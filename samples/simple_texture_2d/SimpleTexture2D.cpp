@@ -59,19 +59,7 @@ void main()
         // Load the texture
         mTexture = CreateSimpleTexture2D();
 
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-
-        return true;
-    }
-
-    void destroy() override
-    {
-        glDeleteProgram(mProgram);
-        glDeleteTextures(1, &mTexture);
-    }
-
-    void draw() override
-    {
+        // Create buffers
         GLfloat vertices[] = {
             -0.5f, 0.5f,  0.0f,  // Position 0
             0.0f,  0.0f,         // TexCoord 0
@@ -84,6 +72,26 @@ void main()
         };
         GLushort indices[] = {0, 1, 2, 0, 2, 3};
 
+        glGenBuffers(2, mBuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, mBuffer[0]);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mBuffer[1]);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+
+        return true;
+    }
+
+    void destroy() override
+    {
+        glDeleteProgram(mProgram);
+        glDeleteTextures(1, &mTexture);
+        glDeleteBuffers(2, mBuffer);
+    }
+
+    void draw() override
+    {
         // Set the viewport
         glViewport(0, 0, getWindow()->getWidth(), getWindow()->getHeight());
 
@@ -93,11 +101,13 @@ void main()
         // Use the program object
         glUseProgram(mProgram);
 
+        glBindBuffer(GL_ARRAY_BUFFER, mBuffer[0]);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mBuffer[1]);
         // Load the vertex position
-        glVertexAttribPointer(mPositionLoc, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), vertices);
+        glVertexAttribPointer(mPositionLoc, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), 0);
         // Load the texture coordinate
         glVertexAttribPointer(mTexCoordLoc, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat),
-                              vertices + 3);
+                              reinterpret_cast<void*>(3 * sizeof(GLfloat)));
 
         glEnableVertexAttribArray(mPositionLoc);
         glEnableVertexAttribArray(mTexCoordLoc);
@@ -109,7 +119,7 @@ void main()
         // Set the texture sampler to texture unit to 0
         glUniform1i(mSamplerLoc, 0);
 
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, indices);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
     }
 
   private:
@@ -125,6 +135,9 @@ void main()
 
     // Texture handle
     GLuint mTexture;
+
+    // Buffer handle
+    GLuint mBuffer[2];
 };
 
 int main(int argc, char **argv)

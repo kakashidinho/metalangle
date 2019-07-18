@@ -22,6 +22,9 @@ vars = {
   # Current revision of glslang, the Khronos SPIRV compiler.
   'glslang_revision': '8aa9a7bb8f74869ab9cfd2c9bd51cef1741004e7',
 
+  # Current revision of spirv-cross, the Khronos SPIRV cross compiler.
+  'spirv_cross_revision': '2082e7e80189843a52d9a79bc17787af93b517de',
+
   # Current revision fo the SPIRV-Headers Vulkan support library.
   'spirv_headers_revision': 'de99d4d834aeb51dd9f099baa285bd44fd04bb3d',
 
@@ -85,6 +88,11 @@ deps = {
 
   '{angle_root}/third_party/glslang/src': {
     'url': '{chromium_git}/external/github.com/KhronosGroup/glslang@{glslang_revision}',
+    'condition': 'not build_with_chromium',
+  },
+
+  '{angle_root}/third_party/spirv-cross/src': {
+    'url': '{chromium_git}/external/github.com/KhronosGroup/SPIRV-Cross@{spirv_cross_revision}',
     'condition': 'not build_with_chromium',
   },
 

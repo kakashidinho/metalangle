@@ -382,9 +382,18 @@ angle_static_library("translator") {
     defines += [ "ANGLE_ENABLE_HLSL" ]
   }
 
-  if (angle_enable_vulkan || use_fuzzing_engine) {
+  if (angle_enable_vulkan || use_fuzzing_engine || angle_enable_metal) {
+    # This translator is needed by metal backend also.
     sources += angle_translator_lib_vulkan_sources
+  }
+
+  if (angle_enable_vulkan || use_fuzzing_engine) {
     defines += [ "ANGLE_ENABLE_VULKAN" ]
+  }
+
+  if (angle_enable_metal) {
+    sources += angle_translator_lib_metal_sources
+    defines += [ "ANGLE_ENABLE_METAL" ]
   }
 
   public_configs += [ ":external_config" ]
@@ -491,9 +500,78 @@ config("angle_backend_config") {
       defines += [ "ANGLE_USE_CUSTOM_VULKAN_CMD_BUFFERS=1" ]
     }
   }
+  if (angle_enable_metal) {
+    defines += [ "ANGLE_ENABLE_METAL" ]
+  }
   if (angle_enable_null) {
     defines += [ "ANGLE_ENABLE_NULL" ]
   }
+}
+
+# Special porition of the code that requires no Objective-C ARC.
+angle_source_set("angle_metal_no_arc_backend") {
+  sources = libangle_metal_no_arc_sources
+
+  cflags = [ "-fno-objc-arc" ]
+  cflags_objc = [ "-fno-objc-arc" ]
+  cflags_objcc = [ "-fno-objc-arc" ]
+}
+
+angle_source_set("angle_metal_backend") {
+  sources = libangle_metal_sources
+
+  cflags = []
+  cflags_cc = []
+  cflags_objc = []
+  cflags_objcc = []
+  ldflags = []
+  libs = []
+
+  public_deps = [
+    ":angle_common"
+  ]
+
+  deps = [
+    ":includes",
+    ":angle_metal_no_arc_backend",
+    "${angle_glslang_dir}:glslang_default_resource_limits_sources",
+    "${angle_glslang_dir}:glslang_sources",
+    "${angle_spirv_cross_dir}:spirv_cross_sources",
+  ]
+
+  # Due to autoreleasepool unpredictable problems, we disable ARC for now.
+  cflags_objc += [
+    "-fno-objc-arc", "-Wno-nullability-completeness"
+  ]
+  cflags_objcc += [
+    "-fno-objc-arc", "-Wno-nullability-completeness"
+  ]
+
+  libs += [
+    "Metal.framework",
+  ]
+
+  if (is_mac) {
+    additional_cflags = [
+      # This should be set by setting "mac_deployment_target" argument
+      # "-mmacosx-version-min=10.13"
+    ]
+
+    cflags += additional_cflags
+    cflags_cc += additional_cflags
+    cflags_objc += additional_cflags
+    cflags_objcc += additional_cflags
+
+    ldflags += additional_cflags
+
+    libs += [
+      "Cocoa.framework",
+      "IOSurface.framework",
+      "QuartzCore.framework",
+    ]
+  }
+
+  # TODO(hqle): iOS support.
 }
 
 config("libANGLE_config") {
@@ -501,6 +579,9 @@ config("libANGLE_config") {
   defines = []
   libs = []
   ldflags = []
+  cflags_objc = []
+  cflags_objcc = []
+
   if (angle_enable_d3d9) {
     ldflags += [ "/DELAYLOAD:d3d9.dll" ]
   }
@@ -685,6 +766,12 @@ angle_source_set("libANGLE") {
     # Include generated shaders.
     import("src/libANGLE/renderer/vulkan/vk_internal_shaders_autogen.gni")
     sources += angle_vulkan_internal_shaders
+  }
+
+  if (angle_enable_metal) {
+    public_deps += [
+      ":angle_metal_backend"
+    ]
   }
 
   if (angle_enable_null) {

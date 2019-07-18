@@ -67,15 +67,23 @@ util_ozone_sources = [
   "util/ozone/OzoneWindow.h",
 ]
 
-util_osx_sources = [
+util_apple_sources = [
   "util/osx/OSXTimer.cpp",
   "util/osx/OSXTimer.h",
   "util/osx/OSXPixmap.mm",
   "util/osx/OSXPixmap.h",
-  "util/osx/OSXWindow.mm",
-  "util/osx/OSXWindow.h",
   "util/posix/Posix_crash_handler.cpp",
   "util/posix/Posix_system_utils.cpp",
+]
+
+util_osx_sources = util_apple_sources + [
+  "util/osx/OSXWindow.mm",
+  "util/osx/OSXWindow.h"
+]
+
+util_ios_sources = util_apple_sources + [
+  "util/ios/IOSWindow.mm",
+  "util/ios/IOSWindow.h"
 ]
 
 util_android_sources = util_posix_sources + [

@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <list>
 #include <string>
+#include <functional>
 
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
@@ -59,6 +60,14 @@ class ANGLE_UTIL_EXPORT OSWindow
     virtual void setVisible(bool isVisible)     = 0;
 
     virtual void signalTestEvent() = 0;
+
+    typedef std::function<int ()> LoopDelegate;
+    typedef LoopDelegate LoopStartDelegate;
+    virtual bool hasOwnLoop() const { return false; }
+    virtual int runOwnLoop(LoopStartDelegate initDelegate, LoopDelegate loopDelegate)
+    {
+        return 0;
+    }
 
     // Pops events look for the test event
     bool didTestEventFire();

@@ -37,4 +37,8 @@ default_args = {
   clang_use_chrome_plugins = true
   build_angle_deqp_tests = true
   use_sysroot = true
+  # This is requirement for Metal backend implementation.
+  # If lower version is desired, change this argument to lower and also
+  # set "angle_enable_metal=false"
+  mac_deployment_target = "10.13"
 }

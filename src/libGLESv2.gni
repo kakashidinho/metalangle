@@ -874,6 +874,58 @@ libangle_vulkan_sources = [
   "src/libANGLE/renderer/vulkan/vk_wrapper.h",
 ]
 
+libangle_metal_sources = [
+  "src/libANGLE/renderer/metal/BufferMtl.h",
+  "src/libANGLE/renderer/metal/BufferMtl.mm",
+  "src/libANGLE/renderer/metal/CompilerMtl.h",
+  "src/libANGLE/renderer/metal/CompilerMtl.mm",
+  "src/libANGLE/renderer/metal/ContextMtl.h",
+  "src/libANGLE/renderer/metal/ContextMtl.mm",
+  "src/libANGLE/renderer/metal/DisplayMtl.h",
+  "src/libANGLE/renderer/metal/DisplayMtl.mm",
+  "src/libANGLE/renderer/metal/FrameBufferMtl.h",
+  "src/libANGLE/renderer/metal/FrameBufferMtl.mm",
+  "src/libANGLE/renderer/metal/GlslangWrapper.h",
+  "src/libANGLE/renderer/metal/GlslangWrapper.mm",
+  "src/libANGLE/renderer/metal/ProgramMtl.h",
+  "src/libANGLE/renderer/metal/ProgramMtl.mm",
+  "src/libANGLE/renderer/metal/RenderBufferMtl.h",
+  "src/libANGLE/renderer/metal/RenderBufferMtl.mm",
+  "src/libANGLE/renderer/metal/RenderTargetMtl.h",
+  "src/libANGLE/renderer/metal/RenderTargetMtl.mm",
+  "src/libANGLE/renderer/metal/RendererMtl.h",
+  "src/libANGLE/renderer/metal/RendererMtl.mm",
+  "src/libANGLE/renderer/metal/ShaderMtl.h",
+  "src/libANGLE/renderer/metal/ShaderMtl.mm",
+  "src/libANGLE/renderer/metal/StateCacheMtl.h",
+  "src/libANGLE/renderer/metal/StateCacheMtl.mm",
+  "src/libANGLE/renderer/metal/SurfaceMtl.h",
+  "src/libANGLE/renderer/metal/SurfaceMtl.mm",
+  "src/libANGLE/renderer/metal/TextureMtl.h",
+  "src/libANGLE/renderer/metal/TextureMtl.mm",
+  "src/libANGLE/renderer/metal/UtilsMtl.h",
+  "src/libANGLE/renderer/metal/UtilsMtl.mm",
+  "src/libANGLE/renderer/metal/VertexArrayMtl.h",
+  "src/libANGLE/renderer/metal/VertexArrayMtl.mm",
+  "src/libANGLE/renderer/metal/mtl_buffer_pool.h",
+  "src/libANGLE/renderer/metal/mtl_buffer_pool.mm",
+  "src/libANGLE/renderer/metal/mtl_command_buffer.h",
+  "src/libANGLE/renderer/metal/mtl_command_buffer.mm",
+  "src/libANGLE/renderer/metal/mtl_common.h",
+  "src/libANGLE/renderer/metal/mtl_common.mm",
+  "src/libANGLE/renderer/metal/mtl_format_table_autogen.mm",
+  "src/libANGLE/renderer/metal/mtl_format_utils.h",
+  "src/libANGLE/renderer/metal/mtl_format_utils.mm",
+  "src/libANGLE/renderer/metal/mtl_resources.h",
+  "src/libANGLE/renderer/metal/mtl_resources.mm",
+  "src/libANGLE/renderer/metal/mtl_utils.h",
+  "src/libANGLE/renderer/metal/mtl_utils.mm",
+]
+
+libangle_metal_no_arc_sources = [
+  "src/libANGLE/renderer/metal/mtl_utils_no_arc.mm",
+]
+
 # The frame capture headers are always visible to libANGLE.
 libangle_sources += [
   "src/libANGLE/FrameCapture.h",

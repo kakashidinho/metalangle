@@ -1,4 +1,28 @@
-# ANGLE - Almost Native Graphics Layer Engine
+# MetalANGLE - OpenGL ES to Apple Metal API Translation Layer
+This is a fork of Goolge's [ANGLE project](https://chromium.googlesource.com/angle/angle). It adds Metal API backend support.
+Apple announced OpenGL (ES) deprecation in 2018. So the purpose of MetalANGLE is to allow OpenGL ES applications
+to continue operate on Apple platforms by translating OpenGL ES draw calls to Metal draw calls under the hood.
+
+### Current Metal backend implementation status
+- Almost all basic samples has been tested to work fine.
+- No `GL_TRIANGLE_FAN` & `GL_LINE_LOOP` support in draw calls yet.
+- Metal doesn't allow buffer offset not being multiple of 4 bytes. Hence, draw calls that use unsupported offsets, strides,
+and vertex formats will force MetalANGLE to do software conversions on CPU.
+- MSAA is not supported yet.
+- MetalANGLE only supports __MacOS 10.13+__ and __iOS 11.0+__.
+#### TODO lists
+- Make sure it passes all ANGLE's unit tests.
+- Support `GL_TRIANGLE_FAN` & `GL_LINE_LOOP` by generating index buffer on the fly using Metal compute shader.
+- Use compute shader to convert unsupported offsets, strides & vertex formats.
+- Support MSAA.
+- Support OpenGL ES 3.0.
+
+## How to build Metal ANGLE for MacOS & iOS
+View the [Metal backend's Dev setup instructions](src/libANGLE/renderer/metal/DevSetup.md).
+Currently, for convenience, iOS version can be built using Xcode project provided in `ios/xcode` folder.
+
+------
+# Google's ANGLE - Almost Native Graphics Layer Engine
 
 The goal of ANGLE is to allow users of multiple operating systems to seamlessly run WebGL and other
 OpenGL ES content by translating OpenGL ES API calls to one of the hardware-supported APIs available
@@ -8,23 +32,24 @@ underway, and future plans include compute shader support (ES 3.1) and MacOS sup
 
 ### Level of OpenGL ES support via backing renderers
 
-|                |  Direct3D 9   |  Direct3D 11     |   Desktop GL   |    GL ES      |    Vulkan     |
-|----------------|:-------------:|:----------------:|:--------------:|:-------------:|:-------------:|
-| OpenGL ES 2.0  |    complete   |    complete      |    complete    |   complete    |    complete   |
-| OpenGL ES 3.0  |               |    complete      |    complete    |   complete    |  in progress  |
-| OpenGL ES 3.1  |               |   in progress    |     complete   |   complete    |  not started  |
-| OpenGL ES 3.2  |               |                  |    planned     |    planned    |    planned    |
+|                |  Direct3D 9   |  Direct3D 11     |   Desktop GL   |    GL ES      |    Vulkan     |    Metal      |
+|----------------|:-------------:|:----------------:|:--------------:|:-------------:|:-------------:|:-------------:|
+| OpenGL ES 2.0  |    complete   |    complete      |    complete    |   complete    |    complete   |  in progress  |
+| OpenGL ES 3.0  |               |    complete      |    complete    |   complete    |  in progress  |  not started  |
+| OpenGL ES 3.1  |               |   in progress    |     complete   |   complete    |  not started  |  not started  |
+| OpenGL ES 3.2  |               |                  |    planned     |    planned    |    planned    |  not started  |
 
 ### Platform support via backing renderers
 
-|             |    Direct3D 9  |   Direct3D 11  |   Desktop GL  |    GL ES    |   Vulkan    |
-|------------:|:--------------:|:--------------:|:-------------:|:-----------:|:-----------:|
-| Windows     |    complete    |    complete    |   complete    |   complete  |   complete  |
-| Linux       |                |                |   complete    |             |   complete  |
-| Mac OS X    |                |                |   complete    |             |             |
-| Chrome OS   |                |                |               |   complete  |   planned   |
-| Android     |                |                |               |   complete  |   complete  |
-| Fuchsia     |                |                |               |             | in progress |
+|             |    Direct3D 9  |   Direct3D 11  |   Desktop GL  |    GL ES    |   Vulkan    |   Metal    |
+|------------:|:--------------:|:--------------:|:-------------:|:-----------:|:-----------:|:-----------:|
+| Windows     |    complete    |    complete    |   complete    |   complete  |   complete  |             |
+| Linux       |                |                |   complete    |             |   complete  |             |
+| Mac OS X    |                |                |   complete    |             |             | in progress |
+| iOS         |                |                |               |             |             | in progress |
+| Chrome OS   |                |                |               |   complete  |   planned   |             |
+| Android     |                |                |               |   complete  |   complete  |             |
+| Fuchsia     |                |                |               |             | in progress |             |
 
 ANGLE v1.0.772 was certified compliant by passing the ES 2.0.3 conformance tests in October 2011.
 ANGLE also provides an implementation of the EGL 1.4 specification.

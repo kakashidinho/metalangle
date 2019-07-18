@@ -69,6 +69,8 @@ declare_args() {
   angle_enable_null = true
   angle_enable_essl = true
   angle_enable_glsl = true
+
+  angle_enable_metal = is_mac || is_ios
 }
 
 declare_args() {

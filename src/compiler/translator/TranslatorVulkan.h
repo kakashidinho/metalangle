@@ -23,10 +23,17 @@ class TranslatorVulkan : public TCompiler
     TranslatorVulkan(sh::GLenum type, ShShaderSpec spec);
 
   protected:
+    TranslatorVulkan(sh::GLenum type,
+                     ShShaderSpec spec,
+                     bool scalePositionY /* use viewportScaleY to scale gl_Position.y */);
+
     void translate(TIntermBlock *root,
                    ShCompileOptions compileOptions,
                    PerformanceDiagnostics *perfDiagnostics) override;
     bool shouldFlattenPragmaStdglInvariantAll() override;
+
+  private:
+    const bool mScalePositionY;
 };
 
 }  // namespace sh

@@ -120,6 +120,9 @@ struct InternalFormat
     GLenum getReadPixelsFormat() const;
     GLenum getReadPixelsType(const Version &version) const;
 
+    // Support upload a portion of image?
+    bool supportSubImage() const;
+
     // Return true if the format is a required renderbuffer format in the given version of the core
     // spec. Note that it isn't always clear whether all the rules that apply to core required
     // renderbuffer formats also apply to additional formats added by extensions. Because of this
@@ -201,8 +204,22 @@ const InternalFormat &GetInternalFormatInfo(GLenum internalFormat, GLenum type);
 // format is valid.
 GLenum GetUnsizedFormat(GLenum internalFormat);
 
+// Return whether the compressed format requires whole image/mip level to be uploaded to texture.
+bool CompressedFormatRequiresWholeImage(GLenum internalFormat);
+
 typedef std::set<GLenum> FormatSet;
 const FormatSet &GetAllSizedInternalFormats();
+
+struct UnsizedFormatInfo
+{
+    bool operator==(const UnsizedFormatInfo &other) const;
+    bool operator!=(const UnsizedFormatInfo &other) const;
+    bool operator<(const UnsizedFormatInfo &other) const;
+    GLenum internalFormat;
+    GLenum type;
+};
+typedef std::set<UnsizedFormatInfo> UnsizedFormatSet;
+const UnsizedFormatSet &GetAllUnsizedInternalFormats();
 
 // From the ESSL 3.00.4 spec:
 // Vertex shader inputs can only be float, floating-point vectors, matrices, signed and unsigned

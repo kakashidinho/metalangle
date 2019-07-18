@@ -7,6 +7,7 @@ angle_root = "//"
 
 # Overrides for ANGLE's dependencies
 angle_glslang_dir = "//third_party/glslang/src"
+angle_spirv_cross_dir = "//third_party/spirv-cross"
 angle_googletest_dir = "//third_party/googletest/src"
 angle_libjpeg_turbo_dir = "//third_party/libjpeg_turbo"
 angle_jsoncpp_dir = "//third_party/jsoncpp"

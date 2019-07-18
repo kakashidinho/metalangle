@@ -316,6 +316,34 @@ void AppendVertexShaderDepthCorrectionToMain(TIntermBlock *root, TSymbolTable *s
     RunAtTheEndOfShader(root, assignment, symbolTable);
 }
 
+// This operation performs flipping the gl_Position.y using this expression:
+// gl_Position.y = gl_Position.y * viewportScaleY
+void AppendVertexShaderPositionYCorrectionToMain(TIntermBlock *root,
+                                                 TSymbolTable *symbolTable,
+                                                 const TVariable *driverUniforms)
+{
+    TIntermBinary *viewportYScale = CreateDriverUniformRef(driverUniforms, kViewportYScale);
+
+    // Create a symbol reference to "gl_Position"
+    const TVariable *position  = BuiltInVariable::gl_Position();
+    TIntermSymbol *positionRef = new TIntermSymbol(position);
+
+    // Create a swizzle to "gl_Position.y"
+    TVector<int> swizzleOffsetY;
+    swizzleOffsetY.push_back(1);
+    TIntermSwizzle *positionY = new TIntermSwizzle(positionRef, swizzleOffsetY);
+
+    // Create the expression "gl_Position.y * viewportScaleY"
+    TIntermBinary *inverseY    = new TIntermBinary(EOpMul, positionY->deepCopy(), viewportYScale);
+
+    // Create the assignment "gl_Position.y = gl_Position.y * viewportScaleY
+    TIntermTyped *positionYLHS = positionY->deepCopy();
+    TIntermBinary *assignment  = new TIntermBinary(TOperator::EOpAssign, positionYLHS, inverseY);
+
+    // Append the assignment as a statement at the end of the shader.
+    RunAtTheEndOfShader(root, assignment, symbolTable);
+}
+
 void AppendVertexShaderTransformFeedbackOutputToMain(TIntermBlock *root, TSymbolTable *symbolTable)
 {
     TVariable *xfbPlaceholder = new TVariable(symbolTable, ImmutableString("@@ XFB-OUT @@"),
@@ -637,7 +665,12 @@ void AddLineSegmentRasterizationEmulation(TInfoSinkBase &sink,
 }  // anonymous namespace
 
 TranslatorVulkan::TranslatorVulkan(sh::GLenum type, ShShaderSpec spec)
-    : TCompiler(type, spec, SH_GLSL_450_CORE_OUTPUT)
+    : TranslatorVulkan(type, spec, false)
+{}
+
+TranslatorVulkan::TranslatorVulkan(sh::GLenum type, ShShaderSpec spec, bool scalePositionY)
+    : TCompiler(type, spec, SH_GLSL_450_CORE_OUTPUT),
+      mScalePositionY(scalePositionY)
 {}
 
 void TranslatorVulkan::translate(TIntermBlock *root,
@@ -789,6 +822,10 @@ void TranslatorVulkan::translate(TIntermBlock *root,
 
         // Append depth range translation to main.
         AppendVertexShaderDepthCorrectionToMain(root, &getSymbolTable());
+
+        // Append gl_Position.y correction to main
+        if (mScalePositionY)
+            AppendVertexShaderPositionYCorrectionToMain(root, &getSymbolTable(), driverUniforms);
     }
 
     // Write translated shader.
