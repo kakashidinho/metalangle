@@ -106,7 +106,7 @@ AutoObjCPtr<id<MTLCommandBuffer>> CommandQueue::makeMetalCommandBuffer(uint64_t 
 {
     ANGLE_MTL_OBJC_SCOPE
     {
-        id<MTLCommandBuffer> metalCmdBuffer = [get() commandBuffer];
+        AutoObjCPtr<id<MTLCommandBuffer>> metalCmdBuffer = [get() commandBuffer];
 
         std::lock_guard<std::mutex> lg(mLock);
 

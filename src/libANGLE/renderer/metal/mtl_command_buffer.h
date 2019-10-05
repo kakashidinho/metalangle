@@ -67,7 +67,7 @@ class CommandQueue final : public WrappedObject<id<MTLCommandQueue>>, angle::Non
 
     struct CmdBufferQueueEntry
     {
-        ANGLE_MTL_WEAK id<MTLCommandBuffer> buffer;
+        AutoObjCPtr<id<MTLCommandBuffer>> buffer;
         uint64_t serial;
     };
     std::deque<CmdBufferQueueEntry> mQueuedMetalCmdBuffers;
