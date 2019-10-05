@@ -226,7 +226,7 @@ class ContextMtl : public ContextImpl, public mtl::Context
 
     // Will end current command encoder and start new blit command encoder. Unless a blit comamnd
     // encoder is already started.
-    mtl::BlitCommandEncoder *getBitCommandEncoder();
+    mtl::BlitCommandEncoder *getBlitCommandEncoder();
 
   private:
     void initializeCaps() const;

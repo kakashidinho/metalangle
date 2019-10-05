@@ -232,7 +232,7 @@ angle::Result TextureMtl::generateMipmap(const gl::Context *context)
         return angle::Result::Continue;
     }
 
-    mtl::BlitCommandEncoder *blitEncoder = contextMtl->getBitCommandEncoder();
+    mtl::BlitCommandEncoder *blitEncoder = contextMtl->getBlitCommandEncoder();
 
     blitEncoder->generateMipmapsForTexture(mTexture);
 

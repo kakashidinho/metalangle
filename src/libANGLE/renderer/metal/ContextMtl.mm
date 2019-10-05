@@ -861,7 +861,7 @@ mtl::RenderCommandEncoder *ContextMtl::getRenderCommandEncoder(mtl::TextureRef t
     return getRenderCommandEncoder(textureTarget, index, Optional<MTLClearColor>());
 }
 
-mtl::BlitCommandEncoder *ContextMtl::getBitCommandEncoder()
+mtl::BlitCommandEncoder *ContextMtl::getBlitCommandEncoder()
 {
     if (mBlitEncoder.valid())
     {
