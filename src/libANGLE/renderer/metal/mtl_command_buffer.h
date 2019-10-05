@@ -296,7 +296,7 @@ class BlitCommandEncoder final : public CommandEncoder
                                     MTLOrigin srcOrigin);
 
     BlitCommandEncoder &generateMipmapsForTexture(TextureRef texture);
-
+    BlitCommandEncoder &synchronizeResource(TextureRef texture);
   private:
     id<MTLBlitCommandEncoder> get()
     {

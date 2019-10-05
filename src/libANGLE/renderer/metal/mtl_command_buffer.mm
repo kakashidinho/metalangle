@@ -873,5 +873,18 @@ BlitCommandEncoder &BlitCommandEncoder::generateMipmapsForTexture(TextureRef tex
 
     return *this;
 }
+BlitCommandEncoder &BlitCommandEncoder::synchronizeResource(TextureRef texture)
+{
+    if (!texture)
+    {
+        return *this;
+    }
+
+#if TARGET_OS_OSX
+    cmdBuffer().setWriteDependency(texture);
+    [get() synchronizeResource:texture->get()];
+#endif
+    return *this;
+}
 }
 }

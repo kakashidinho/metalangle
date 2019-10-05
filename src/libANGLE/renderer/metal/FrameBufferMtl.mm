@@ -718,13 +718,20 @@ angle::Result FramebufferMtl::readPixelsImpl(const gl::Context *context,
     MTLRegion mtlSrcRowRegion = MTLRegionMake2D(area.x, area.y, area.width, 1);
 
     NSUInteger rowOffset = packPixelsParams.reverseRowOrder ? -1 : 1;
-    NSUInteger startRow  = packPixelsParams.reverseRowOrder ? area.y1() : area.y;
+    NSUInteger startRow  = packPixelsParams.reverseRowOrder ? (area.y1() - 1) : area.y;
+
+    // Make sure GPU & CPU contents are synchronized
+    mtl::BlitCommandEncoder *blitEncoder = contextMtl->getBlitCommandEncoder();
+    if (blitEncoder)
+    {
+        blitEncoder->synchronizeResource(texture);
+    }
 
     // Copy pixels row by row
     packPixelsRowParams.area.height     = 1;
     packPixelsRowParams.reverseRowOrder = false;
     for (NSUInteger r = startRow, i = 0; i < static_cast<NSUInteger>(area.height);
-         ++i, r += rowOffset)
+         ++i, r += rowOffset, pixels += packPixelsRowParams.outputPitch)
     {
         mtlSrcRowRegion.origin.y   = r;
         packPixelsRowParams.area.y = packPixelsParams.area.y + i;
