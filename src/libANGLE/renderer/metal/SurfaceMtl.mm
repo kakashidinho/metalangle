@@ -20,7 +20,7 @@ namespace rx
 
 namespace
 {
-constexpr angle::FormatID kDefaultFrameBufferColorFormatId   = angle::FormatID::B8G8R8A8_UNORM_SRGB;
+constexpr angle::FormatID kDefaultFrameBufferColorFormatId   = angle::FormatID::B8G8R8A8_UNORM;
 constexpr angle::FormatID kDefaultFrameBufferDepthFormatId   = angle::FormatID::D32_FLOAT;
 constexpr angle::FormatID kDefaultFrameBufferStencilFormatId = angle::FormatID::S8_UINT;
 constexpr angle::FormatID kDefaultFrameBufferDepthStencilFormatId =
@@ -189,6 +189,16 @@ egl::Error SurfaceMtl::initialize(const egl::Display *display)
     mDepthFormat.initAndConvertToCompatibleFormatIfNotSupported(
         metalDevice, kDefaultFrameBufferDepthStencilFormatId);
     mStencilFormat = mDepthFormat;
+#endif
+
+#if TARGET_OS_OSX
+    if (!metalDevice.depth24Stencil8PixelFormatSupported)
+    {
+        // Acording to https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
+        // B8G8R8A8 is only supported if depth24Stencil8PixelFormatSupported is YES.
+        // Fallback to SRGB version
+        mColorFormat.init(angle::FormatID::B8G8R8A8_UNORM_SRGB);
+    }
 #endif
 
     ANGLE_MTL_OBJC_SCOPE
