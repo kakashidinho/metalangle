@@ -81,8 +81,9 @@ Ninja automatically calls GN to regenerate the build files on any configuration 
 Ensure `depot_tools` is in your path as it provides ninja.
 
 ### Building iOS version
-Open `OpenGLES.xcodeproj` in `ios/xcode` folder.
-The target `MetalANGLE` will build OpenGL ES framework named `MetalANGLE.framework`.
+- Open `OpenGLES.xcodeproj` in `ios/xcode` folder.
+- The target `MetalANGLE` will build OpenGL ES framework named `MetalANGLE.framework`.
+- Note: in order to test sample apps on real devices. You have to change their Bundle Identifier in XCode to something you like, since only one development team can use one ID at a time. And this is global restriction across the globes. Once one person install the sample apps using his Apple developer profile, the ID configured will be registered for that developer only. And no other developers can use that ID to install to their device anymore.
 
 ## Application Development with ANGLE
 This sections describes how to use ANGLE to build an OpenGL ES application.
