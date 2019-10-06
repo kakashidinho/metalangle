@@ -204,7 +204,7 @@ void CommandBuffer::setWriteDependency(const ResourceRef &resource)
         return;
     }
 
-    resource->setUsedByCommandBufferWithQueueSerial(mQueueSerial);
+    resource->setUsedByCommandBufferWithQueueSerial(mQueueSerial, true);
 }
 
 void CommandBuffer::setReadDependency(const ResourceRef &resource)
@@ -221,7 +221,7 @@ void CommandBuffer::setReadDependency(const ResourceRef &resource)
         return;
     }
 
-    resource->setUsedByCommandBufferWithQueueSerial(mQueueSerial);
+    resource->setUsedByCommandBufferWithQueueSerial(mQueueSerial, false);
 }
 
 void CommandBuffer::restart()

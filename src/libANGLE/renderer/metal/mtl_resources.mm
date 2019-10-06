@@ -36,7 +36,7 @@ bool Resource::isBeingUsedByGPU(Context *context) const
     return context->cmdQueue().isResourceBeingUsedByGPU(this);
 }
 
-void Resource::setUsedByCommandBufferWithQueueSerial(uint64_t serial)
+void Resource::setUsedByCommandBufferWithQueueSerial(uint64_t serial, bool writing)
 {
     auto curSerial = mRef->mCmdBufferQueueSerial.load(std::memory_order_relaxed);
     do
@@ -47,6 +47,13 @@ void Resource::setUsedByCommandBufferWithQueueSerial(uint64_t serial)
         }
     } while (!mRef->mCmdBufferQueueSerial.compare_exchange_weak(
         curSerial, serial, std::memory_order_release, std::memory_order_relaxed));
+
+    // TODO(hqle): This is not thread safe, if multiple command buffers on multiple threads
+    // are writing to it.
+    if (writing)
+    {
+        mRef->mCPUReadMemDirty = true;
+    }
 }
 
 // Texture implemenetation

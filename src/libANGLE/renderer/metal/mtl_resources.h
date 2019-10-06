@@ -46,13 +46,17 @@ class Resource : angle::NonCopyable
 
     bool isBeingUsedByGPU(Context *context) const;
 
-    void setUsedByCommandBufferWithQueueSerial(uint64_t serial);
+    void setUsedByCommandBufferWithQueueSerial(uint64_t serial, bool writing);
 
     const std::atomic<uint64_t> &getCommandBufferQueueSerial() const
     {
         return mRef->mCmdBufferQueueSerial;
     }
 
+    // Flag indicate whether we should synchornize the content to CPU after GPU changed this
+    // resource's content.
+    bool isCPUReadMemDirty() const { return mRef->mCPUReadMemDirty; }
+    void resetCPUReadMemDirty() { mRef->mCPUReadMemDirty = false; }
   protected:
     Resource();
     // Share the GPU usage ref with other resource
@@ -63,6 +67,9 @@ class Resource : angle::NonCopyable
     {
         // The command buffer's writing ref count
         std::atomic<uint64_t> mCmdBufferQueueSerial{0};
+
+        // TODO(hqle): resource dirty handle is not threadsafe.
+        bool mCPUReadMemDirty = false;
     };
 
     std::shared_ptr<Ref> mRef;
