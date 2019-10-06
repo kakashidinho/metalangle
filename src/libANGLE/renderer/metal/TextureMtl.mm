@@ -433,7 +433,7 @@ angle::Result TextureMtl::setStorageImpl(const gl::Context *context,
             for (size_t f = 0; f < gl::kCubeFaceCount; ++f)
             {
                 mLayeredTextureViews[f] = mTexture->createFaceView(f);
-                mLayeredRenderTargets[f].set(mTexture, 0, f, mFormat);
+                mLayeredRenderTargets[f].set(mLayeredTextureViews[f], 0, 0, mFormat);
             }
             break;
         default:
@@ -445,12 +445,39 @@ angle::Result TextureMtl::setStorageImpl(const gl::Context *context,
     mFormat                             = convertedFormat;
     MTLColorWriteMask colorWritableMask = MTLColorWriteMaskAll;
     const angle::Format &intendedFormat = angle::Format::Get(mFormat.intendedFormatId);
+    bool emulatedAlpha = false;
     if (intendedFormat.alphaBits == 0)
     {
+        emulatedAlpha = true;
         // Disable alpha write to this texture
         colorWritableMask = colorWritableMask & (~MTLColorWriteMaskAlpha);
     }
     mTexture->setColorWritableMask(colorWritableMask);
+
+    // For emulated alpha texture, we need to initialize its alpha channel to one.
+    if (emulatedAlpha)
+    {
+        int layers = mtlType == MTLTextureTypeCube ? 6 : 1;
+        for (int layer = 0; layer < layers; ++layer)
+        {
+            auto cubeFace = static_cast<gl::TextureTarget>(
+                static_cast<int>(gl::TextureTarget::CubeMapPositiveX) + layer);
+            for (size_t mip = 0; mip < mipmaps; ++mip)
+            {
+                gl::ImageIndex index;
+                if (layers > 1)
+                {
+                    index = gl::ImageIndex::MakeCubeMapFace(cubeFace, mip);
+                }
+                else
+                {
+                    index = gl::ImageIndex::Make2D(mip);
+                }
+
+                ANGLE_TRY(mtl::InitializeTextureContents(context, mTexture, mFormat, index));
+            }
+        }
+    }
 
     return angle::Result::Continue;
 }
@@ -485,6 +512,10 @@ angle::Result TextureMtl::setSubImageImpl(const gl::Context *context,
                                           const gl::PixelUnpackState &unpack,
                                           const uint8_t *pixels)
 {
+    if (!pixels)
+    {
+        return angle::Result::Continue;
+    }
     ASSERT(mTexture && mTexture->valid());
     ASSERT(unpack.skipRows == 0 && unpack.skipPixels == 0 && unpack.skipImages == 0);
 
@@ -602,15 +633,33 @@ angle::Result TextureMtl::copySubImageImpl(const gl::Context *context,
         return angle::Result::Continue;
     }
 
-    ContextMtl *contextMtl         = mtl::GetImpl(context);
-    RendererMtl *rendererMtl       = contextMtl->getRenderer();
-    FramebufferMtl *framebufferMtl = mtl::GetImpl(source);
-
     // If negative offsets are given, clippedSourceArea ensures we don't read from those offsets.
     // However, that changes the sourceOffset->destOffset mapping.  Here, destOffset is shifted by
     // the same amount as clipped to correct the error.
     const gl::Offset modifiedDestOffset(destOffset.x + clippedSourceArea.x - sourceArea.x,
                                         destOffset.y + clippedSourceArea.y - sourceArea.y, 0);
+
+    if (!mtl::Format::FormatRenderable(mFormat.metalFormat))
+    {
+        return copySubImageCPU(context, index, modifiedDestOffset, clippedSourceArea,
+                               internalFormat, source);
+    }
+
+    // TODO(hqle): Use compute shader.
+    return copySubImageWithDraw(context, index, modifiedDestOffset, clippedSourceArea,
+                                internalFormat, source);
+}
+
+angle::Result TextureMtl::copySubImageWithDraw(const gl::Context *context,
+                                               const gl::ImageIndex &index,
+                                               const gl::Offset &modifiedDestOffset,
+                                               const gl::Rectangle &clippedSourceArea,
+                                               const gl::InternalFormat &internalFormat,
+                                               gl::Framebuffer *source)
+{
+    ContextMtl *contextMtl         = mtl::GetImpl(context);
+    RendererMtl *rendererMtl       = contextMtl->getRenderer();
+    FramebufferMtl *framebufferMtl = mtl::GetImpl(source);
 
     RenderTargetMtl *colorReadRT = framebufferMtl->getColorReadRenderTarget();
 
@@ -633,6 +682,46 @@ angle::Result TextureMtl::copySubImageImpl(const gl::Context *context,
     blitParams.dstLuminance = intendedInternalFormat.isLUMA();
 
     rendererMtl->getUtils().blitWithDraw(context, cmdEncoder, blitParams);
+
+    return angle::Result::Continue;
+}
+
+angle::Result TextureMtl::copySubImageCPU(const gl::Context *context,
+                                          const gl::ImageIndex &index,
+                                          const gl::Offset &modifiedDestOffset,
+                                          const gl::Rectangle &clippedSourceArea,
+                                          const gl::InternalFormat &internalFormat,
+                                          gl::Framebuffer *source)
+{
+    ContextMtl *contextMtl         = mtl::GetImpl(context);
+    FramebufferMtl *framebufferMtl = mtl::GetImpl(source);
+
+    const angle::Format &dstFormat = angle::Format::Get(mFormat.actualFormatId);
+    const size_t dstRowPitch = dstFormat.pixelBytes * clippedSourceArea.width;
+    std::unique_ptr<uint8_t[]> conversionRow(new (std::nothrow) uint8_t[dstRowPitch]);
+    ANGLE_CHECK_GL_ALLOC(contextMtl, conversionRow);
+
+    MTLRegion mtlDstRowArea  = MTLRegionMake2D(clippedSourceArea.x, 0, clippedSourceArea.width, 1);
+    gl::Rectangle srcRowArea = gl::Rectangle(clippedSourceArea.x, 0, clippedSourceArea.width, 1);
+
+    for (int r = 0; r < clippedSourceArea.height; ++r)
+    {
+        mtlDstRowArea.origin.y = modifiedDestOffset.y + r;
+        srcRowArea.y = clippedSourceArea.y + r;
+
+        PackPixelsParams packParams(srcRowArea, dstFormat, dstRowPitch, false,
+                                    nullptr, 0);
+
+        // Read pixels from framebuffer to memory:
+        ANGLE_TRY(framebufferMtl->readPixelsImpl(context, srcRowArea, packParams,
+                                                 framebufferMtl->getColorReadRenderTarget(),
+                                                 conversionRow.get()));
+
+        // Upload to texture
+        mTexture->replaceRegion(contextMtl, mtlDstRowArea, index.getLevelIndex(),
+                                index.hasLayer() ? index.cubeMapFaceIndex() : 0,
+                                conversionRow.get(), dstRowPitch);
+    }
 
     return angle::Result::Continue;
 }

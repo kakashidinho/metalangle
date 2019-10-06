@@ -93,12 +93,12 @@ class FramebufferMtl : public FramebufferImpl
     void onFinishedDrawingToFrameBuffer(const gl::Context *context,
                                         mtl::RenderCommandEncoder *encoder);
 
-  private:
     angle::Result readPixelsImpl(const gl::Context *context,
                                  const gl::Rectangle &area,
                                  const PackPixelsParams &packPixelsParams,
                                  RenderTargetMtl *renderTarget,
                                  uint8_t *pixels);
+  private:
     angle::Result invalidateImpl(ContextMtl *contextMtl, size_t count, const GLenum *attachments);
     angle::Result clearImpl(const gl::Context *context,
                             gl::DrawBufferMask clearColorBuffers,

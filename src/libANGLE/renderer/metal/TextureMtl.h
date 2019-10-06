@@ -186,6 +186,18 @@ class TextureMtl : public TextureImpl
                                    const gl::Rectangle &sourceArea,
                                    const gl::InternalFormat &internalFormat,
                                    gl::Framebuffer *source);
+    angle::Result copySubImageWithDraw(const gl::Context *context,
+                                       const gl::ImageIndex &index,
+                                       const gl::Offset &destOffset,
+                                       const gl::Rectangle &sourceArea,
+                                       const gl::InternalFormat &internalFormat,
+                                       gl::Framebuffer *source);
+    angle::Result copySubImageCPU(const gl::Context *context,
+                                  const gl::ImageIndex &index,
+                                  const gl::Offset &destOffset,
+                                  const gl::Rectangle &sourceArea,
+                                  const gl::InternalFormat &internalFormat,
+                                  gl::Framebuffer *source);
 
     // Convert pixels to suported format before uploading to texture
     angle::Result convertAndSetSubImage(const gl::Context *context,
