@@ -461,9 +461,9 @@ TEST_P(AttributeLayoutBufferIndexed, Test)
     Run(false);
 }
 
-#define PARAMS                                                                         \
-    ES2_VULKAN(), ES2_OPENGL(), ES2_D3D9(), ES2_D3D11(), ES3_OPENGL(), ES2_OPENGLES(), \
-        ES3_OPENGLES()
+#define PARAMS                                                                      \
+    ES2_VULKAN(), ES2_METAL(), ES2_OPENGL(), ES2_D3D9(), ES2_D3D11(), ES3_OPENGL(), \
+        ES2_OPENGLES(), ES3_OPENGLES()
 
 ANGLE_INSTANTIATE_TEST(AttributeLayoutNonIndexed, PARAMS);
 ANGLE_INSTANTIATE_TEST(AttributeLayoutMemoryIndexed, PARAMS);

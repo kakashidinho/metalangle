@@ -72,6 +72,7 @@ TEST_P(RequestExtensionTest, Queries)
 ANGLE_INSTANTIATE_TEST(RequestExtensionTest,
                        ES2_D3D11(),
                        ES3_D3D11(),
+                       ES2_METAL(),
                        ES2_OPENGL(),
                        ES3_OPENGL(),
                        ES2_OPENGLES(),

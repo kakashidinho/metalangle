@@ -405,6 +405,7 @@ void main()
 }
 
 ANGLE_INSTANTIATE_TEST(LinkAndRelinkTest,
+                       ES2_METAL(),
                        ES2_OPENGL(),
                        ES2_OPENGLES(),
                        ES2_D3D9(),

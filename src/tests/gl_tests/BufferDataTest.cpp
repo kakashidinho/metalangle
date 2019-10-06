@@ -541,12 +541,19 @@ TEST_P(BufferDataTestES3, NoBufferInitDataCopyBug)
 ANGLE_INSTANTIATE_TEST(BufferDataTest,
                        ES2_D3D9(),
                        ES2_D3D11(),
+                       ES2_METAL(),
                        ES2_OPENGL(),
                        ES2_OPENGLES(),
                        ES2_VULKAN());
-ANGLE_INSTANTIATE_TEST(BufferDataTestES3, ES3_D3D11(), ES3_OPENGL(), ES3_OPENGLES(), ES3_VULKAN());
+ANGLE_INSTANTIATE_TEST(BufferDataTestES3,
+                       ES3_D3D11(),
+                       ES2_METAL(),
+                       ES3_OPENGL(),
+                       ES3_OPENGLES(),
+                       ES3_VULKAN());
 ANGLE_INSTANTIATE_TEST(IndexedBufferCopyTest,
                        ES3_D3D11(),
+                       ES2_METAL(),
                        ES3_OPENGL(),
                        ES3_OPENGLES(),
                        ES3_VULKAN());

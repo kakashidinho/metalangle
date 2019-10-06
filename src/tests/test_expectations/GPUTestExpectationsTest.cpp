@@ -42,6 +42,7 @@ class GPUTestConfigTest : public ANGLETest
         bool GLDesktop = false;
         bool GLES      = false;
         bool Vulkan    = false;
+        bool Metal     = false;
         switch (api)
         {
             case GPUTestConfig::kAPID3D9:
@@ -59,6 +60,9 @@ class GPUTestConfigTest : public ANGLETest
             case GPUTestConfig::kAPIVulkan:
                 Vulkan = true;
                 break;
+            case GPUTestConfig::kAPIMetal:
+                Metal = true;
+                break;
             case GPUTestConfig::kAPIUnknown:
             default:
                 break;
@@ -68,6 +72,7 @@ class GPUTestConfigTest : public ANGLETest
         EXPECT_EQ(GLDesktop, config.getConditions()[GPUTestConfig::kConditionGLDesktop]);
         EXPECT_EQ(GLES, config.getConditions()[GPUTestConfig::kConditionGLES]);
         EXPECT_EQ(Vulkan, config.getConditions()[GPUTestConfig::kConditionVulkan]);
+        EXPECT_EQ(Metal, config.getConditions()[GPUTestConfig::kConditionMetal]);
     }
 };
 
@@ -91,6 +96,12 @@ TEST_P(GPUTestConfigTest, GPUTestConfigConditions_D3D11)
 {
     GPUTestConfig config(GPUTestConfig::kAPID3D11);
     validateConfigAPI(config, GPUTestConfig::kAPID3D11);
+}
+
+TEST_P(GPUTestConfigTest, GPUTestConfigConditions_Metal)
+{
+    GPUTestConfig config(GPUTestConfig::kAPIMetal);
+    validateConfigAPI(config, GPUTestConfig::kAPIMetal);
 }
 
 TEST_P(GPUTestConfigTest, GPUTestConfigConditions_GLDesktop)
@@ -117,6 +128,7 @@ ANGLE_INSTANTIATE_TEST(GPUTestConfigTest,
                        ES2_D3D9(),
                        ES2_D3D11(),
                        ES3_D3D11(),
+                       ES2_METAL(),
                        ES2_OPENGL(),
                        ES3_OPENGL(),
                        ES2_OPENGLES(),

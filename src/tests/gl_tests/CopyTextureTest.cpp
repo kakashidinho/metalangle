@@ -2001,6 +2001,7 @@ TEST_P(CopyTextureTestES3, ES3UintFormats)
 ANGLE_INSTANTIATE_TEST(CopyTextureTest,
                        ES2_D3D9(),
                        ES2_D3D11(),
+                       ES2_METAL(),
                        ES2_OPENGL(),
                        ES2_OPENGLES(),
                        ES2_VULKAN());
@@ -2013,12 +2014,14 @@ ANGLE_INSTANTIATE_TEST_COMBINE_5(CopyTextureVariationsTest,
                                  testing::Bool(),  // unmultiplyAlpha
                                  ES2_D3D9(),
                                  ES2_D3D11(),
+                                 ES2_METAL(),
                                  ES2_OPENGL(),
                                  ES2_OPENGLES(),
                                  ES2_VULKAN());
 ANGLE_INSTANTIATE_TEST(CopyTextureTestWebGL,
                        ES2_D3D9(),
                        ES2_D3D11(),
+                       ES2_METAL(),
                        ES2_OPENGL(),
                        ES2_OPENGLES(),
                        ES2_VULKAN());

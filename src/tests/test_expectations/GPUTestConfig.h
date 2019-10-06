@@ -23,6 +23,7 @@ struct GPUTestConfig
         kAPIGLDesktop,
         kAPIGLES,
         kAPIVulkan,
+        kAPIMetal,
     };
 
     enum Condition
@@ -58,6 +59,7 @@ struct GPUTestConfig
         kConditionGLDesktop,
         kConditionGLES,
         kConditionVulkan,
+        kConditionMetal,
         kConditionNexus5X,
         kConditionPixel2,
         kConditionNVIDIAQuadroP400,

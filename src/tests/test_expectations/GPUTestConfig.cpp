@@ -503,6 +503,12 @@ inline bool IsVulkan(const GPUTestConfig::API &api)
     return (api == GPUTestConfig::kAPIVulkan);
 }
 
+// Check whether the backend API has been set to Metal in the constructor
+inline bool IsMetal(const GPUTestConfig::API &api)
+{
+    return (api == GPUTestConfig::kAPIMetal);
+}
+
 }  // anonymous namespace
 
 // Load all conditions in the constructor since this data will not change during a test set.
@@ -540,6 +546,7 @@ GPUTestConfig::GPUTestConfig()
     mConditions[kConditionGLDesktop] = true;
     mConditions[kConditionGLES]      = true;
     mConditions[kConditionVulkan]    = true;
+    mConditions[kConditionMetal]    = true;
 
     mConditions[kConditionNexus5X]          = IsNexus5X();
     mConditions[kConditionPixel2]           = IsPixel2();
@@ -554,6 +561,7 @@ GPUTestConfig::GPUTestConfig(const API &api) : GPUTestConfig()
     mConditions[kConditionGLDesktop] = IsGLDesktop(api);
     mConditions[kConditionGLES]      = IsGLES(api);
     mConditions[kConditionVulkan]    = IsVulkan(api);
+    mConditions[kConditionMetal]     = IsMetal(api);
 }
 
 // Return a const reference to the list of all pre-calculated conditions.

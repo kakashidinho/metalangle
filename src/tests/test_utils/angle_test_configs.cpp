@@ -394,6 +394,18 @@ EGLPlatformParameters VULKAN_NULL()
                                  EGL_PLATFORM_ANGLE_DEVICE_TYPE_NULL_ANGLE);
 }
 
+EGLPlatformParameters METAL()
+{
+    // TODO(hqle): Metal platform doesn't have enum value yet, so use default enum.
+    return EGLPlatformParameters(EGL_PLATFORM_ANGLE_TYPE_DEFAULT_ANGLE);
+}
+
+EGLPlatformParameters METAL_NULL()
+{
+    return EGLPlatformParameters(EGL_PLATFORM_ANGLE_TYPE_DEFAULT_ANGLE, EGL_DONT_CARE, EGL_DONT_CARE,
+                                 EGL_PLATFORM_ANGLE_DEVICE_TYPE_NULL_ANGLE);
+}
+
 }  // namespace egl_platform
 
 // ANGLE tests platforms
@@ -675,6 +687,46 @@ PlatformParameters ES31_VULKAN()
 PlatformParameters ES31_VULKAN_NULL()
 {
     return PlatformParameters(3, 1, egl_platform::VULKAN_NULL());
+}
+
+PlatformParameters ES1_METAL()
+{
+    return PlatformParameters(1, 0, egl_platform::METAL());
+}
+
+PlatformParameters ES1_METAL_NULL()
+{
+    return PlatformParameters(1, 0, egl_platform::METAL_NULL());
+}
+
+PlatformParameters ES2_METAL()
+{
+    return PlatformParameters(2, 0, egl_platform::METAL());
+}
+
+PlatformParameters ES2_METAL_NULL()
+{
+    return PlatformParameters(2, 0, egl_platform::METAL_NULL());
+}
+
+PlatformParameters ES3_METAL()
+{
+    return PlatformParameters(3, 0, egl_platform::METAL());
+}
+
+PlatformParameters ES3_METAL_NULL()
+{
+    return PlatformParameters(3, 0, egl_platform::METAL_NULL());
+}
+
+PlatformParameters ES31_METAL()
+{
+    return PlatformParameters(3, 1, egl_platform::METAL());
+}
+
+PlatformParameters ES31_METAL_NULL()
+{
+    return PlatformParameters(3, 1, egl_platform::METAL_NULL());
 }
 
 PlatformParameters ES2_WGL()

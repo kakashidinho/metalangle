@@ -4176,15 +4176,19 @@ TEST_P(SimpleStateChangeTestES3, RasterizerDiscardState)
 }
 }  // anonymous namespace
 
-ANGLE_INSTANTIATE_TEST(StateChangeTest, ES2_D3D9(), ES2_D3D11(), ES2_OPENGL(), ES2_VULKAN());
+ANGLE_INSTANTIATE_TEST(StateChangeTest,
+                       ES2_METAL(), ES2_D3D9(), ES2_D3D11(), ES2_OPENGL(), ES2_VULKAN());
 ANGLE_INSTANTIATE_TEST(LineLoopStateChangeTest,
+                       ES2_METAL(),
                        ES2_D3D9(),
                        ES2_D3D11(),
                        ES2_OPENGL(),
                        ES2_VULKAN());
-ANGLE_INSTANTIATE_TEST(StateChangeRenderTest, ES2_D3D9(), ES2_D3D11(), ES2_OPENGL(), ES2_VULKAN());
+ANGLE_INSTANTIATE_TEST(StateChangeRenderTest,
+                       ES2_METAL(), ES2_D3D9(), ES2_D3D11(), ES2_OPENGL(), ES2_VULKAN());
 ANGLE_INSTANTIATE_TEST(StateChangeTestES3, ES3_D3D11(), ES3_OPENGL());
-ANGLE_INSTANTIATE_TEST(SimpleStateChangeTest, ES2_D3D11(), ES2_VULKAN(), ES2_OPENGL());
+ANGLE_INSTANTIATE_TEST(SimpleStateChangeTest,
+                       ES2_METAL(), ES2_D3D11(), ES2_VULKAN(), ES2_OPENGL());
 ANGLE_INSTANTIATE_TEST(SimpleStateChangeTestES3, ES3_OPENGL(), ES3_D3D11(), ES3_VULKAN());
 ANGLE_INSTANTIATE_TEST(SimpleStateChangeTestES31, ES31_OPENGL(), ES31_D3D11());
 ANGLE_INSTANTIATE_TEST(ValidationStateChangeTest, ES3_D3D11(), ES3_OPENGL());

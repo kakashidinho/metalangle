@@ -91,9 +91,10 @@ const char *gTestExpectationsFiles[] = {
 using APIInfo = std::pair<const char *, GPUTestConfig::API>;
 
 const APIInfo gEGLDisplayAPIs[] = {
-    {"angle-d3d9", GPUTestConfig::kAPID3D9},    {"angle-d3d11", GPUTestConfig::kAPID3D11},
-    {"angle-gl", GPUTestConfig::kAPIGLDesktop}, {"angle-gles", GPUTestConfig::kAPIGLES},
-    {"angle-null", GPUTestConfig::kAPIUnknown}, {"angle-vulkan", GPUTestConfig::kAPIVulkan},
+    {"angle-d3d9", GPUTestConfig::kAPID3D9},     {"angle-d3d11", GPUTestConfig::kAPID3D11},
+    {"angle-metal", GPUTestConfig::kAPIMetal},   {"angle-gl", GPUTestConfig::kAPIGLDesktop},
+    {"angle-gles", GPUTestConfig::kAPIGLES},     {"angle-null", GPUTestConfig::kAPIUnknown},
+    {"angle-vulkan", GPUTestConfig::kAPIVulkan},
 };
 
 const char *gdEQPEGLString  = "--deqp-egl-display-type=";
@@ -114,7 +115,9 @@ const char *GetDefaultAPIName()
 {
 #if defined(ANGLE_PLATFORM_WINDOWS)
     return "angle-d3d11";
-#elif defined(ANGLE_PLATFORM_APPLE) || defined(ANGLE_PLATFORM_LINUX)
+#elif defined(ANGLE_PLATFORM_APPLE)
+    return "angle-metal";
+#elif defined(ANGLE_PLATFORM_LINUX)
     return "angle-gl";
 #elif defined(ANGLE_PLATFORM_ANDROID)
     return "angle-gles";

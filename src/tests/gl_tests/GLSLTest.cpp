@@ -5549,6 +5549,7 @@ TEST_P(GLSLTest, MemoryExhaustedTest)
 ANGLE_INSTANTIATE_TEST(GLSLTest,
                        ES2_D3D9(),
                        ES2_D3D11(),
+                       ES2_METAL(),
                        ES2_OPENGL(),
                        ES3_OPENGL(),
                        ES2_OPENGLES(),
@@ -5558,6 +5559,7 @@ ANGLE_INSTANTIATE_TEST(GLSLTest,
 ANGLE_INSTANTIATE_TEST(GLSLTestNoValidation,
                        ES2_D3D9(),
                        ES2_D3D11(),
+                       ES2_METAL(),
                        ES2_OPENGL(),
                        ES3_OPENGL(),
                        ES2_OPENGLES(),
@@ -5568,6 +5570,7 @@ ANGLE_INSTANTIATE_TEST(GLSLTestNoValidation,
 // tests should be run against.
 ANGLE_INSTANTIATE_TEST(GLSLTest_ES3, ES3_D3D11(), ES3_OPENGL(), ES3_OPENGLES(), ES3_VULKAN());
 
-ANGLE_INSTANTIATE_TEST(WebGLGLSLTest, ES2_D3D11(), ES2_OPENGL(), ES2_OPENGLES(), ES2_VULKAN());
+ANGLE_INSTANTIATE_TEST(WebGLGLSLTest, ES2_D3D11(),
+                       ES2_METAL(), ES2_OPENGL(), ES2_OPENGLES(), ES2_VULKAN());
 
 ANGLE_INSTANTIATE_TEST(GLSLTest_ES31, ES31_D3D11(), ES31_OPENGL(), ES31_OPENGLES());

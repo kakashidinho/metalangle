@@ -76,6 +76,7 @@ TEST_P(ColorMaskTest, AMDZeroColorMaskBug)
 ANGLE_INSTANTIATE_TEST(ColorMaskTest,
                        ES2_D3D9(),
                        ES2_D3D11(),
+                       ES2_METAL(),
                        ES2_OPENGL(),
                        ES3_OPENGL(),
                        ES2_OPENGLES(),

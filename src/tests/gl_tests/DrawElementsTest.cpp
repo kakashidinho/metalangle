@@ -311,6 +311,10 @@ TEST_P(WebGLDrawElementsTest, DrawElementsTypeAlignment)
     EXPECT_GL_ERROR(GL_INVALID_OPERATION);
 }
 
-ANGLE_INSTANTIATE_TEST(DrawElementsTest, ES3_OPENGL(), ES3_OPENGLES());
-ANGLE_INSTANTIATE_TEST(WebGLDrawElementsTest, ES2_OPENGL(), ES2_OPENGLES(), ES2_VULKAN());
+ANGLE_INSTANTIATE_TEST(DrawElementsTest, ES2_METAL(), ES3_OPENGL(), ES3_OPENGLES());
+ANGLE_INSTANTIATE_TEST(WebGLDrawElementsTest,
+                       ES2_METAL(),
+                       ES2_OPENGL(),
+                       ES2_OPENGLES(),
+                       ES2_VULKAN());
 }  // namespace
