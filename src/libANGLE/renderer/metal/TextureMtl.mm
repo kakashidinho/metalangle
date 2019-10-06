@@ -676,7 +676,7 @@ angle::Result TextureMtl::copySubImageWithDraw(const gl::Context *context,
     blitParams.dstOffset    = modifiedDestOffset;
     blitParams.dstColorMask = mTexture->getColorWritableMask();
 
-    blitParams.src          = colorReadRT->getTexture().lock();
+    blitParams.src          = colorReadRT->getTexture();
     blitParams.srcRect      = clippedSourceArea;
     blitParams.srcYFlipped  = framebufferMtl->flipY();
     blitParams.dstLuminance = intendedInternalFormat.isLUMA();
