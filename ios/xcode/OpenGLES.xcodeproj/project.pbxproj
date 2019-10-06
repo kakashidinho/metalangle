@@ -6418,6 +6418,8 @@
 				GCC_ENABLE_CPP_EXCEPTIONS = NO;
 				GCC_ENABLE_CPP_RTTI = "${inherited}";
 				GCC_PREPROCESSOR_DEFINITIONS = (
+					LIBEGL_IMPLEMENTATION,
+					"EGLAPI=__attribute__((visibility(\\\"default\\\")))",
 					LIBGLESV2_IMPLEMENTATION,
 					LIBANGLE_IMPLEMENTATION,
 					ANGLE_ENABLE_DEBUG_ANNOTATIONS,
@@ -6456,6 +6458,8 @@
 				GCC_ENABLE_CPP_EXCEPTIONS = NO;
 				GCC_ENABLE_CPP_RTTI = "${inherited}";
 				GCC_PREPROCESSOR_DEFINITIONS = (
+					LIBEGL_IMPLEMENTATION,
+					"EGLAPI=__attribute__((visibility(\\\"default\\\")))",
 					LIBGLESV2_IMPLEMENTATION,
 					LIBANGLE_IMPLEMENTATION,
 					SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS,
@@ -7180,9 +7184,18 @@
 				GCC_ENABLE_CPP_RTTI = "${inherited}";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"ANGLE_IOS_DEPLOY_TARGET=__IPHONE_13_0",
+					LIBEGL_IMPLEMENTATION,
+					"EGLAPI=__attribute__((visibility(\\\"default\\\")))",
+					LIBGLESV2_IMPLEMENTATION,
 					LIBANGLE_IMPLEMENTATION,
 					ANGLE_ENABLE_DEBUG_ANNOTATIONS,
 					SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS,
+					"GL_APICALL=__attribute__((visibility(\\\"default\\\")))",
+					"GL_API=__attribute__((visibility(\\\"default\\\")))",
+					"GL_GLES_PROTOTYPES=1",
+					"EGL_EGL_PROTOTYPES=1",
+					GL_GLEXT_PROTOTYPES,
+					EGL_EGLEXT_PROTOTYPES,
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = Info.plist;
@@ -7213,8 +7226,17 @@
 				GCC_ENABLE_CPP_RTTI = "${inherited}";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"ANGLE_IOS_DEPLOY_TARGET=__IPHONE_13_0",
+					LIBEGL_IMPLEMENTATION,
+					"EGLAPI=__attribute__((visibility(\\\"default\\\")))",
+					LIBGLESV2_IMPLEMENTATION,
 					LIBANGLE_IMPLEMENTATION,
 					SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS,
+					"GL_APICALL=__attribute__((visibility(\\\"default\\\")))",
+					"GL_API=__attribute__((visibility(\\\"default\\\")))",
+					"GL_GLES_PROTOTYPES=1",
+					"EGL_EGL_PROTOTYPES=1",
+					GL_GLEXT_PROTOTYPES,
+					EGL_EGLEXT_PROTOTYPES,
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = Info.plist;
