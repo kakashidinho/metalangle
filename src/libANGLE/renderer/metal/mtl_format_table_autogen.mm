@@ -324,22 +324,26 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool forStreaming)
         case angle::FormatID::R32G32B32A32_FIXED:
             this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
             this->vertexLoadFunction = Copy32FixedTo32FVertexData<4, 4>;
-            break;
+            // Skip streaming format override step
+            goto conversion;
 
         case angle::FormatID::R32G32B32_FIXED:
             this->actualFormatId = angle::FormatID::R32G32B32_FLOAT;
             this->vertexLoadFunction = Copy32FixedTo32FVertexData<3, 3>;
-            break;
+            // Skip streaming format override step
+            goto conversion;
 
         case angle::FormatID::R32G32_FIXED:
             this->actualFormatId = angle::FormatID::R32G32_FLOAT;
             this->vertexLoadFunction = Copy32FixedTo32FVertexData<2, 2>;
-            break;
+            // Skip streaming format override step
+            goto conversion;
 
         case angle::FormatID::R32_FIXED:
             this->actualFormatId = angle::FormatID::R32_FLOAT;
             this->vertexLoadFunction = Copy32FixedTo32FVertexData<1, 1>;
-            break;
+            // Skip streaming format override step
+            goto conversion;
 
         default:
             this->actualFormatId = this->intendedFormatId;
@@ -354,105 +358,221 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool forStreaming)
     // Override the unsupported format for streaming
     switch (this->intendedFormatId)
     {
+        case angle::FormatID::R16G16B16A16_SSCALED:
+            this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
+            this->vertexLoadFunction = CopyTo32FVertexData<GLshort, 4, 4, false>;
+            // Skip streaming format override step
+            goto conversion;
+
+        case angle::FormatID::R16G16B16A16_USCALED:
+            this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
+            this->vertexLoadFunction = CopyTo32FVertexData<GLushort, 4, 4, false>;
+            // Skip streaming format override step
+            goto conversion;
+
         case angle::FormatID::R16G16B16_SINT:
             this->actualFormatId = angle::FormatID::R32G32B32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLshort, 3, 3, false>;
-            break;
+            // Skip streaming format override step
+            goto conversion;
 
         case angle::FormatID::R16G16B16_SNORM:
             this->actualFormatId = angle::FormatID::R32G32B32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLshort, 3, 3, true>;
-            break;
+            // Skip streaming format override step
+            goto conversion;
+
+        case angle::FormatID::R16G16B16_SSCALED:
+            this->actualFormatId = angle::FormatID::R32G32B32_FLOAT;
+            this->vertexLoadFunction = CopyTo32FVertexData<GLshort, 3, 3, false>;
+            // Skip streaming format override step
+            goto conversion;
 
         case angle::FormatID::R16G16B16_UINT:
             this->actualFormatId = angle::FormatID::R32G32B32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLushort, 3, 3, false>;
-            break;
+            // Skip streaming format override step
+            goto conversion;
 
         case angle::FormatID::R16G16B16_UNORM:
             this->actualFormatId = angle::FormatID::R32G32B32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLushort, 3, 3, true>;
-            break;
+            // Skip streaming format override step
+            goto conversion;
+
+        case angle::FormatID::R16G16B16_USCALED:
+            this->actualFormatId = angle::FormatID::R32G32B32_FLOAT;
+            this->vertexLoadFunction = CopyTo32FVertexData<GLushort, 3, 3, false>;
+            // Skip streaming format override step
+            goto conversion;
+
+        case angle::FormatID::R16G16_SSCALED:
+            this->actualFormatId = angle::FormatID::R32G32_FLOAT;
+            this->vertexLoadFunction = CopyTo32FVertexData<GLshort, 2, 2, false>;
+            // Skip streaming format override step
+            goto conversion;
+
+        case angle::FormatID::R16G16_USCALED:
+            this->actualFormatId = angle::FormatID::R32G32_FLOAT;
+            this->vertexLoadFunction = CopyTo32FVertexData<GLushort, 2, 2, false>;
+            // Skip streaming format override step
+            goto conversion;
 
         case angle::FormatID::R16_SINT:
             this->actualFormatId = angle::FormatID::R32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLshort, 1, 1, false>;
-            break;
+            // Skip streaming format override step
+            goto conversion;
 
         case angle::FormatID::R16_SNORM:
             this->actualFormatId = angle::FormatID::R32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLshort, 1, 1, true>;
-            break;
+            // Skip streaming format override step
+            goto conversion;
+
+        case angle::FormatID::R16_SSCALED:
+            this->actualFormatId = angle::FormatID::R32_FLOAT;
+            this->vertexLoadFunction = CopyTo32FVertexData<GLshort, 1, 1, false>;
+            // Skip streaming format override step
+            goto conversion;
 
         case angle::FormatID::R16_UINT:
             this->actualFormatId = angle::FormatID::R32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLushort, 1, 1, false>;
-            break;
+            // Skip streaming format override step
+            goto conversion;
 
         case angle::FormatID::R16_UNORM:
             this->actualFormatId = angle::FormatID::R32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLushort, 1, 1, true>;
-            break;
+            // Skip streaming format override step
+            goto conversion;
+
+        case angle::FormatID::R16_USCALED:
+            this->actualFormatId = angle::FormatID::R32_FLOAT;
+            this->vertexLoadFunction = CopyTo32FVertexData<GLushort, 1, 1, false>;
+            // Skip streaming format override step
+            goto conversion;
+
+        case angle::FormatID::R8G8B8A8_SSCALED:
+            this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
+            this->vertexLoadFunction = CopyTo32FVertexData<GLbyte, 4, 4, false>;
+            // Skip streaming format override step
+            goto conversion;
+
+        case angle::FormatID::R8G8B8A8_USCALED:
+            this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
+            this->vertexLoadFunction = CopyTo32FVertexData<GLubyte, 4, 4, false>;
+            // Skip streaming format override step
+            goto conversion;
 
         case angle::FormatID::R8G8B8_SINT:
             this->actualFormatId = angle::FormatID::R32G32B32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLbyte, 3, 3, false>;
-            break;
+            // Skip streaming format override step
+            goto conversion;
 
         case angle::FormatID::R8G8B8_SNORM:
             this->actualFormatId = angle::FormatID::R32G32B32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLbyte, 3, 3, true>;
-            break;
+            // Skip streaming format override step
+            goto conversion;
+
+        case angle::FormatID::R8G8B8_SSCALED:
+            this->actualFormatId = angle::FormatID::R32G32B32_FLOAT;
+            this->vertexLoadFunction = CopyTo32FVertexData<GLbyte, 3, 3, false>;
+            // Skip streaming format override step
+            goto conversion;
 
         case angle::FormatID::R8G8B8_UINT:
             this->actualFormatId = angle::FormatID::R32G32B32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLubyte, 3, 3, false>;
-            break;
+            // Skip streaming format override step
+            goto conversion;
 
         case angle::FormatID::R8G8B8_UNORM:
             this->actualFormatId = angle::FormatID::R32G32B32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLubyte, 3, 3, true>;
-            break;
+            // Skip streaming format override step
+            goto conversion;
+
+        case angle::FormatID::R8G8B8_USCALED:
+            this->actualFormatId = angle::FormatID::R32G32B32_FLOAT;
+            this->vertexLoadFunction = CopyTo32FVertexData<GLubyte, 3, 3, false>;
+            // Skip streaming format override step
+            goto conversion;
 
         case angle::FormatID::R8G8_SINT:
             this->actualFormatId = angle::FormatID::R32G32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLbyte, 2, 2, false>;
-            break;
+            // Skip streaming format override step
+            goto conversion;
 
         case angle::FormatID::R8G8_SNORM:
             this->actualFormatId = angle::FormatID::R32G32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLbyte, 2, 2, true>;
-            break;
+            // Skip streaming format override step
+            goto conversion;
+
+        case angle::FormatID::R8G8_SSCALED:
+            this->actualFormatId = angle::FormatID::R32G32_FLOAT;
+            this->vertexLoadFunction = CopyTo32FVertexData<GLbyte, 2, 2, false>;
+            // Skip streaming format override step
+            goto conversion;
 
         case angle::FormatID::R8G8_UINT:
             this->actualFormatId = angle::FormatID::R32G32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLubyte, 2, 2, false>;
-            break;
+            // Skip streaming format override step
+            goto conversion;
 
         case angle::FormatID::R8G8_UNORM:
             this->actualFormatId = angle::FormatID::R32G32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLubyte, 2, 2, true>;
-            break;
+            // Skip streaming format override step
+            goto conversion;
+
+        case angle::FormatID::R8G8_USCALED:
+            this->actualFormatId = angle::FormatID::R32G32_FLOAT;
+            this->vertexLoadFunction = CopyTo32FVertexData<GLubyte, 2, 2, false>;
+            // Skip streaming format override step
+            goto conversion;
 
         case angle::FormatID::R8_SINT:
             this->actualFormatId = angle::FormatID::R32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLbyte, 1, 1, false>;
-            break;
+            // Skip streaming format override step
+            goto conversion;
 
         case angle::FormatID::R8_SNORM:
             this->actualFormatId = angle::FormatID::R32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLbyte, 1, 1, true>;
-            break;
+            // Skip streaming format override step
+            goto conversion;
+
+        case angle::FormatID::R8_SSCALED:
+            this->actualFormatId = angle::FormatID::R32_FLOAT;
+            this->vertexLoadFunction = CopyTo32FVertexData<GLbyte, 1, 1, false>;
+            // Skip streaming format override step
+            goto conversion;
 
         case angle::FormatID::R8_UINT:
             this->actualFormatId = angle::FormatID::R32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLubyte, 1, 1, false>;
-            break;
+            // Skip streaming format override step
+            goto conversion;
 
         case angle::FormatID::R8_UNORM:
             this->actualFormatId = angle::FormatID::R32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLubyte, 1, 1, true>;
-            break;
+            // Skip streaming format override step
+            goto conversion;
+
+        case angle::FormatID::R8_USCALED:
+            this->actualFormatId = angle::FormatID::R32_FLOAT;
+            this->vertexLoadFunction = CopyTo32FVertexData<GLubyte, 1, 1, false>;
+            // Skip streaming format override step
+            goto conversion;
 
         default:
             this->actualFormatId = this->intendedFormatId;
@@ -487,6 +607,14 @@ conversion:
             }
             break;
 
+        case angle::FormatID::R16G16B16A16_SSCALED:
+            this->metalFormat = MTLVertexFormatShort4;
+            if (!this->vertexLoadFunction)
+            {
+                this->vertexLoadFunction = CopyNativeVertexData<GLshort, 4, 4, 0>;
+            }
+            break;
+
         case angle::FormatID::R16G16B16A16_UINT:
             this->metalFormat = MTLVertexFormatUShort4;
             if (!this->vertexLoadFunction)
@@ -497,6 +625,14 @@ conversion:
 
         case angle::FormatID::R16G16B16A16_UNORM:
             this->metalFormat = MTLVertexFormatUShort4Normalized;
+            if (!this->vertexLoadFunction)
+            {
+                this->vertexLoadFunction = CopyNativeVertexData<GLushort, 4, 4, 0>;
+            }
+            break;
+
+        case angle::FormatID::R16G16B16A16_USCALED:
+            this->metalFormat = MTLVertexFormatUShort4;
             if (!this->vertexLoadFunction)
             {
                 this->vertexLoadFunction = CopyNativeVertexData<GLushort, 4, 4, 0>;
@@ -519,6 +655,14 @@ conversion:
             }
             break;
 
+        case angle::FormatID::R16G16B16_SSCALED:
+            this->metalFormat = MTLVertexFormatShort3;
+            if (!this->vertexLoadFunction)
+            {
+                this->vertexLoadFunction = CopyNativeVertexData<GLshort, 3, 3, 0>;
+            }
+            break;
+
         case angle::FormatID::R16G16B16_UINT:
             this->metalFormat = MTLVertexFormatUShort3;
             if (!this->vertexLoadFunction)
@@ -529,6 +673,14 @@ conversion:
 
         case angle::FormatID::R16G16B16_UNORM:
             this->metalFormat = MTLVertexFormatUShort3Normalized;
+            if (!this->vertexLoadFunction)
+            {
+                this->vertexLoadFunction = CopyNativeVertexData<GLushort, 3, 3, 0>;
+            }
+            break;
+
+        case angle::FormatID::R16G16B16_USCALED:
+            this->metalFormat = MTLVertexFormatUShort3;
             if (!this->vertexLoadFunction)
             {
                 this->vertexLoadFunction = CopyNativeVertexData<GLushort, 3, 3, 0>;
@@ -551,6 +703,14 @@ conversion:
             }
             break;
 
+        case angle::FormatID::R16G16_SSCALED:
+            this->metalFormat = MTLVertexFormatShort2;
+            if (!this->vertexLoadFunction)
+            {
+                this->vertexLoadFunction = CopyNativeVertexData<GLshort, 2, 2, 0>;
+            }
+            break;
+
         case angle::FormatID::R16G16_UINT:
             this->metalFormat = MTLVertexFormatUShort2;
             if (!this->vertexLoadFunction)
@@ -561,6 +721,14 @@ conversion:
 
         case angle::FormatID::R16G16_UNORM:
             this->metalFormat = MTLVertexFormatUShort2Normalized;
+            if (!this->vertexLoadFunction)
+            {
+                this->vertexLoadFunction = CopyNativeVertexData<GLushort, 2, 2, 0>;
+            }
+            break;
+
+        case angle::FormatID::R16G16_USCALED:
+            this->metalFormat = MTLVertexFormatUShort2;
             if (!this->vertexLoadFunction)
             {
                 this->vertexLoadFunction = CopyNativeVertexData<GLushort, 2, 2, 0>;
@@ -583,6 +751,14 @@ conversion:
             }
             break;
 
+        case angle::FormatID::R16_SSCALED:
+            this->metalFormat = MTLVertexFormatShort;
+            if (!this->vertexLoadFunction)
+            {
+                this->vertexLoadFunction = CopyNativeVertexData<GLshort, 1, 1, 0>;
+            }
+            break;
+
         case angle::FormatID::R16_UINT:
             this->metalFormat = MTLVertexFormatUShort;
             if (!this->vertexLoadFunction)
@@ -593,6 +769,14 @@ conversion:
 
         case angle::FormatID::R16_UNORM:
             this->metalFormat = MTLVertexFormatUShortNormalized;
+            if (!this->vertexLoadFunction)
+            {
+                this->vertexLoadFunction = CopyNativeVertexData<GLushort, 1, 1, 0>;
+            }
+            break;
+
+        case angle::FormatID::R16_USCALED:
+            this->metalFormat = MTLVertexFormatUShort;
             if (!this->vertexLoadFunction)
             {
                 this->vertexLoadFunction = CopyNativeVertexData<GLushort, 1, 1, 0>;
@@ -647,6 +831,14 @@ conversion:
             }
             break;
 
+        case angle::FormatID::R8G8B8A8_SSCALED:
+            this->metalFormat = MTLVertexFormatChar4;
+            if (!this->vertexLoadFunction)
+            {
+                this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 4, 4, 0>;
+            }
+            break;
+
         case angle::FormatID::R8G8B8A8_UINT:
             this->metalFormat = MTLVertexFormatUChar4;
             if (!this->vertexLoadFunction)
@@ -657,6 +849,14 @@ conversion:
 
         case angle::FormatID::R8G8B8A8_UNORM:
             this->metalFormat = MTLVertexFormatUChar4Normalized;
+            if (!this->vertexLoadFunction)
+            {
+                this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 4, 4, 0>;
+            }
+            break;
+
+        case angle::FormatID::R8G8B8A8_USCALED:
+            this->metalFormat = MTLVertexFormatUChar4;
             if (!this->vertexLoadFunction)
             {
                 this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 4, 4, 0>;
@@ -679,6 +879,14 @@ conversion:
             }
             break;
 
+        case angle::FormatID::R8G8B8_SSCALED:
+            this->metalFormat = MTLVertexFormatChar3;
+            if (!this->vertexLoadFunction)
+            {
+                this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 3, 3, 0>;
+            }
+            break;
+
         case angle::FormatID::R8G8B8_UINT:
             this->metalFormat = MTLVertexFormatUChar3;
             if (!this->vertexLoadFunction)
@@ -689,6 +897,14 @@ conversion:
 
         case angle::FormatID::R8G8B8_UNORM:
             this->metalFormat = MTLVertexFormatUChar3Normalized;
+            if (!this->vertexLoadFunction)
+            {
+                this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 3, 3, 0>;
+            }
+            break;
+
+        case angle::FormatID::R8G8B8_USCALED:
+            this->metalFormat = MTLVertexFormatUChar3;
             if (!this->vertexLoadFunction)
             {
                 this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 3, 3, 0>;
@@ -711,6 +927,14 @@ conversion:
             }
             break;
 
+        case angle::FormatID::R8G8_SSCALED:
+            this->metalFormat = MTLVertexFormatChar2;
+            if (!this->vertexLoadFunction)
+            {
+                this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 2, 2, 0>;
+            }
+            break;
+
         case angle::FormatID::R8G8_UINT:
             this->metalFormat = MTLVertexFormatUChar2;
             if (!this->vertexLoadFunction)
@@ -721,6 +945,14 @@ conversion:
 
         case angle::FormatID::R8G8_UNORM:
             this->metalFormat = MTLVertexFormatUChar2Normalized;
+            if (!this->vertexLoadFunction)
+            {
+                this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 2, 2, 0>;
+            }
+            break;
+
+        case angle::FormatID::R8G8_USCALED:
+            this->metalFormat = MTLVertexFormatUChar2;
             if (!this->vertexLoadFunction)
             {
                 this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 2, 2, 0>;
@@ -743,6 +975,14 @@ conversion:
             }
             break;
 
+        case angle::FormatID::R8_SSCALED:
+            this->metalFormat = MTLVertexFormatChar;
+            if (!this->vertexLoadFunction)
+            {
+                this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 1, 1, 0>;
+            }
+            break;
+
         case angle::FormatID::R8_UINT:
             this->metalFormat = MTLVertexFormatUChar;
             if (!this->vertexLoadFunction)
@@ -753,6 +993,14 @@ conversion:
 
         case angle::FormatID::R8_UNORM:
             this->metalFormat = MTLVertexFormatUCharNormalized;
+            if (!this->vertexLoadFunction)
+            {
+                this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 1, 1, 0>;
+            }
+            break;
+
+        case angle::FormatID::R8_USCALED:
+            this->metalFormat = MTLVertexFormatUChar;
             if (!this->vertexLoadFunction)
             {
                 this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 1, 1, 0>;

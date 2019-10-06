@@ -104,7 +104,8 @@ case_image_format_template = """        case angle::FormatID::{angle_format}:
 case_vertex_format_override_template = """        case angle::FormatID::{angle_format}:
             this->actualFormatId = angle::FormatID::{override_format};
             this->vertexLoadFunction = {vertex_copy_function};
-            break;
+            // Skip streaming format override step
+            goto conversion;
 
 """
 

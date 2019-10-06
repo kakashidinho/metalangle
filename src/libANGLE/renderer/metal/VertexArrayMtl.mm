@@ -28,6 +28,7 @@ angle::Result StreamVertexData(ContextMtl *contextMtl,
                                SimpleWeakBufferHolderMtl *bufferHolder,
                                size_t *bufferOffsetOut)
 {
+    ANGLE_CHECK(contextMtl, vertexLoadFunction, "Unsupported format conversion", GL_INVALID_ENUM);
     uint8_t *dst = nullptr;
     mtl::BufferRef newBuffer;
     ANGLE_TRY(dynamicBuffer->allocate(contextMtl, bytesToAllocate, &dst, &newBuffer,
