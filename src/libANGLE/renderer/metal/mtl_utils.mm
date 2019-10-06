@@ -136,7 +136,7 @@ MTLScissorRect GetScissorRect(const gl::Rectangle &rect, double screenHeight, bo
 
 AutoObjCPtr<id<MTLLibrary>> CreateShaderLibrary(id<MTLDevice> metalDevice,
                                                 const std::string &source,
-                                                NSError *_Nullable *error)
+                                                AutoObjCPtr<NSError *> *error)
 {
     return CreateShaderLibrary(metalDevice, source.c_str(), source.size(), error);
 }
@@ -144,31 +144,48 @@ AutoObjCPtr<id<MTLLibrary>> CreateShaderLibrary(id<MTLDevice> metalDevice,
 AutoObjCPtr<id<MTLLibrary>> CreateShaderLibrary(id<MTLDevice> metalDevice,
                                                 const char *source,
                                                 size_t sourceLen,
-                                                NSError *_Nullable *error)
+                                                AutoObjCPtr<NSError *> *errorOut)
 {
     ANGLE_MTL_OBJC_SCOPE
     {
+        NSError *nsError = nil;
         auto nsSource = [[NSString alloc] initWithBytesNoCopy:const_cast<char *>(source)
                                                        length:sourceLen
                                                      encoding:NSUTF8StringEncoding
                                                  freeWhenDone:NO];
+        auto options = [[[MTLCompileOptions alloc] init] ANGLE_MTL_AUTORELEASE];
+        auto library = [metalDevice newLibraryWithSource:nsSource
+                                                 options:options
+                                                   error:&nsError];
+
         [nsSource ANGLE_MTL_AUTORELEASE];
-        return [metalDevice newLibraryWithSource:nsSource options:nil error:error];
+
+        *errorOut = std::move(nsError);
+
+        return library;
     }
 }
 
 AutoObjCPtr<id<MTLLibrary>> CreateShaderLibraryFromBinary(id<MTLDevice> metalDevice,
                                                           const uint8_t *binarySource,
                                                           size_t binarySourceLen,
-                                                          NSError *_Nullable *error)
+                                                          AutoObjCPtr<NSError *> *errorOut)
 {
     ANGLE_MTL_OBJC_SCOPE
     {
+        NSError *nsError = nil;
         auto shaderSourceData =
             dispatch_data_create(binarySource, binarySourceLen, dispatch_get_main_queue(),
                                  ^{
                                  });
-        return [metalDevice newLibraryWithData:shaderSourceData error:error];
+
+        auto library = [metalDevice newLibraryWithData:shaderSourceData error:&nsError];
+
+        [shaderSourceData ANGLE_MTL_AUTORELEASE];
+
+        *errorOut = std::move(nsError);
+
+        return library;
     }
 }
 

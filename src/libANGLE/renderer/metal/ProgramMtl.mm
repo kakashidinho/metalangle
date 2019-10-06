@@ -425,14 +425,14 @@ angle::Result ProgramMtl::createMslShader(const gl::Context *glContext,
         id<MTLDevice> mtlDevice = renderer->getMetalDevice();
 
         // Convert to actual binary shader
-        NSError *err = nil;
+        mtl::AutoObjCPtr<NSError *> err = nil;
         mtl::AutoObjCPtr<id<MTLLibrary>> mtlShaderLib =
             mtl::CreateShaderLibrary(mtlDevice, translatedMsl, &err);
         if (err && !mtlShaderLib)
         {
             std::ostringstream ss;
             ss << "Internal error compiling Metal shader:\n"
-               << err.localizedDescription.UTF8String << "\n";
+               << err.get().localizedDescription.UTF8String << "\n";
 
             ERR() << ss.str();
 

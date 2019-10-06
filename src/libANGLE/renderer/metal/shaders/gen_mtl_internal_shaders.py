@@ -78,6 +78,13 @@ def main():
     os.system(
         'echo "#endif  // TARGET_OS_OSX\n" >> compiled/mtl_default_shaders.inc')
 
+    # Write full source string for debug purpose
+    os.system("echo \"// GENERATED FILE on {0} - DO NOT EDIT.\" > mtl_default_shaders_src_autogen.inc"
+              .format(datetime.now()))
+    os.system('echo "\n\nstatic const char default_metallib_src[] = R\\"(" >> mtl_default_shaders_src_autogen.inc')
+    os.system('cat default.metal >> mtl_default_shaders_src_autogen.inc')
+    os.system('echo ")\\";" >> mtl_default_shaders_src_autogen.inc')
+
 
 if __name__ == '__main__':
     sys.exit(main())

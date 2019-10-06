@@ -14,6 +14,7 @@
 #include "libANGLE/renderer/metal/mtl_common.h"
 #include "libANGLE/renderer/metal/mtl_utils.h"
 #include "libANGLE/renderer/metal/shaders/compiled/mtl_default_shaders.inc"
+#include "libANGLE/renderer/metal/shaders/mtl_default_shaders_src_autogen.inc"
 
 namespace rx
 {
@@ -95,14 +96,21 @@ void UtilsMtl::handleError(NSError *nserror,
 
 angle::Result UtilsMtl::initShaderLibrary()
 {
-    NSError *err    = nil;
+    mtl::AutoObjCObj<NSError> err    = nil;
+
+#if !defined(NDEBUG)
+    mDefaultShaders = mtl::CreateShaderLibrary(getRenderer()->getMetalDevice(),
+                                               default_metallib_src,
+                                               sizeof(default_metallib_src), &err);
+#else
     mDefaultShaders = mtl::CreateShaderLibraryFromBinary(getRenderer()->getMetalDevice(),
                                                          compiled_default_metallib,
                                                          compiled_default_metallib_len, &err);
+#endif
 
     if (err && !mDefaultShaders)
     {
-        ANGLE_MTL_CHECK_WITH_ERR(this, false, err);
+        ANGLE_MTL_CHECK_WITH_ERR(this, false, err.get());
         return angle::Result::Stop;
     }
 
@@ -145,12 +153,29 @@ void UtilsMtl::clearWithDraw(const gl::Context *context,
                              mtl::RenderCommandEncoder *cmdEncoder,
                              const ClearParams &params)
 {
-    if (!params.clearColor.valid() && !params.clearDepth.valid() && !params.clearStencil.valid())
+    auto overridedParams = params;
+    // Make sure we don't clear attachment that doesn't exist
+    const mtl::RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
+    if (renderPassDesc.numColorAttachments == 0)
+    {
+        overridedParams.clearColor.reset();
+    }
+    if (!renderPassDesc.depthAttachment.texture)
+    {
+        overridedParams.clearDepth.reset();
+    }
+    if (!renderPassDesc.stencilAttachment.texture)
+    {
+        overridedParams.clearStencil.reset();
+    }
+
+    if (!overridedParams.clearColor.valid() && !overridedParams.clearDepth.valid() &&
+        !overridedParams.clearStencil.valid())
     {
         return;
     }
 
-    setupClearWithDraw(context, cmdEncoder, params);
+    setupClearWithDraw(context, cmdEncoder, overridedParams);
 
     // Draw the screen aligned quad
     cmdEncoder->draw(MTLPrimitiveTypeTriangle, 0, 6);
@@ -265,6 +290,8 @@ void UtilsMtl::setupBlitWithDraw(const gl::Context *context,
         dstRect, texture->height(renderPassColorAttachment.level), params.dstFlipY);
     cmdEncoder->setViewport(viewportMtl);
     cmdEncoder->setScissorRect(scissorRectMtl);
+
+    cmdEncoder->setFragmentTexture(params.src, 0);
 
     // Uniform
     setupBlitWithDrawUniformData(cmdEncoder, params);
@@ -387,8 +414,6 @@ void UtilsMtl::setupBlitWithDrawUniformData(mtl::RenderCommandEncoder *cmdEncode
     {
         y0 = srcHeight - y1;
         y1 = y0 + params.srcRect.height;
-
-        std::swap(y0, y1);
     }
 
     if (params.unpackFlipY)

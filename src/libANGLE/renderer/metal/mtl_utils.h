@@ -45,17 +45,17 @@ MTLScissorRect GetScissorRect(const gl::Rectangle &rect,
 
 AutoObjCPtr<id<MTLLibrary>> CreateShaderLibrary(id<MTLDevice> metalDevice,
                                                 const std::string &source,
-                                                NSError *_Nullable *error);
+                                                AutoObjCPtr<NSError *> *error);
 
 AutoObjCPtr<id<MTLLibrary>> CreateShaderLibrary(id<MTLDevice> metalDevice,
                                                 const char *source,
                                                 size_t sourceLen,
-                                                NSError *_Nullable *error);
+                                                AutoObjCPtr<NSError *> *error);
 
 AutoObjCPtr<id<MTLLibrary>> CreateShaderLibraryFromBinary(id<MTLDevice> metalDevice,
                                                           const uint8_t *binarySource,
                                                           size_t binarySourceLen,
-                                                          NSError *_Nullable *error);
+                                                          AutoObjCPtr<NSError *> *error);
 
 // Need to define invalid enum value since Metal doesn't define it
 constexpr MTLTextureType MTLTextureTypeInvalid = static_cast<MTLTextureType>(NSUIntegerMax);
