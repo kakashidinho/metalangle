@@ -442,6 +442,8 @@ angle::Result SurfaceMtl::obtainNextDrawable(const gl::Context *context)
 
 angle::Result SurfaceMtl::swapImpl(const gl::Context *context)
 {
+    ANGLE_TRY(ensureRenderTargetsCreated(context));
+
     ContextMtl *contextMtl = mtl::GetImpl(context);
 
     contextMtl->present(context, mCurrentDrawable);
