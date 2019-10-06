@@ -464,7 +464,7 @@ angle::Result VertexArrayMtl::convertIndexBuffer(const gl::Context *glContext,
         idxBuffer->getIndexConversionBuffer(glContext, indexType, offset);
 
     // Has the content of the buffer has changed since last conversion?
-    if (conversion->dirty)
+    if (!conversion->dirty)
     {
         return angle::Result::Continue;
     }
