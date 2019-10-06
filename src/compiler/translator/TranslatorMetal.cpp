@@ -19,7 +19,7 @@
 #include "angle_gl.h"
 #include "common/utilities.h"
 #include "compiler/translator/ImmutableStringBuilder.h"
-#include "compiler/translator/OutputVulkanGLSL.h"
+#include "compiler/translator/OutputVulkanGLSLForMetal.h"
 #include "compiler/translator/StaticType.h"
 #include "compiler/translator/tree_ops/NameEmbeddedUniformStructs.h"
 #include "compiler/translator/tree_ops/RewriteDfdy.h"
@@ -42,7 +42,7 @@ namespace
 class DeclareStructTypesTraverser : public TIntermTraverser
 {
   public:
-    explicit DeclareStructTypesTraverser(TOutputVulkanGLSL *outputVulkanGLSL)
+    explicit DeclareStructTypesTraverser(TOutputVulkanGLSLForMetal *outputVulkanGLSL)
         : TIntermTraverser(true, false, false), mOutputVulkanGLSL(outputVulkanGLSL)
     {}
 
@@ -81,7 +81,7 @@ class DeclareStructTypesTraverser : public TIntermTraverser
     }
 
   private:
-    TOutputVulkanGLSL *mOutputVulkanGLSL;
+    TOutputVulkanGLSLForMetal *mOutputVulkanGLSL;
 };
 
 class DeclareDefaultUniformsTraverser : public TIntermTraverser
@@ -679,9 +679,9 @@ void TranslatorMetal::translate(TIntermBlock *root,
                                  PerformanceDiagnostics * /*perfDiagnostics*/)
 {
     TInfoSinkBase &sink = getInfoSink().obj;
-    TOutputVulkanGLSL outputGLSL(sink, getArrayIndexClampingStrategy(), getHashFunction(),
-                                 getNameMap(), &getSymbolTable(), getShaderType(),
-                                 getShaderVersion(), getOutputType(), compileOptions);
+    TOutputVulkanGLSLForMetal outputGLSL(sink, getArrayIndexClampingStrategy(), getHashFunction(),
+                                         getNameMap(), &getSymbolTable(), getShaderType(),
+                                         getShaderVersion(), getOutputType(), compileOptions);
 
     sink << "#version 450 core\n";
 

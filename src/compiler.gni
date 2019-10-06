@@ -285,6 +285,8 @@ angle_translator_lib_vulkan_sources = [
 ]
 
 angle_translator_lib_metal_sources = [
+  "src/compiler/translator/OutputVulkanGLSLForMetal.mm",
+  "src/compiler/translator/OutputVulkanGLSLForMetal.h",
   "src/compiler/translator/TranslatorMetal.cpp",
   "src/compiler/translator/TranslatorMetal.h",
 ]
