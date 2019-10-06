@@ -33,7 +33,7 @@ ConversionBufferMtl::ConversionBufferMtl(const gl::Context *context,
     : dirty(true)
 {
     ContextMtl *contextMtl = mtl::GetImpl(context);
-    data.initialize(contextMtl, alignment, initialSize);
+    data.initialize(contextMtl, initialSize, alignment);
 }
 
 ConversionBufferMtl::~ConversionBufferMtl() = default;
