@@ -743,8 +743,9 @@ void ContextMtl::endEncoding(bool forceSaveRenderPassContent)
             // Save the work in progress.
             mRenderEncoder.setColorStoreAction(MTLStoreActionStore);
             mRenderEncoder.setDepthStencilStoreAction(MTLStoreActionStore, MTLStoreActionStore);
-            mRenderEncoder.endEncoding();
         }
+
+        mRenderEncoder.endEncoding();
     }
 
     if (mBlitEncoder.valid())
