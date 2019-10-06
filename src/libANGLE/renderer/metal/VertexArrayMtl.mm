@@ -524,11 +524,13 @@ angle::Result VertexArrayMtl::convertVertexBufferCPU(const gl::Context *glContex
                                                      BufferMtl *srcBuffer,
                                                      const gl::VertexBinding &binding,
                                                      size_t attribIndex,
-                                                     const mtl::VertexFormat &vertexFormat,
+                                                     const mtl::VertexFormat &srcVertexFormat,
                                                      ConversionBufferMtl *conversion)
 {
     ContextMtl *contextMtl = mtl::GetImpl(glContext);
 
+    // Convert to streaming format
+    mtl::VertexFormat vertexFormat(srcVertexFormat.intendedFormatId, true);
     unsigned srcFormatSize = vertexFormat.intendedAngleFormat().pixelBytes;
     unsigned dstFormatSize = vertexFormat.actualAngleFormat().pixelBytes;
 
