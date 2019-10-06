@@ -52,7 +52,6 @@ class VertexArrayMtl : public VertexArrayImpl
 
     angle::Result convertIndexBuffer(const gl::Context *glContext,
                                      gl::DrawElementsType indexType,
-                                     size_t indexCount,
                                      BufferMtl *idxBuffer,
                                      size_t offset);
     angle::Result streamIndexBufferFromClient(const gl::Context *glContext,

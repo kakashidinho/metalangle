@@ -115,6 +115,12 @@ size_t GetVertexCount(BufferMtl *srcBuffer,
     return numVertices;
 }
 
+inline size_t GetIndexCount(BufferMtl *srcBuffer, size_t offset, gl::DrawElementsType indexType)
+{
+    size_t elementSize = gl::GetDrawElementsTypeSize(indexType);
+    return (srcBuffer->size() - offset) / elementSize;
+}
+
 }  // namespace
 
 // VertexArrayMtl implementation
@@ -451,7 +457,6 @@ angle::Result VertexArrayMtl::syncDirtyAttrib(const gl::Context *glContext,
 
 angle::Result VertexArrayMtl::convertIndexBuffer(const gl::Context *glContext,
                                                  gl::DrawElementsType indexType,
-                                                 size_t indexCount,
                                                  BufferMtl *idxBuffer,
                                                  size_t offset)
 {
@@ -469,9 +474,11 @@ angle::Result VertexArrayMtl::convertIndexBuffer(const gl::Context *glContext,
         return angle::Result::Continue;
     }
 
+    size_t indexCount = GetIndexCount(idxBuffer, offset, indexType);
+
     // TODO(hqle): Use GPU to convert.
     const auto srcData = idxBuffer->getClientShadowCopyData(glContext) + offset;
-    ANGLE_TRY(StreamIndexData(contextMtl, &mDynamicIndexData, srcData, indexType, indexCount,
+    ANGLE_TRY(StreamIndexData(contextMtl, &conversion->data, srcData, indexType, indexCount,
                               &mDynamicElementArrayBufferHolder,
                               &mCurrentElementArrayBufferOffset));
 
