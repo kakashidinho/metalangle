@@ -9,6 +9,7 @@
 
 #include "libANGLE/renderer/metal/Metal_platform.h"
 
+#include "common/PackedEnums.h"
 #include "libANGLE/angletypes.h"
 #include "libANGLE/renderer/metal/StateCacheMtl.h"
 #include "libANGLE/renderer/metal/UtilsMtl.h"
@@ -53,6 +54,8 @@ class RendererMtl final : angle::NonCopyable
         return mStateCache.getSamplerState(getMetalDevice(), desc);
     }
 
+    mtl::TextureRef getNullTexture(const gl::Context *context, gl::TextureType type);
+
   private:
     void ensureCapsInitialized() const;
 
@@ -62,6 +65,9 @@ class RendererMtl final : angle::NonCopyable
 
     StateCacheMtl mStateCache;
     UtilsMtl mUtils;
+
+    static const size_t kNumTexturesType = static_cast<size_t>(gl::TextureType::EnumCount);
+    mtl::TextureRef mNullTextures[kNumTexturesType];
 
     mutable bool mCapsInitialized;
     mutable gl::Limitations mNativeLimitations;

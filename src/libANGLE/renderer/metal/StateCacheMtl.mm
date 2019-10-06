@@ -385,6 +385,19 @@ SamplerDesc::SamplerDesc(const gl::SamplerState &glState) : SamplerDesc()
     maxAnisotropy = glState.getMaxAnisotropy();
 }
 
+void SamplerDesc::set()
+{
+    rAddressMode = MTLSamplerAddressModeClampToEdge;
+    sAddressMode = MTLSamplerAddressModeClampToEdge;
+    tAddressMode = MTLSamplerAddressModeClampToEdge;
+
+    minFilter = MTLSamplerMinMagFilterNearest;
+    magFilter = MTLSamplerMinMagFilterNearest;
+    mipFilter = MTLSamplerMipFilterNearest;
+
+    maxAnisotropy = 1;
+}
+
 bool SamplerDesc::operator==(const SamplerDesc &rhs) const
 {
     return ANGLE_PROP_EQ(*this, rhs, rAddressMode) && ANGLE_PROP_EQ(*this, rhs, sAddressMode) &&
@@ -902,6 +915,19 @@ mtl::AutoObjCPtr<id<MTLSamplerState>> StateCacheMtl::getSamplerState(id<MTLDevic
 
         return ite->second;
     }
+}
+
+mtl::AutoObjCPtr<id<MTLSamplerState>> StateCacheMtl::getNullSamplerState(mtl::Context *context)
+{
+    return getNullSamplerState(context->getMetalDevice());
+}
+
+mtl::AutoObjCPtr<id<MTLSamplerState>> StateCacheMtl::getNullSamplerState(id<MTLDevice> device)
+{
+    mtl::SamplerDesc desc;
+    desc.set();
+
+    return getSamplerState(device, desc);
 }
 
 void StateCacheMtl::clear()

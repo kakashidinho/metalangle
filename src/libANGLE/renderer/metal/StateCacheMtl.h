@@ -75,6 +75,9 @@ struct SamplerDesc
 
     explicit SamplerDesc(const gl::SamplerState &glState);
 
+    // Set default values. All filters are nearest, and addresModes are clamp to edge.
+    void set();
+
     bool operator==(const SamplerDesc &rhs) const;
 
     size_t hash() const;
@@ -378,7 +381,9 @@ class StateCacheMtl final : angle::NonCopyable
         const mtl::DepthStencilDesc &desc);
     mtl::AutoObjCPtr<id<MTLSamplerState>> getSamplerState(id<MTLDevice> device,
                                                           const mtl::SamplerDesc &desc);
-
+    // Null sampler state uses default SamplerDesc
+    mtl::AutoObjCPtr<id<MTLSamplerState>> getNullSamplerState(mtl::Context *context);
+    mtl::AutoObjCPtr<id<MTLSamplerState>> getNullSamplerState(id<MTLDevice> device);
     void clear();
 
   private:
