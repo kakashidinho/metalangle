@@ -195,19 +195,31 @@ void UtilsMtl::setupClearWithDraw(const gl::Context *context,
     // Viewports
     const mtl::RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
 
-    ASSERT(renderPassDesc.numColorAttachments == 1);
-
     MTLViewport viewport;
     MTLScissorRect scissorRect;
-    const mtl::RenderPassColorAttachmentDesc &renderPassColorAttachment =
-        renderPassDesc.colorAttachments[0];
-    auto texture = renderPassColorAttachment.texture.lock();
 
-    viewport = mtl::GetViewport(params.clearArea, texture->height(renderPassColorAttachment.level),
+    mtl::RenderPassAttachmentDesc renderPassAttachment;
+
+    if (renderPassDesc.numColorAttachments)
+    {
+        renderPassAttachment = renderPassDesc.colorAttachments[0];
+    }
+    else if (!renderPassDesc.depthAttachment.texture.expired())
+    {
+        renderPassAttachment = renderPassDesc.depthAttachment;
+    }
+    else
+    {
+        renderPassAttachment = renderPassDesc.stencilAttachment;
+    }
+
+    auto texture = renderPassAttachment.texture.lock();
+
+    viewport = mtl::GetViewport(params.clearArea, texture->height(renderPassAttachment.level),
                                 params.flipY);
 
     scissorRect = mtl::GetScissorRect(
-        params.clearArea, texture->height(renderPassColorAttachment.level), params.flipY);
+        params.clearArea, texture->height(renderPassAttachment.level), params.flipY);
 
     cmdEncoder->setViewport(viewport);
     cmdEncoder->setScissorRect(scissorRect);
@@ -308,6 +320,10 @@ id<MTLRenderPipelineState> UtilsMtl::getClearRenderPipelineState(
 {
     ContextMtl *contextMtl      = mtl::GetImpl(context);
     MTLColorWriteMask colorMask = contextMtl->getColorMask();
+    if (!params.clearColor.valid())
+    {
+        colorMask = MTLColorWriteMaskNone;
+    }
 
     mtl::RenderPipelineDesc pipelineDesc;
     const mtl::RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();

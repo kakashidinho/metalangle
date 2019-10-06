@@ -490,35 +490,35 @@ angle::Result FramebufferMtl::clearWithLoadOp(const gl::Context *context,
         }
     }
 
-    MTLStoreAction dethpStoreAction, stencilStoreAction;
+    MTLStoreAction preClearDethpStoreAction, preClearStencilStoreAction;
     if (clearOpts.clearDepth.valid())
     {
-        dethpStoreAction                    = MTLStoreActionDontCare;
+        preClearDethpStoreAction            = MTLStoreActionDontCare;
         tempDesc.depthAttachment.loadAction = MTLLoadActionClear;
         tempDesc.depthAttachment.clearDepth = clearOpts.clearDepth.value();
     }
     else
     {
-        dethpStoreAction                    = MTLStoreActionStore;
+        preClearDethpStoreAction            = MTLStoreActionStore;
         tempDesc.depthAttachment.loadAction = MTLLoadActionLoad;
     }
 
     if (clearOpts.clearStencil.valid())
     {
-        stencilStoreAction                      = MTLStoreActionDontCare;
+        preClearStencilStoreAction              = MTLStoreActionDontCare;
         tempDesc.stencilAttachment.loadAction   = MTLLoadActionClear;
         tempDesc.stencilAttachment.clearStencil = clearOpts.clearStencil.value();
     }
     else
     {
-        stencilStoreAction                    = MTLStoreActionStore;
+        preClearStencilStoreAction            = MTLStoreActionStore;
         tempDesc.stencilAttachment.loadAction = MTLLoadActionLoad;
     }
 
     // End current render pass.
     if (startedRenderPass)
     {
-        encoder->setDepthStencilStoreAction(dethpStoreAction, stencilStoreAction);
+        encoder->setDepthStencilStoreAction(preClearDethpStoreAction, preClearStencilStoreAction);
         contextMtl->endEncoding(encoder);
     }
 
@@ -532,26 +532,13 @@ angle::Result FramebufferMtl::clearWithDraw(const gl::Context *context,
                                             gl::DrawBufferMask clearColorBuffers,
                                             const UtilsMtl::ClearParams &clearOpts)
 {
-    mtl::RenderPassDesc tempRenderPassDesc;
-    mtl::RenderPassDesc *pRPDescPtr;
-    if (clearColorBuffers == mState.getEnabledDrawBuffers())
-    {
-        pRPDescPtr = &mRenderPassDesc;
-    }
-    else
-    {
-        pRPDescPtr = &tempRenderPassDesc;
-    }
-
-    ANGLE_TRY(prepareRenderPass(context, clearColorBuffers, pRPDescPtr));
-
-    ContextMtl *contextMtl = mtl::GetImpl(context);
-    RendererMtl *renderer  = contextMtl->getRenderer();
-    auto &rpDesc           = *pRPDescPtr;
+    ContextMtl *contextMtl     = mtl::GetImpl(context);
+    RendererMtl *renderer      = contextMtl->getRenderer();
+    mtl::RenderPassDesc rpDesc;
+    ANGLE_TRY(prepareRenderPass(context, mState.getEnabledDrawBuffers(), &rpDesc));
 
     for (uint32_t i = 0, attachmentIdx = 0; i < rpDesc.numColorAttachments; ++i, ++attachmentIdx)
     {
-        ASSERT(clearOpts.clearColor.valid());
         mtl::RenderPassColorAttachmentDesc &colorAttachment =
             rpDesc.colorAttachments[attachmentIdx];
         mtl::TextureRef texture = colorAttachment.texture.lock();
