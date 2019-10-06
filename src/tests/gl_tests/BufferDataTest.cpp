@@ -547,13 +547,11 @@ ANGLE_INSTANTIATE_TEST(BufferDataTest,
                        ES2_VULKAN());
 ANGLE_INSTANTIATE_TEST(BufferDataTestES3,
                        ES3_D3D11(),
-                       ES2_METAL(),
                        ES3_OPENGL(),
                        ES3_OPENGLES(),
                        ES3_VULKAN());
 ANGLE_INSTANTIATE_TEST(IndexedBufferCopyTest,
                        ES3_D3D11(),
-                       ES2_METAL(),
                        ES3_OPENGL(),
                        ES3_OPENGLES(),
                        ES3_VULKAN());
