@@ -842,7 +842,7 @@ mtl::RenderCommandEncoder *ContextMtl::getRenderCommandEncoder(
 
     rpDesc.colorAttachments[0].texture = textureTarget;
     rpDesc.colorAttachments[0].level   = index.getLevelIndex();
-    rpDesc.colorAttachments[0].slice   = index.getLayerIndex();
+    rpDesc.colorAttachments[0].slice   = index.hasLayer() ? index.getLayerIndex() : 0;
     rpDesc.numColorAttachments         = 1;
 
     if (clearColor.valid())
@@ -1400,13 +1400,13 @@ angle::Result ContextMtl::handleDirtyDepthStencilState(const gl::Context *contex
     mtl::DepthStencilDesc dsDesc              = mDepthStencilDesc;
     const mtl::RenderPassDesc &renderPassDesc = mDrawFramebuffer->getRenderPassDesc(this);
 
-    if (renderPassDesc.depthAttachment.texture.expired())
+    if (!renderPassDesc.depthAttachment.texture)
     {
         dsDesc.depthWriteEnabled    = false;
         dsDesc.depthCompareFunction = MTLCompareFunctionAlways;
     }
 
-    if (renderPassDesc.stencilAttachment.texture.expired())
+    if (!renderPassDesc.stencilAttachment.texture)
     {
         dsDesc.frontFaceStencil.set();
         dsDesc.backFaceStencil.set();

@@ -159,9 +159,9 @@ MTLRenderPipelineDescriptor *ToObjC(id<MTLFunction> vertexShader,
     return [objCDesc ANGLE_MTL_AUTORELEASE];
 }
 
-id<MTLTexture> ToObjC(const TextureWeakRef &texture)
+id<MTLTexture> ToObjC(const TextureRef &texture)
 {
-    auto textureRef = texture.lock();
+    auto textureRef = texture;
     return textureRef ? textureRef->get() : nil;
 }
 
@@ -561,7 +561,7 @@ void RenderPassAttachmentDesc::set()
 bool RenderPassAttachmentDesc::equalIgnoreLoadStoreOptions(
     const RenderPassAttachmentDesc &other) const
 {
-    return texture.lock() == other.texture.lock() && level == other.level && slice == other.slice;
+    return texture == other.texture && level == other.level && slice == other.slice;
 }
 
 bool RenderPassAttachmentDesc::operator==(const RenderPassAttachmentDesc &other) const
@@ -598,7 +598,7 @@ void RenderPassDesc::populateRenderPipelineOutputDesc(const BlendDesc &blendStat
     for (uint32_t i = 0; i < this->numColorAttachments; ++i)
     {
         auto &renderPassColorAttachment = this->colorAttachments[i];
-        auto texture                    = renderPassColorAttachment.texture.lock();
+        auto texture                    = renderPassColorAttachment.texture;
 
         // Copy parameters from blend state
         outputDescriptor.colorAttachments[i].update(blendState);
@@ -619,11 +619,11 @@ void RenderPassDesc::populateRenderPipelineOutputDesc(const BlendDesc &blendStat
         }
     }
 
-    auto depthTexture = this->depthAttachment.texture.lock();
+    auto depthTexture = this->depthAttachment.texture;
     outputDescriptor.depthAttachmentPixelFormat =
         depthTexture ? depthTexture->pixelFormat() : MTLPixelFormatInvalid;
 
-    auto stencilTexture = this->stencilAttachment.texture.lock();
+    auto stencilTexture = this->stencilAttachment.texture;
     outputDescriptor.stencilAttachmentPixelFormat =
         stencilTexture ? stencilTexture->pixelFormat() : MTLPixelFormatInvalid;
 }

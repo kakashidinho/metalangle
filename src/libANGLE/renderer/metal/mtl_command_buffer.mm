@@ -78,7 +78,7 @@ void CommandQueue::ensureResourceReadyForCPU(Resource *resource)
         mLock.unlock();
 
         ANGLE_MTL_CMD_LOG("Waiting for MTLCommandBuffer %llu:%p", metalBufferEntry.serial,
-                          metalBufferEntry.buffer);
+                          metalBufferEntry.buffer.get());
         [metalBufferEntry.buffer waitUntilCompleted];
 
         mLock.lock();
@@ -114,7 +114,7 @@ AutoObjCPtr<id<MTLCommandBuffer>> CommandQueue::makeMetalCommandBuffer(uint64_t 
 
         mQueuedMetalCmdBuffers.push_back({metalCmdBuffer, serial});
 
-        ANGLE_MTL_CMD_LOG("Created MTLCommandBuffer %llu:%p", serial, metalCmdBuffer);
+        ANGLE_MTL_CMD_LOG("Created MTLCommandBuffer %llu:%p", serial, metalCmdBuffer.get());
 
         [metalCmdBuffer addCompletedHandler:^(id<MTLCommandBuffer> buf) {
           onCommandBufferCompleted(buf, serial);
@@ -147,7 +147,7 @@ void CommandQueue::onCommandBufferCompleted(id<MTLCommandBuffer> buf, uint64_t s
         auto metalBufferEntry = mQueuedMetalCmdBuffers.front();
         (void)metalBufferEntry;
         ANGLE_MTL_CMD_LOG("Popped MTLCommandBuffer %llu:%p", metalBufferEntry.serial,
-                          metalBufferEntry.buffer);
+                          metalBufferEntry.buffer.get());
 
         mQueuedMetalCmdBuffers.pop_front();
     }
@@ -246,17 +246,12 @@ void CommandBuffer::set(id<MTLCommandBuffer> metalBuffer)
 
 void CommandBuffer::setActiveCommandEncoder(CommandEncoder *encoder)
 {
-    std::lock_guard<std::mutex> lg(mLock);
     mActiveCommandEncoder = encoder;
 }
 
 void CommandBuffer::invalidateActiveCommandEncoder(CommandEncoder *encoder)
 {
-    std::lock_guard<std::mutex> lg(mLock);
-    if (encoder == mActiveCommandEncoder)
-    {
-        mActiveCommandEncoder = nullptr;
-    }
+    mActiveCommandEncoder.compare_exchange_strong(encoder, nullptr);
 }
 
 void CommandBuffer::cleanup()
@@ -284,9 +279,9 @@ void CommandBuffer::commitImpl()
     }
 
     // End the current encoder
-    if (mActiveCommandEncoder)
+    if (mActiveCommandEncoder.load(std::memory_order_relaxed))
     {
-        mActiveCommandEncoder->endEncoding();
+        mActiveCommandEncoder.load(std::memory_order_relaxed)->endEncoding();
         mActiveCommandEncoder = nullptr;
     }
 
@@ -346,24 +341,37 @@ void RenderCommandEncoder::endEncoding()
     {
         if (mRenderPassDesc.colorAttachments[i].storeAction == MTLStoreActionUnknown)
         {
+            // If storeAction hasn't been set for this attachment, we set to dontcare.
             mRenderPassDesc.colorAttachments[i].storeAction = MTLStoreActionDontCare;
         }
 
-        [metalEncoder setColorStoreAction:mRenderPassDesc.colorAttachments[i].storeAction
-                                  atIndex:i];
+        // Only initial unknown store action can change the value now.
+        if (mColorInitialStoreActions[i] == MTLStoreActionUnknown)
+        {
+            [metalEncoder setColorStoreAction:mRenderPassDesc.colorAttachments[i].storeAction
+                                      atIndex:i];
+        }
     }
 
     if (mRenderPassDesc.depthAttachment.storeAction == MTLStoreActionUnknown)
     {
+        // If storeAction hasn't been set for this attachment, we set to dontcare.
         mRenderPassDesc.depthAttachment.storeAction = MTLStoreActionDontCare;
     }
-    [metalEncoder setDepthStoreAction:mRenderPassDesc.depthAttachment.storeAction];
+    if (mDepthInitialStoreAction == MTLStoreActionUnknown)
+    {
+        [metalEncoder setDepthStoreAction:mRenderPassDesc.depthAttachment.storeAction];
+    }
 
     if (mRenderPassDesc.stencilAttachment.storeAction == MTLStoreActionUnknown)
     {
+        // If storeAction hasn't been set for this attachment, we set to dontcare.
         mRenderPassDesc.stencilAttachment.storeAction = MTLStoreActionDontCare;
     }
-    [metalEncoder setStencilStoreAction:mRenderPassDesc.stencilAttachment.storeAction];
+    if (mStencilInitialStoreAction == MTLStoreActionUnknown)
+    {
+        [metalEncoder setStencilStoreAction:mRenderPassDesc.stencilAttachment.storeAction];
+    }
 
     CommandEncoder::endEncoding();
 
@@ -396,21 +404,43 @@ RenderCommandEncoder &RenderCommandEncoder::restart(const RenderPassDesc &desc)
 
     ANGLE_MTL_OBJC_SCOPE
     {
+
+#define ANGLE_MTL_SET_DEP_AND_STORE_ACTION(TEXTURE_EXPR, STOREACTION)            \
+        do                                                                       \
+        {                                                                        \
+            auto TEXTURE = TEXTURE_EXPR;                                         \
+            if (TEXTURE)                                                         \
+            {                                                                    \
+                cmdBuffer().setWriteDependency(TEXTURE);                         \
+                /* Set store action to unknown so that we can change it later */ \
+                STOREACTION = MTLStoreActionUnknown;                             \
+            }                                                                    \
+            else                                                                 \
+            {                                                                    \
+                STOREACTION = MTLStoreActionDontCare;                            \
+            }                                                                    \
+        } while (0);
+
         // mask writing dependency
         for (uint32_t i = 0; i < mRenderPassDesc.numColorAttachments; ++i)
         {
-            cmdBuffer().setWriteDependency(mRenderPassDesc.colorAttachments[i].texture.lock());
-            // Set store action to unknown so that we can change it later
-            mRenderPassDesc.colorAttachments[i].storeAction = MTLStoreActionUnknown;
+            ANGLE_MTL_SET_DEP_AND_STORE_ACTION(mRenderPassDesc.colorAttachments[i].texture,
+                                               mRenderPassDesc.colorAttachments[i].storeAction);
+            mColorInitialStoreActions[i] = mRenderPassDesc.colorAttachments[i].storeAction;
         }
 
-        cmdBuffer().setWriteDependency(mRenderPassDesc.depthAttachment.texture.lock());
-        cmdBuffer().setWriteDependency(mRenderPassDesc.stencilAttachment.texture.lock());
-        mRenderPassDesc.depthAttachment.storeAction   = MTLStoreActionUnknown;
-        mRenderPassDesc.stencilAttachment.storeAction = MTLStoreActionUnknown;
+        ANGLE_MTL_SET_DEP_AND_STORE_ACTION(mRenderPassDesc.depthAttachment.texture,
+                                           mRenderPassDesc.depthAttachment.storeAction);
+        mDepthInitialStoreAction = mRenderPassDesc.depthAttachment.storeAction;
+
+        ANGLE_MTL_SET_DEP_AND_STORE_ACTION(mRenderPassDesc.stencilAttachment.texture,
+                                           mRenderPassDesc.stencilAttachment.storeAction);
+        mStencilInitialStoreAction = mRenderPassDesc.stencilAttachment.storeAction;
 
         // Create objective C object
         mtl::AutoObjCObj<MTLRenderPassDescriptor> objCDesc = ToMetalObj(mRenderPassDesc);
+
+        ANGLE_MTL_CMD_LOG("Creating new render command encoder with desc: %@", objCDesc.get());
 
         id<MTLRenderCommandEncoder> metalCmdEncoder =
             [cmdBuffer().get() renderCommandEncoderWithDescriptor:objCDesc];

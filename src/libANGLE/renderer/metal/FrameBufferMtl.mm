@@ -469,7 +469,7 @@ angle::Result FramebufferMtl::clearWithLoadOp(const gl::Context *context,
         auto attachmentIdx = attachmentCount++;
         mtl::RenderPassColorAttachmentDesc &colorAttachment =
             tempDesc.colorAttachments[attachmentIdx];
-        mtl::TextureRef texture = colorAttachment.texture.lock();
+        mtl::TextureRef texture = colorAttachment.texture;
 
         if (clearColorBuffers.test(colorIndexGL))
         {
@@ -541,18 +541,18 @@ angle::Result FramebufferMtl::clearWithDraw(const gl::Context *context,
     {
         mtl::RenderPassColorAttachmentDesc &colorAttachment =
             rpDesc.colorAttachments[attachmentIdx];
-        mtl::TextureRef texture = colorAttachment.texture.lock();
+        mtl::TextureRef texture = colorAttachment.texture;
 
         // Need to preserve previous content, since we only clear a portion of the framebuffer
         colorAttachment.loadAction = MTLLoadActionLoad;
     }
 
-    if (rpDesc.depthAttachment.texture.lock())
+    if (rpDesc.depthAttachment.texture)
     {
         rpDesc.depthAttachment.loadAction = MTLLoadActionLoad;
     }
 
-    if (rpDesc.stencilAttachment.texture.lock())
+    if (rpDesc.stencilAttachment.texture)
     {
         rpDesc.stencilAttachment.loadAction = MTLLoadActionLoad;
     }
@@ -685,7 +685,7 @@ angle::Result FramebufferMtl::readPixelsImpl(const gl::Context *context,
     {
         return angle::Result::Continue;
     }
-    mtl::TextureRef texture = renderTarget->getTexture().lock();
+    mtl::TextureRef texture = renderTarget->getTexture();
 
     if (!texture)
     {

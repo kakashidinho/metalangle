@@ -204,16 +204,17 @@ void UtilsMtl::setupClearWithDraw(const gl::Context *context,
     {
         renderPassAttachment = renderPassDesc.colorAttachments[0];
     }
-    else if (!renderPassDesc.depthAttachment.texture.expired())
+    else if (renderPassDesc.depthAttachment.texture)
     {
         renderPassAttachment = renderPassDesc.depthAttachment;
     }
     else
     {
+        ASSERT(renderPassDesc.stencilAttachment.texture);
         renderPassAttachment = renderPassDesc.stencilAttachment;
     }
 
-    auto texture = renderPassAttachment.texture.lock();
+    auto texture = renderPassAttachment.texture;
 
     viewport = mtl::GetViewport(params.clearArea, texture->height(renderPassAttachment.level),
                                 params.flipY);
@@ -254,7 +255,7 @@ void UtilsMtl::setupBlitWithDraw(const gl::Context *context,
     const mtl::RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
     const mtl::RenderPassColorAttachmentDesc &renderPassColorAttachment =
         renderPassDesc.colorAttachments[0];
-    auto texture = renderPassColorAttachment.texture.lock();
+    auto texture = renderPassColorAttachment.texture;
 
     gl::Rectangle dstRect(params.dstOffset.x, params.dstOffset.y, params.srcRect.width,
                           params.srcRect.height);

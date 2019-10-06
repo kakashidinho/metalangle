@@ -614,7 +614,7 @@ angle::Result TextureMtl::copySubImageImpl(const gl::Context *context,
 
     RenderTargetMtl *colorReadRT = framebufferMtl->getColorReadRenderTarget();
 
-    if (!colorReadRT || !colorReadRT->getTexture().lock())
+    if (!colorReadRT || !colorReadRT->getTexture())
     {
         // Is this an error?
         return angle::Result::Continue;

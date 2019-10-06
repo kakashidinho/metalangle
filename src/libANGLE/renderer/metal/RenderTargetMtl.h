@@ -29,11 +29,11 @@ class RenderTargetMtl final : public FramebufferAttachmentRenderTarget
     // Used in std::vector initialization.
     RenderTargetMtl(RenderTargetMtl &&other);
 
-    void set(mtl::TextureWeakRef texture, size_t level, size_t layer, const mtl::Format &format);
-    void set(mtl::TextureWeakRef texture);
+    void set(mtl::TextureRef texture, size_t level, size_t layer, const mtl::Format &format);
+    void set(mtl::TextureRef texture);
     void reset();
 
-    mtl::TextureWeakRef getTexture() const { return mTexture; }
+    mtl::TextureRef getTexture() const { return mTexture; }
     size_t getLevelIndex() const { return mLevelIndex; }
     size_t getLayerIndex() const { return mLayerIndex; }
     const mtl::Format *getFormat() const { return mFormat; }
@@ -41,7 +41,7 @@ class RenderTargetMtl final : public FramebufferAttachmentRenderTarget
     void toRenderPassAttachmentDesc(mtl::RenderPassAttachmentDesc *rpaDescOut) const;
 
   private:
-    mtl::TextureWeakRef mTexture;
+    mtl::TextureRef mTexture;
     size_t mLevelIndex         = 0;
     size_t mLayerIndex         = 0;
     const mtl::Format *mFormat = nullptr;

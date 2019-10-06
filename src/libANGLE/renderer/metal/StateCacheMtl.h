@@ -216,7 +216,7 @@ struct RenderPassAttachmentDesc
     bool equalIgnoreLoadStoreOptions(const RenderPassAttachmentDesc &other) const;
     bool operator==(const RenderPassAttachmentDesc &other) const;
 
-    TextureWeakRef texture;
+    TextureRef texture;
     uint32_t level;
     uint32_t slice;
     MTLLoadAction loadAction;

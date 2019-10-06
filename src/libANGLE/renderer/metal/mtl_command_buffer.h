@@ -112,7 +112,7 @@ class CommandBuffer final : public WrappedObject<id<MTLCommandBuffer>>, angle::N
 
     CommandQueue &mCmdQueue;
 
-    CommandEncoder *mActiveCommandEncoder = nullptr;
+    std::atomic<CommandEncoder *> mActiveCommandEncoder {nullptr};
 
     uint64_t mQueueSerial = 0;
 
@@ -273,6 +273,9 @@ class RenderCommandEncoder final : public CommandEncoder
     }
 
     RenderPassDesc mRenderPassDesc;
+    MTLStoreAction mColorInitialStoreActions[kMaxRenderTargets];
+    MTLStoreAction mDepthInitialStoreAction;
+    MTLStoreAction mStencilInitialStoreAction;
 
     StateCache mStateCache;
 };
