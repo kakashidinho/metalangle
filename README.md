@@ -5,6 +5,7 @@ to continue operate on Apple platforms by translating OpenGL ES draw calls to Me
 
 ### Current Metal backend implementation status
 - Almost all basic samples has been tested to work fine.
+- Not all ANGLE tests passed yet.
 - No `GL_TRIANGLE_FAN` & `GL_LINE_LOOP` support in draw calls yet.
 - Metal doesn't allow buffer offset not being multiple of 4 bytes. Hence, draw calls that use unsupported offsets, strides,
 and vertex formats will force MetalANGLE to do software conversions on CPU.
