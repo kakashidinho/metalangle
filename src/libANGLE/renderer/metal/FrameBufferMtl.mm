@@ -49,10 +49,13 @@ FramebufferMtl::FramebufferMtl(const gl::FramebufferState &state,
       mBackBuffer(backBuffer),
       mAlwaysDiscardDepthStencil(alwaysDiscard),
       mFlipY(flipY)
-{}
+{
+    reset();
+}
+
 FramebufferMtl::~FramebufferMtl() {}
 
-void FramebufferMtl::destroy(const gl::Context *context)
+void FramebufferMtl::reset()
 {
     for (auto &rt : mColorRenderTargets)
     {
@@ -64,6 +67,11 @@ void FramebufferMtl::destroy(const gl::Context *context)
     }
     mDepthRenderTarget = mStencilRenderTarget = nullptr;
     mDiscardDepth = mDiscardStencil = false;
+}
+
+void FramebufferMtl::destroy(const gl::Context *context)
+{
+    reset();
 }
 
 angle::Result FramebufferMtl::discard(const gl::Context *context,

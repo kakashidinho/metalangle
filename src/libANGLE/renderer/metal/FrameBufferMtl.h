@@ -99,6 +99,7 @@ class FramebufferMtl : public FramebufferImpl
                                  RenderTargetMtl *renderTarget,
                                  uint8_t *pixels);
   private:
+    void reset();
     angle::Result invalidateImpl(ContextMtl *contextMtl, size_t count, const GLenum *attachments);
     angle::Result clearImpl(const gl::Context *context,
                             gl::DrawBufferMask clearColorBuffers,
