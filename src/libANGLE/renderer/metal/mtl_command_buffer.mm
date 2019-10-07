@@ -324,6 +324,18 @@ void CommandEncoder::set(id<MTLCommandEncoder> metalCmdEncoder)
     cmdBuffer().setActiveCommandEncoder(this);
 }
 
+CommandEncoder &CommandEncoder::markResourceBeingWrittenByGPU(BufferRef buffer)
+{
+    cmdBuffer().setWriteDependency(buffer);
+    return *this;
+}
+
+CommandEncoder &CommandEncoder::markResourceBeingWrittenByGPU(TextureRef texture)
+{
+    cmdBuffer().setWriteDependency(texture);
+    return *this;
+}
+
 // RenderCommandEncoder implemtation
 RenderCommandEncoder::RenderCommandEncoder(CommandBuffer *cmdBuffer)
     : CommandEncoder(cmdBuffer, RENDER)
@@ -916,5 +928,121 @@ BlitCommandEncoder &BlitCommandEncoder::synchronizeResource(TextureRef texture)
 #endif
     return *this;
 }
+
+// ComputeCommandEncoder implementation
+ComputeCommandEncoder::ComputeCommandEncoder(CommandBuffer *cmdBuffer)
+    : CommandEncoder(cmdBuffer, COMPUTE)
+{}
+ComputeCommandEncoder::~ComputeCommandEncoder()
+{}
+
+ComputeCommandEncoder &ComputeCommandEncoder::restart()
+{
+    ANGLE_MTL_OBJC_SCOPE
+    {
+        if (valid())
+        {
+            // no change, skip
+            return *this;
+        }
+
+        if (!cmdBuffer().valid())
+        {
+            reset();
+            return *this;
+        }
+
+        // Create objective C object
+        set([cmdBuffer().get() computeCommandEncoder]);
+
+        // Verify that it was created successfully
+        ASSERT(get());
+
+        return *this;
+    }
+}
+
+ComputeCommandEncoder &ComputeCommandEncoder::setComputePipelineState(
+    id<MTLComputePipelineState> state)
+{
+    [get() setComputePipelineState:state];
+    return *this;
+}
+
+ComputeCommandEncoder &ComputeCommandEncoder::setBuffer(BufferRef buffer,
+                                                        uint32_t offset,
+                                                        uint32_t index)
+{
+    if (index >= kMaxShaderBuffers)
+    {
+        return *this;
+    }
+
+    // TODO(hqle): Assume compute shader both reads and writes to this buffer for now.
+    cmdBuffer().setReadDependency(buffer);
+    cmdBuffer().setWriteDependency(buffer);
+
+    [get() setBuffer:(buffer ? buffer->get() : nil)offset:offset atIndex:index];
+
+    return *this;
+}
+
+ComputeCommandEncoder &ComputeCommandEncoder::setBytes(const uint8_t *bytes,
+                                                       size_t size,
+                                                       uint32_t index)
+{
+    if (index >= kMaxShaderBuffers)
+    {
+        return *this;
+    }
+
+    [get() setBytes:bytes length:size atIndex:index];
+
+    return *this;
+}
+
+ComputeCommandEncoder &ComputeCommandEncoder::setSamplerState(id<MTLSamplerState> state,
+                                                              float lodMinClamp,
+                                                              float lodMaxClamp,
+                                                              uint32_t index)
+{
+    if (index >= kMaxShaderSamplers)
+    {
+        return *this;
+    }
+
+    [get() setSamplerState:state lodMinClamp:lodMinClamp lodMaxClamp:lodMaxClamp atIndex:index];
+
+    return *this;
+}
+ComputeCommandEncoder &ComputeCommandEncoder::setTexture(TextureRef texture, uint32_t index)
+{
+    if (index >= kMaxShaderSamplers)
+    {
+        return *this;
+    }
+
+    // TODO(hqle): Assume compute shader both reads and writes to this texture for now.
+    cmdBuffer().setReadDependency(texture);
+    cmdBuffer().setWriteDependency(texture);
+    [get() setTexture:(texture ? texture->get() : nil)atIndex:index];
+
+    return *this;
+}
+
+ComputeCommandEncoder &ComputeCommandEncoder::dispatch(MTLSize threadGroupsPerGrid,
+                                                       MTLSize threadsPerGroup)
+{
+    [get() dispatchThreadgroups:threadGroupsPerGrid threadsPerThreadgroup:threadsPerGroup];
+    return *this;
+}
+
+ComputeCommandEncoder &ComputeCommandEncoder::dispatchNonUniform(MTLSize threadsPerGrid,
+                                                                 MTLSize threadsPerGroup)
+{
+    [get() dispatchThreads:threadsPerGrid threadsPerThreadgroup:threadsPerGroup];
+    return *this;
+}
+
 }
 }

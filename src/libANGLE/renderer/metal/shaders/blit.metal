@@ -4,36 +4,8 @@
 // found in the LICENSE file.
 //
 
-#include <metal_stdlib>
-#include <simd/simd.h>
+#include "common.h"
 
-using namespace metal;
-
-constant float2 gCorners[6] =
-{
-    float2(-1.0f,  1.0f),
-    float2( 1.0f, -1.0f),
-    float2(-1.0f, -1.0f),
-    float2(-1.0f,  1.0f),
-    float2( 1.0f,  1.0f),
-    float2( 1.0f, -1.0f),
-};
-
-constant int gTexcoordsIndices[6] =
-{
-    2,
-    1,
-    0,
-    2,
-    3,
-    1
-};
-
-struct ClearParams
-{
-    float4 clearColor;
-    float clearDepth;
-};
 
 struct BlitParams
 {
@@ -51,17 +23,6 @@ struct BlitVSOut
     float2 texCoords [[user(locn1)]];
 };
 
-vertex float4 clearVS(unsigned int vid [[ vertex_id ]],
-                      constant ClearParams &clearParams [[buffer(0)]])
-{
-    return float4(gCorners[vid], clearParams.clearDepth, 1.0);
-}
-
-fragment float4 clearFS(constant ClearParams &clearParams [[buffer(0)]])
-{
-    return clearParams.clearColor;
-}
-
 vertex BlitVSOut blitVS(unsigned int vid [[ vertex_id ]],
                          constant BlitParams &options [[buffer(0)]])
 {
@@ -77,12 +38,12 @@ vertex BlitVSOut blitVS(unsigned int vid [[ vertex_id ]],
     return output;
 }
 
-float4 sampleTexture(texture2d<float> srcTexture,
+float4 blitSampleTexture(texture2d<float> srcTexture,
                      float2 texCoords,
                      constant BlitParams &options)
 {
-    constexpr sampler textureSampler (mag_filter::linear,
-                                      min_filter::linear);
+    constexpr sampler textureSampler(mag_filter::linear,
+                                     min_filter::linear);
     float4 output = srcTexture.sample(textureSampler, texCoords, level(options.srcLevel));
 
     if (options.srcLuminance)
@@ -109,14 +70,14 @@ fragment float4 blitFS(BlitVSOut input [[stage_in]],
                        texture2d<float> srcTexture [[texture(0)]],
                        constant BlitParams &options [[buffer(0)]])
 {
-    return blitOutput(sampleTexture(srcTexture, input.texCoords, options), options);
+    return blitOutput(blitSampleTexture(srcTexture, input.texCoords, options), options);
 }
 
 fragment float4 blitPremultiplyAlphaFS(BlitVSOut input [[stage_in]],
                                        texture2d<float> srcTexture [[texture(0)]],
                                        constant BlitParams &options [[buffer(0)]])
 {
-    float4 output = sampleTexture(srcTexture, input.texCoords, options);
+    float4 output = blitSampleTexture(srcTexture, input.texCoords, options);
     output.xyz *= output.a;
     return blitOutput(output, options);
 }
@@ -125,7 +86,7 @@ fragment float4 blitUnmultiplyAlphaFS(BlitVSOut input [[stage_in]],
                                       texture2d<float> srcTexture [[texture(0)]],
                                       constant BlitParams &options [[buffer(0)]])
 {
-    float4 output = sampleTexture(srcTexture, input.texCoords, options);
+    float4 output = blitSampleTexture(srcTexture, input.texCoords, options);
     if (output.a != 0.0)
     {
         output.xyz *= 1.0 / output.a;

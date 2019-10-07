@@ -59,7 +59,7 @@ BufferMtl::IndexConversionBuffer::IndexConversionBuffer(const gl::Context *conte
                                                         size_t offsetIn)
     : ConversionBufferMtl(context,
                           kConvertedElementArrayBufferInitialSize,
-                          kIndexBufferOffsetAlignment),
+                          kBufferSettingOffsetAlignment),
       type(typeIn),
       offset(offsetIn)
 {}

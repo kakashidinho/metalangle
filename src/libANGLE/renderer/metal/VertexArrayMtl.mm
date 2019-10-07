@@ -7,9 +7,12 @@
 #include "libANGLE/renderer/metal/VertexArrayMtl.h"
 #include "libANGLE/renderer/metal/BufferMtl.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
+#include "libANGLE/renderer/metal/RendererMtl.h"
 #include "libANGLE/renderer/metal/mtl_format_utils.h"
 
 #include "common/debug.h"
+
+#define ANGLE_MTL_CONVERT_INDEX_GPU 1
 
 namespace rx
 {
@@ -41,6 +44,21 @@ angle::Result StreamVertexData(ContextMtl *contextMtl,
     return angle::Result::Continue;
 }
 
+size_t GetIndexConvertedBufferSize(gl::DrawElementsType indexType, size_t indexCount)
+{
+    size_t elementSize = gl::GetDrawElementsTypeSize(indexType);
+    if (indexType == gl::DrawElementsType::UnsignedByte)
+    {
+        // 8-bit indices are not supported by Metal, so they are promoted to
+        // 16-bit indices below
+        elementSize = sizeof(GLushort);
+    }
+
+    const size_t amount = elementSize * indexCount;
+
+    return amount;
+}
+
 angle::Result StreamIndexData(ContextMtl *contextMtl,
                               mtl::BufferPool *dynamicBuffer,
                               const uint8_t *sourcePointer,
@@ -53,15 +71,7 @@ angle::Result StreamIndexData(ContextMtl *contextMtl,
     // to a common source file?
     dynamicBuffer->releaseInFlightBuffers(contextMtl);
 
-    size_t elementSize = gl::GetDrawElementsTypeSize(indexType);
-    if (indexType == gl::DrawElementsType::UnsignedByte)
-    {
-        // 8-bit indices are not supported by Metal, so they are promoted to
-        // 16-bit indices below
-        elementSize = sizeof(GLushort);
-    }
-
-    const size_t amount = elementSize * indexCount;
+    const size_t amount = GetIndexConvertedBufferSize(indexType, indexCount);
     GLubyte *dst        = nullptr;
 
     mtl::BufferRef newBuffer;
@@ -463,7 +473,6 @@ angle::Result VertexArrayMtl::convertIndexBuffer(const gl::Context *glContext,
     ASSERT(idxBuffer);
     ASSERT((offset % kIndexBufferOffsetAlignment) != 0 ||
            indexType == gl::DrawElementsType::UnsignedByte);
-    ContextMtl *contextMtl = mtl::GetImpl(glContext);
 
     ConversionBufferMtl *conversion =
         idxBuffer->getIndexConversionBuffer(glContext, indexType, offset);
@@ -476,13 +485,64 @@ angle::Result VertexArrayMtl::convertIndexBuffer(const gl::Context *glContext,
 
     size_t indexCount = GetIndexCount(idxBuffer, offset, indexType);
 
-    // TODO(hqle): Use GPU to convert.
+#if ANGLE_MTL_CONVERT_INDEX_GPU
+    ANGLE_TRY(
+        convertIndexBufferGPU(glContext, indexType, idxBuffer, offset, indexCount, conversion));
+#else
+    ANGLE_TRY(
+        convertIndexBufferCPU(glContext, indexType, idxBuffer, offset, indexCount, conversion));
+#endif
+
+    return angle::Result::Continue;
+}
+
+angle::Result VertexArrayMtl::convertIndexBufferGPU(const gl::Context *glContext,
+                                                    gl::DrawElementsType indexType,
+                                                    BufferMtl *idxBuffer,
+                                                    size_t offset,
+                                                    size_t indexCount,
+                                                    ConversionBufferMtl *conversion)
+{
+    ContextMtl *contextMtl = mtl::GetImpl(glContext);
+    RendererMtl *renderer  = contextMtl->getRenderer();
+
+    const size_t amount = GetIndexConvertedBufferSize(indexType, indexCount);
+
+    // Allocate new buffer
+    mtl::BufferRef newBuffer;
+    conversion->data.releaseInFlightBuffers(contextMtl);
+    ANGLE_TRY(conversion->data.allocate(contextMtl, amount, nullptr, &newBuffer,
+                                        &mCurrentElementArrayBufferOffset));
+    mDynamicElementArrayBufferHolder.set(newBuffer);
+
+    // Do the conversion on GPU.
+    ANGLE_TRY(renderer->getUtils().convertIndexBuffer(
+        glContext, indexType, indexCount, idxBuffer->getCurrentBuffer(glContext), offset, newBuffer,
+        mCurrentElementArrayBufferOffset));
+
+    mCurrentElementArrayBuffer = &mDynamicElementArrayBufferHolder;
+    ASSERT(conversion->dirty);
+    conversion->dirty          = false;
+
+    return angle::Result::Continue;
+}
+
+angle::Result VertexArrayMtl::convertIndexBufferCPU(const gl::Context *glContext,
+                                                    gl::DrawElementsType indexType,
+                                                    BufferMtl *idxBuffer,
+                                                    size_t offset,
+                                                    size_t indexCount,
+                                                    ConversionBufferMtl *conversion)
+{
+    ContextMtl *contextMtl = mtl::GetImpl(glContext);
+
     const auto srcData = idxBuffer->getClientShadowCopyData(glContext) + offset;
     ANGLE_TRY(StreamIndexData(contextMtl, &conversion->data, srcData, indexType, indexCount,
                               &mDynamicElementArrayBufferHolder,
                               &mCurrentElementArrayBufferOffset));
 
     mCurrentElementArrayBuffer = &mDynamicElementArrayBufferHolder;
+    ASSERT(conversion->dirty);
     conversion->dirty          = false;
 
     return angle::Result::Continue;

@@ -1,27 +1,45 @@
-// GENERATED FILE on 2019-10-07 00:31:09.384338 - DO NOT EDIT.
+// GENERATED FILE on 2019-10-08 03:49:48.587386 - DO NOT EDIT.
 
 
 static const char default_metallib_src[] = R"(
-//
-// Copyright (c) 2019 The ANGLE Project. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-//
-
 #include <metal_stdlib>
 #include <simd/simd.h>
+# 1 "master_source.metal"
+# 1 "<built-in>" 1
+# 1 "<built-in>" 3
+# 374 "<built-in>" 3
+# 1 "<command line>" 1
+# 1 "<built-in>" 2
+# 1 "master_source.metal" 2
 
+
+
+
+
+
+# 1 "./clear.metal" 1
+
+
+
+
+
+
+# 1 "./common.h" 1
+# 15 "./common.h"
 using namespace metal;
+
 
 constant float2 gCorners[6] =
 {
-    float2(-1.0f,  1.0f),
+    float2(-1.0f, 1.0f),
     float2( 1.0f, -1.0f),
     float2(-1.0f, -1.0f),
-    float2(-1.0f,  1.0f),
-    float2( 1.0f,  1.0f),
+    float2(-1.0f, 1.0f),
+    float2( 1.0f, 1.0f),
     float2( 1.0f, -1.0f),
 };
+
+
 
 constant int gTexcoordsIndices[6] =
 {
@@ -33,26 +51,16 @@ constant int gTexcoordsIndices[6] =
     1
 };
 
+fragment float4 dummyFS()
+{
+    return float4(0, 0, 0, 0);
+}
+# 8 "./clear.metal" 2
+
 struct ClearParams
 {
     float4 clearColor;
     float clearDepth;
-};
-
-struct BlitParams
-{
-    // 0: lower left, 1: lower right, 2: upper left, 3: upper right
-    float2 srcTexCoords[4];
-    int srcLevel;
-    bool srcLuminance; // source texture is luminance texture
-    bool dstFlipY;
-    bool dstLuminance; // destination texture is luminance;
-};
-
-struct BlitVSOut
-{
-    float4 position [[position]];
-    float2 texCoords [[user(locn1)]];
 };
 
 vertex float4 clearVS(unsigned int vid [[ vertex_id ]],
@@ -65,6 +73,24 @@ fragment float4 clearFS(constant ClearParams &clearParams [[buffer(0)]])
 {
     return clearParams.clearColor;
 }
+# 8 "master_source.metal" 2
+# 1 "./blit.metal" 1
+# 10 "./blit.metal"
+struct BlitParams
+{
+
+    float2 srcTexCoords[4];
+    int srcLevel;
+    bool srcLuminance;
+    bool dstFlipY;
+    bool dstLuminance;
+};
+
+struct BlitVSOut
+{
+    float4 position [[position]];
+    float2 texCoords [[user(locn1)]];
+};
 
 vertex BlitVSOut blitVS(unsigned int vid [[ vertex_id ]],
                          constant BlitParams &options [[buffer(0)]])
@@ -81,12 +107,12 @@ vertex BlitVSOut blitVS(unsigned int vid [[ vertex_id ]],
     return output;
 }
 
-float4 sampleTexture(texture2d<float> srcTexture,
+float4 blitSampleTexture(texture2d<float> srcTexture,
                      float2 texCoords,
                      constant BlitParams &options)
 {
-    constexpr sampler textureSampler (mag_filter::linear,
-                                      min_filter::linear);
+    constexpr sampler textureSampler(mag_filter::linear,
+                                     min_filter::linear);
     float4 output = srcTexture.sample(textureSampler, texCoords, level(options.srcLevel));
 
     if (options.srcLuminance)
@@ -113,14 +139,14 @@ fragment float4 blitFS(BlitVSOut input [[stage_in]],
                        texture2d<float> srcTexture [[texture(0)]],
                        constant BlitParams &options [[buffer(0)]])
 {
-    return blitOutput(sampleTexture(srcTexture, input.texCoords, options), options);
+    return blitOutput(blitSampleTexture(srcTexture, input.texCoords, options), options);
 }
 
 fragment float4 blitPremultiplyAlphaFS(BlitVSOut input [[stage_in]],
                                        texture2d<float> srcTexture [[texture(0)]],
                                        constant BlitParams &options [[buffer(0)]])
 {
-    float4 output = sampleTexture(srcTexture, input.texCoords, options);
+    float4 output = blitSampleTexture(srcTexture, input.texCoords, options);
     output.xyz *= output.a;
     return blitOutput(output, options);
 }
@@ -129,10 +155,91 @@ fragment float4 blitUnmultiplyAlphaFS(BlitVSOut input [[stage_in]],
                                       texture2d<float> srcTexture [[texture(0)]],
                                       constant BlitParams &options [[buffer(0)]])
 {
-    float4 output = sampleTexture(srcTexture, input.texCoords, options);
+    float4 output = blitSampleTexture(srcTexture, input.texCoords, options);
     if (output.a != 0.0)
     {
         output.xyz *= 1.0 / output.a;
     }
     return blitOutput(output, options);
-})";
+}
+# 9 "master_source.metal" 2
+# 1 "./genIndices.metal" 1
+
+
+
+
+
+
+
+
+struct IndexConversionParams
+{
+    uint32_t srcOffset;
+    uint32_t indexCount;
+};
+
+
+
+
+
+
+
+kernel void convertIndexU8ToU16(uint idx[[thread_position_in_grid]],
+                                constant IndexConversionParams &options[[buffer(0)]],
+                                constant uchar *input[[buffer(1)]],
+                                device ushort *output[[buffer(2)]])
+{
+    if (idx >= options.indexCount) { return; };
+    output[idx] = input[options.srcOffset + idx];
+}
+
+kernel void convertIndexU16Unaligned(uint idx[[thread_position_in_grid]],
+                                     constant IndexConversionParams &options[[buffer(0)]],
+                                     constant uchar *input[[buffer(1)]],
+                                     device ushort *output[[buffer(2)]])
+{
+    if (idx >= options.indexCount) { return; };
+    ushort inputLo = input[options.srcOffset + 2 * idx];
+    ushort inputHi = input[options.srcOffset + 2 * idx + 1];
+
+    ushort value = inputLo | (inputHi << 8);
+    output[idx] = value;
+}
+
+kernel void convertIndexU16Aligned(uint idx[[thread_position_in_grid]],
+                                   constant IndexConversionParams &options[[buffer(0)]],
+                                   constant ushort *input[[buffer(1)]],
+                                   device ushort *output[[buffer(2)]])
+{
+    if (idx >= options.indexCount) { return; };
+    ushort value = input[options.srcOffset / 2 + idx];
+    output[idx] = value;
+}
+
+kernel void convertIndexU32Unaligned(uint idx[[thread_position_in_grid]],
+                                     constant IndexConversionParams &options[[buffer(0)]],
+                                     constant uchar *input[[buffer(1)]],
+                                     device uint *output[[buffer(2)]])
+{
+    if (idx >= options.indexCount) { return; };
+    uint input0 = input[options.srcOffset + 4 * idx];
+    uint input1 = input[options.srcOffset + 4 * idx + 1];
+    uint input2 = input[options.srcOffset + 4 * idx + 2];
+    uint input3 = input[options.srcOffset + 4 * idx + 3];
+
+    uint value = input0 | (input1 << 8) | (input2 << 16) | (input3 << 24);
+    output[idx] = value;
+}
+
+kernel void convertIndexU32Aligned(uint idx[[thread_position_in_grid]],
+                                   constant IndexConversionParams &options[[buffer(0)]],
+                                   constant uint *input[[buffer(1)]],
+                                   device uint *output[[buffer(2)]])
+{
+    if (idx >= options.indexCount) { return; };
+    uint value = input[options.srcOffset / 4 + idx];
+    output[idx] = value;
+}
+# 9 "master_source.metal" 2
+
+)";

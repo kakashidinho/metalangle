@@ -197,6 +197,7 @@ class ContextMtl : public ContextImpl, public mtl::Context
     // endEncoding() directly.
     void endEncoding(mtl::RenderCommandEncoder *encoder);
     void endEncoding(mtl::BlitCommandEncoder *encoder);
+    void endEncoding(mtl::ComputeCommandEncoder *encoder);
     // Ends any active command encoder
     void endEncoding(bool forceSaveRenderPassContent = false);
 
@@ -210,6 +211,8 @@ class ContextMtl : public ContextImpl, public mtl::Context
 
     // Get current render encoder. May be nullptr if no render pass has been started.
     mtl::RenderCommandEncoder *getRenderCommandEncoder();
+
+    mtl::RenderCommandEncoder *getCurrentFramebufferRenderCommandEncoder();
 
     // Will end current command encoder if it is valid, then start new encoder.
     // Unless hasStartedRenderPass(desc) returns true.
@@ -227,6 +230,10 @@ class ContextMtl : public ContextImpl, public mtl::Context
     // Will end current command encoder and start new blit command encoder. Unless a blit comamnd
     // encoder is already started.
     mtl::BlitCommandEncoder *getBlitCommandEncoder();
+
+    // Will end current command encoder and start new compute command encoder. Unless a compute
+    // command encoder is already started.
+    mtl::ComputeCommandEncoder *getComputeCommandEncoder();
 
   private:
     void initializeCaps() const;
@@ -266,6 +273,7 @@ class ContextMtl : public ContextImpl, public mtl::Context
     mtl::CommandBuffer mCmdBuffer;
     mtl::RenderCommandEncoder mRenderEncoder;
     mtl::BlitCommandEncoder mBlitEncoder;
+    mtl::ComputeCommandEncoder mComputeEncoder;
 
     // Cached back-end objects
     FramebufferMtl *mDrawFramebuffer = nullptr;

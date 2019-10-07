@@ -52,6 +52,7 @@ class UtilsMtl : public mtl::Context, angle::NonCopyable
     angle::Result initialize();
     void onDestroy();
 
+    // Clear current framebuffer
     void clearWithDraw(const gl::Context *context,
                        mtl::RenderCommandEncoder *cmdEncoder,
                        const ClearParams &params);
@@ -59,6 +60,15 @@ class UtilsMtl : public mtl::Context, angle::NonCopyable
     void blitWithDraw(const gl::Context *context,
                       mtl::RenderCommandEncoder *cmdEncoder,
                       const BlitParams &params);
+
+    angle::Result convertIndexBuffer(const gl::Context *context,
+                                     gl::DrawElementsType srcType,
+                                     uint32_t indexCount,
+                                     mtl::BufferRef srcBuffer,
+                                     uint32_t srcOffset,
+                                     mtl::BufferRef dstBuffer,
+                                     // Must be multiples of kBufferSettingOffsetAlignment
+                                     uint32_t dstOffset);
 
   private:
     // override mtl::ErrorHandler
@@ -92,13 +102,29 @@ class UtilsMtl : public mtl::Context, angle::NonCopyable
     void setupBlitWithDrawUniformData(mtl::RenderCommandEncoder *cmdEncoder,
                                       const BlitParams &params);
 
-    void setupDrawScreenQuadCommonStates(mtl::RenderCommandEncoder *cmdEncoder);
+    void setupDrawCommonStates(mtl::RenderCommandEncoder *cmdEncoder);
+
+    mtl::AutoObjCPtr<id<MTLComputePipelineState>> getIndexConversionPipeline(
+        ContextMtl *context,
+        gl::DrawElementsType srcType,
+        uint32_t srcOffset);
 
     mtl::AutoObjCPtr<id<MTLLibrary>> mDefaultShaders = nil;
     RenderPipelineCacheMtl mClearRenderPipelineCache;
     RenderPipelineCacheMtl mBlitRenderPipelineCache;
     RenderPipelineCacheMtl mBlitPremultiplyAlphaRenderPipelineCache;
     RenderPipelineCacheMtl mBlitUnmultiplyAlphaRenderPipelineCache;
+
+    struct IndexConvesionPipelineCacheKey
+    {
+        gl::DrawElementsType srcType;
+        bool srcBufferOffsetAligned;
+
+        bool operator==(const IndexConvesionPipelineCacheKey &other) const;
+        bool operator<(const IndexConvesionPipelineCacheKey &other) const;
+    };
+    std::map<IndexConvesionPipelineCacheKey, mtl::AutoObjCPtr<id<MTLComputePipelineState>>>
+        mIndexConversionPipelineCaches;
 };
 
 }  // namespace rx

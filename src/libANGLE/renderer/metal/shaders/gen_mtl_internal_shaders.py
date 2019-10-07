@@ -6,29 +6,28 @@
 
 import os
 import sys
+import json
 from datetime import datetime
 
 
 def main():
     os.chdir(sys.path[0])
+
     print('Compiling macos version of default shaders ...')
     os.system(
-        'xcrun -sdk macosx metal default.metal -mmacosx-version-min=10.13 -c -o compiled/default.air')
+        'xcrun -sdk macosx metal master_source.metal -mmacosx-version-min=10.13 -c -o compiled/default.air')
     os.system(
         'xcrun -sdk macosx metallib compiled/default.air -o compiled/default.metallib')
-    os.system('xcrun -sdk macosx metal default.metal -g -mmacosx-version-min=10.13  -c -o compiled/default.debug.air')
-    os.system(
-        'xcrun -sdk macosx metallib compiled/default.debug.air -o compiled/default.debug.metallib')
 
     print('Compiling ios version of default shaders ...')
     os.system(
-        'xcrun -sdk iphoneos metal default.metal -mios-version-min=8.0 -c -o compiled/default.ios.air')
+        'xcrun -sdk iphoneos metal master_source.metal -mios-version-min=8.0 -c -o compiled/default.ios.air')
     os.system(
         'xcrun -sdk iphoneos metallib compiled/default.ios.air -o compiled/default.ios.metallib')
 
     print('Compiling ios simulator version of default shaders ...')
     os.system(
-        'xcrun -sdk iphonesimulator metal default.metal -c -o compiled/default.ios_sim.air')
+        'xcrun -sdk iphonesimulator metal master_source.metal -c -o compiled/default.ios_sim.air')
     os.system('xcrun -sdk iphonesimulator metallib compiled/default.ios_sim.air -o compiled/default.ios_sim.metallib')
 
     os.system("echo \"// GENERATED FILE on {0} - DO NOT EDIT.\" > compiled/mtl_default_shaders.inc"
@@ -40,20 +39,8 @@ def main():
     # Mac version
     os.system('echo "#if TARGET_OS_OSX\n" >> compiled/mtl_default_shaders.inc')
 
-    # Non-debug version
-    os.system('echo "#  if defined (NDEBUG)\n" >> compiled/mtl_default_shaders.inc')
     os.system('echo "static const " >> compiled/mtl_default_shaders.inc')
     os.system('xxd -i compiled/default.metallib >> compiled/mtl_default_shaders.inc')
-
-    # Debug version
-    os.system('echo "#  else  // NDEBUG\n" >> compiled/mtl_default_shaders.inc')
-    os.system('echo "#define compiled_default_metallib     compiled_default_debug_metallib" >> compiled/mtl_default_shaders.inc')
-    os.system('echo "#define compiled_default_metallib_len compiled_default_debug_metallib_len\n" >> compiled/mtl_default_shaders.inc')
-    os.system('echo "static const " >> compiled/mtl_default_shaders.inc')
-    os.system(
-        'xxd -i compiled/default.debug.metallib >> compiled/mtl_default_shaders.inc')
-
-    os.system('echo "#  endif  // NDEBUG\n" >> compiled/mtl_default_shaders.inc')
 
     # iOS simulator version
     os.system(
@@ -82,7 +69,9 @@ def main():
     os.system("echo \"// GENERATED FILE on {0} - DO NOT EDIT.\" > mtl_default_shaders_src_autogen.inc"
               .format(datetime.now()))
     os.system('echo "\n\nstatic const char default_metallib_src[] = R\\"(" >> mtl_default_shaders_src_autogen.inc')
-    os.system('cat default.metal >> mtl_default_shaders_src_autogen.inc')
+    os.system('echo "#include <metal_stdlib>" >> mtl_default_shaders_src_autogen.inc')
+    os.system('echo "#include <simd/simd.h>" >> mtl_default_shaders_src_autogen.inc')
+    os.system('clang -xc++ -E -DSKIP_STD_HEADERS master_source.metal >> mtl_default_shaders_src_autogen.inc')
     os.system('echo ")\\";" >> mtl_default_shaders_src_autogen.inc')
 
 

@@ -155,6 +155,7 @@ MTLRenderPipelineDescriptor *ToObjC(id<MTLFunction> vertexShader,
 #if ANGLE_MTL_PRIMITIVE_TOPOLOGY_CLASS_AVAILABLE
     ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, inputPrimitiveTopology);
 #endif
+    ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, rasterizationEnabled);
 
     return [objCDesc ANGLE_MTL_AUTORELEASE];
 }

@@ -40,7 +40,34 @@ struct BlitParamsUniform
     float padding2[2];
 };
 
+struct IndexConversionUniform
+{
+    uint32_t srcOffset;
+    uint32_t indexCount;
+    uint32_t padding[2];
+};
+
 }  // namespace
+
+bool UtilsMtl::IndexConvesionPipelineCacheKey::operator==(
+    const IndexConvesionPipelineCacheKey &other) const
+{
+    return srcType == other.srcType &&
+            srcBufferOffsetAligned == other.srcBufferOffsetAligned;
+}
+bool UtilsMtl::IndexConvesionPipelineCacheKey::operator<(
+    const IndexConvesionPipelineCacheKey &other) const
+{
+    if (!srcBufferOffsetAligned && other.srcBufferOffsetAligned)
+    {
+        return true;
+    }
+    if (srcBufferOffsetAligned && !other.srcBufferOffsetAligned)
+    {
+        return false;
+    }
+    return static_cast<int>(srcType) < static_cast<int>(other.srcType);
+}
 
 UtilsMtl::UtilsMtl(RendererMtl *renderer) : mtl::Context(renderer) {}
 
@@ -68,6 +95,8 @@ void UtilsMtl::onDestroy()
     mBlitRenderPipelineCache.clear();
     mBlitPremultiplyAlphaRenderPipelineCache.clear();
     mBlitUnmultiplyAlphaRenderPipelineCache.clear();
+
+    mIndexConversionPipelineCaches.clear();
 }
 
 // override mtl::ErrorHandler
@@ -211,7 +240,7 @@ void UtilsMtl::setupClearWithDraw(const gl::Context *context,
     auto renderPipelineState = getClearRenderPipelineState(context, cmdEncoder, params);
     ASSERT(renderPipelineState);
     // Setup states
-    setupDrawScreenQuadCommonStates(cmdEncoder);
+    setupDrawCommonStates(cmdEncoder);
     cmdEncoder->setRenderPipelineState(renderPipelineState);
 
     id<MTLDepthStencilState> dsState = getClearDepthStencilState(context, params);
@@ -272,7 +301,7 @@ void UtilsMtl::setupBlitWithDraw(const gl::Context *context,
     auto renderPipelineState = getBlitRenderPipelineState(context, cmdEncoder, params);
     ASSERT(renderPipelineState);
     // Setup states
-    setupDrawScreenQuadCommonStates(cmdEncoder);
+    setupDrawCommonStates(cmdEncoder);
     cmdEncoder->setRenderPipelineState(renderPipelineState);
     cmdEncoder->setDepthStencilState(getRenderer()->getStateCache().getNullDepthStencilState(this));
 
@@ -297,7 +326,7 @@ void UtilsMtl::setupBlitWithDraw(const gl::Context *context,
     setupBlitWithDrawUniformData(cmdEncoder, params);
 }
 
-void UtilsMtl::setupDrawScreenQuadCommonStates(mtl::RenderCommandEncoder *cmdEncoder)
+void UtilsMtl::setupDrawCommonStates(mtl::RenderCommandEncoder *cmdEncoder)
 {
     cmdEncoder->setCullMode(MTLCullModeNone);
     cmdEncoder->setTriangleFillMode(MTLTriangleFillModeFill);
@@ -444,6 +473,123 @@ void UtilsMtl::setupBlitWithDrawUniformData(mtl::RenderCommandEncoder *cmdEncode
 
     cmdEncoder->setVertexData(uniformParams, 0);
     cmdEncoder->setFragmentData(uniformParams, 0);
+}
+
+mtl::AutoObjCPtr<id<MTLComputePipelineState>> UtilsMtl::getIndexConversionPipeline(
+    ContextMtl *context,
+    gl::DrawElementsType srcType,
+    uint32_t srcOffset)
+{
+    id<MTLDevice> metalDevice = context->getMetalDevice();
+    size_t elementSize = gl::GetDrawElementsTypeSize(srcType);
+    bool aligned = (srcOffset % elementSize) == 0;
+
+    IndexConvesionPipelineCacheKey key = { srcType, aligned };
+
+    auto &cache = mIndexConversionPipelineCaches[key];
+
+    if (!cache)
+    {
+        ANGLE_MTL_OBJC_SCOPE
+        {
+            auto shaderLib    = mDefaultShaders.get();
+            id<MTLFunction> shader = nil;
+            switch (srcType)
+            {
+                case gl::DrawElementsType::UnsignedByte:
+                    shader = [shaderLib newFunctionWithName:@"convertIndexU8ToU16"];
+                    break;
+                case gl::DrawElementsType::UnsignedShort:
+                    if (aligned)
+                    {
+                        shader = [shaderLib newFunctionWithName:@"convertIndexU16Aligned"];
+                    }
+                    else
+                    {
+                        shader = [shaderLib newFunctionWithName:@"convertIndexU16Unaligned"];
+                    }
+                    break;
+                case gl::DrawElementsType::UnsignedInt:
+                    if (aligned)
+                    {
+                        shader = [shaderLib newFunctionWithName:@"convertIndexU32Aligned"];
+                    }
+                    else
+                    {
+                        shader = [shaderLib newFunctionWithName:@"convertIndexU32Unaligned"];
+                    }
+                    break;
+                default:
+                    UNREACHABLE();
+            }
+
+            ASSERT(shader);
+
+            NSError *err  = nil;
+            cache = [metalDevice newComputePipelineStateWithFunction:shader error: &err];
+
+            if (err && !cache)
+            {
+                ERR() << "Internal error: " << err.localizedDescription.UTF8String << "\n";
+            }
+
+            ASSERT(cache);
+        }
+    }
+
+    return cache;
+}
+
+angle::Result UtilsMtl::convertIndexBuffer(const gl::Context *context,
+                                           gl::DrawElementsType srcType,
+                                           uint32_t indexCount,
+                                           mtl::BufferRef srcBuffer,
+                                           uint32_t srcOffset,
+                                           mtl::BufferRef dstBuffer,
+                                           uint32_t dstOffset)
+{
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+    mtl::ComputeCommandEncoder *cmdEncoder = contextMtl->getComputeCommandEncoder();
+    ASSERT(cmdEncoder);
+
+    mtl::AutoObjCPtr<id<MTLComputePipelineState>> pipelineState =
+        getIndexConversionPipeline(contextMtl, srcType, srcOffset);
+
+    ASSERT(pipelineState);
+
+    cmdEncoder->setComputePipelineState(pipelineState);
+
+    ASSERT((dstOffset % kBufferSettingOffsetAlignment) == 0);
+
+    IndexConversionUniform uniform;
+    uniform.srcOffset = srcOffset;
+    uniform.indexCount = indexCount;
+
+    cmdEncoder->setData(uniform, 0);
+    cmdEncoder->setBuffer(srcBuffer, 0, 1);
+    cmdEncoder->setBuffer(dstBuffer, dstOffset, 2);
+
+    NSUInteger w = pipelineState.get().threadExecutionWidth;
+    MTLSize threadsPerThreadgroup = MTLSizeMake(w, 1, 1);
+
+#if TARGET_OS_OSX
+    if ([getMetalDevice() supportsFeatureSet:MTLFeatureSet_macOS_GPUFamily1_v1])
+#else
+    if ([getMetalDevice() supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily4_v1])
+#endif
+    {
+        MTLSize threads = MTLSizeMake(indexCount, 1, 1);
+        cmdEncoder->dispatchNonUniform(threads, threadsPerThreadgroup);
+    }
+    else
+    {
+        MTLSize groups = MTLSizeMake((indexCount + w - 1) / w, 1, 1);
+        cmdEncoder->dispatch(groups, threadsPerThreadgroup);
+    }
+
+    contextMtl->invalidateState(context);
+
+    return angle::Result::Continue;
 }
 
 }  // namespace rx

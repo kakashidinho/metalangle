@@ -188,16 +188,22 @@ struct RenderPipelineOutputDesc
 #    define ANGLE_MTL_PRIMITIVE_TOPOLOGY_CLASS_AVAILABLE 0
 typedef uint32_t PrimitiveTopologyClass;
 constexpr PrimitiveTopologyClass kPrimitiveTopologyClassTriangle = 0;
+constexpr PrimitiveTopologyClass kPrimitiveTopologyClassPoint = 0;
 #else
 #    define ANGLE_MTL_PRIMITIVE_TOPOLOGY_CLASS_AVAILABLE 1
 typedef MTLPrimitiveTopologyClass PrimitiveTopologyClass;
 constexpr PrimitiveTopologyClass kPrimitiveTopologyClassTriangle =
     MTLPrimitiveTopologyClassTriangle;
+constexpr PrimitiveTopologyClass kPrimitiveTopologyClassPoint = MTLPrimitiveTopologyClassPoint;
 #endif
 
 struct RenderPipelineDesc
 {
-    RenderPipelineDesc() { memset(this, 0, sizeof(*this)); }
+    RenderPipelineDesc()
+    {
+        memset(this, 0, sizeof(*this));
+        rasterizationEnabled = true;
+    }
 
     bool operator==(const RenderPipelineDesc &rhs) const;
 
@@ -208,6 +214,8 @@ struct RenderPipelineDesc
     RenderPipelineOutputDesc outputDescriptor;
 
     PrimitiveTopologyClass inputPrimitiveTopology;
+
+    bool rasterizationEnabled;
 };
 
 struct RenderPassAttachmentDesc
@@ -333,6 +341,9 @@ class RenderPipelineCacheMtl final : angle::NonCopyable
 
     void setVertexShader(mtl::Context *context, id<MTLFunction> shader);
     void setFragmentShader(mtl::Context *context, id<MTLFunction> shader);
+
+    id<MTLFunction> getVertexShader() { return mVertexShader.get(); }
+    id<MTLFunction> getFragmentShader() { return mFragmentShader.get(); }
 
     mtl::AutoObjCPtr<id<MTLRenderPipelineState>> getRenderPipelineState(
         ContextMtl *context,

@@ -46,10 +46,10 @@ class BufferPool
     // a memory pointer is given, the buffer will be automatically map()ed.
     angle::Result allocate(ContextMtl *contextMtl,
                            size_t sizeInBytes,
-                           uint8_t **ptrOut,
-                           BufferRef *bufferOut,
-                           size_t *offsetOut,
-                           bool *newBufferAllocatedOut);
+                           uint8_t **ptrOut = nullptr,
+                           BufferRef *bufferOut = nullptr,
+                           size_t *offsetOut = nullptr,
+                           bool *newBufferAllocatedOut = nullptr);
 
     // After a sequence of writes, call commit to ensure the data is visible to the device.
     angle::Result commit(ContextMtl *contextMtl);

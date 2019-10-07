@@ -128,6 +128,7 @@ class CommandEncoder : public WrappedObject<id<MTLCommandEncoder>>, angle::NonCo
     {
         RENDER,
         BLIT,
+        COMPUTE,
     };
 
     virtual ~CommandEncoder();
@@ -136,6 +137,9 @@ class CommandEncoder : public WrappedObject<id<MTLCommandEncoder>>, angle::NonCo
 
     void reset();
     Type getType() const { return mType; }
+
+    CommandEncoder &markResourceBeingWrittenByGPU(BufferRef buffer);
+    CommandEncoder &markResourceBeingWrittenByGPU(TextureRef texture);
 
   protected:
     typedef WrappedObject<id<MTLCommandEncoder>> ParentClass;
@@ -265,7 +269,6 @@ class RenderCommandEncoder final : public CommandEncoder
 
     const RenderPassDesc &renderPassDesc() const { return mRenderPassDesc; }
     const StateCache &getStateCache() const { return mStateCache; }
-
   private:
     id<MTLRenderCommandEncoder> get()
     {
@@ -304,6 +307,39 @@ class BlitCommandEncoder final : public CommandEncoder
     id<MTLBlitCommandEncoder> get()
     {
         return static_cast<id<MTLBlitCommandEncoder>>(CommandEncoder::get());
+    }
+};
+
+class ComputeCommandEncoder final : public CommandEncoder
+{
+  public:
+    ComputeCommandEncoder(CommandBuffer *cmdBuffer);
+    ~ComputeCommandEncoder();
+
+    ComputeCommandEncoder &restart();
+
+    ComputeCommandEncoder &setComputePipelineState(id<MTLComputePipelineState> state);
+
+    ComputeCommandEncoder &setBuffer(BufferRef buffer, uint32_t offset, uint32_t index);
+    ComputeCommandEncoder &setBytes(const uint8_t *bytes, size_t size, uint32_t index);
+    template <typename T>
+    ComputeCommandEncoder &setData(const T &data, uint32_t index)
+    {
+        return setBytes(reinterpret_cast<const uint8_t *>(&data), sizeof(T), index);
+    }
+    ComputeCommandEncoder &setSamplerState(id<MTLSamplerState> state,
+                                           float lodMinClamp,
+                                           float lodMaxClamp,
+                                           uint32_t index);
+    ComputeCommandEncoder &setTexture(TextureRef texture, uint32_t index);
+
+    ComputeCommandEncoder &dispatch(MTLSize threadGroupsPerGrid, MTLSize threadsPerGroup);
+
+    ComputeCommandEncoder &dispatchNonUniform(MTLSize threadsPerGrid, MTLSize threadsPerGroup);
+  private:
+    id<MTLComputeCommandEncoder> get()
+    {
+        return static_cast<id<MTLComputeCommandEncoder>>(CommandEncoder::get());
     }
 };
 
