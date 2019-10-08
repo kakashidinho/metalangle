@@ -8,7 +8,7 @@
 //   The shaders are then fed into glslang to spit out SPIR-V (libANGLE-side).
 //   See: https://www.khronos.org/registry/vulkan/specs/misc/GL_KHR_vulkan_glsl.txt
 //
-// This file is basically a copy of TranslatorMetal.cpp with some major differences:
+// This file is basically a copy of TranslatorVulkan.cpp with some major differences:
 // - The negViewportYScale will be used to scale the gl_Position.y
 //
 // In future, we should move common code between the two to a separate files.
