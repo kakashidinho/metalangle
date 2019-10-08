@@ -1059,7 +1059,7 @@ static UnsizedFormatSet BuildAllUnsizedInternalFormatSet()
             {
                 UnsizedFormatInfo format;
                 format.internalFormat = type.second.internalFormat;
-                format.type = type.second.type;
+                format.type           = type.second.type;
                 result.insert(format);
             }
         }
@@ -1329,8 +1329,6 @@ GLenum GetUnsizedFormat(GLenum internalFormat)
 
     return internalFormat;
 }
-
-
 
 bool CompressedFormatRequiresWholeImage(GLenum internalFormat)
 {

@@ -522,7 +522,7 @@ angle::Result VertexArrayMtl::convertIndexBufferGPU(const gl::Context *glContext
 
     mCurrentElementArrayBuffer = &mDynamicElementArrayBufferHolder;
     ASSERT(conversion->dirty);
-    conversion->dirty          = false;
+    conversion->dirty = false;
 
     return angle::Result::Continue;
 }
@@ -543,7 +543,7 @@ angle::Result VertexArrayMtl::convertIndexBufferCPU(const gl::Context *glContext
 
     mCurrentElementArrayBuffer = &mDynamicElementArrayBufferHolder;
     ASSERT(conversion->dirty);
-    conversion->dirty          = false;
+    conversion->dirty = false;
 
     return angle::Result::Continue;
 }

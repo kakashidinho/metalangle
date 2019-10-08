@@ -69,7 +69,7 @@ TCompiler *ConstructCompiler(sh::GLenum type, ShShaderSpec spec, ShShaderOutput 
     {
         return new TranslatorMetal(type, spec);
     }
-#endif // ANGLE_ENABLE_METAL
+#endif  // ANGLE_ENABLE_METAL
 
     // Unsupported compiler or unknown format. Return nullptr per the sh::ConstructCompiler API.
     return nullptr;

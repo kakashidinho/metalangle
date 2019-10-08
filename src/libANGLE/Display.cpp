@@ -199,11 +199,11 @@ rx::DisplayImpl *CreateDisplayFromAttribs(const AttributeMap &attribMap, const D
 #elif defined(ANGLE_USE_X11)
             impl = new rx::DisplayGLX(state);
 #elif defined(ANGLE_PLATFORM_APPLE)
-#   if defined(ANGLE_ENABLE_METAL)
+#    if defined(ANGLE_ENABLE_METAL)
             impl = new rx::DisplayMtl(state);
-#   else
+#    else
             impl = new rx::DisplayCGL(state);
-#   endif
+#    endif
 #elif defined(ANGLE_PLATFORM_FUCHSIA)
             impl = new rx::DisplayVkFuchsia(state);
 #elif defined(ANGLE_USE_OZONE)

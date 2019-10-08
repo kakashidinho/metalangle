@@ -124,19 +124,19 @@ def gen_image_override_switch_string(angle_override, mac_override, non_mac_overr
     switch_data = ''
     for angle_format in sorted(angle_override.keys()):
         override_format = angle_override[angle_format]
-        switch_data += case_image_format_override_template.format(angle_format=angle_format,
-                                                                  override_format=override_format)
+        switch_data += case_image_format_override_template.format(
+            angle_format=angle_format, override_format=override_format)
     switch_data += "#if TARGET_OS_OSX\n"
     for angle_format in sorted(mac_override.keys()):
         override_format = mac_override[angle_format]
-        switch_data += case_image_format_override_template.format(angle_format=angle_format,
-                                                                  override_format=override_format)
+        switch_data += case_image_format_override_template.format(
+            angle_format=angle_format, override_format=override_format)
 
     switch_data += "#else  // TARGET_OS_OSX\n"
     for angle_format in sorted(non_mac_override.keys()):
         override_format = non_mac_override[angle_format]
-        switch_data += case_image_format_override_template.format(angle_format=angle_format,
-                                                                  override_format=override_format)
+        switch_data += case_image_format_override_template.format(
+            angle_format=angle_format, override_format=override_format)
     switch_data += "#endif\n"
     switch_data += "        default:\n"
     switch_data += "            this->actualFormatId = this->intendedFormatId;\n"
@@ -147,18 +147,18 @@ def gen_image_map_switch_string(angle_to_mtl, mac_specific_formats, ios_specific
     switch_data = ''
     for angle_format in sorted(angle_to_mtl.keys()):
         mtl_format = angle_to_mtl[angle_format]
-        switch_data += case_image_format_template.format(angle_format=angle_format,
-                                                         mtl_format=mtl_format)
+        switch_data += case_image_format_template.format(
+            angle_format=angle_format, mtl_format=mtl_format)
     switch_data += "#if TARGET_OS_OSX\n"
     for angle_format in sorted(mac_specific_formats.keys()):
         mtl_format = mac_specific_formats[angle_format]
-        switch_data += case_image_format_template.format(angle_format=angle_format,
-                                                         mtl_format=mtl_format)
+        switch_data += case_image_format_template.format(
+            angle_format=angle_format, mtl_format=mtl_format)
     switch_data += "#else  // TARGET_OS_OSX\n"
     for angle_format in sorted(ios_specific_formats.keys()):
         mtl_format = ios_specific_formats[angle_format]
-        switch_data += case_image_format_template.format(angle_format=angle_format,
-                                                         mtl_format=mtl_format)
+        switch_data += case_image_format_template.format(
+            angle_format=angle_format, mtl_format=mtl_format)
     switch_data += "#endif  // TARGET_OS_OSX\n"
     switch_data += "        default:\n"
     switch_data += "            this->metalFormat = MTLPixelFormatInvalid;\n"
@@ -170,8 +170,7 @@ def gen_vertex_override_switch_string(angle_override):
     switch_data = ''
     for angle_fmt in sorted(angle_override.keys()):
         override_format = angle_override[angle_fmt]
-        copy_function = angle_format.get_vertex_copy_function(
-            angle_fmt, override_format)
+        copy_function = angle_format.get_vertex_copy_function(angle_fmt, override_format)
         switch_data += case_vertex_format_override_template.format(
             angle_format=angle_fmt,
             override_format=override_format,
@@ -186,12 +185,9 @@ def gen_vertex_map_switch_string(angle_to_mtl):
     switch_data = ''
     for angle_fmt in sorted(angle_to_mtl.keys()):
         mtl_format = angle_to_mtl[angle_fmt]
-        copy_function = angle_format.get_vertex_copy_function(
-            angle_fmt, angle_fmt)
+        copy_function = angle_format.get_vertex_copy_function(angle_fmt, angle_fmt)
         switch_data += case_vertex_format_template.format(
-            angle_format=angle_fmt,
-            mtl_format=mtl_format,
-            vertex_copy_function=copy_function)
+            angle_format=angle_fmt, mtl_format=mtl_format, vertex_copy_function=copy_function)
     switch_data += "        default:\n"
     switch_data += "            this->metalFormat = MTLVertexFormatInvalid;\n"
     switch_data += "            this->actualFormatId = angle::FormatID::NONE;\n"
@@ -200,7 +196,7 @@ def gen_vertex_map_switch_string(angle_to_mtl):
 
 
 def main():
-     # auto_script parameters.
+    # auto_script parameters.
     if len(sys.argv) > 1:
         inputs = ['mtl_format_map.json']
         outputs = ['mtl_format_table_autogen.mm']
@@ -230,15 +226,12 @@ def main():
     vertex_angle_streaming_override = map_vertex["streaming_override"]
     vertex_angle_to_mtl = map_vertex["map"]
 
-    image_override_data = gen_image_override_switch_string(image_angle_override,
-                                                           image_mac_override,
-                                                           image_non_mac_override)
-    image_switch_data = gen_image_map_switch_string(image_angle_to_mtl,
-                                                    image_mac_specific_formats,
+    image_override_data = gen_image_override_switch_string(
+        image_angle_override, image_mac_override, image_non_mac_override)
+    image_switch_data = gen_image_map_switch_string(image_angle_to_mtl, image_mac_specific_formats,
                                                     image_ios_specific_formats)
 
-    vertex_override_data = gen_vertex_override_switch_string(
-        vertex_angle_override)
+    vertex_override_data = gen_vertex_override_switch_string(vertex_angle_override)
     vertex_streaming_override_switch = gen_vertex_override_switch_string(
         vertex_angle_streaming_override)
     vertex_switch_data = gen_vertex_map_switch_string(vertex_angle_to_mtl)

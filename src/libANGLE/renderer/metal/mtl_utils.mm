@@ -149,14 +149,12 @@ AutoObjCPtr<id<MTLLibrary>> CreateShaderLibrary(id<MTLDevice> metalDevice,
     ANGLE_MTL_OBJC_SCOPE
     {
         NSError *nsError = nil;
-        auto nsSource = [[NSString alloc] initWithBytesNoCopy:const_cast<char *>(source)
+        auto nsSource    = [[NSString alloc] initWithBytesNoCopy:const_cast<char *>(source)
                                                        length:sourceLen
                                                      encoding:NSUTF8StringEncoding
                                                  freeWhenDone:NO];
-        auto options = [[[MTLCompileOptions alloc] init] ANGLE_MTL_AUTORELEASE];
-        auto library = [metalDevice newLibraryWithSource:nsSource
-                                                 options:options
-                                                   error:&nsError];
+        auto options     = [[[MTLCompileOptions alloc] init] ANGLE_MTL_AUTORELEASE];
+        auto library = [metalDevice newLibraryWithSource:nsSource options:options error:&nsError];
 
         [nsSource ANGLE_MTL_AUTORELEASE];
 
@@ -498,6 +496,31 @@ MTLClearColor EmulatedAlphaClearColor(MTLClearColor color, MTLColorWriteMask col
 
     return re;
 }
+
+#if !__has_feature(objc_arc)
+AutoReleasePoolRef InitAutoreleasePool(AutoReleasePoolRef *poolInOut)
+{
+    if (*poolInOut)
+    {
+        return *poolInOut;
+    }
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+
+    return *poolInOut = (__bridge void *)pool;
+}
+void ReleaseAutoreleasePool(AutoReleasePoolRef *poolInOut)
+{
+    auto &pool = *poolInOut;
+    if (!pool)
+    {
+        return;
+    }
+    NSAutoreleasePool *arpool = (__bridge NSAutoreleasePool *)pool;
+
+    [arpool release];
+    pool = nullptr;
+}
+#endif  // #if !__has_feature(objc_arc)
 
 }  // namespace mtl
 }  // namespace rx

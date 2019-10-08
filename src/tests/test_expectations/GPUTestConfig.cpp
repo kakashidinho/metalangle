@@ -546,7 +546,7 @@ GPUTestConfig::GPUTestConfig()
     mConditions[kConditionGLDesktop] = true;
     mConditions[kConditionGLES]      = true;
     mConditions[kConditionVulkan]    = true;
-    mConditions[kConditionMetal]    = true;
+    mConditions[kConditionMetal]     = true;
 
     mConditions[kConditionNexus5X]          = IsNexus5X();
     mConditions[kConditionPixel2]           = IsPixel2();

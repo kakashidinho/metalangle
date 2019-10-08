@@ -17,7 +17,7 @@
 
 // Use environment variable if this variable is not compile time defined.
 #if !defined(ANGLE_EGL_LIBRARY_NAME)
-#   define ANGLE_EGL_LIBRARY_NAME angle::GetEnvironmentVar("ANGLE_EGL_LIBRARY_NAME").c_str()
+#    define ANGLE_EGL_LIBRARY_NAME angle::GetEnvironmentVar("ANGLE_EGL_LIBRARY_NAME").c_str()
 #endif
 
 namespace
@@ -61,7 +61,7 @@ SampleApplication::SampleApplication(std::string name,
       mEGLWindow(nullptr),
       mOSWindow(nullptr)
 {
-    mPlatformParams.renderer     = EGL_PLATFORM_ANGLE_TYPE_DEFAULT_ANGLE;
+    mPlatformParams.renderer = EGL_PLATFORM_ANGLE_TYPE_DEFAULT_ANGLE;
 
     if (argc > 1 && strncmp(argv[1], kUseAngleArg, strlen(kUseAngleArg)) == 0)
     {
@@ -208,13 +208,8 @@ int SampleApplication::run()
     {
         // The Window platform has its own message loop, so let it run its own
         // using our delegates.
-        result = mOSWindow->runOwnLoop([this]
-        {
-            return prepareToRun();
-        }, [this]
-        {
-            return runIteration();
-        });
+        result = mOSWindow->runOwnLoop([this] { return prepareToRun(); },
+                                       [this] { return runIteration(); });
     }
     else
     {

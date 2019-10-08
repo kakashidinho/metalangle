@@ -417,21 +417,21 @@ RenderCommandEncoder &RenderCommandEncoder::restart(const RenderPassDesc &desc)
     ANGLE_MTL_OBJC_SCOPE
     {
 
-#define ANGLE_MTL_SET_DEP_AND_STORE_ACTION(TEXTURE_EXPR, STOREACTION)            \
-        do                                                                       \
-        {                                                                        \
-            auto TEXTURE = TEXTURE_EXPR;                                         \
-            if (TEXTURE)                                                         \
-            {                                                                    \
-                cmdBuffer().setWriteDependency(TEXTURE);                         \
-                /* Set store action to unknown so that we can change it later */ \
-                STOREACTION = MTLStoreActionUnknown;                             \
-            }                                                                    \
-            else                                                                 \
-            {                                                                    \
-                STOREACTION = MTLStoreActionDontCare;                            \
-            }                                                                    \
-        } while (0);
+#define ANGLE_MTL_SET_DEP_AND_STORE_ACTION(TEXTURE_EXPR, STOREACTION)        \
+    do                                                                       \
+    {                                                                        \
+        auto TEXTURE = TEXTURE_EXPR;                                         \
+        if (TEXTURE)                                                         \
+        {                                                                    \
+            cmdBuffer().setWriteDependency(TEXTURE);                         \
+            /* Set store action to unknown so that we can change it later */ \
+            STOREACTION = MTLStoreActionUnknown;                             \
+        }                                                                    \
+        else                                                                 \
+        {                                                                    \
+            STOREACTION = MTLStoreActionDontCare;                            \
+        }                                                                    \
+    } while (0);
 
         // mask writing dependency
         for (uint32_t i = 0; i < mRenderPassDesc.numColorAttachments; ++i)
@@ -645,7 +645,7 @@ RenderCommandEncoder &RenderCommandEncoder::setVertexBuffer(BufferRef buffer,
 
     cmdBuffer().setReadDependency(buffer);
 
-    [get() setVertexBuffer:(buffer ? buffer->get() : nil)offset:offset atIndex:index];
+    [get() setVertexBuffer:(buffer ? buffer->get() : nil) offset:offset atIndex:index];
 
     mStateCache.vertexBuffers[index].offset = offset;
     mStateCache.vertexBuffers[index].buffer = buffer;
@@ -699,7 +699,7 @@ RenderCommandEncoder &RenderCommandEncoder::setVertexTexture(TextureRef texture,
     }
 
     cmdBuffer().setReadDependency(texture);
-    [get() setVertexTexture:(texture ? texture->get() : nil)atIndex:index];
+    [get() setVertexTexture:(texture ? texture->get() : nil) atIndex:index];
 
     mStateCache.vertexTextures[index] = texture;
 
@@ -717,7 +717,7 @@ RenderCommandEncoder &RenderCommandEncoder::setFragmentBuffer(BufferRef buffer,
 
     cmdBuffer().setReadDependency(buffer);
 
-    [get() setFragmentBuffer:(buffer ? buffer->get() : nil)offset:offset atIndex:index];
+    [get() setFragmentBuffer:(buffer ? buffer->get() : nil) offset:offset atIndex:index];
 
     mStateCache.fragmentBuffers[index].offset = offset;
     mStateCache.fragmentBuffers[index].buffer = buffer;
@@ -771,7 +771,7 @@ RenderCommandEncoder &RenderCommandEncoder::setFragmentTexture(TextureRef textur
     }
 
     cmdBuffer().setReadDependency(texture);
-    [get() setFragmentTexture:(texture ? texture->get() : nil)atIndex:index];
+    [get() setFragmentTexture:(texture ? texture->get() : nil) atIndex:index];
 
     mStateCache.fragmentTextures[index] = texture;
 
@@ -933,8 +933,7 @@ BlitCommandEncoder &BlitCommandEncoder::synchronizeResource(TextureRef texture)
 ComputeCommandEncoder::ComputeCommandEncoder(CommandBuffer *cmdBuffer)
     : CommandEncoder(cmdBuffer, COMPUTE)
 {}
-ComputeCommandEncoder::~ComputeCommandEncoder()
-{}
+ComputeCommandEncoder::~ComputeCommandEncoder() {}
 
 ComputeCommandEncoder &ComputeCommandEncoder::restart()
 {
@@ -982,7 +981,7 @@ ComputeCommandEncoder &ComputeCommandEncoder::setBuffer(BufferRef buffer,
     cmdBuffer().setReadDependency(buffer);
     cmdBuffer().setWriteDependency(buffer);
 
-    [get() setBuffer:(buffer ? buffer->get() : nil)offset:offset atIndex:index];
+    [get() setBuffer:(buffer ? buffer->get() : nil) offset:offset atIndex:index];
 
     return *this;
 }
@@ -1025,7 +1024,7 @@ ComputeCommandEncoder &ComputeCommandEncoder::setTexture(TextureRef texture, uin
     // TODO(hqle): Assume compute shader both reads and writes to this texture for now.
     cmdBuffer().setReadDependency(texture);
     cmdBuffer().setWriteDependency(texture);
-    [get() setTexture:(texture ? texture->get() : nil)atIndex:index];
+    [get() setTexture:(texture ? texture->get() : nil) atIndex:index];
 
     return *this;
 }

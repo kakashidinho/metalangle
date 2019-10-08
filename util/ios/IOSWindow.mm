@@ -6,13 +6,13 @@
 
 #include "util/ios/IOSWindow.h"
 
+#import <QuartzCore/CALayer.h>
 #import <UIKit/UIApplication.h>
-#import <UIKit/UIWindow.h>
+#import <UIKit/UIColor.h>
 #import <UIKit/UIScreen.h>
 #import <UIKit/UIView.h>
-#import <UIKit/UIColor.h>
 #import <UIKit/UIViewController.h>
-#import <QuartzCore/CALayer.h>
+#import <UIKit/UIWindow.h>
 
 #include <set>
 
@@ -23,36 +23,33 @@ static IOSWindow *gMainIOSWindow;
 #pragma region AppDelegate
 
 // AppDelegate implementation.
-@interface AppDelegate : UIResponder<UIApplicationDelegate>
+@interface AppDelegate : UIResponder <UIApplicationDelegate>
 
 @end
 
 @implementation AppDelegate
 
-- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
+- (BOOL)application:(UIApplication *)application
+    didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
-	[[UIApplication sharedApplication] setStatusBarHidden:YES];  // hide status bar
-	
-	// Listen to orientation change.
-	[[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
-	
+    [[UIApplication sharedApplication] setStatusBarHidden:YES];  // hide status bar
+
+    // Listen to orientation change.
+    [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
+
     if (gMainIOSWindow)
     {
         gMainIOSWindow->appDidFinishLaunching();
     }
-	
-	return YES;
+
+    return YES;
 }
 
 - (void)applicationWillResignActive:(UIApplication *)application
-{
-	
-}
+{}
 
 - (void)applicationDidBecomeActive:(UIApplication *)application
-{
-	
-}
+{}
 
 - (void)applicationWillTerminate:(UIApplication *)application
 {
@@ -60,8 +57,8 @@ static IOSWindow *gMainIOSWindow;
     {
         gMainIOSWindow->appWillTerminate();
     }
-	
-	[[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
+
+    [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
 }
 
 - (void)applicationDidEnterBackground:(UIApplication *)application
@@ -81,23 +78,24 @@ static IOSWindow *gMainIOSWindow;
 // IOSWindowViewController implementation
 @interface IOSWindowViewController : UIViewController
 
-- (void) loopIteration;
+- (void)loopIteration;
 
 @end
 
 @implementation IOSWindowViewController
 
-- (BOOL) shouldAutorotate
+- (BOOL)shouldAutorotate
 {
     return YES;
 }
 
-- (UIInterfaceOrientation) preferredInterfaceOrientationForPresentation
+- (UIInterfaceOrientation)preferredInterfaceOrientationForPresentation
 {
     return UIInterfaceOrientationLandscapeRight;
 }
 
--(NSUInteger) supportedInterfaceOrientations{
+- (NSUInteger)supportedInterfaceOrientations
+{
     return UIInterfaceOrientationMaskLandscapeRight;
 }
 
@@ -109,7 +107,7 @@ static IOSWindow *gMainIOSWindow;
     }
 }
 
-- (void) viewDidAppear:(BOOL)animated
+- (void)viewDidAppear:(BOOL)animated
 {
     if (gMainIOSWindow)
     {
@@ -117,7 +115,7 @@ static IOSWindow *gMainIOSWindow;
     }
 }
 
-- (void) viewDidLayoutSubviews
+- (void)viewDidLayoutSubviews
 {
     if (gMainIOSWindow)
     {
@@ -125,7 +123,7 @@ static IOSWindow *gMainIOSWindow;
     }
 }
 
-- (void) loopIteration
+- (void)loopIteration
 {
     if (gMainIOSWindow)
     {
@@ -146,11 +144,11 @@ static IOSWindow *gMainIOSWindow;
 
 - (id)initWithFrame:(CGRect)frameRect
 {
-	if ((self = [super initWithFrame:frameRect]) != nil) 
-	{
-		self.multipleTouchEnabled = YES;
-	}
-	return self;
+    if ((self = [super initWithFrame:frameRect]) != nil)
+    {
+        self.multipleTouchEnabled = YES;
+    }
+    return self;
 }
 
 - (BOOL)canBecomeFirstResponder
@@ -178,13 +176,14 @@ struct IOSWindow::Impl
         displayLink = nil;
     }
 
-    UIWindow *window = nil;
-    IOSWindowView *view = nil;
+    UIWindow *window                        = nil;
+    IOSWindowView *view                     = nil;
     IOSWindowViewController *viewController = nil;
-    CADisplayLink *displayLink = nil;
+    CADisplayLink *displayLink              = nil;
 };
 
-namespace{
+namespace
+{
 
 std::vector<IOSWindow::Delegate> &GetRegisteredAppStartHandlers()
 {
@@ -193,9 +192,7 @@ std::vector<IOSWindow::Delegate> &GetRegisteredAppStartHandlers()
 }
 }
 
-IOSWindow::IOSWindow()
-    : mImpl(new Impl()), mRunning(false), mLoopInitializedDelegate(nullptr)
-{}
+IOSWindow::IOSWindow() : mImpl(new Impl()), mRunning(false), mLoopInitializedDelegate(nullptr) {}
 
 IOSWindow::~IOSWindow()
 {
@@ -216,7 +213,7 @@ void IOSWindow::destroy()
     mRunning = false;
 
     mLoopInitializedDelegate = nullptr;
-    mLoopIterationDelegate = nullptr;
+    mLoopIterationDelegate   = nullptr;
 
     ASSERT(this == gMainIOSWindow);
     gMainIOSWindow = nullptr;
@@ -274,7 +271,6 @@ void IOSWindow::signalTestEvent()
     // TODO(hqle)
 }
 
-
 void IOSWindow::appDidFinishLaunching()
 {
     NSLog(@"IOSWindow::appDidFinishLaunching()");
@@ -330,23 +326,20 @@ void IOSWindow::viewDidLayoutSubviews()
     }
 
     // Start rendering loop
-    mImpl->displayLink = [CADisplayLink displayLinkWithTarget: mImpl->viewController
-                                                     selector: @selector(loopIteration)];
+    mImpl->displayLink = [CADisplayLink displayLinkWithTarget:mImpl->viewController
+                                                     selector:@selector(loopIteration)];
     mImpl->displayLink.preferredFramesPerSecond = 60;
-    [mImpl->displayLink addToRunLoop: [NSRunLoop mainRunLoop] forMode: NSDefaultRunLoopMode];
+    [mImpl->displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSDefaultRunLoopMode];
 }
 
-void IOSWindow::viewDidAppear()
-{}
+void IOSWindow::viewDidAppear() {}
 
 void IOSWindow::appWillTerminate()
 {
     stopRunning();
 }
 
-void IOSWindow::deviceOrientationDidChange()
-{
-}
+void IOSWindow::deviceOrientationDidChange() {}
 
 void IOSWindow::stopRunning()
 {
@@ -356,7 +349,7 @@ void IOSWindow::stopRunning()
     event.Type = Event::EVENT_CLOSED;
     pushEvent(event);
 
-    [mImpl->displayLink removeFromRunLoop: [NSRunLoop mainRunLoop] forMode: NSDefaultRunLoopMode];
+    [mImpl->displayLink removeFromRunLoop:[NSRunLoop mainRunLoop] forMode:NSDefaultRunLoopMode];
 }
 
 void IOSWindow::loopIteration()
@@ -372,7 +365,7 @@ void IOSWindow::loopIteration()
             return;
         }
 
-        mWidth = mImpl->view.layer.frame.size.width * mImpl->view.layer.contentsScale;
+        mWidth  = mImpl->view.layer.frame.size.width * mImpl->view.layer.contentsScale;
         mHeight = mImpl->view.layer.frame.size.height * mImpl->view.layer.contentsScale;
 
         if (mLoopIterationDelegate)
@@ -396,11 +389,12 @@ int IOSWindow::runOwnLoop(LoopStartDelegate initDelegate, LoopDelegate loopDeleg
     mRunning = true;
 
     mLoopInitializedDelegate = initDelegate;
-    mLoopIterationDelegate = loopDelegate;
+    mLoopIterationDelegate   = loopDelegate;
 
-    char* argv[1] = {nullptr};
+    char *argv[1] = {nullptr};
 
-    @autoreleasepool {
+    @autoreleasepool
+    {
         return UIApplicationMain(0, argv, nil, NSStringFromClass(AppDelegate.class));
     }
 }

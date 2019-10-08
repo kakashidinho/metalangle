@@ -112,7 +112,7 @@ class CommandBuffer final : public WrappedObject<id<MTLCommandBuffer>>, angle::N
 
     CommandQueue &mCmdQueue;
 
-    std::atomic<CommandEncoder *> mActiveCommandEncoder {nullptr};
+    std::atomic<CommandEncoder *> mActiveCommandEncoder{nullptr};
 
     uint64_t mQueueSerial = 0;
 
@@ -269,6 +269,7 @@ class RenderCommandEncoder final : public CommandEncoder
 
     const RenderPassDesc &renderPassDesc() const { return mRenderPassDesc; }
     const StateCache &getStateCache() const { return mStateCache; }
+
   private:
     id<MTLRenderCommandEncoder> get()
     {
@@ -303,6 +304,7 @@ class BlitCommandEncoder final : public CommandEncoder
 
     BlitCommandEncoder &generateMipmapsForTexture(TextureRef texture);
     BlitCommandEncoder &synchronizeResource(TextureRef texture);
+
   private:
     id<MTLBlitCommandEncoder> get()
     {
@@ -336,6 +338,7 @@ class ComputeCommandEncoder final : public CommandEncoder
     ComputeCommandEncoder &dispatch(MTLSize threadGroupsPerGrid, MTLSize threadsPerGroup);
 
     ComputeCommandEncoder &dispatchNonUniform(MTLSize threadsPerGrid, MTLSize threadsPerGroup);
+
   private:
     id<MTLComputeCommandEncoder> get()
     {

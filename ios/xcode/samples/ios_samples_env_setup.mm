@@ -6,24 +6,21 @@
 
 #import <Foundation/Foundation.h>
 
-#include "util/system_utils.h"
 #include "util/ios/IOSWindow.h"
+#include "util/system_utils.h"
 
 namespace
 {
 
-__attribute__((constructor))
-void SetEGLLibName()
+__attribute__((constructor)) void SetEGLLibName()
 {
     @autoreleasepool
     {
-        NSString *pathMetalANGLEv13 =
-            [[NSBundle mainBundle].privateFrameworksPath
-                stringByAppendingPathComponent: @"MetalANGLE_ios_13.0.framework/MetalANGLE_ios_13.0"];
-        NSString *pathMetalANGLE =
-            [[NSBundle mainBundle].privateFrameworksPath
-                stringByAppendingPathComponent: @"MetalANGLE.framework/MetalANGLE"];
-        
+        NSString *pathMetalANGLEv13 = [[NSBundle mainBundle].privateFrameworksPath
+            stringByAppendingPathComponent:@"MetalANGLE_ios_13.0.framework/MetalANGLE_ios_13.0"];
+        NSString *pathMetalANGLE    = [[NSBundle mainBundle].privateFrameworksPath
+            stringByAppendingPathComponent:@"MetalANGLE.framework/MetalANGLE"];
+
         if ([[NSFileManager defaultManager] fileExistsAtPath:pathMetalANGLEv13])
         {
             angle::SetEnvironmentVar("ANGLE_EGL_LIBRARY_NAME", "MetalANGLE_ios_13");

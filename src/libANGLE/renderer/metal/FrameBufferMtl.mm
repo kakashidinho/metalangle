@@ -540,8 +540,8 @@ angle::Result FramebufferMtl::clearWithDraw(const gl::Context *context,
                                             gl::DrawBufferMask clearColorBuffers,
                                             const UtilsMtl::ClearParams &clearOpts)
 {
-    ContextMtl *contextMtl     = mtl::GetImpl(context);
-    RendererMtl *renderer      = contextMtl->getRenderer();
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+    RendererMtl *renderer  = contextMtl->getRenderer();
     mtl::RenderPassDesc rpDesc;
     ANGLE_TRY(prepareRenderPass(context, mState.getEnabledDrawBuffers(), &rpDesc));
 
@@ -713,7 +713,7 @@ angle::Result FramebufferMtl::readPixelsImpl(const gl::Context *context,
     MTLRegion mtlSrcRowRegion = MTLRegionMake2D(area.x, area.y, area.width, 1);
 
     NSInteger rowOffset = packPixelsParams.reverseRowOrder ? -1 : 1;
-    NSUInteger startRow  = packPixelsParams.reverseRowOrder ? (area.y1() - 1) : area.y;
+    NSUInteger startRow = packPixelsParams.reverseRowOrder ? (area.y1() - 1) : area.y;
 
     // Make sure GPU & CPU contents are synchronized
     if (texture->isCPUReadMemDirty())

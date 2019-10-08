@@ -57,6 +57,7 @@ class Resource : angle::NonCopyable
     // resource's content.
     bool isCPUReadMemDirty() const { return mRef->mCPUReadMemDirty; }
     void resetCPUReadMemDirty() { mRef->mCPUReadMemDirty = false; }
+
   protected:
     Resource();
     // Share the GPU usage ref with other resource

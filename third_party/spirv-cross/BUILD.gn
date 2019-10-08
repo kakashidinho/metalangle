@@ -35,9 +35,7 @@ source_set("spirv_cross_sources") {
     "src/spirv_reflect.hpp",
   ]
 
-  cflags = [
-    "-fno-exceptions"
-  ]
+  cflags = [ "-fno-exceptions" ]
 
   if (is_clang) {
     cflags_cc = [

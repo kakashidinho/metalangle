@@ -669,14 +669,13 @@ void AddLineSegmentRasterizationEmulation(TInfoSinkBase &sink,
 }
 }  // anonymous namespace
 
-
 TranslatorMetal::TranslatorMetal(sh::GLenum type, ShShaderSpec spec)
     : TCompiler(type, spec, SH_GLSL_450_CORE_OUTPUT)
 {}
 
 void TranslatorMetal::translate(TIntermBlock *root,
-                                 ShCompileOptions compileOptions,
-                                 PerformanceDiagnostics * /*perfDiagnostics*/)
+                                ShCompileOptions compileOptions,
+                                PerformanceDiagnostics * /*perfDiagnostics*/)
 {
     TInfoSinkBase &sink = getInfoSink().obj;
     TOutputVulkanGLSLForMetal outputGLSL(sink, getArrayIndexClampingStrategy(), getHashFunction(),

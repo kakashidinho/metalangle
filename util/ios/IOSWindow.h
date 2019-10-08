@@ -48,6 +48,7 @@ class IOSWindow : public OSWindow
     void deviceOrientationDidChange();
     void viewDidAppear();
     void viewDidLayoutSubviews();
+
   private:
     void stopRunning();
 

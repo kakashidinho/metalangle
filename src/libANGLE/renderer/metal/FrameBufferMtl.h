@@ -98,6 +98,7 @@ class FramebufferMtl : public FramebufferImpl
                                  const PackPixelsParams &packPixelsParams,
                                  RenderTargetMtl *renderTarget,
                                  uint8_t *pixels);
+
   private:
     void reset();
     angle::Result invalidateImpl(ContextMtl *contextMtl, size_t count, const GLenum *attachments);

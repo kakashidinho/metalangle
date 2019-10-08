@@ -162,8 +162,7 @@ void BindNullSampler(const gl::Context *glContext,
 {
     ContextMtl *contextMtl = mtl::GetImpl(glContext);
 
-    mtl::TextureRef nullTex = contextMtl->getRenderer()->getNullTexture(
-        glContext, textureType);
+    mtl::TextureRef nullTex = contextMtl->getRenderer()->getNullTexture(glContext, textureType);
 
     mtl::AutoObjCPtr<id<MTLSamplerState>> nullSampler =
         contextMtl->getRenderer()->getStateCache().getNullSamplerState(contextMtl);
@@ -857,7 +856,7 @@ angle::Result ProgramMtl::updateTextures(const gl::Context *glContext,
                                          mtl::RenderCommandEncoder *cmdEncoder,
                                          bool forceUpdate)
 {
-    const auto &glState    = glContext->getState();
+    const auto &glState = glContext->getState();
 
     const gl::ActiveTexturePointerArray &completeTextures = glState.getActiveTexturesCache();
 
@@ -878,9 +877,9 @@ angle::Result ProgramMtl::updateTextures(const gl::Context *glContext,
             for (uint32_t arrayElement = 0; arrayElement < samplerBinding.boundTextureUnits.size();
                  ++arrayElement)
             {
-                GLuint textureUnit     = samplerBinding.boundTextureUnits[arrayElement];
-                gl::Texture *texture   = completeTextures[textureUnit];
-                auto destBindingPoint  = textureIndex + arrayElement;
+                GLuint textureUnit    = samplerBinding.boundTextureUnits[arrayElement];
+                gl::Texture *texture  = completeTextures[textureUnit];
+                auto destBindingPoint = textureIndex + arrayElement;
                 if (!texture)
                 {
                     BindNullSampler(glContext, cmdEncoder, shaderType, samplerBinding.textureType,

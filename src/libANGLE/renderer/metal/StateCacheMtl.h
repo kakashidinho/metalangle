@@ -188,7 +188,7 @@ struct RenderPipelineOutputDesc
 #    define ANGLE_MTL_PRIMITIVE_TOPOLOGY_CLASS_AVAILABLE 0
 typedef uint32_t PrimitiveTopologyClass;
 constexpr PrimitiveTopologyClass kPrimitiveTopologyClassTriangle = 0;
-constexpr PrimitiveTopologyClass kPrimitiveTopologyClassPoint = 0;
+constexpr PrimitiveTopologyClass kPrimitiveTopologyClassPoint    = 0;
 #else
 #    define ANGLE_MTL_PRIMITIVE_TOPOLOGY_CLASS_AVAILABLE 1
 typedef MTLPrimitiveTopologyClass PrimitiveTopologyClass;

@@ -52,8 +52,7 @@ struct IndexConversionUniform
 bool UtilsMtl::IndexConvesionPipelineCacheKey::operator==(
     const IndexConvesionPipelineCacheKey &other) const
 {
-    return srcType == other.srcType &&
-            srcBufferOffsetAligned == other.srcBufferOffsetAligned;
+    return srcType == other.srcType && srcBufferOffsetAligned == other.srcBufferOffsetAligned;
 }
 bool UtilsMtl::IndexConvesionPipelineCacheKey::operator<(
     const IndexConvesionPipelineCacheKey &other) const
@@ -125,12 +124,11 @@ void UtilsMtl::handleError(NSError *nserror,
 
 angle::Result UtilsMtl::initShaderLibrary()
 {
-    mtl::AutoObjCObj<NSError> err    = nil;
+    mtl::AutoObjCObj<NSError> err = nil;
 
 #if !defined(NDEBUG)
-    mDefaultShaders = mtl::CreateShaderLibrary(getRenderer()->getMetalDevice(),
-                                               default_metallib_src,
-                                               sizeof(default_metallib_src), &err);
+    mDefaultShaders = mtl::CreateShaderLibrary(
+        getRenderer()->getMetalDevice(), default_metallib_src, sizeof(default_metallib_src), &err);
 #else
     mDefaultShaders = mtl::CreateShaderLibraryFromBinary(getRenderer()->getMetalDevice(),
                                                          compiled_default_metallib,
@@ -273,8 +271,8 @@ void UtilsMtl::setupClearWithDraw(const gl::Context *context,
     viewport = mtl::GetViewport(params.clearArea, texture->height(renderPassAttachment.level),
                                 params.flipY);
 
-    scissorRect = mtl::GetScissorRect(
-        params.clearArea, texture->height(renderPassAttachment.level), params.flipY);
+    scissorRect = mtl::GetScissorRect(params.clearArea, texture->height(renderPassAttachment.level),
+                                      params.flipY);
 
     cmdEncoder->setViewport(viewport);
     cmdEncoder->setScissorRect(scissorRect);
@@ -481,10 +479,10 @@ mtl::AutoObjCPtr<id<MTLComputePipelineState>> UtilsMtl::getIndexConversionPipeli
     uint32_t srcOffset)
 {
     id<MTLDevice> metalDevice = context->getMetalDevice();
-    size_t elementSize = gl::GetDrawElementsTypeSize(srcType);
-    bool aligned = (srcOffset % elementSize) == 0;
+    size_t elementSize        = gl::GetDrawElementsTypeSize(srcType);
+    bool aligned              = (srcOffset % elementSize) == 0;
 
-    IndexConvesionPipelineCacheKey key = { srcType, aligned };
+    IndexConvesionPipelineCacheKey key = {srcType, aligned};
 
     auto &cache = mIndexConversionPipelineCaches[key];
 
@@ -492,7 +490,7 @@ mtl::AutoObjCPtr<id<MTLComputePipelineState>> UtilsMtl::getIndexConversionPipeli
     {
         ANGLE_MTL_OBJC_SCOPE
         {
-            auto shaderLib    = mDefaultShaders.get();
+            auto shaderLib         = mDefaultShaders.get();
             id<MTLFunction> shader = nil;
             switch (srcType)
             {
@@ -525,8 +523,8 @@ mtl::AutoObjCPtr<id<MTLComputePipelineState>> UtilsMtl::getIndexConversionPipeli
 
             ASSERT(shader);
 
-            NSError *err  = nil;
-            cache = [metalDevice newComputePipelineStateWithFunction:shader error: &err];
+            NSError *err = nil;
+            cache        = [metalDevice newComputePipelineStateWithFunction:shader error:&err];
 
             if (err && !cache)
             {
@@ -548,7 +546,7 @@ angle::Result UtilsMtl::convertIndexBuffer(const gl::Context *context,
                                            mtl::BufferRef dstBuffer,
                                            uint32_t dstOffset)
 {
-    ContextMtl *contextMtl = mtl::GetImpl(context);
+    ContextMtl *contextMtl                 = mtl::GetImpl(context);
     mtl::ComputeCommandEncoder *cmdEncoder = contextMtl->getComputeCommandEncoder();
     ASSERT(cmdEncoder);
 
@@ -562,14 +560,14 @@ angle::Result UtilsMtl::convertIndexBuffer(const gl::Context *context,
     ASSERT((dstOffset % kBufferSettingOffsetAlignment) == 0);
 
     IndexConversionUniform uniform;
-    uniform.srcOffset = srcOffset;
+    uniform.srcOffset  = srcOffset;
     uniform.indexCount = indexCount;
 
     cmdEncoder->setData(uniform, 0);
     cmdEncoder->setBuffer(srcBuffer, 0, 1);
     cmdEncoder->setBuffer(dstBuffer, dstOffset, 2);
 
-    NSUInteger w = pipelineState.get().threadExecutionWidth;
+    NSUInteger w                  = pipelineState.get().threadExecutionWidth;
     MTLSize threadsPerThreadgroup = MTLSizeMake(w, 1, 1);
 
 #if TARGET_OS_OSX

@@ -445,7 +445,7 @@ angle::Result TextureMtl::setStorageImpl(const gl::Context *context,
     mFormat                             = convertedFormat;
     MTLColorWriteMask colorWritableMask = MTLColorWriteMaskAll;
     const angle::Format &intendedFormat = angle::Format::Get(mFormat.intendedFormatId);
-    bool emulatedAlpha = false;
+    bool emulatedAlpha                  = false;
     if (intendedFormat.alphaBits == 0)
     {
         emulatedAlpha = true;
@@ -697,7 +697,7 @@ angle::Result TextureMtl::copySubImageCPU(const gl::Context *context,
     FramebufferMtl *framebufferMtl = mtl::GetImpl(source);
 
     const angle::Format &dstFormat = angle::Format::Get(mFormat.actualFormatId);
-    const size_t dstRowPitch = dstFormat.pixelBytes * clippedSourceArea.width;
+    const size_t dstRowPitch       = dstFormat.pixelBytes * clippedSourceArea.width;
     std::unique_ptr<uint8_t[]> conversionRow(new (std::nothrow) uint8_t[dstRowPitch]);
     ANGLE_CHECK_GL_ALLOC(contextMtl, conversionRow);
 
@@ -707,10 +707,9 @@ angle::Result TextureMtl::copySubImageCPU(const gl::Context *context,
     for (int r = 0; r < clippedSourceArea.height; ++r)
     {
         mtlDstRowArea.origin.y = modifiedDestOffset.y + r;
-        srcRowArea.y = clippedSourceArea.y + r;
+        srcRowArea.y           = clippedSourceArea.y + r;
 
-        PackPixelsParams packParams(srcRowArea, dstFormat, dstRowPitch, false,
-                                    nullptr, 0);
+        PackPixelsParams packParams(srcRowArea, dstFormat, dstRowPitch, false, nullptr, 0);
 
         // Read pixels from framebuffer to memory:
         ANGLE_TRY(framebufferMtl->readPixelsImpl(context, srcRowArea, packParams,

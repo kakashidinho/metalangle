@@ -6,8 +6,8 @@
 
 #include "libANGLE/renderer/metal/RendererMtl.h"
 
-#include "libANGLE/renderer/metal/GlslangWrapper.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
+#include "libANGLE/renderer/metal/GlslangWrapper.h"
 #include "libANGLE/renderer/metal/mtl_common.h"
 
 namespace rx
@@ -83,7 +83,7 @@ const gl::Limitations &RendererMtl::getNativeLimitations() const
 mtl::TextureRef RendererMtl::getNullTexture(const gl::Context *context, gl::TextureType typeEnum)
 {
     ContextMtl *contextMtl = mtl::GetImpl(context);
-    int type = static_cast<int>(typeEnum);
+    int type               = static_cast<int>(typeEnum);
     if (!mNullTextures[type])
     {
         // initialize content with zeros

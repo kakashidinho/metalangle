@@ -922,10 +922,6 @@ libangle_metal_sources = [
   "src/libANGLE/renderer/metal/mtl_utils.mm",
 ]
 
-libangle_metal_no_arc_sources = [
-  "src/libANGLE/renderer/metal/mtl_utils_no_arc.mm",
-]
-
 # The frame capture headers are always visible to libANGLE.
 libangle_sources += [
   "src/libANGLE/FrameCapture.h",

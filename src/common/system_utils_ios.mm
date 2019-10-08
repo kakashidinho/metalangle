@@ -10,11 +10,11 @@
 
 #import <Foundation/Foundation.h>
 
-#include <unistd.h>
 #include <dlfcn.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 #include <cstdlib>
 #include <vector>
@@ -93,8 +93,7 @@ class IOSLibrary : public Library
     {
         char buffer[4096];
         int ret = snprintf(buffer, 4096, "%s/Frameworks/%s.framework/%s",
-                           GetExecutableDirectory().c_str(),
-                           libraryName, libraryName);
+                           GetExecutableDirectory().c_str(), libraryName, libraryName);
         if (ret > 0 && ret < 4096)
         {
             mModule = dlopen(buffer, RTLD_NOW);

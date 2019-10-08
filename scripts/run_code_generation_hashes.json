@@ -1,14 +1,14 @@
 {
   "ANGLE format:src/libANGLE/renderer/FormatID_autogen.h":
-    "083c08bb743bf72a900079890b14184f",
+    "9acca3d574e7df36d7951e8aab6d8b7d",
   "ANGLE format:src/libANGLE/renderer/Format_table_autogen.cpp":
-    "24a7e010def51eb4342caa5392536ea9",
+    "bec78b61d25f50363058960613758f26",
   "ANGLE format:src/libANGLE/renderer/angle_format.py":
     "7ce0869650454e1eebc93658d4d96844",
   "ANGLE format:src/libANGLE/renderer/angle_format_data.json":
-    "288d2f350948f8b1928c249234a44b25",
+    "0d387ce01d44b58e88d1dace22ba60c3",
   "ANGLE format:src/libANGLE/renderer/angle_format_map.json":
-    "be9f9bdbdf785dda05920146e8c55dbb",
+    "eb8fef6b85baf98a34fc3bb9d4d9fdce",
   "ANGLE format:src/libANGLE/renderer/gen_angle_format_table.py":
     "37f4654bca2bebc7fdec1fc7ca9bc622",
   "ANGLE load functions table:src/libANGLE/renderer/gen_load_functions_table.py":
@@ -42,7 +42,7 @@
   "DXGI format:src/libANGLE/renderer/angle_format.py":
     "7ce0869650454e1eebc93658d4d96844",
   "DXGI format:src/libANGLE/renderer/angle_format_map.json":
-    "be9f9bdbdf785dda05920146e8c55dbb",
+    "eb8fef6b85baf98a34fc3bb9d4d9fdce",
   "DXGI format:src/libANGLE/renderer/d3d/d3d11/dxgi_format_data.json":
     "24f525b05dc665fbbc8c6d68fb863719",
   "DXGI format:src/libANGLE/renderer/d3d/d3d11/dxgi_format_map_autogen.cpp":
@@ -82,9 +82,9 @@
   "GL format map:src/libANGLE/es3_format_type_combinations.json":
     "a232823cd6430f14e28793ccabb968ee",
   "GL format map:src/libANGLE/format_map_autogen.cpp":
-    "1e1b1c2af35a8a75c4395430d2370758",
+    "4500db509b45e91720e2d90f3ef6afbc",
   "GL format map:src/libANGLE/format_map_data.json":
-    "779798d4879e5f73a5a108e3e3fd3095",
+    "4c7697e29f72873dc02a45084632f331",
   "GL format map:src/libANGLE/gen_format_map.py":
     "dbc855d50826670a9e1a4ff2747e7583",
   "GL/EGL entry points:scripts/egl.xml":
@@ -285,6 +285,20 @@
     "12ffb44e5e743c826e4d84ac65cdba82",
   "GL/EGL/WGL loader:util/windows/wgl_loader_autogen.h":
     "e18f6c134b709c5a69ed3b4ff38642d0",
+  "Metal default shaders:src/libANGLE/renderer/metal/shaders/compiled/mtl_default_shaders.inc":
+    "71518f50cd034ddec19abc8f923e9f0b",
+  "Metal default shaders:src/libANGLE/renderer/metal/shaders/gen_mtl_internal_shaders.py":
+    "b8d7acf7abf1b2b939c0f1ec6dcd35db",
+  "Metal default shaders:src/libANGLE/renderer/metal/shaders/master_source.metal":
+    "2aa17b03f535b3d664da48ef6fa81667",
+  "Metal default shaders:src/libANGLE/renderer/metal/shaders/mtl_default_shaders_src_autogen.inc":
+    "256208d221b6581d72e58d360c44c7b0",
+  "Metal format:src/libANGLE/renderer/metal/gen_mtl_format_table.py":
+    "4c4070a7457dd7f0a5849aa96f9bc68f",
+  "Metal format:src/libANGLE/renderer/metal/mtl_format_map.json":
+    "ed1f02a398fab1c55c04bd4769299360",
+  "Metal format:src/libANGLE/renderer/metal/mtl_format_table_autogen.mm":
+    "2ec2c3ac2c53db63a43e1cd390748b2c",
   "OpenGL dispatch table:scripts/gl.xml":
     "b470cb06b06cbbe7adb2c8129ec85708",
   "OpenGL dispatch table:src/libANGLE/renderer/angle_format.py":
@@ -304,13 +318,13 @@
   "Vulkan format:src/libANGLE/renderer/angle_format.py":
     "7ce0869650454e1eebc93658d4d96844",
   "Vulkan format:src/libANGLE/renderer/angle_format_map.json":
-    "be9f9bdbdf785dda05920146e8c55dbb",
+    "eb8fef6b85baf98a34fc3bb9d4d9fdce",
   "Vulkan format:src/libANGLE/renderer/vulkan/gen_vk_format_table.py":
     "09340e3ba114b4acef6460ac8b242040",
   "Vulkan format:src/libANGLE/renderer/vulkan/vk_format_map.json":
     "9e0a57bee62f7b0603c7431c815d1be2",
   "Vulkan format:src/libANGLE/renderer/vulkan/vk_format_table_autogen.cpp":
-    "8d7f42c646e4b05017552e5af1b3bc84",
+    "35be481e0957e67a831347dca4ae7342",
   "Vulkan internal shader programs:src/libANGLE/renderer/vulkan/gen_vk_internal_shaders.py":
     "a528a53197ea6c8eaa3bb42a7cdf0a17",
   "Vulkan internal shader programs:src/libANGLE/renderer/vulkan/shaders/gen/BlitResolve.frag.00000000.inc":

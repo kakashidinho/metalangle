@@ -8,34 +8,21 @@
 #define LIBANGLE_RENDERER_METAL_SHADERS_COMMON_H_
 
 #ifndef SKIP_STD_HEADERS
-#   include <metal_stdlib>
-#   include <simd/simd.h>
+#    include <simd/simd.h>
+#    include <metal_stdlib>
 #endif
 
 using namespace metal;
 
 // Full screen quad's vertices
-constant float2 gCorners[6] =
-{
-    float2(-1.0f,  1.0f),
-    float2( 1.0f, -1.0f),
-    float2(-1.0f, -1.0f),
-    float2(-1.0f,  1.0f),
-    float2( 1.0f,  1.0f),
-    float2( 1.0f, -1.0f),
+constant float2 gCorners[6] = {
+    float2(-1.0f, 1.0f), float2(1.0f, -1.0f), float2(-1.0f, -1.0f),
+    float2(-1.0f, 1.0f), float2(1.0f, 1.0f),  float2(1.0f, -1.0f),
 };
 
 // Full screen quad's texcoords indices:
 // 0: lower left, 1: lower right, 2: upper left, 3: upper right
-constant int gTexcoordsIndices[6] =
-{
-    2,
-    1,
-    0,
-    2,
-    3,
-    1
-};
+constant int gTexcoordsIndices[6] = {2, 1, 0, 2, 3, 1};
 
 fragment float4 dummyFS()
 {

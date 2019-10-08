@@ -96,6 +96,10 @@ generators = {
         'src/compiler/translator/gen_emulated_builtin_function_tables.py',
     'ESSL static builtins':
         'src/compiler/translator/gen_builtin_symbols.py',
+    'Metal format':
+        'src/libANGLE/renderer/metal/gen_mtl_format_table.py',
+    'Metal default shaders':
+        'src/libANGLE/renderer/metal/shaders/gen_mtl_internal_shaders.py',
 }
 
 

@@ -77,14 +77,14 @@ util_apple_sources = [
 ]
 
 util_osx_sources = util_apple_sources + [
-  "util/osx/OSXWindow.mm",
-  "util/osx/OSXWindow.h"
-]
+                     "util/osx/OSXWindow.mm",
+                     "util/osx/OSXWindow.h",
+                   ]
 
 util_ios_sources = util_apple_sources + [
-  "util/ios/IOSWindow.mm",
-  "util/ios/IOSWindow.h"
-]
+                     "util/ios/IOSWindow.mm",
+                     "util/ios/IOSWindow.h",
+                   ]
 
 util_android_sources = util_posix_sources + [
                          "util/android/AndroidPixmap.cpp",

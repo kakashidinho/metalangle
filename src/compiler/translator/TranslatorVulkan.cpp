@@ -334,7 +334,7 @@ void AppendVertexShaderPositionYCorrectionToMain(TIntermBlock *root,
     TIntermSwizzle *positionY = new TIntermSwizzle(positionRef, swizzleOffsetY);
 
     // Create the expression "gl_Position.y * viewportScaleY"
-    TIntermBinary *inverseY    = new TIntermBinary(EOpMul, positionY->deepCopy(), viewportYScale);
+    TIntermBinary *inverseY = new TIntermBinary(EOpMul, positionY->deepCopy(), viewportYScale);
 
     // Create the assignment "gl_Position.y = gl_Position.y * viewportScaleY
     TIntermTyped *positionYLHS = positionY->deepCopy();
@@ -669,8 +669,7 @@ TranslatorVulkan::TranslatorVulkan(sh::GLenum type, ShShaderSpec spec)
 {}
 
 TranslatorVulkan::TranslatorVulkan(sh::GLenum type, ShShaderSpec spec, bool scalePositionY)
-    : TCompiler(type, spec, SH_GLSL_450_CORE_OUTPUT),
-      mScalePositionY(scalePositionY)
+    : TCompiler(type, spec, SH_GLSL_450_CORE_OUTPUT), mScalePositionY(scalePositionY)
 {}
 
 void TranslatorVulkan::translate(TIntermBlock *root,
