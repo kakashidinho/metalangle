@@ -711,17 +711,6 @@ angle::Result FramebufferMtl::readPixelsImpl(const gl::Context *context,
     int rowOffset = packPixelsParams.reverseRowOrder ? -1 : 1;
     int startRow  = packPixelsParams.reverseRowOrder ? (area.y1() - 1) : area.y;
 
-    // Make sure GPU & CPU contents are synchronized
-    if (texture->isCPUReadMemDirty())
-    {
-        mtl::BlitCommandEncoder *blitEncoder = contextMtl->getBlitCommandEncoder();
-        if (blitEncoder)
-        {
-            blitEncoder->synchronizeResource(texture);
-        }
-        texture->resetCPUReadMemDirty();
-    }
-
     // Copy pixels row by row
     packPixelsRowParams.area.height     = 1;
     packPixelsRowParams.reverseRowOrder = false;

@@ -79,7 +79,9 @@ class Resource : angle::NonCopyable
     std::shared_ptr<Ref> mRef;
 };
 
-class Texture final : public Resource, public WrappedObject<id<MTLTexture>>
+class Texture final : public Resource,
+                      public WrappedObject<id<MTLTexture>>,
+                      public std::enable_shared_from_this<Texture>
 {
   public:
     static angle::Result Make2DTexture(ContextMtl *context,
@@ -146,6 +148,8 @@ class Texture final : public Resource, public WrappedObject<id<MTLTexture>>
 
     // Create a texture view
     Texture(Texture *original, MTLTextureType type, NSRange mipmapLevelRange, uint32_t slice);
+
+    void syncContent(ContextMtl *context);
 
     MTLColorWriteMask mColorWritableMask = MTLColorWriteMaskAll;
 };

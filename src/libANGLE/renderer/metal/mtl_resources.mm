@@ -175,6 +175,22 @@ Texture::Texture(Texture *original, MTLTextureType type, NSRange mipmapLevelRang
     set(view);
 }
 
+void Texture::syncContent(ContextMtl *context)
+{
+#if TARGET_OS_OSX
+    // Make sure GPU & CPU contents are synchronized
+    if (this->isCPUReadMemDirty())
+    {
+        mtl::BlitCommandEncoder *blitEncoder = context->getBlitCommandEncoder();
+        if (blitEncoder)
+        {
+            blitEncoder->synchronizeResource(shared_from_this());
+        }
+        this->resetCPUReadMemDirty();
+    }
+#endif
+}
+
 void Texture::replaceRegion(ContextMtl *context,
                             MTLRegion region,
                             uint32_t mipmapLevel,
@@ -183,6 +199,8 @@ void Texture::replaceRegion(ContextMtl *context,
                             size_t bytesPerRow)
 {
     CommandQueue &cmdQueue = context->cmdQueue();
+
+    syncContent(context);
 
     // TODO(hqle): what if multiple contexts on multiple threads are using this texture?
     if (this->isBeingUsedByGPU(context))
@@ -207,6 +225,8 @@ void Texture::getBytes(ContextMtl *context,
                        uint8_t *dataOut)
 {
     CommandQueue &cmdQueue = context->cmdQueue();
+
+    syncContent(context);
 
     // TODO(hqle): what if multiple contexts on multiple threads are using this texture?
     if (this->isBeingUsedByGPU(context))
