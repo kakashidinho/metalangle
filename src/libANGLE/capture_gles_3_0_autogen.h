@@ -23,7 +23,7 @@ class Context;
 angle::CallCapture CaptureBeginQuery(const Context *context,
                                      bool isCallValid,
                                      QueryType targetPacked,
-                                     GLuint id);
+                                     QueryID idPacked);
 angle::CallCapture CaptureBeginTransformFeedback(const Context *context,
                                                  bool isCallValid,
                                                  PrimitiveMode primitiveModePacked);
@@ -31,23 +31,25 @@ angle::CallCapture CaptureBindBufferBase(const Context *context,
                                          bool isCallValid,
                                          BufferBinding targetPacked,
                                          GLuint index,
-                                         GLuint buffer);
+                                         BufferID bufferPacked);
 angle::CallCapture CaptureBindBufferRange(const Context *context,
                                           bool isCallValid,
                                           BufferBinding targetPacked,
                                           GLuint index,
-                                          GLuint buffer,
+                                          BufferID bufferPacked,
                                           GLintptr offset,
                                           GLsizeiptr size);
 angle::CallCapture CaptureBindSampler(const Context *context,
                                       bool isCallValid,
                                       GLuint unit,
-                                      GLuint sampler);
+                                      SamplerID samplerPacked);
 angle::CallCapture CaptureBindTransformFeedback(const Context *context,
                                                 bool isCallValid,
                                                 GLenum target,
-                                                GLuint id);
-angle::CallCapture CaptureBindVertexArray(const Context *context, bool isCallValid, GLuint array);
+                                                TransformFeedbackID idPacked);
+angle::CallCapture CaptureBindVertexArray(const Context *context,
+                                          bool isCallValid,
+                                          VertexArrayID arrayPacked);
 angle::CallCapture CaptureBlitFramebuffer(const Context *context,
                                           bool isCallValid,
                                           GLint srcX0,
@@ -85,7 +87,8 @@ angle::CallCapture CaptureClientWaitSync(const Context *context,
                                          bool isCallValid,
                                          GLsync sync,
                                          GLbitfield flags,
-                                         GLuint64 timeout);
+                                         GLuint64 timeout,
+                                         GLenum returnValue);
 angle::CallCapture CaptureCompressedTexImage3D(const Context *context,
                                                bool isCallValid,
                                                TextureTarget targetPacked,
@@ -131,20 +134,20 @@ angle::CallCapture CaptureCopyTexSubImage3D(const Context *context,
 angle::CallCapture CaptureDeleteQueries(const Context *context,
                                         bool isCallValid,
                                         GLsizei n,
-                                        const GLuint *ids);
+                                        const QueryID *idsPacked);
 angle::CallCapture CaptureDeleteSamplers(const Context *context,
                                          bool isCallValid,
                                          GLsizei count,
-                                         const GLuint *samplers);
+                                         const SamplerID *samplersPacked);
 angle::CallCapture CaptureDeleteSync(const Context *context, bool isCallValid, GLsync sync);
 angle::CallCapture CaptureDeleteTransformFeedbacks(const Context *context,
                                                    bool isCallValid,
                                                    GLsizei n,
-                                                   const GLuint *ids);
+                                                   const TransformFeedbackID *idsPacked);
 angle::CallCapture CaptureDeleteVertexArrays(const Context *context,
                                              bool isCallValid,
                                              GLsizei n,
-                                             const GLuint *arrays);
+                                             const VertexArrayID *arraysPacked);
 angle::CallCapture CaptureDrawArraysInstanced(const Context *context,
                                               bool isCallValid,
                                               PrimitiveMode modePacked,
@@ -177,7 +180,8 @@ angle::CallCapture CaptureEndTransformFeedback(const Context *context, bool isCa
 angle::CallCapture CaptureFenceSync(const Context *context,
                                     bool isCallValid,
                                     GLenum condition,
-                                    GLbitfield flags);
+                                    GLbitfield flags,
+                                    GLsync returnValue);
 angle::CallCapture CaptureFlushMappedBufferRange(const Context *context,
                                                  bool isCallValid,
                                                  BufferBinding targetPacked,
@@ -187,41 +191,41 @@ angle::CallCapture CaptureFramebufferTextureLayer(const Context *context,
                                                   bool isCallValid,
                                                   GLenum target,
                                                   GLenum attachment,
-                                                  GLuint texture,
+                                                  TextureID texturePacked,
                                                   GLint level,
                                                   GLint layer);
 angle::CallCapture CaptureGenQueries(const Context *context,
                                      bool isCallValid,
                                      GLsizei n,
-                                     GLuint *ids);
+                                     QueryID *idsPacked);
 angle::CallCapture CaptureGenSamplers(const Context *context,
                                       bool isCallValid,
                                       GLsizei count,
-                                      GLuint *samplers);
+                                      SamplerID *samplersPacked);
 angle::CallCapture CaptureGenTransformFeedbacks(const Context *context,
                                                 bool isCallValid,
                                                 GLsizei n,
-                                                GLuint *ids);
+                                                TransformFeedbackID *idsPacked);
 angle::CallCapture CaptureGenVertexArrays(const Context *context,
                                           bool isCallValid,
                                           GLsizei n,
-                                          GLuint *arrays);
+                                          VertexArrayID *arraysPacked);
 angle::CallCapture CaptureGetActiveUniformBlockName(const Context *context,
                                                     bool isCallValid,
-                                                    GLuint program,
+                                                    ShaderProgramID programPacked,
                                                     GLuint uniformBlockIndex,
                                                     GLsizei bufSize,
                                                     GLsizei *length,
                                                     GLchar *uniformBlockName);
 angle::CallCapture CaptureGetActiveUniformBlockiv(const Context *context,
                                                   bool isCallValid,
-                                                  GLuint program,
+                                                  ShaderProgramID programPacked,
                                                   GLuint uniformBlockIndex,
                                                   GLenum pname,
                                                   GLint *params);
 angle::CallCapture CaptureGetActiveUniformsiv(const Context *context,
                                               bool isCallValid,
-                                              GLuint program,
+                                              ShaderProgramID programPacked,
                                               GLsizei uniformCount,
                                               const GLuint *uniformIndices,
                                               GLenum pname,
@@ -238,8 +242,9 @@ angle::CallCapture CaptureGetBufferPointerv(const Context *context,
                                             void **params);
 angle::CallCapture CaptureGetFragDataLocation(const Context *context,
                                               bool isCallValid,
-                                              GLuint program,
-                                              const GLchar *name);
+                                              ShaderProgramID programPacked,
+                                              const GLchar *name,
+                                              GLint returnValue);
 angle::CallCapture CaptureGetInteger64i_v(const Context *context,
                                           bool isCallValid,
                                           GLenum target,
@@ -263,14 +268,14 @@ angle::CallCapture CaptureGetInternalformativ(const Context *context,
                                               GLint *params);
 angle::CallCapture CaptureGetProgramBinary(const Context *context,
                                            bool isCallValid,
-                                           GLuint program,
+                                           ShaderProgramID programPacked,
                                            GLsizei bufSize,
                                            GLsizei *length,
                                            GLenum *binaryFormat,
                                            void *binary);
 angle::CallCapture CaptureGetQueryObjectuiv(const Context *context,
                                             bool isCallValid,
-                                            GLuint id,
+                                            QueryID idPacked,
                                             GLenum pname,
                                             GLuint *params);
 angle::CallCapture CaptureGetQueryiv(const Context *context,
@@ -280,18 +285,19 @@ angle::CallCapture CaptureGetQueryiv(const Context *context,
                                      GLint *params);
 angle::CallCapture CaptureGetSamplerParameterfv(const Context *context,
                                                 bool isCallValid,
-                                                GLuint sampler,
+                                                SamplerID samplerPacked,
                                                 GLenum pname,
                                                 GLfloat *params);
 angle::CallCapture CaptureGetSamplerParameteriv(const Context *context,
                                                 bool isCallValid,
-                                                GLuint sampler,
+                                                SamplerID samplerPacked,
                                                 GLenum pname,
                                                 GLint *params);
 angle::CallCapture CaptureGetStringi(const Context *context,
                                      bool isCallValid,
                                      GLenum name,
-                                     GLuint index);
+                                     GLuint index,
+                                     const GLubyte *returnValue);
 angle::CallCapture CaptureGetSynciv(const Context *context,
                                     bool isCallValid,
                                     GLsync sync,
@@ -301,7 +307,7 @@ angle::CallCapture CaptureGetSynciv(const Context *context,
                                     GLint *values);
 angle::CallCapture CaptureGetTransformFeedbackVarying(const Context *context,
                                                       bool isCallValid,
-                                                      GLuint program,
+                                                      ShaderProgramID programPacked,
                                                       GLuint index,
                                                       GLsizei bufSize,
                                                       GLsizei *length,
@@ -310,17 +316,18 @@ angle::CallCapture CaptureGetTransformFeedbackVarying(const Context *context,
                                                       GLchar *name);
 angle::CallCapture CaptureGetUniformBlockIndex(const Context *context,
                                                bool isCallValid,
-                                               GLuint program,
-                                               const GLchar *uniformBlockName);
+                                               ShaderProgramID programPacked,
+                                               const GLchar *uniformBlockName,
+                                               GLuint returnValue);
 angle::CallCapture CaptureGetUniformIndices(const Context *context,
                                             bool isCallValid,
-                                            GLuint program,
+                                            ShaderProgramID programPacked,
                                             GLsizei uniformCount,
                                             const GLchar *const *uniformNames,
                                             GLuint *uniformIndices);
 angle::CallCapture CaptureGetUniformuiv(const Context *context,
                                         bool isCallValid,
-                                        GLuint program,
+                                        ShaderProgramID programPacked,
                                         GLint location,
                                         GLuint *params);
 angle::CallCapture CaptureGetVertexAttribIiv(const Context *context,
@@ -347,27 +354,43 @@ angle::CallCapture CaptureInvalidateSubFramebuffer(const Context *context,
                                                    GLint y,
                                                    GLsizei width,
                                                    GLsizei height);
-angle::CallCapture CaptureIsQuery(const Context *context, bool isCallValid, GLuint id);
-angle::CallCapture CaptureIsSampler(const Context *context, bool isCallValid, GLuint sampler);
-angle::CallCapture CaptureIsSync(const Context *context, bool isCallValid, GLsync sync);
-angle::CallCapture CaptureIsTransformFeedback(const Context *context, bool isCallValid, GLuint id);
-angle::CallCapture CaptureIsVertexArray(const Context *context, bool isCallValid, GLuint array);
+angle::CallCapture CaptureIsQuery(const Context *context,
+                                  bool isCallValid,
+                                  QueryID idPacked,
+                                  GLboolean returnValue);
+angle::CallCapture CaptureIsSampler(const Context *context,
+                                    bool isCallValid,
+                                    SamplerID samplerPacked,
+                                    GLboolean returnValue);
+angle::CallCapture CaptureIsSync(const Context *context,
+                                 bool isCallValid,
+                                 GLsync sync,
+                                 GLboolean returnValue);
+angle::CallCapture CaptureIsTransformFeedback(const Context *context,
+                                              bool isCallValid,
+                                              TransformFeedbackID idPacked,
+                                              GLboolean returnValue);
+angle::CallCapture CaptureIsVertexArray(const Context *context,
+                                        bool isCallValid,
+                                        VertexArrayID arrayPacked,
+                                        GLboolean returnValue);
 angle::CallCapture CaptureMapBufferRange(const Context *context,
                                          bool isCallValid,
                                          BufferBinding targetPacked,
                                          GLintptr offset,
                                          GLsizeiptr length,
-                                         GLbitfield access);
+                                         GLbitfield access,
+                                         void *returnValue);
 angle::CallCapture CapturePauseTransformFeedback(const Context *context, bool isCallValid);
 angle::CallCapture CaptureProgramBinary(const Context *context,
                                         bool isCallValid,
-                                        GLuint program,
+                                        ShaderProgramID programPacked,
                                         GLenum binaryFormat,
                                         const void *binary,
                                         GLsizei length);
 angle::CallCapture CaptureProgramParameteri(const Context *context,
                                             bool isCallValid,
-                                            GLuint program,
+                                            ShaderProgramID programPacked,
                                             GLenum pname,
                                             GLint value);
 angle::CallCapture CaptureReadBuffer(const Context *context, bool isCallValid, GLenum src);
@@ -381,22 +404,22 @@ angle::CallCapture CaptureRenderbufferStorageMultisample(const Context *context,
 angle::CallCapture CaptureResumeTransformFeedback(const Context *context, bool isCallValid);
 angle::CallCapture CaptureSamplerParameterf(const Context *context,
                                             bool isCallValid,
-                                            GLuint sampler,
+                                            SamplerID samplerPacked,
                                             GLenum pname,
                                             GLfloat param);
 angle::CallCapture CaptureSamplerParameterfv(const Context *context,
                                              bool isCallValid,
-                                             GLuint sampler,
+                                             SamplerID samplerPacked,
                                              GLenum pname,
                                              const GLfloat *param);
 angle::CallCapture CaptureSamplerParameteri(const Context *context,
                                             bool isCallValid,
-                                            GLuint sampler,
+                                            SamplerID samplerPacked,
                                             GLenum pname,
                                             GLint param);
 angle::CallCapture CaptureSamplerParameteriv(const Context *context,
                                              bool isCallValid,
-                                             GLuint sampler,
+                                             SamplerID samplerPacked,
                                              GLenum pname,
                                              const GLint *param);
 angle::CallCapture CaptureTexImage3D(const Context *context,
@@ -441,7 +464,7 @@ angle::CallCapture CaptureTexSubImage3D(const Context *context,
                                         const void *pixels);
 angle::CallCapture CaptureTransformFeedbackVaryings(const Context *context,
                                                     bool isCallValid,
-                                                    GLuint program,
+                                                    ShaderProgramID programPacked,
                                                     GLsizei count,
                                                     const GLchar *const *varyings,
                                                     GLenum bufferMode);
@@ -489,7 +512,7 @@ angle::CallCapture CaptureUniform4uiv(const Context *context,
                                       const GLuint *value);
 angle::CallCapture CaptureUniformBlockBinding(const Context *context,
                                               bool isCallValid,
-                                              GLuint program,
+                                              ShaderProgramID programPacked,
                                               GLuint uniformBlockIndex,
                                               GLuint uniformBlockBinding);
 angle::CallCapture CaptureUniformMatrix2x3fv(const Context *context,
@@ -530,7 +553,8 @@ angle::CallCapture CaptureUniformMatrix4x3fv(const Context *context,
                                              const GLfloat *value);
 angle::CallCapture CaptureUnmapBuffer(const Context *context,
                                       bool isCallValid,
-                                      BufferBinding targetPacked);
+                                      BufferBinding targetPacked,
+                                      GLboolean returnValue);
 angle::CallCapture CaptureVertexAttribDivisor(const Context *context,
                                               bool isCallValid,
                                               GLuint index,
@@ -616,26 +640,26 @@ void CaptureCompressedTexSubImage3D_data(const Context *context,
                                          GLsizei imageSize,
                                          const void *data,
                                          angle::ParamCapture *paramCapture);
-void CaptureDeleteQueries_ids(const Context *context,
-                              bool isCallValid,
-                              GLsizei n,
-                              const GLuint *ids,
-                              angle::ParamCapture *paramCapture);
-void CaptureDeleteSamplers_samplers(const Context *context,
+void CaptureDeleteQueries_idsPacked(const Context *context,
                                     bool isCallValid,
-                                    GLsizei count,
-                                    const GLuint *samplers,
+                                    GLsizei n,
+                                    const QueryID *idsPacked,
                                     angle::ParamCapture *paramCapture);
-void CaptureDeleteTransformFeedbacks_ids(const Context *context,
-                                         bool isCallValid,
-                                         GLsizei n,
-                                         const GLuint *ids,
-                                         angle::ParamCapture *paramCapture);
-void CaptureDeleteVertexArrays_arrays(const Context *context,
-                                      bool isCallValid,
-                                      GLsizei n,
-                                      const GLuint *arrays,
-                                      angle::ParamCapture *paramCapture);
+void CaptureDeleteSamplers_samplersPacked(const Context *context,
+                                          bool isCallValid,
+                                          GLsizei count,
+                                          const SamplerID *samplersPacked,
+                                          angle::ParamCapture *paramCapture);
+void CaptureDeleteTransformFeedbacks_idsPacked(const Context *context,
+                                               bool isCallValid,
+                                               GLsizei n,
+                                               const TransformFeedbackID *idsPacked,
+                                               angle::ParamCapture *paramCapture);
+void CaptureDeleteVertexArrays_arraysPacked(const Context *context,
+                                            bool isCallValid,
+                                            GLsizei n,
+                                            const VertexArrayID *arraysPacked,
+                                            angle::ParamCapture *paramCapture);
 void CaptureDrawBuffers_bufs(const Context *context,
                              bool isCallValid,
                              GLsizei n,
@@ -658,29 +682,29 @@ void CaptureDrawRangeElements_indices(const Context *context,
                                       DrawElementsType typePacked,
                                       const void *indices,
                                       angle::ParamCapture *paramCapture);
-void CaptureGenQueries_ids(const Context *context,
-                           bool isCallValid,
-                           GLsizei n,
-                           GLuint *ids,
-                           angle::ParamCapture *paramCapture);
-void CaptureGenSamplers_samplers(const Context *context,
+void CaptureGenQueries_idsPacked(const Context *context,
                                  bool isCallValid,
-                                 GLsizei count,
-                                 GLuint *samplers,
+                                 GLsizei n,
+                                 QueryID *idsPacked,
                                  angle::ParamCapture *paramCapture);
-void CaptureGenTransformFeedbacks_ids(const Context *context,
-                                      bool isCallValid,
-                                      GLsizei n,
-                                      GLuint *ids,
-                                      angle::ParamCapture *paramCapture);
-void CaptureGenVertexArrays_arrays(const Context *context,
-                                   bool isCallValid,
-                                   GLsizei n,
-                                   GLuint *arrays,
-                                   angle::ParamCapture *paramCapture);
+void CaptureGenSamplers_samplersPacked(const Context *context,
+                                       bool isCallValid,
+                                       GLsizei count,
+                                       SamplerID *samplersPacked,
+                                       angle::ParamCapture *paramCapture);
+void CaptureGenTransformFeedbacks_idsPacked(const Context *context,
+                                            bool isCallValid,
+                                            GLsizei n,
+                                            TransformFeedbackID *idsPacked,
+                                            angle::ParamCapture *paramCapture);
+void CaptureGenVertexArrays_arraysPacked(const Context *context,
+                                         bool isCallValid,
+                                         GLsizei n,
+                                         VertexArrayID *arraysPacked,
+                                         angle::ParamCapture *paramCapture);
 void CaptureGetActiveUniformBlockName_length(const Context *context,
                                              bool isCallValid,
-                                             GLuint program,
+                                             ShaderProgramID programPacked,
                                              GLuint uniformBlockIndex,
                                              GLsizei bufSize,
                                              GLsizei *length,
@@ -688,7 +712,7 @@ void CaptureGetActiveUniformBlockName_length(const Context *context,
                                              angle::ParamCapture *paramCapture);
 void CaptureGetActiveUniformBlockName_uniformBlockName(const Context *context,
                                                        bool isCallValid,
-                                                       GLuint program,
+                                                       ShaderProgramID programPacked,
                                                        GLuint uniformBlockIndex,
                                                        GLsizei bufSize,
                                                        GLsizei *length,
@@ -696,14 +720,14 @@ void CaptureGetActiveUniformBlockName_uniformBlockName(const Context *context,
                                                        angle::ParamCapture *paramCapture);
 void CaptureGetActiveUniformBlockiv_params(const Context *context,
                                            bool isCallValid,
-                                           GLuint program,
+                                           ShaderProgramID programPacked,
                                            GLuint uniformBlockIndex,
                                            GLenum pname,
                                            GLint *params,
                                            angle::ParamCapture *paramCapture);
 void CaptureGetActiveUniformsiv_uniformIndices(const Context *context,
                                                bool isCallValid,
-                                               GLuint program,
+                                               ShaderProgramID programPacked,
                                                GLsizei uniformCount,
                                                const GLuint *uniformIndices,
                                                GLenum pname,
@@ -711,7 +735,7 @@ void CaptureGetActiveUniformsiv_uniformIndices(const Context *context,
                                                angle::ParamCapture *paramCapture);
 void CaptureGetActiveUniformsiv_params(const Context *context,
                                        bool isCallValid,
-                                       GLuint program,
+                                       ShaderProgramID programPacked,
                                        GLsizei uniformCount,
                                        const GLuint *uniformIndices,
                                        GLenum pname,
@@ -731,7 +755,7 @@ void CaptureGetBufferPointerv_params(const Context *context,
                                      angle::ParamCapture *paramCapture);
 void CaptureGetFragDataLocation_name(const Context *context,
                                      bool isCallValid,
-                                     GLuint program,
+                                     ShaderProgramID programPacked,
                                      const GLchar *name,
                                      angle::ParamCapture *paramCapture);
 void CaptureGetInteger64i_v_data(const Context *context,
@@ -761,7 +785,7 @@ void CaptureGetInternalformativ_params(const Context *context,
                                        angle::ParamCapture *paramCapture);
 void CaptureGetProgramBinary_length(const Context *context,
                                     bool isCallValid,
-                                    GLuint program,
+                                    ShaderProgramID programPacked,
                                     GLsizei bufSize,
                                     GLsizei *length,
                                     GLenum *binaryFormat,
@@ -769,7 +793,7 @@ void CaptureGetProgramBinary_length(const Context *context,
                                     angle::ParamCapture *paramCapture);
 void CaptureGetProgramBinary_binaryFormat(const Context *context,
                                           bool isCallValid,
-                                          GLuint program,
+                                          ShaderProgramID programPacked,
                                           GLsizei bufSize,
                                           GLsizei *length,
                                           GLenum *binaryFormat,
@@ -777,7 +801,7 @@ void CaptureGetProgramBinary_binaryFormat(const Context *context,
                                           angle::ParamCapture *paramCapture);
 void CaptureGetProgramBinary_binary(const Context *context,
                                     bool isCallValid,
-                                    GLuint program,
+                                    ShaderProgramID programPacked,
                                     GLsizei bufSize,
                                     GLsizei *length,
                                     GLenum *binaryFormat,
@@ -785,7 +809,7 @@ void CaptureGetProgramBinary_binary(const Context *context,
                                     angle::ParamCapture *paramCapture);
 void CaptureGetQueryObjectuiv_params(const Context *context,
                                      bool isCallValid,
-                                     GLuint id,
+                                     QueryID idPacked,
                                      GLenum pname,
                                      GLuint *params,
                                      angle::ParamCapture *paramCapture);
@@ -797,13 +821,13 @@ void CaptureGetQueryiv_params(const Context *context,
                               angle::ParamCapture *paramCapture);
 void CaptureGetSamplerParameterfv_params(const Context *context,
                                          bool isCallValid,
-                                         GLuint sampler,
+                                         SamplerID samplerPacked,
                                          GLenum pname,
                                          GLfloat *params,
                                          angle::ParamCapture *paramCapture);
 void CaptureGetSamplerParameteriv_params(const Context *context,
                                          bool isCallValid,
-                                         GLuint sampler,
+                                         SamplerID samplerPacked,
                                          GLenum pname,
                                          GLint *params,
                                          angle::ParamCapture *paramCapture);
@@ -825,7 +849,7 @@ void CaptureGetSynciv_values(const Context *context,
                              angle::ParamCapture *paramCapture);
 void CaptureGetTransformFeedbackVarying_length(const Context *context,
                                                bool isCallValid,
-                                               GLuint program,
+                                               ShaderProgramID programPacked,
                                                GLuint index,
                                                GLsizei bufSize,
                                                GLsizei *length,
@@ -835,7 +859,7 @@ void CaptureGetTransformFeedbackVarying_length(const Context *context,
                                                angle::ParamCapture *paramCapture);
 void CaptureGetTransformFeedbackVarying_size(const Context *context,
                                              bool isCallValid,
-                                             GLuint program,
+                                             ShaderProgramID programPacked,
                                              GLuint index,
                                              GLsizei bufSize,
                                              GLsizei *length,
@@ -845,7 +869,7 @@ void CaptureGetTransformFeedbackVarying_size(const Context *context,
                                              angle::ParamCapture *paramCapture);
 void CaptureGetTransformFeedbackVarying_type(const Context *context,
                                              bool isCallValid,
-                                             GLuint program,
+                                             ShaderProgramID programPacked,
                                              GLuint index,
                                              GLsizei bufSize,
                                              GLsizei *length,
@@ -855,7 +879,7 @@ void CaptureGetTransformFeedbackVarying_type(const Context *context,
                                              angle::ParamCapture *paramCapture);
 void CaptureGetTransformFeedbackVarying_name(const Context *context,
                                              bool isCallValid,
-                                             GLuint program,
+                                             ShaderProgramID programPacked,
                                              GLuint index,
                                              GLsizei bufSize,
                                              GLsizei *length,
@@ -865,26 +889,26 @@ void CaptureGetTransformFeedbackVarying_name(const Context *context,
                                              angle::ParamCapture *paramCapture);
 void CaptureGetUniformBlockIndex_uniformBlockName(const Context *context,
                                                   bool isCallValid,
-                                                  GLuint program,
+                                                  ShaderProgramID programPacked,
                                                   const GLchar *uniformBlockName,
                                                   angle::ParamCapture *paramCapture);
 void CaptureGetUniformIndices_uniformNames(const Context *context,
                                            bool isCallValid,
-                                           GLuint program,
+                                           ShaderProgramID programPacked,
                                            GLsizei uniformCount,
                                            const GLchar *const *uniformNames,
                                            GLuint *uniformIndices,
                                            angle::ParamCapture *paramCapture);
 void CaptureGetUniformIndices_uniformIndices(const Context *context,
                                              bool isCallValid,
-                                             GLuint program,
+                                             ShaderProgramID programPacked,
                                              GLsizei uniformCount,
                                              const GLchar *const *uniformNames,
                                              GLuint *uniformIndices,
                                              angle::ParamCapture *paramCapture);
 void CaptureGetUniformuiv_params(const Context *context,
                                  bool isCallValid,
-                                 GLuint program,
+                                 ShaderProgramID programPacked,
                                  GLint location,
                                  GLuint *params,
                                  angle::ParamCapture *paramCapture);
@@ -918,20 +942,20 @@ void CaptureInvalidateSubFramebuffer_attachments(const Context *context,
                                                  angle::ParamCapture *paramCapture);
 void CaptureProgramBinary_binary(const Context *context,
                                  bool isCallValid,
-                                 GLuint program,
+                                 ShaderProgramID programPacked,
                                  GLenum binaryFormat,
                                  const void *binary,
                                  GLsizei length,
                                  angle::ParamCapture *paramCapture);
 void CaptureSamplerParameterfv_param(const Context *context,
                                      bool isCallValid,
-                                     GLuint sampler,
+                                     SamplerID samplerPacked,
                                      GLenum pname,
                                      const GLfloat *param,
                                      angle::ParamCapture *paramCapture);
 void CaptureSamplerParameteriv_param(const Context *context,
                                      bool isCallValid,
-                                     GLuint sampler,
+                                     SamplerID samplerPacked,
                                      GLenum pname,
                                      const GLint *param,
                                      angle::ParamCapture *paramCapture);
@@ -964,7 +988,7 @@ void CaptureTexSubImage3D_pixels(const Context *context,
                                  angle::ParamCapture *paramCapture);
 void CaptureTransformFeedbackVaryings_varyings(const Context *context,
                                                bool isCallValid,
-                                               GLuint program,
+                                               ShaderProgramID programPacked,
                                                GLsizei count,
                                                const GLchar *const *varyings,
                                                GLenum bufferMode,

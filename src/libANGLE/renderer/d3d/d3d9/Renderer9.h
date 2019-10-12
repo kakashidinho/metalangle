@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2012-2014 The ANGLE Project Authors. All rights reserved.
+// Copyright 2012 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -96,9 +96,11 @@ class Renderer9 : public RendererD3D
                                   EGLint samples) override;
     egl::Error getD3DTextureInfo(const egl::Config *configuration,
                                  IUnknown *d3dTexture,
+                                 const egl::AttributeMap &attribs,
                                  EGLint *width,
                                  EGLint *height,
-                                 EGLint *samples,
+                                 GLsizei *samples,
+                                 gl::Format *glFormat,
                                  const angle::Format **angleFormat) const override;
     egl::Error validateShareHandle(const egl::Config *config,
                                    HANDLE shareHandle,
@@ -405,6 +407,7 @@ class Renderer9 : public RendererD3D
     DebugAnnotator9 *getAnnotator() { return &mAnnotator; }
 
     gl::Version getMaxSupportedESVersion() const override;
+    gl::Version getMaxConformantESVersion() const override;
 
     angle::Result clearRenderTarget(const gl::Context *context,
                                     RenderTargetD3D *renderTarget,

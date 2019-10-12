@@ -123,11 +123,6 @@ class ImageTest : public ANGLETest
                 glGetUniformLocation(mTextureExternalESSL3Program, "tex");
         }
 
-        eglCreateImageKHR =
-            reinterpret_cast<PFNEGLCREATEIMAGEKHRPROC>(eglGetProcAddress("eglCreateImageKHR"));
-        eglDestroyImageKHR =
-            reinterpret_cast<PFNEGLDESTROYIMAGEKHRPROC>(eglGetProcAddress("eglDestroyImageKHR"));
-
         ASSERT_GL_NO_ERROR();
     }
 
@@ -467,9 +462,6 @@ class ImageTest : public ANGLETest
 
     GLuint mTextureExternalESSL3Program        = 0;
     GLint mTextureExternalESSL3UniformLocation = -1;
-
-    PFNEGLCREATEIMAGEKHRPROC eglCreateImageKHR;
-    PFNEGLDESTROYIMAGEKHRPROC eglDestroyImageKHR;
 };
 
 class ImageTestES3 : public ImageTest
@@ -1631,6 +1623,7 @@ TEST_P(ImageTest, MipLevels)
     // Driver returns OOM in read pixels, some internal error.
     ANGLE_SKIP_TEST_IF(IsOzone() && IsOpenGLES());
     // Also fails on NVIDIA Shield TV bot.
+    // http://anglebug.com/3850
     ANGLE_SKIP_TEST_IF(IsNVIDIAShield() && IsOpenGLES());
     // On Vulkan, the clear operation in the loop is optimized with a render pass loadOp=Clear.  On
     // Linux/Intel, that operation is mistakenly clearing the rest of the mips to 0.

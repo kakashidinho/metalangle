@@ -267,19 +267,26 @@ class IncompleteTextureSet final : angle::NonCopyable
 // Helpers to set a matrix uniform value based on GLSL or HLSL semantics.
 // The return value indicate if the data was updated or not.
 template <int cols, int rows>
-bool SetFloatUniformMatrixGLSL(unsigned int arrayElementOffset,
-                               unsigned int elementCount,
-                               GLsizei countIn,
-                               GLboolean transpose,
-                               const GLfloat *value,
-                               uint8_t *targetData);
+struct SetFloatUniformMatrixGLSL
+{
+    static void Run(unsigned int arrayElementOffset,
+                    unsigned int elementCount,
+                    GLsizei countIn,
+                    GLboolean transpose,
+                    const GLfloat *value,
+                    uint8_t *targetData);
+};
+
 template <int cols, int rows>
-bool SetFloatUniformMatrixHLSL(unsigned int arrayElementOffset,
-                               unsigned int elementCount,
-                               GLsizei countIn,
-                               GLboolean transpose,
-                               const GLfloat *value,
-                               uint8_t *targetData);
+struct SetFloatUniformMatrixHLSL
+{
+    static void Run(unsigned int arrayElementOffset,
+                    unsigned int elementCount,
+                    GLsizei countIn,
+                    GLboolean transpose,
+                    const GLfloat *value,
+                    uint8_t *targetData);
+};
 
 // Helper method to de-tranpose a matrix uniform for an API query.
 void GetMatrixUniform(GLenum type, GLfloat *dataOut, const GLfloat *source, bool transpose);
@@ -310,11 +317,11 @@ void OverrideFeaturesWithDisplayState(angle::FeatureSetBase *features,
                                       const egl::DisplayState &state);
 
 template <typename In>
-size_t LineLoopRestartIndexCountHelper(GLsizei indexCount, const uint8_t *srcPtr)
+uint32_t LineLoopRestartIndexCountHelper(GLsizei indexCount, const uint8_t *srcPtr)
 {
     constexpr In restartIndex = gl::GetPrimitiveRestartIndexFromType<In>();
     const In *inIndices       = reinterpret_cast<const In *>(srcPtr);
-    size_t numIndices         = 0;
+    uint32_t numIndices       = 0;
     // See CopyLineLoopIndicesWithRestart() below for more info on how
     // numIndices is calculated.
     GLsizei loopStartIndex = 0;
@@ -341,9 +348,9 @@ size_t LineLoopRestartIndexCountHelper(GLsizei indexCount, const uint8_t *srcPtr
     return numIndices;
 }
 
-inline size_t GetLineLoopWithRestartIndexCount(gl::DrawElementsType glIndexType,
-                                               GLsizei indexCount,
-                                               const uint8_t *srcPtr)
+inline uint32_t GetLineLoopWithRestartIndexCount(gl::DrawElementsType glIndexType,
+                                                 GLsizei indexCount,
+                                                 const uint8_t *srcPtr)
 {
     switch (glIndexType)
     {

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2012-2014 The ANGLE Project Authors. All rights reserved.
+// Copyright 2012 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -66,6 +66,13 @@ bool TextureStorage11::ImageKey::operator<(const ImageKey &rhs) const
     return std::tie(level, layered, layer, access, format) <
            std::tie(rhs.level, rhs.layered, rhs.layer, rhs.access, rhs.format);
 }
+
+MultisampledRenderToTextureInfo::MultisampledRenderToTextureInfo(const GLsizei samples,
+                                                                 const gl::ImageIndex index)
+    : samples(samples), index(index)
+{}
+
+MultisampledRenderToTextureInfo::~MultisampledRenderToTextureInfo() {}
 
 TextureStorage11::TextureStorage11(Renderer11 *renderer,
                                    UINT bindFlags,
@@ -384,7 +391,7 @@ angle::Result TextureStorage11::getSRVForImage(const gl::Context *context,
                                                const d3d11::SharedSRV **outSRV)
 {
     // TODO(Xinghua.cao@intel.com): Add solution to handle swizzle required.
-    ImageKey key(imageUnit.level, imageUnit.layered, imageUnit.layer, imageUnit.access,
+    ImageKey key(imageUnit.level, (imageUnit.layered == GL_TRUE), imageUnit.layer, imageUnit.access,
                  imageUnit.format);
     ANGLE_TRY(getCachedOrCreateSRVForImage(context, key, outSRV));
     return angle::Result::Continue;
@@ -416,7 +423,7 @@ angle::Result TextureStorage11::getUAVForImage(const gl::Context *context,
                                                const d3d11::SharedUAV **outUAV)
 {
     // TODO(Xinghua.cao@intel.com): Add solution to handle swizzle required.
-    ImageKey key(imageUnit.level, imageUnit.layered, imageUnit.layer, imageUnit.access,
+    ImageKey key(imageUnit.level, (imageUnit.layered == GL_TRUE), imageUnit.layer, imageUnit.access,
                  imageUnit.format);
     ANGLE_TRY(getCachedOrCreateUAVForImage(context, key, outUAV));
     return angle::Result::Continue;
@@ -638,10 +645,11 @@ angle::Result TextureStorage11::generateMipmap(const gl::Context *context,
     markLevelDirty(destIndex.getLevelIndex());
 
     RenderTargetD3D *source = nullptr;
-    ANGLE_TRY(getRenderTarget(context, sourceIndex, &source));
+    ANGLE_TRY(getRenderTarget(context, sourceIndex, 0, &source));
 
     RenderTargetD3D *dest = nullptr;
-    ANGLE_TRY(getRenderTarget(context, destIndex, &dest));
+    GLsizei destSamples   = 0;
+    ANGLE_TRY(getRenderTarget(context, destIndex, destSamples, &dest));
 
     RenderTarget11 *rt11                   = GetAs<RenderTarget11>(source);
     const d3d11::SharedSRV &sourceSRV      = rt11->getBlitShaderResourceView(context);
@@ -846,6 +854,15 @@ angle::Result TextureStorage11::initDropStencilTexture(const gl::Context *contex
     }
 
     return angle::Result::Continue;
+}
+
+GLsizei TextureStorage11::getRenderToTextureSamples() const
+{
+    if (mMSTexInfo)
+    {
+        return mMSTexInfo->samples;
+    }
+    return 0;
 }
 
 TextureStorage11_2D::TextureStorage11_2D(Renderer11 *renderer, SwapChain11 *swapchain)
@@ -1155,6 +1172,7 @@ angle::Result TextureStorage11_2D::ensureTextureExists(const gl::Context *contex
 
 angle::Result TextureStorage11_2D::getRenderTarget(const gl::Context *context,
                                                    const gl::ImageIndex &index,
+                                                   GLsizei samples,
                                                    RenderTargetD3D **outRT)
 {
     ASSERT(!index.hasLayer());
@@ -1524,6 +1542,7 @@ angle::Result TextureStorage11_External::getMippedResource(const gl::Context *co
 
 angle::Result TextureStorage11_External::getRenderTarget(const gl::Context *context,
                                                          const gl::ImageIndex &index,
+                                                         GLsizei samples,
                                                          RenderTargetD3D **outRT)
 {
     // Render targets are not supported for external textures
@@ -1701,6 +1720,7 @@ angle::Result TextureStorage11_EGLImage::getMippedResource(const gl::Context *co
 
 angle::Result TextureStorage11_EGLImage::getRenderTarget(const gl::Context *context,
                                                          const gl::ImageIndex &index,
+                                                         GLsizei samples,
                                                          RenderTargetD3D **outRT)
 {
     ASSERT(!index.hasLayer());
@@ -2212,6 +2232,7 @@ angle::Result TextureStorage11_Cube::createRenderTargetSRV(const gl::Context *co
 
 angle::Result TextureStorage11_Cube::getRenderTarget(const gl::Context *context,
                                                      const gl::ImageIndex &index,
+                                                     GLsizei samples,
                                                      RenderTargetD3D **outRT)
 {
     const int faceIndex = index.cubeMapFaceIndex();
@@ -2713,6 +2734,7 @@ angle::Result TextureStorage11_3D::createUAVForImage(const gl::Context *context,
 
 angle::Result TextureStorage11_3D::getRenderTarget(const gl::Context *context,
                                                    const gl::ImageIndex &index,
+                                                   GLsizei samples,
                                                    RenderTargetD3D **outRT)
 {
     const int mipLevel = index.getLevelIndex();
@@ -3083,6 +3105,7 @@ angle::Result TextureStorage11_2DArray::createRenderTargetSRV(const gl::Context 
 
 angle::Result TextureStorage11_2DArray::getRenderTarget(const gl::Context *context,
                                                         const gl::ImageIndex &index,
+                                                        GLsizei samples,
                                                         RenderTargetD3D **outRT)
 {
     ASSERT(index.hasLayer());
@@ -3345,6 +3368,7 @@ angle::Result TextureStorage11_2DMultisample::ensureTextureExists(const gl::Cont
 
 angle::Result TextureStorage11_2DMultisample::getRenderTarget(const gl::Context *context,
                                                               const gl::ImageIndex &index,
+                                                              GLsizei samples,
                                                               RenderTargetD3D **outRT)
 {
     ASSERT(!index.hasLayer());
@@ -3555,6 +3579,7 @@ angle::Result TextureStorage11_2DMultisampleArray::createRenderTargetSRV(
 
 angle::Result TextureStorage11_2DMultisampleArray::getRenderTarget(const gl::Context *context,
                                                                    const gl::ImageIndex &index,
+                                                                   GLsizei samples,
                                                                    RenderTargetD3D **outRT)
 {
     ASSERT(index.hasLayer());

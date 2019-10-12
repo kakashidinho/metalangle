@@ -24,6 +24,16 @@ void WriteParamTypeToStream(std::ostream &os, ParamType paramType, const ParamVa
         case ParamType::TBufferBinding:
             WriteParamValueToStream<ParamType::TBufferBinding>(os, paramValue.BufferBindingVal);
             break;
+        case ParamType::TBufferID:
+            WriteParamValueToStream<ParamType::TBufferID>(os, paramValue.BufferIDVal);
+            break;
+        case ParamType::TBufferIDConstPointer:
+            WriteParamValueToStream<ParamType::TBufferIDConstPointer>(
+                os, paramValue.BufferIDConstPointerVal);
+            break;
+        case ParamType::TBufferIDPointer:
+            WriteParamValueToStream<ParamType::TBufferIDPointer>(os, paramValue.BufferIDPointerVal);
+            break;
         case ParamType::TBufferUsage:
             WriteParamValueToStream<ParamType::TBufferUsage>(os, paramValue.BufferUsageVal);
             break;
@@ -37,6 +47,31 @@ void WriteParamTypeToStream(std::ostream &os, ParamType paramType, const ParamVa
         case ParamType::TDrawElementsType:
             WriteParamValueToStream<ParamType::TDrawElementsType>(os,
                                                                   paramValue.DrawElementsTypeVal);
+            break;
+        case ParamType::TFenceNVID:
+            WriteParamValueToStream<ParamType::TFenceNVID>(os, paramValue.FenceNVIDVal);
+            break;
+        case ParamType::TFenceNVIDConstPointer:
+            WriteParamValueToStream<ParamType::TFenceNVIDConstPointer>(
+                os, paramValue.FenceNVIDConstPointerVal);
+            break;
+        case ParamType::TFenceNVIDPointer:
+            WriteParamValueToStream<ParamType::TFenceNVIDPointer>(os,
+                                                                  paramValue.FenceNVIDPointerVal);
+            break;
+        case ParamType::TFramebufferID:
+            WriteParamValueToStream<ParamType::TFramebufferID>(os, paramValue.FramebufferIDVal);
+            break;
+        case ParamType::TFramebufferIDConstPointer:
+            WriteParamValueToStream<ParamType::TFramebufferIDConstPointer>(
+                os, paramValue.FramebufferIDConstPointerVal);
+            break;
+        case ParamType::TFramebufferIDPointer:
+            WriteParamValueToStream<ParamType::TFramebufferIDPointer>(
+                os, paramValue.FramebufferIDPointerVal);
+            break;
+        case ParamType::TGLDEBUGPROC:
+            WriteParamValueToStream<ParamType::TGLDEBUGPROC>(os, paramValue.GLDEBUGPROCVal);
             break;
         case ParamType::TGLDEBUGPROCKHR:
             WriteParamValueToStream<ParamType::TGLDEBUGPROCKHR>(os, paramValue.GLDEBUGPROCKHRVal);
@@ -135,6 +170,10 @@ void WriteParamTypeToStream(std::ostream &os, ParamType paramType, const ParamVa
         case ParamType::TGLintptr:
             WriteParamValueToStream<ParamType::TGLintptr>(os, paramValue.GLintptrVal);
             break;
+        case ParamType::TGLintptrConstPointer:
+            WriteParamValueToStream<ParamType::TGLintptrConstPointer>(
+                os, paramValue.GLintptrConstPointerVal);
+            break;
         case ParamType::TGLshort:
             WriteParamValueToStream<ParamType::TGLshort>(os, paramValue.GLshortVal);
             break;
@@ -154,6 +193,10 @@ void WriteParamTypeToStream(std::ostream &os, ParamType paramType, const ParamVa
             break;
         case ParamType::TGLsizeiptr:
             WriteParamValueToStream<ParamType::TGLsizeiptr>(os, paramValue.GLsizeiptrVal);
+            break;
+        case ParamType::TGLsizeiptrConstPointer:
+            WriteParamValueToStream<ParamType::TGLsizeiptrConstPointer>(
+                os, paramValue.GLsizeiptrConstPointerVal);
             break;
         case ParamType::TGLsync:
             WriteParamValueToStream<ParamType::TGLsync>(os, paramValue.GLsyncVal);
@@ -227,17 +270,98 @@ void WriteParamTypeToStream(std::ostream &os, ParamType paramType, const ParamVa
         case ParamType::TMatrixType:
             WriteParamValueToStream<ParamType::TMatrixType>(os, paramValue.MatrixTypeVal);
             break;
+        case ParamType::TMemoryObjectID:
+            WriteParamValueToStream<ParamType::TMemoryObjectID>(os, paramValue.MemoryObjectIDVal);
+            break;
+        case ParamType::TMemoryObjectIDConstPointer:
+            WriteParamValueToStream<ParamType::TMemoryObjectIDConstPointer>(
+                os, paramValue.MemoryObjectIDConstPointerVal);
+            break;
+        case ParamType::TMemoryObjectIDPointer:
+            WriteParamValueToStream<ParamType::TMemoryObjectIDPointer>(
+                os, paramValue.MemoryObjectIDPointerVal);
+            break;
+        case ParamType::TPathID:
+            WriteParamValueToStream<ParamType::TPathID>(os, paramValue.PathIDVal);
+            break;
         case ParamType::TPointParameter:
             WriteParamValueToStream<ParamType::TPointParameter>(os, paramValue.PointParameterVal);
             break;
         case ParamType::TPrimitiveMode:
             WriteParamValueToStream<ParamType::TPrimitiveMode>(os, paramValue.PrimitiveModeVal);
             break;
-        case ParamType::TProvokingVertex:
-            WriteParamValueToStream<ParamType::TProvokingVertex>(os, paramValue.ProvokingVertexVal);
+        case ParamType::TProgramPipelineID:
+            WriteParamValueToStream<ParamType::TProgramPipelineID>(os,
+                                                                   paramValue.ProgramPipelineIDVal);
+            break;
+        case ParamType::TProgramPipelineIDConstPointer:
+            WriteParamValueToStream<ParamType::TProgramPipelineIDConstPointer>(
+                os, paramValue.ProgramPipelineIDConstPointerVal);
+            break;
+        case ParamType::TProgramPipelineIDPointer:
+            WriteParamValueToStream<ParamType::TProgramPipelineIDPointer>(
+                os, paramValue.ProgramPipelineIDPointerVal);
+            break;
+        case ParamType::TProvokingVertexConvention:
+            WriteParamValueToStream<ParamType::TProvokingVertexConvention>(
+                os, paramValue.ProvokingVertexConventionVal);
+            break;
+        case ParamType::TQueryID:
+            WriteParamValueToStream<ParamType::TQueryID>(os, paramValue.QueryIDVal);
+            break;
+        case ParamType::TQueryIDConstPointer:
+            WriteParamValueToStream<ParamType::TQueryIDConstPointer>(
+                os, paramValue.QueryIDConstPointerVal);
+            break;
+        case ParamType::TQueryIDPointer:
+            WriteParamValueToStream<ParamType::TQueryIDPointer>(os, paramValue.QueryIDPointerVal);
             break;
         case ParamType::TQueryType:
             WriteParamValueToStream<ParamType::TQueryType>(os, paramValue.QueryTypeVal);
+            break;
+        case ParamType::TRenderbufferID:
+            WriteParamValueToStream<ParamType::TRenderbufferID>(os, paramValue.RenderbufferIDVal);
+            break;
+        case ParamType::TRenderbufferIDConstPointer:
+            WriteParamValueToStream<ParamType::TRenderbufferIDConstPointer>(
+                os, paramValue.RenderbufferIDConstPointerVal);
+            break;
+        case ParamType::TRenderbufferIDPointer:
+            WriteParamValueToStream<ParamType::TRenderbufferIDPointer>(
+                os, paramValue.RenderbufferIDPointerVal);
+            break;
+        case ParamType::TSamplerID:
+            WriteParamValueToStream<ParamType::TSamplerID>(os, paramValue.SamplerIDVal);
+            break;
+        case ParamType::TSamplerIDConstPointer:
+            WriteParamValueToStream<ParamType::TSamplerIDConstPointer>(
+                os, paramValue.SamplerIDConstPointerVal);
+            break;
+        case ParamType::TSamplerIDPointer:
+            WriteParamValueToStream<ParamType::TSamplerIDPointer>(os,
+                                                                  paramValue.SamplerIDPointerVal);
+            break;
+        case ParamType::TSemaphoreID:
+            WriteParamValueToStream<ParamType::TSemaphoreID>(os, paramValue.SemaphoreIDVal);
+            break;
+        case ParamType::TSemaphoreIDConstPointer:
+            WriteParamValueToStream<ParamType::TSemaphoreIDConstPointer>(
+                os, paramValue.SemaphoreIDConstPointerVal);
+            break;
+        case ParamType::TSemaphoreIDPointer:
+            WriteParamValueToStream<ParamType::TSemaphoreIDPointer>(
+                os, paramValue.SemaphoreIDPointerVal);
+            break;
+        case ParamType::TShaderProgramID:
+            WriteParamValueToStream<ParamType::TShaderProgramID>(os, paramValue.ShaderProgramIDVal);
+            break;
+        case ParamType::TShaderProgramIDConstPointer:
+            WriteParamValueToStream<ParamType::TShaderProgramIDConstPointer>(
+                os, paramValue.ShaderProgramIDConstPointerVal);
+            break;
+        case ParamType::TShaderProgramIDPointer:
+            WriteParamValueToStream<ParamType::TShaderProgramIDPointer>(
+                os, paramValue.ShaderProgramIDPointerVal);
             break;
         case ParamType::TShaderType:
             WriteParamValueToStream<ParamType::TShaderType>(os, paramValue.ShaderTypeVal);
@@ -253,11 +377,45 @@ void WriteParamTypeToStream(std::ostream &os, ParamType paramType, const ParamVa
             WriteParamValueToStream<ParamType::TTextureEnvTarget>(os,
                                                                   paramValue.TextureEnvTargetVal);
             break;
+        case ParamType::TTextureID:
+            WriteParamValueToStream<ParamType::TTextureID>(os, paramValue.TextureIDVal);
+            break;
+        case ParamType::TTextureIDConstPointer:
+            WriteParamValueToStream<ParamType::TTextureIDConstPointer>(
+                os, paramValue.TextureIDConstPointerVal);
+            break;
+        case ParamType::TTextureIDPointer:
+            WriteParamValueToStream<ParamType::TTextureIDPointer>(os,
+                                                                  paramValue.TextureIDPointerVal);
+            break;
         case ParamType::TTextureTarget:
             WriteParamValueToStream<ParamType::TTextureTarget>(os, paramValue.TextureTargetVal);
             break;
         case ParamType::TTextureType:
             WriteParamValueToStream<ParamType::TTextureType>(os, paramValue.TextureTypeVal);
+            break;
+        case ParamType::TTransformFeedbackID:
+            WriteParamValueToStream<ParamType::TTransformFeedbackID>(
+                os, paramValue.TransformFeedbackIDVal);
+            break;
+        case ParamType::TTransformFeedbackIDConstPointer:
+            WriteParamValueToStream<ParamType::TTransformFeedbackIDConstPointer>(
+                os, paramValue.TransformFeedbackIDConstPointerVal);
+            break;
+        case ParamType::TTransformFeedbackIDPointer:
+            WriteParamValueToStream<ParamType::TTransformFeedbackIDPointer>(
+                os, paramValue.TransformFeedbackIDPointerVal);
+            break;
+        case ParamType::TVertexArrayID:
+            WriteParamValueToStream<ParamType::TVertexArrayID>(os, paramValue.VertexArrayIDVal);
+            break;
+        case ParamType::TVertexArrayIDConstPointer:
+            WriteParamValueToStream<ParamType::TVertexArrayIDConstPointer>(
+                os, paramValue.VertexArrayIDConstPointerVal);
+            break;
+        case ParamType::TVertexArrayIDPointer:
+            WriteParamValueToStream<ParamType::TVertexArrayIDPointer>(
+                os, paramValue.VertexArrayIDPointerVal);
             break;
         case ParamType::TVertexAttribType:
             WriteParamValueToStream<ParamType::TVertexAttribType>(os,
@@ -289,17 +447,37 @@ const char *ParamTypeToString(ParamType paramType)
     switch (paramType)
     {
         case ParamType::TAlphaTestFunc:
-            return "gl::AlphaTestFunc";
+            return "GLenum";
         case ParamType::TBufferBinding:
-            return "gl::BufferBinding";
+            return "GLenum";
+        case ParamType::TBufferID:
+            return "GLuint";
+        case ParamType::TBufferIDConstPointer:
+            return "const GLuint *";
+        case ParamType::TBufferIDPointer:
+            return "GLuint *";
         case ParamType::TBufferUsage:
-            return "gl::BufferUsage";
+            return "GLenum";
         case ParamType::TClientVertexArrayType:
-            return "gl::ClientVertexArrayType";
+            return "GLenum";
         case ParamType::TCullFaceMode:
-            return "gl::CullFaceMode";
+            return "GLenum";
         case ParamType::TDrawElementsType:
-            return "gl::DrawElementsType";
+            return "GLenum";
+        case ParamType::TFenceNVID:
+            return "GLuint";
+        case ParamType::TFenceNVIDConstPointer:
+            return "const GLuint *";
+        case ParamType::TFenceNVIDPointer:
+            return "GLuint *";
+        case ParamType::TFramebufferID:
+            return "GLuint";
+        case ParamType::TFramebufferIDConstPointer:
+            return "const GLuint *";
+        case ParamType::TFramebufferIDPointer:
+            return "GLuint *";
+        case ParamType::TGLDEBUGPROC:
+            return "GLDEBUGPROC";
         case ParamType::TGLDEBUGPROCKHR:
             return "GLDEBUGPROCKHR";
         case ParamType::TGLbitfield:
@@ -358,6 +536,8 @@ const char *ParamTypeToString(ParamType paramType)
             return "GLint *";
         case ParamType::TGLintptr:
             return "GLintptr";
+        case ParamType::TGLintptrConstPointer:
+            return "const GLintptr *";
         case ParamType::TGLshort:
             return "GLshort";
         case ParamType::TGLshortConstPointer:
@@ -370,6 +550,8 @@ const char *ParamTypeToString(ParamType paramType)
             return "GLsizei *";
         case ParamType::TGLsizeiptr:
             return "GLsizeiptr";
+        case ParamType::TGLsizeiptrConstPointer:
+            return "const GLsizeiptr *";
         case ParamType::TGLsync:
             return "GLsync";
         case ParamType::TGLubyte:
@@ -401,39 +583,101 @@ const char *ParamTypeToString(ParamType paramType)
         case ParamType::TGLvoidConstPointerPointer:
             return "const GLvoid * const *";
         case ParamType::TGraphicsResetStatus:
-            return "gl::GraphicsResetStatus";
+            return "GLenum";
         case ParamType::THandleType:
-            return "gl::HandleType";
+            return "GLenum";
         case ParamType::TLightParameter:
-            return "gl::LightParameter";
+            return "GLenum";
         case ParamType::TLogicalOperation:
-            return "gl::LogicalOperation";
+            return "GLenum";
         case ParamType::TMaterialParameter:
-            return "gl::MaterialParameter";
+            return "GLenum";
         case ParamType::TMatrixType:
-            return "gl::MatrixType";
+            return "GLenum";
+        case ParamType::TMemoryObjectID:
+            return "GLuint";
+        case ParamType::TMemoryObjectIDConstPointer:
+            return "const GLuint *";
+        case ParamType::TMemoryObjectIDPointer:
+            return "GLuint *";
+        case ParamType::TPathID:
+            return "GLuint";
         case ParamType::TPointParameter:
-            return "gl::PointParameter";
+            return "GLenum";
         case ParamType::TPrimitiveMode:
-            return "gl::PrimitiveMode";
-        case ParamType::TProvokingVertex:
-            return "gl::ProvokingVertex";
+            return "GLenum";
+        case ParamType::TProgramPipelineID:
+            return "GLuint";
+        case ParamType::TProgramPipelineIDConstPointer:
+            return "const GLuint *";
+        case ParamType::TProgramPipelineIDPointer:
+            return "GLuint *";
+        case ParamType::TProvokingVertexConvention:
+            return "GLenum";
+        case ParamType::TQueryID:
+            return "GLuint";
+        case ParamType::TQueryIDConstPointer:
+            return "const GLuint *";
+        case ParamType::TQueryIDPointer:
+            return "GLuint *";
         case ParamType::TQueryType:
-            return "gl::QueryType";
+            return "GLenum";
+        case ParamType::TRenderbufferID:
+            return "GLuint";
+        case ParamType::TRenderbufferIDConstPointer:
+            return "const GLuint *";
+        case ParamType::TRenderbufferIDPointer:
+            return "GLuint *";
+        case ParamType::TSamplerID:
+            return "GLuint";
+        case ParamType::TSamplerIDConstPointer:
+            return "const GLuint *";
+        case ParamType::TSamplerIDPointer:
+            return "GLuint *";
+        case ParamType::TSemaphoreID:
+            return "GLuint";
+        case ParamType::TSemaphoreIDConstPointer:
+            return "const GLuint *";
+        case ParamType::TSemaphoreIDPointer:
+            return "GLuint *";
+        case ParamType::TShaderProgramID:
+            return "GLuint";
+        case ParamType::TShaderProgramIDConstPointer:
+            return "const GLuint *";
+        case ParamType::TShaderProgramIDPointer:
+            return "GLuint *";
         case ParamType::TShaderType:
-            return "gl::ShaderType";
+            return "GLenum";
         case ParamType::TShadingModel:
-            return "gl::ShadingModel";
+            return "GLenum";
         case ParamType::TTextureEnvParameter:
-            return "gl::TextureEnvParameter";
+            return "GLenum";
         case ParamType::TTextureEnvTarget:
-            return "gl::TextureEnvTarget";
+            return "GLenum";
+        case ParamType::TTextureID:
+            return "GLuint";
+        case ParamType::TTextureIDConstPointer:
+            return "const GLuint *";
+        case ParamType::TTextureIDPointer:
+            return "GLuint *";
         case ParamType::TTextureTarget:
-            return "gl::TextureTarget";
+            return "GLenum";
         case ParamType::TTextureType:
-            return "gl::TextureType";
+            return "GLenum";
+        case ParamType::TTransformFeedbackID:
+            return "GLuint";
+        case ParamType::TTransformFeedbackIDConstPointer:
+            return "const GLuint *";
+        case ParamType::TTransformFeedbackIDPointer:
+            return "GLuint *";
+        case ParamType::TVertexArrayID:
+            return "GLuint";
+        case ParamType::TVertexArrayIDConstPointer:
+            return "const GLuint *";
+        case ParamType::TVertexArrayIDPointer:
+            return "GLuint *";
         case ParamType::TVertexAttribType:
-            return "gl::VertexAttribType";
+            return "GLenum";
         case ParamType::TvoidConstPointer:
             return "const void *";
         case ParamType::TvoidConstPointerPointer:
@@ -445,6 +689,133 @@ const char *ParamTypeToString(ParamType paramType)
         default:
             UNREACHABLE();
             return "unknown";
+    }
+}
+
+ResourceIDType GetResourceIDTypeFromParamType(ParamType paramType)
+{
+    switch (paramType)
+    {
+        case ParamType::TBufferID:
+            return ResourceIDType::Buffer;
+        case ParamType::TBufferIDConstPointer:
+            return ResourceIDType::Buffer;
+        case ParamType::TBufferIDPointer:
+            return ResourceIDType::Buffer;
+        case ParamType::TFenceNVID:
+            return ResourceIDType::FenceNV;
+        case ParamType::TFenceNVIDConstPointer:
+            return ResourceIDType::FenceNV;
+        case ParamType::TFenceNVIDPointer:
+            return ResourceIDType::FenceNV;
+        case ParamType::TFramebufferID:
+            return ResourceIDType::Framebuffer;
+        case ParamType::TFramebufferIDConstPointer:
+            return ResourceIDType::Framebuffer;
+        case ParamType::TFramebufferIDPointer:
+            return ResourceIDType::Framebuffer;
+        case ParamType::TMemoryObjectID:
+            return ResourceIDType::MemoryObject;
+        case ParamType::TMemoryObjectIDConstPointer:
+            return ResourceIDType::MemoryObject;
+        case ParamType::TMemoryObjectIDPointer:
+            return ResourceIDType::MemoryObject;
+        case ParamType::TPathID:
+            return ResourceIDType::Path;
+        case ParamType::TProgramPipelineID:
+            return ResourceIDType::ProgramPipeline;
+        case ParamType::TProgramPipelineIDConstPointer:
+            return ResourceIDType::ProgramPipeline;
+        case ParamType::TProgramPipelineIDPointer:
+            return ResourceIDType::ProgramPipeline;
+        case ParamType::TQueryID:
+            return ResourceIDType::Query;
+        case ParamType::TQueryIDConstPointer:
+            return ResourceIDType::Query;
+        case ParamType::TQueryIDPointer:
+            return ResourceIDType::Query;
+        case ParamType::TRenderbufferID:
+            return ResourceIDType::Renderbuffer;
+        case ParamType::TRenderbufferIDConstPointer:
+            return ResourceIDType::Renderbuffer;
+        case ParamType::TRenderbufferIDPointer:
+            return ResourceIDType::Renderbuffer;
+        case ParamType::TSamplerID:
+            return ResourceIDType::Sampler;
+        case ParamType::TSamplerIDConstPointer:
+            return ResourceIDType::Sampler;
+        case ParamType::TSamplerIDPointer:
+            return ResourceIDType::Sampler;
+        case ParamType::TSemaphoreID:
+            return ResourceIDType::Semaphore;
+        case ParamType::TSemaphoreIDConstPointer:
+            return ResourceIDType::Semaphore;
+        case ParamType::TSemaphoreIDPointer:
+            return ResourceIDType::Semaphore;
+        case ParamType::TShaderProgramID:
+            return ResourceIDType::ShaderProgram;
+        case ParamType::TShaderProgramIDConstPointer:
+            return ResourceIDType::ShaderProgram;
+        case ParamType::TShaderProgramIDPointer:
+            return ResourceIDType::ShaderProgram;
+        case ParamType::TTextureID:
+            return ResourceIDType::Texture;
+        case ParamType::TTextureIDConstPointer:
+            return ResourceIDType::Texture;
+        case ParamType::TTextureIDPointer:
+            return ResourceIDType::Texture;
+        case ParamType::TTransformFeedbackID:
+            return ResourceIDType::TransformFeedback;
+        case ParamType::TTransformFeedbackIDConstPointer:
+            return ResourceIDType::TransformFeedback;
+        case ParamType::TTransformFeedbackIDPointer:
+            return ResourceIDType::TransformFeedback;
+        case ParamType::TVertexArrayID:
+            return ResourceIDType::VertexArray;
+        case ParamType::TVertexArrayIDConstPointer:
+            return ResourceIDType::VertexArray;
+        case ParamType::TVertexArrayIDPointer:
+            return ResourceIDType::VertexArray;
+        default:
+            return ResourceIDType::InvalidEnum;
+    }
+}
+
+const char *GetResourceIDTypeName(ResourceIDType resourceIDType)
+{
+    switch (resourceIDType)
+    {
+        case ResourceIDType::Buffer:
+            return "Buffer";
+        case ResourceIDType::FenceNV:
+            return "FenceNV";
+        case ResourceIDType::Framebuffer:
+            return "Framebuffer";
+        case ResourceIDType::MemoryObject:
+            return "MemoryObject";
+        case ResourceIDType::Path:
+            return "Path";
+        case ResourceIDType::ProgramPipeline:
+            return "ProgramPipeline";
+        case ResourceIDType::Query:
+            return "Query";
+        case ResourceIDType::Renderbuffer:
+            return "Renderbuffer";
+        case ResourceIDType::Sampler:
+            return "Sampler";
+        case ResourceIDType::Semaphore:
+            return "Semaphore";
+        case ResourceIDType::ShaderProgram:
+            return "ShaderProgram";
+        case ResourceIDType::Texture:
+            return "Texture";
+        case ResourceIDType::TransformFeedback:
+            return "TransformFeedback";
+        case ResourceIDType::VertexArray:
+            return "VertexArray";
+        default:
+            UNREACHABLE();
+            return "GetResourceIDTypeName error";
     }
 }
 }  // namespace angle

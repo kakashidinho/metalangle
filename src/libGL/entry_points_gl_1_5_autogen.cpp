@@ -13,6 +13,7 @@
 #include "libANGLE/Context.h"
 #include "libANGLE/Context.inl.h"
 #include "libANGLE/entry_points_utils.h"
+#include "libANGLE/gl_enum_utils_autogen.h"
 #include "libANGLE/validationEGL.h"
 #include "libANGLE/validationES.h"
 #include "libANGLE/validationES1.h"
@@ -27,325 +28,441 @@ namespace gl
 {
 void GL_APIENTRY BeginQuery(GLenum target, GLuint id)
 {
-    EVENT("(GLenum target = 0x%X, GLuint id = %u)", target, id);
-
     Context *context = GetValidGlobalContext();
+    EVENT("glBeginQuery", "context = %d, GLenum target = %s, GLuint id = %u", CID(context),
+          GLenumToString(GLenumGroup::QueryTarget, target), id);
+
     if (context)
     {
-        QueryType targetPacked = FromGLenum<QueryType>(target);
-        ANGLE_CAPTURE(BeginQuery, context, targetPacked, id);
-        if (context->skipValidation() || ValidateBeginQuery(context, targetPacked, id))
+        QueryType targetPacked                        = FromGL<QueryType>(target);
+        QueryID idPacked                              = FromGL<QueryID>(id);
+        std::unique_lock<std::mutex> shareContextLock = GetShareGroupLock(context);
+        bool isCallValid =
+            (context->skipValidation() || ValidateBeginQuery(context, targetPacked, idPacked));
+        if (isCallValid)
         {
-            context->beginQuery(targetPacked, id);
+            context->beginQuery(targetPacked, idPacked);
         }
+        ANGLE_CAPTURE(BeginQuery, isCallValid, context, targetPacked, idPacked);
     }
 }
 
 void GL_APIENTRY BindBuffer(GLenum target, GLuint buffer)
 {
-    EVENT("(GLenum target = 0x%X, GLuint buffer = %u)", target, buffer);
-
     Context *context = GetValidGlobalContext();
+    EVENT("glBindBuffer", "context = %d, GLenum target = %s, GLuint buffer = %u", CID(context),
+          GLenumToString(GLenumGroup::BufferTargetARB, target), buffer);
+
     if (context)
     {
-        BufferBinding targetPacked = FromGLenum<BufferBinding>(target);
-        ANGLE_CAPTURE(BindBuffer, context, targetPacked, buffer);
-        if (context->skipValidation() || ValidateBindBuffer(context, targetPacked, buffer))
+        BufferBinding targetPacked                    = FromGL<BufferBinding>(target);
+        BufferID bufferPacked                         = FromGL<BufferID>(buffer);
+        std::unique_lock<std::mutex> shareContextLock = GetShareGroupLock(context);
+        bool isCallValid =
+            (context->skipValidation() || ValidateBindBuffer(context, targetPacked, bufferPacked));
+        if (isCallValid)
         {
-            context->bindBuffer(targetPacked, buffer);
+            context->bindBuffer(targetPacked, bufferPacked);
         }
+        ANGLE_CAPTURE(BindBuffer, isCallValid, context, targetPacked, bufferPacked);
     }
 }
 
 void GL_APIENTRY BufferData(GLenum target, GLsizeiptr size, const void *data, GLenum usage)
 {
-    EVENT("(GLenum target = 0x%X, GLsizeiptr size = %llu, const void *data = 0x%016" PRIxPTR
-          ", GLenum usage = 0x%X)",
-          target, static_cast<unsigned long long>(size), (uintptr_t)data, usage);
-
     Context *context = GetValidGlobalContext();
+    EVENT("glBufferData",
+          "context = %d, GLenum target = %s, GLsizeiptr size = %llu, const void *data = "
+          "0x%016" PRIxPTR ", GLenum usage = %s",
+          CID(context), GLenumToString(GLenumGroup::BufferTargetARB, target),
+          static_cast<unsigned long long>(size), (uintptr_t)data,
+          GLenumToString(GLenumGroup::BufferUsageARB, usage));
+
     if (context)
     {
-        BufferBinding targetPacked = FromGLenum<BufferBinding>(target);
-        BufferUsage usagePacked    = FromGLenum<BufferUsage>(usage);
-        ANGLE_CAPTURE(BufferData, context, targetPacked, size, data, usagePacked);
-        if (context->skipValidation() ||
-            ValidateBufferData(context, targetPacked, size, data, usagePacked))
+        BufferBinding targetPacked                    = FromGL<BufferBinding>(target);
+        BufferUsage usagePacked                       = FromGL<BufferUsage>(usage);
+        std::unique_lock<std::mutex> shareContextLock = GetShareGroupLock(context);
+        bool isCallValid                              = (context->skipValidation() ||
+                            ValidateBufferData(context, targetPacked, size, data, usagePacked));
+        if (isCallValid)
         {
             context->bufferData(targetPacked, size, data, usagePacked);
         }
+        ANGLE_CAPTURE(BufferData, isCallValid, context, targetPacked, size, data, usagePacked);
     }
 }
 
 void GL_APIENTRY BufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, const void *data)
 {
-    EVENT(
-        "(GLenum target = 0x%X, GLintptr offset = %llu, GLsizeiptr size = %llu, const void *data = "
-        "0x%016" PRIxPTR ")",
-        target, static_cast<unsigned long long>(offset), static_cast<unsigned long long>(size),
-        (uintptr_t)data);
-
     Context *context = GetValidGlobalContext();
+    EVENT("glBufferSubData",
+          "context = %d, GLenum target = %s, GLintptr offset = %llu, GLsizeiptr size = %llu, const "
+          "void *data = 0x%016" PRIxPTR "",
+          CID(context), GLenumToString(GLenumGroup::BufferTargetARB, target),
+          static_cast<unsigned long long>(offset), static_cast<unsigned long long>(size),
+          (uintptr_t)data);
+
     if (context)
     {
-        BufferBinding targetPacked = FromGLenum<BufferBinding>(target);
-        ANGLE_CAPTURE(BufferSubData, context, targetPacked, offset, size, data);
-        if (context->skipValidation() ||
-            ValidateBufferSubData(context, targetPacked, offset, size, data))
+        BufferBinding targetPacked                    = FromGL<BufferBinding>(target);
+        std::unique_lock<std::mutex> shareContextLock = GetShareGroupLock(context);
+        bool isCallValid                              = (context->skipValidation() ||
+                            ValidateBufferSubData(context, targetPacked, offset, size, data));
+        if (isCallValid)
         {
             context->bufferSubData(targetPacked, offset, size, data);
         }
+        ANGLE_CAPTURE(BufferSubData, isCallValid, context, targetPacked, offset, size, data);
     }
 }
 
 void GL_APIENTRY DeleteBuffers(GLsizei n, const GLuint *buffers)
 {
-    EVENT("(GLsizei n = %d, const GLuint *buffers = 0x%016" PRIxPTR ")", n, (uintptr_t)buffers);
-
     Context *context = GetValidGlobalContext();
+    EVENT("glDeleteBuffers",
+          "context = %d, GLsizei n = %d, const GLuint *buffers = 0x%016" PRIxPTR "", CID(context),
+          n, (uintptr_t)buffers);
+
     if (context)
     {
-        ANGLE_CAPTURE(DeleteBuffers, context, n, buffers);
-        if (context->skipValidation() || ValidateDeleteBuffers(context, n, buffers))
+        const BufferID *buffersPacked                 = FromGL<const BufferID *>(buffers);
+        std::unique_lock<std::mutex> shareContextLock = GetShareGroupLock(context);
+        bool isCallValid =
+            (context->skipValidation() || ValidateDeleteBuffers(context, n, buffersPacked));
+        if (isCallValid)
         {
-            context->deleteBuffers(n, buffers);
+            context->deleteBuffers(n, buffersPacked);
         }
+        ANGLE_CAPTURE(DeleteBuffers, isCallValid, context, n, buffersPacked);
     }
 }
 
 void GL_APIENTRY DeleteQueries(GLsizei n, const GLuint *ids)
 {
-    EVENT("(GLsizei n = %d, const GLuint *ids = 0x%016" PRIxPTR ")", n, (uintptr_t)ids);
-
     Context *context = GetValidGlobalContext();
+    EVENT("glDeleteQueries", "context = %d, GLsizei n = %d, const GLuint *ids = 0x%016" PRIxPTR "",
+          CID(context), n, (uintptr_t)ids);
+
     if (context)
     {
-        ANGLE_CAPTURE(DeleteQueries, context, n, ids);
-        if (context->skipValidation() || ValidateDeleteQueries(context, n, ids))
+        const QueryID *idsPacked                      = FromGL<const QueryID *>(ids);
+        std::unique_lock<std::mutex> shareContextLock = GetShareGroupLock(context);
+        bool isCallValid =
+            (context->skipValidation() || ValidateDeleteQueries(context, n, idsPacked));
+        if (isCallValid)
         {
-            context->deleteQueries(n, ids);
+            context->deleteQueries(n, idsPacked);
         }
+        ANGLE_CAPTURE(DeleteQueries, isCallValid, context, n, idsPacked);
     }
 }
 
 void GL_APIENTRY EndQuery(GLenum target)
 {
-    EVENT("(GLenum target = 0x%X)", target);
-
     Context *context = GetValidGlobalContext();
+    EVENT("glEndQuery", "context = %d, GLenum target = %s", CID(context),
+          GLenumToString(GLenumGroup::QueryTarget, target));
+
     if (context)
     {
-        QueryType targetPacked = FromGLenum<QueryType>(target);
-        ANGLE_CAPTURE(EndQuery, context, targetPacked);
-        if (context->skipValidation() || ValidateEndQuery(context, targetPacked))
+        QueryType targetPacked                        = FromGL<QueryType>(target);
+        std::unique_lock<std::mutex> shareContextLock = GetShareGroupLock(context);
+        bool isCallValid = (context->skipValidation() || ValidateEndQuery(context, targetPacked));
+        if (isCallValid)
         {
             context->endQuery(targetPacked);
         }
+        ANGLE_CAPTURE(EndQuery, isCallValid, context, targetPacked);
     }
 }
 
 void GL_APIENTRY GenBuffers(GLsizei n, GLuint *buffers)
 {
-    EVENT("(GLsizei n = %d, GLuint *buffers = 0x%016" PRIxPTR ")", n, (uintptr_t)buffers);
-
     Context *context = GetValidGlobalContext();
+    EVENT("glGenBuffers", "context = %d, GLsizei n = %d, GLuint *buffers = 0x%016" PRIxPTR "",
+          CID(context), n, (uintptr_t)buffers);
+
     if (context)
     {
-        ANGLE_CAPTURE(GenBuffers, context, n, buffers);
-        if (context->skipValidation() || ValidateGenBuffers(context, n, buffers))
+        BufferID *buffersPacked                       = FromGL<BufferID *>(buffers);
+        std::unique_lock<std::mutex> shareContextLock = GetShareGroupLock(context);
+        bool isCallValid =
+            (context->skipValidation() || ValidateGenBuffers(context, n, buffersPacked));
+        if (isCallValid)
         {
-            context->genBuffers(n, buffers);
+            context->genBuffers(n, buffersPacked);
         }
+        ANGLE_CAPTURE(GenBuffers, isCallValid, context, n, buffersPacked);
     }
 }
 
 void GL_APIENTRY GenQueries(GLsizei n, GLuint *ids)
 {
-    EVENT("(GLsizei n = %d, GLuint *ids = 0x%016" PRIxPTR ")", n, (uintptr_t)ids);
-
     Context *context = GetValidGlobalContext();
+    EVENT("glGenQueries", "context = %d, GLsizei n = %d, GLuint *ids = 0x%016" PRIxPTR "",
+          CID(context), n, (uintptr_t)ids);
+
     if (context)
     {
-        ANGLE_CAPTURE(GenQueries, context, n, ids);
-        if (context->skipValidation() || ValidateGenQueries(context, n, ids))
+        QueryID *idsPacked                            = FromGL<QueryID *>(ids);
+        std::unique_lock<std::mutex> shareContextLock = GetShareGroupLock(context);
+        bool isCallValid = (context->skipValidation() || ValidateGenQueries(context, n, idsPacked));
+        if (isCallValid)
         {
-            context->genQueries(n, ids);
+            context->genQueries(n, idsPacked);
         }
+        ANGLE_CAPTURE(GenQueries, isCallValid, context, n, idsPacked);
     }
 }
 
 void GL_APIENTRY GetBufferParameteriv(GLenum target, GLenum pname, GLint *params)
 {
-    EVENT("(GLenum target = 0x%X, GLenum pname = 0x%X, GLint *params = 0x%016" PRIxPTR ")", target,
-          pname, (uintptr_t)params);
-
     Context *context = GetValidGlobalContext();
+    EVENT("glGetBufferParameteriv",
+          "context = %d, GLenum target = %s, GLenum pname = %s, GLint *params = 0x%016" PRIxPTR "",
+          CID(context), GLenumToString(GLenumGroup::BufferTargetARB, target),
+          GLenumToString(GLenumGroup::DefaultGroup, pname), (uintptr_t)params);
+
     if (context)
     {
-        BufferBinding targetPacked = FromGLenum<BufferBinding>(target);
-        ANGLE_CAPTURE(GetBufferParameteriv, context, targetPacked, pname, params);
-        if (context->skipValidation() ||
-            ValidateGetBufferParameteriv(context, targetPacked, pname, params))
+        BufferBinding targetPacked                    = FromGL<BufferBinding>(target);
+        std::unique_lock<std::mutex> shareContextLock = GetShareGroupLock(context);
+        bool isCallValid                              = (context->skipValidation() ||
+                            ValidateGetBufferParameteriv(context, targetPacked, pname, params));
+        if (isCallValid)
         {
             context->getBufferParameteriv(targetPacked, pname, params);
         }
+        ANGLE_CAPTURE(GetBufferParameteriv, isCallValid, context, targetPacked, pname, params);
     }
 }
 
 void GL_APIENTRY GetBufferPointerv(GLenum target, GLenum pname, void **params)
 {
-    EVENT("(GLenum target = 0x%X, GLenum pname = 0x%X, void **params = 0x%016" PRIxPTR ")", target,
-          pname, (uintptr_t)params);
-
     Context *context = GetValidGlobalContext();
+    EVENT("glGetBufferPointerv",
+          "context = %d, GLenum target = %s, GLenum pname = %s, void **params = 0x%016" PRIxPTR "",
+          CID(context), GLenumToString(GLenumGroup::BufferTargetARB, target),
+          GLenumToString(GLenumGroup::DefaultGroup, pname), (uintptr_t)params);
+
     if (context)
     {
-        BufferBinding targetPacked = FromGLenum<BufferBinding>(target);
-        ANGLE_CAPTURE(GetBufferPointerv, context, targetPacked, pname, params);
-        if (context->skipValidation() ||
-            ValidateGetBufferPointerv(context, targetPacked, pname, params))
+        BufferBinding targetPacked                    = FromGL<BufferBinding>(target);
+        std::unique_lock<std::mutex> shareContextLock = GetShareGroupLock(context);
+        bool isCallValid                              = (context->skipValidation() ||
+                            ValidateGetBufferPointerv(context, targetPacked, pname, params));
+        if (isCallValid)
         {
             context->getBufferPointerv(targetPacked, pname, params);
         }
+        ANGLE_CAPTURE(GetBufferPointerv, isCallValid, context, targetPacked, pname, params);
     }
 }
 
 void GL_APIENTRY GetBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, void *data)
 {
-    EVENT(
-        "(GLenum target = 0x%X, GLintptr offset = %llu, GLsizeiptr size = %llu, void *data = "
-        "0x%016" PRIxPTR ")",
-        target, static_cast<unsigned long long>(offset), static_cast<unsigned long long>(size),
-        (uintptr_t)data);
-
     Context *context = GetValidGlobalContext();
+    EVENT("glGetBufferSubData",
+          "context = %d, GLenum target = %s, GLintptr offset = %llu, GLsizeiptr size = %llu, void "
+          "*data = 0x%016" PRIxPTR "",
+          CID(context), GLenumToString(GLenumGroup::BufferTargetARB, target),
+          static_cast<unsigned long long>(offset), static_cast<unsigned long long>(size),
+          (uintptr_t)data);
+
     if (context)
     {
-        ANGLE_CAPTURE(GetBufferSubData, context, target, offset, size, data);
-        if (context->skipValidation() ||
-            ValidateGetBufferSubData(context, target, offset, size, data))
+        std::unique_lock<std::mutex> shareContextLock = GetShareGroupLock(context);
+        bool isCallValid                              = (context->skipValidation() ||
+                            ValidateGetBufferSubData(context, target, offset, size, data));
+        if (isCallValid)
         {
             context->getBufferSubData(target, offset, size, data);
         }
+        ANGLE_CAPTURE(GetBufferSubData, isCallValid, context, target, offset, size, data);
     }
 }
 
 void GL_APIENTRY GetQueryObjectiv(GLuint id, GLenum pname, GLint *params)
 {
-    EVENT("(GLuint id = %u, GLenum pname = 0x%X, GLint *params = 0x%016" PRIxPTR ")", id, pname,
+    Context *context = GetGlobalContext();
+    EVENT("glGetQueryObjectiv",
+          "context = %d, GLuint id = %u, GLenum pname = %s, GLint *params = 0x%016" PRIxPTR "",
+          CID(context), id, GLenumToString(GLenumGroup::QueryObjectParameterName, pname),
           (uintptr_t)params);
 
-    Context *context = GetGlobalContext();
     if (context)
     {
-        ANGLE_CAPTURE(GetQueryObjectiv, context, id, pname, params);
-        if (context->skipValidation() || ValidateGetQueryObjectiv(context, id, pname, params))
+        QueryID idPacked                              = FromGL<QueryID>(id);
+        std::unique_lock<std::mutex> shareContextLock = GetShareGroupLock(context);
+        bool isCallValid                              = (context->skipValidation() ||
+                            ValidateGetQueryObjectiv(context, idPacked, pname, params));
+        if (isCallValid)
         {
-            context->getQueryObjectiv(id, pname, params);
+            context->getQueryObjectiv(idPacked, pname, params);
         }
+        ANGLE_CAPTURE(GetQueryObjectiv, isCallValid, context, idPacked, pname, params);
     }
 }
 
 void GL_APIENTRY GetQueryObjectuiv(GLuint id, GLenum pname, GLuint *params)
 {
-    EVENT("(GLuint id = %u, GLenum pname = 0x%X, GLuint *params = 0x%016" PRIxPTR ")", id, pname,
+    Context *context = GetValidGlobalContext();
+    EVENT("glGetQueryObjectuiv",
+          "context = %d, GLuint id = %u, GLenum pname = %s, GLuint *params = 0x%016" PRIxPTR "",
+          CID(context), id, GLenumToString(GLenumGroup::QueryObjectParameterName, pname),
           (uintptr_t)params);
 
-    Context *context = GetValidGlobalContext();
     if (context)
     {
-        ANGLE_CAPTURE(GetQueryObjectuiv, context, id, pname, params);
-        if (context->skipValidation() || ValidateGetQueryObjectuiv(context, id, pname, params))
+        QueryID idPacked                              = FromGL<QueryID>(id);
+        std::unique_lock<std::mutex> shareContextLock = GetShareGroupLock(context);
+        bool isCallValid                              = (context->skipValidation() ||
+                            ValidateGetQueryObjectuiv(context, idPacked, pname, params));
+        if (isCallValid)
         {
-            context->getQueryObjectuiv(id, pname, params);
+            context->getQueryObjectuiv(idPacked, pname, params);
         }
+        ANGLE_CAPTURE(GetQueryObjectuiv, isCallValid, context, idPacked, pname, params);
     }
 }
 
 void GL_APIENTRY GetQueryiv(GLenum target, GLenum pname, GLint *params)
 {
-    EVENT("(GLenum target = 0x%X, GLenum pname = 0x%X, GLint *params = 0x%016" PRIxPTR ")", target,
-          pname, (uintptr_t)params);
-
     Context *context = GetValidGlobalContext();
+    EVENT("glGetQueryiv",
+          "context = %d, GLenum target = %s, GLenum pname = %s, GLint *params = 0x%016" PRIxPTR "",
+          CID(context), GLenumToString(GLenumGroup::QueryTarget, target),
+          GLenumToString(GLenumGroup::QueryParameterName, pname), (uintptr_t)params);
+
     if (context)
     {
-        QueryType targetPacked = FromGLenum<QueryType>(target);
-        ANGLE_CAPTURE(GetQueryiv, context, targetPacked, pname, params);
-        if (context->skipValidation() || ValidateGetQueryiv(context, targetPacked, pname, params))
+        QueryType targetPacked                        = FromGL<QueryType>(target);
+        std::unique_lock<std::mutex> shareContextLock = GetShareGroupLock(context);
+        bool isCallValid =
+            (context->skipValidation() || ValidateGetQueryiv(context, targetPacked, pname, params));
+        if (isCallValid)
         {
             context->getQueryiv(targetPacked, pname, params);
         }
+        ANGLE_CAPTURE(GetQueryiv, isCallValid, context, targetPacked, pname, params);
     }
 }
 
 GLboolean GL_APIENTRY IsBuffer(GLuint buffer)
 {
-    EVENT("(GLuint buffer = %u)", buffer);
-
     Context *context = GetValidGlobalContext();
+    EVENT("glIsBuffer", "context = %d, GLuint buffer = %u", CID(context), buffer);
+
+    GLboolean returnValue;
     if (context)
     {
-        ANGLE_CAPTURE(IsBuffer, context, buffer);
-        if (context->skipValidation() || ValidateIsBuffer(context, buffer))
+        BufferID bufferPacked                         = FromGL<BufferID>(buffer);
+        std::unique_lock<std::mutex> shareContextLock = GetShareGroupLock(context);
+        bool isCallValid = (context->skipValidation() || ValidateIsBuffer(context, bufferPacked));
+        if (isCallValid)
         {
-            return context->isBuffer(buffer);
+            returnValue = context->isBuffer(bufferPacked);
         }
+        else
+        {
+            returnValue = GetDefaultReturnValue<EntryPoint::IsBuffer, GLboolean>();
+        }
+        ANGLE_CAPTURE(IsBuffer, isCallValid, context, bufferPacked, returnValue);
     }
-
-    return GetDefaultReturnValue<EntryPoint::IsBuffer, GLboolean>();
+    else
+    {
+        returnValue = GetDefaultReturnValue<EntryPoint::IsBuffer, GLboolean>();
+    }
+    return returnValue;
 }
 
 GLboolean GL_APIENTRY IsQuery(GLuint id)
 {
-    EVENT("(GLuint id = %u)", id);
-
     Context *context = GetValidGlobalContext();
+    EVENT("glIsQuery", "context = %d, GLuint id = %u", CID(context), id);
+
+    GLboolean returnValue;
     if (context)
     {
-        ANGLE_CAPTURE(IsQuery, context, id);
-        if (context->skipValidation() || ValidateIsQuery(context, id))
+        QueryID idPacked                              = FromGL<QueryID>(id);
+        std::unique_lock<std::mutex> shareContextLock = GetShareGroupLock(context);
+        bool isCallValid = (context->skipValidation() || ValidateIsQuery(context, idPacked));
+        if (isCallValid)
         {
-            return context->isQuery(id);
+            returnValue = context->isQuery(idPacked);
         }
+        else
+        {
+            returnValue = GetDefaultReturnValue<EntryPoint::IsQuery, GLboolean>();
+        }
+        ANGLE_CAPTURE(IsQuery, isCallValid, context, idPacked, returnValue);
     }
-
-    return GetDefaultReturnValue<EntryPoint::IsQuery, GLboolean>();
+    else
+    {
+        returnValue = GetDefaultReturnValue<EntryPoint::IsQuery, GLboolean>();
+    }
+    return returnValue;
 }
 
 void *GL_APIENTRY MapBuffer(GLenum target, GLenum access)
 {
-    EVENT("(GLenum target = 0x%X, GLenum access = 0x%X)", target, access);
-
     Context *context = GetValidGlobalContext();
+    EVENT("glMapBuffer", "context = %d, GLenum target = %s, GLenum access = %s", CID(context),
+          GLenumToString(GLenumGroup::BufferTargetARB, target),
+          GLenumToString(GLenumGroup::BufferAccessARB, access));
+
+    void *returnValue;
     if (context)
     {
-        BufferBinding targetPacked = FromGLenum<BufferBinding>(target);
-        ANGLE_CAPTURE(MapBuffer, context, targetPacked, access);
-        if (context->skipValidation() || ValidateMapBuffer(context, targetPacked, access))
+        BufferBinding targetPacked                    = FromGL<BufferBinding>(target);
+        std::unique_lock<std::mutex> shareContextLock = GetShareGroupLock(context);
+        bool isCallValid =
+            (context->skipValidation() || ValidateMapBuffer(context, targetPacked, access));
+        if (isCallValid)
         {
-            return context->mapBuffer(targetPacked, access);
+            returnValue = context->mapBuffer(targetPacked, access);
         }
+        else
+        {
+            returnValue = GetDefaultReturnValue<EntryPoint::MapBuffer, void *>();
+        }
+        ANGLE_CAPTURE(MapBuffer, isCallValid, context, targetPacked, access, returnValue);
     }
-
-    return GetDefaultReturnValue<EntryPoint::MapBuffer, void *>();
+    else
+    {
+        returnValue = GetDefaultReturnValue<EntryPoint::MapBuffer, void *>();
+    }
+    return returnValue;
 }
 
 GLboolean GL_APIENTRY UnmapBuffer(GLenum target)
 {
-    EVENT("(GLenum target = 0x%X)", target);
-
     Context *context = GetValidGlobalContext();
+    EVENT("glUnmapBuffer", "context = %d, GLenum target = %s", CID(context),
+          GLenumToString(GLenumGroup::BufferTargetARB, target));
+
+    GLboolean returnValue;
     if (context)
     {
-        BufferBinding targetPacked = FromGLenum<BufferBinding>(target);
-        ANGLE_CAPTURE(UnmapBuffer, context, targetPacked);
-        if (context->skipValidation() || ValidateUnmapBuffer(context, targetPacked))
+        BufferBinding targetPacked                    = FromGL<BufferBinding>(target);
+        std::unique_lock<std::mutex> shareContextLock = GetShareGroupLock(context);
+        bool isCallValid =
+            (context->skipValidation() || ValidateUnmapBuffer(context, targetPacked));
+        if (isCallValid)
         {
-            return context->unmapBuffer(targetPacked);
+            returnValue = context->unmapBuffer(targetPacked);
         }
+        else
+        {
+            returnValue = GetDefaultReturnValue<EntryPoint::UnmapBuffer, GLboolean>();
+        }
+        ANGLE_CAPTURE(UnmapBuffer, isCallValid, context, targetPacked, returnValue);
     }
-
-    return GetDefaultReturnValue<EntryPoint::UnmapBuffer, GLboolean>();
+    else
+    {
+        returnValue = GetDefaultReturnValue<EntryPoint::UnmapBuffer, GLboolean>();
+    }
+    return returnValue;
 }
 }  // namespace gl

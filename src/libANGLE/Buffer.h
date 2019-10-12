@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2002-2014 The ANGLE Project Authors. All rights reserved.
+// Copyright 2002 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -64,13 +64,13 @@ class BufferState final : angle::NonCopyable
     int mTransformFeedbackGenericBindingCount;
 };
 
-class Buffer final : public RefCountObject,
+class Buffer final : public RefCountObject<BufferID>,
                      public LabeledObject,
                      public angle::ObserverInterface,
                      public angle::Subject
 {
   public:
-    Buffer(rx::GLImplFactory *factory, GLuint id);
+    Buffer(rx::GLImplFactory *factory, BufferID id);
     ~Buffer() override;
     void onDestroy(const Context *context) override;
 
@@ -100,8 +100,7 @@ class Buffer final : public RefCountObject,
     angle::Result unmap(const Context *context, GLboolean *result);
 
     // These are called when another operation changes Buffer data.
-    void onTransformFeedback();
-    void onPixelPack();
+    void onDataChanged();
 
     angle::Result getIndexRange(const gl::Context *context,
                                 DrawElementsType type,

@@ -13,6 +13,7 @@
 #include "gpu_info_util/SystemInfo.h"
 #include "util/EGLWindow.h"
 #include "util/OSWindow.h"
+#include "util/test_utils.h"
 
 #if defined(ANGLE_PLATFORM_WINDOWS)
 #    include <VersionHelpers.h>
@@ -176,17 +177,9 @@ bool ShouldAlwaysForceNewDisplay()
 }
 }  // anonymous namespace
 
-GLColorRGB::GLColorRGB() : R(0), G(0), B(0) {}
-
-GLColorRGB::GLColorRGB(GLubyte r, GLubyte g, GLubyte b) : R(r), G(g), B(b) {}
-
 GLColorRGB::GLColorRGB(const Vector3 &floatColor)
     : R(ColorDenorm(floatColor.x())), G(ColorDenorm(floatColor.y())), B(ColorDenorm(floatColor.z()))
 {}
-
-GLColor::GLColor() : R(0), G(0), B(0), A(0) {}
-
-GLColor::GLColor(GLubyte r, GLubyte g, GLubyte b, GLubyte a) : R(r), G(g), B(b), A(a) {}
 
 GLColor::GLColor(const Vector4 &floatColor)
     : R(ColorDenorm(floatColor.x())),
@@ -501,6 +494,14 @@ void ANGLETestBase::ANGLETestSetUp()
     gPlatformContext.warningsAsErrors = false;
     gPlatformContext.currentTest      = this;
 
+    // TODO(geofflang): Nexus6P generates GL errors during initialization. Suppress error messages
+    // temporarily until enough logging is in place to figure out exactly which calls generate
+    // errors.  http://crbug.com/998503
+    if (IsNexus6P())
+    {
+        gPlatformContext.ignoreMessages = true;
+    }
+
     if (IsWindows())
     {
         const auto &info = testing::UnitTest::GetInstance()->current_test_info();
@@ -628,6 +629,17 @@ void ANGLETestBase::ANGLETestTearDown()
     }
 }
 
+void ANGLETestBase::ReleaseFixtures()
+{
+    for (auto it = gFixtures.begin(); it != gFixtures.end(); it++)
+    {
+        if (it->second.eglWindow)
+        {
+            it->second.eglWindow->destroyGL();
+        }
+    }
+}
+
 void ANGLETestBase::swapBuffers()
 {
     if (getGLWindow()->isGLInitialized())
@@ -750,7 +762,7 @@ void ANGLETestBase::drawQuad(GLuint program,
 
     GLint positionLocation = glGetAttribLocation(program, positionAttribName.c_str());
 
-    std::array<Vector3, 6> quadVertices;
+    std::array<Vector3, 6> quadVertices = GetQuadVertices();
 
     if (useVertexBuffer)
     {
@@ -760,7 +772,6 @@ void ANGLETestBase::drawQuad(GLuint program,
     }
     else
     {
-        quadVertices = GetQuadVertices();
         for (Vector3 &vertex : quadVertices)
         {
             vertex.x() *= positionAttribXYScale;
@@ -1008,20 +1019,10 @@ void ANGLETestBase::checkD3D11SDKLayersMessages()
     EGLAttrib device      = 0;
     EGLAttrib angleDevice = 0;
 
-    PFNEGLQUERYDISPLAYATTRIBEXTPROC queryDisplayAttribEXT;
-    PFNEGLQUERYDEVICEATTRIBEXTPROC queryDeviceAttribEXT;
-
-    queryDisplayAttribEXT = reinterpret_cast<PFNEGLQUERYDISPLAYATTRIBEXTPROC>(
-        eglGetProcAddress("eglQueryDisplayAttribEXT"));
-    queryDeviceAttribEXT = reinterpret_cast<PFNEGLQUERYDEVICEATTRIBEXTPROC>(
-        eglGetProcAddress("eglQueryDeviceAttribEXT"));
-    ASSERT_NE(nullptr, queryDisplayAttribEXT);
-    ASSERT_NE(nullptr, queryDeviceAttribEXT);
-
     ASSERT_EGL_TRUE(
-        queryDisplayAttribEXT(mFixture->eglWindow->getDisplay(), EGL_DEVICE_EXT, &angleDevice));
-    ASSERT_EGL_TRUE(queryDeviceAttribEXT(reinterpret_cast<EGLDeviceEXT>(angleDevice),
-                                         EGL_D3D11_DEVICE_ANGLE, &device));
+        eglQueryDisplayAttribEXT(mFixture->eglWindow->getDisplay(), EGL_DEVICE_EXT, &angleDevice));
+    ASSERT_EGL_TRUE(eglQueryDeviceAttribEXT(reinterpret_cast<EGLDeviceEXT>(angleDevice),
+                                            EGL_D3D11_DEVICE_ANGLE, &device));
     ID3D11Device *d3d11Device = reinterpret_cast<ID3D11Device *>(device);
 
     ID3D11InfoQueue *infoQueue = nullptr;
@@ -1050,6 +1051,9 @@ void ANGLETestBase::checkD3D11SDKLayersMessages()
                     free(pMessage);
                 }
             }
+            // Clear the queue, so that previous failures are not reported
+            // for subsequent, otherwise passing, tests
+            infoQueue->ClearStoredMessages();
 
             FAIL() << numStoredD3DDebugMessages
                    << " D3D11 SDK Layers message(s) detected! Test Failed.\n";
@@ -1333,7 +1337,10 @@ std::unique_ptr<Library> ANGLETestEnvironment::gWGLLibrary;
 
 void ANGLETestEnvironment::SetUp() {}
 
-void ANGLETestEnvironment::TearDown() {}
+void ANGLETestEnvironment::TearDown()
+{
+    ANGLETestBase::ReleaseFixtures();
+}
 
 Library *ANGLETestEnvironment::GetEGLLibrary()
 {

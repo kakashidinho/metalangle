@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2017 The ANGLE Project Authors. All rights reserved.
+// Copyright 2017 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -31,11 +31,11 @@ DrawCallPerfParams::DrawCallPerfParams()
 
 DrawCallPerfParams::~DrawCallPerfParams() = default;
 
-std::string DrawCallPerfParams::suffix() const
+std::string DrawCallPerfParams::story() const
 {
     std::stringstream strstr;
 
-    strstr << RenderTestParams::suffix();
+    strstr << RenderTestParams::story();
 
     if (numTris == 0)
     {
@@ -45,11 +45,6 @@ std::string DrawCallPerfParams::suffix() const
     if (offscreen)
     {
         strstr << "_offscreen";
-    }
-
-    if (eglParameters.deviceType == EGL_PLATFORM_ANGLE_DEVICE_TYPE_NULL_ANGLE)
-    {
-        strstr << "_null";
     }
 
     return strstr.str();
@@ -101,19 +96,5 @@ DrawCallPerfParams DrawCallWGL()
     DrawCallPerfParams params;
     params.driver = angle::GLESDriverType::SystemWGL;
     return params;
-}
-
-DrawCallPerfParams Offscreen(const DrawCallPerfParams &input)
-{
-    DrawCallPerfParams output = input;
-    output.offscreen          = true;
-    return output;
-}
-
-DrawCallPerfParams NullDevice(const DrawCallPerfParams &input)
-{
-    DrawCallPerfParams output       = input;
-    output.eglParameters.deviceType = EGL_PLATFORM_ANGLE_DEVICE_TYPE_NULL_ANGLE;
-    return output;
 }
 }  // namespace params

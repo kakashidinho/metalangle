@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2002-2014 The ANGLE Project Authors. All rights reserved.
+// Copyright 2002 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -271,13 +271,14 @@ const TConstantUnion *OutputHLSL::writeConstantUnionArray(TInfoSinkBase &out,
 }
 
 OutputHLSL::OutputHLSL(sh::GLenum shaderType,
+                       ShShaderSpec shaderSpec,
                        int shaderVersion,
                        const TExtensionBehavior &extensionBehavior,
                        const char *sourcePath,
                        ShShaderOutput outputType,
                        int numRenderTargets,
                        int maxDualSourceDrawBuffers,
-                       const std::vector<Uniform> &uniforms,
+                       const std::vector<ShaderVariable> &uniforms,
                        ShCompileOptions compileOptions,
                        sh::WorkGroupSize workGroupSize,
                        TSymbolTable *symbolTable,
@@ -285,6 +286,7 @@ OutputHLSL::OutputHLSL(sh::GLenum shaderType,
                        const std::vector<InterfaceBlock> &shaderStorageBlocks)
     : TIntermTraverser(true, true, true, symbolTable),
       mShaderType(shaderType),
+      mShaderSpec(shaderSpec),
       mShaderVersion(shaderVersion),
       mExtensionBehavior(extensionBehavior),
       mSourcePath(sourcePath),
@@ -689,7 +691,8 @@ void OutputHLSL::header(TInfoSinkBase &out,
         writeReferencedVaryings(out);
         out << "\n";
 
-        if (mShaderVersion >= 300)
+        if ((IsDesktopGLSpec(mShaderSpec) && mShaderVersion >= 130) ||
+            (!IsDesktopGLSpec(mShaderSpec) && mShaderVersion >= 300))
         {
             for (const auto &outputVariable : mReferencedOutputVariables)
             {

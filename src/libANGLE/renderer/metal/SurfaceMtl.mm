@@ -330,8 +330,10 @@ EGLint SurfaceMtl::getSwapBehavior() const
 angle::Result SurfaceMtl::getAttachmentRenderTarget(const gl::Context *context,
                                                     GLenum binding,
                                                     const gl::ImageIndex &imageIndex,
+                                                    GLsizei samples,
                                                     FramebufferAttachmentRenderTarget **rtOut)
 {
+    // TODO(hqle): Support MSAA.
     ANGLE_TRY(ensureRenderTargetsCreated(context));
 
     switch (binding)

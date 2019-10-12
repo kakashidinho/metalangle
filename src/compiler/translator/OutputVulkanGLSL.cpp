@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016 The ANGLE Project Authors. All rights reserved.
+// Copyright 2016 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -44,17 +44,16 @@ void TOutputVulkanGLSL::writeLayoutQualifier(TIntermTyped *variable)
     const TType &type = variable->getType();
 
     bool needsCustomLayout =
-        (type.getQualifier() == EvqAttribute || type.getQualifier() == EvqFragmentOut ||
-         type.getQualifier() == EvqVertexIn || IsVarying(type.getQualifier()) ||
-         IsSampler(type.getBasicType()) || type.isInterfaceBlock());
+        type.getQualifier() == EvqAttribute || type.getQualifier() == EvqFragmentOut ||
+        type.getQualifier() == EvqVertexIn || IsVarying(type.getQualifier()) ||
+        IsSampler(type.getBasicType()) || type.isInterfaceBlock() || IsImage(type.getBasicType());
 
     if (!NeedsToWriteLayoutQualifier(type) && !needsCustomLayout)
     {
         return;
     }
 
-    TInfoSinkBase &out                      = objSink();
-    const TLayoutQualifier &layoutQualifier = type.getLayoutQualifier();
+    TInfoSinkBase &out = objSink();
 
     // This isn't super clean, but it gets the job done.
     // See corresponding code in GlslangWrapper.cpp.
@@ -84,13 +83,16 @@ void TOutputVulkanGLSL::writeLayoutQualifier(TIntermTyped *variable)
             storage = EbsStd140;
         }
 
-        blockStorage = getBlockStorageString(storage);
-    }
+        if (interfaceBlock->blockStorage() != EbsUnspecified)
+        {
+            blockStorage = getBlockStorageString(storage);
+        }
 
-    // Specify matrix packing if necessary.
-    if (layoutQualifier.matrixPacking != EmpUnspecified)
-    {
-        matrixPacking = getMatrixPackingString(layoutQualifier.matrixPacking);
+        // We expect all interface blocks to have been transformed to column major, so we don't
+        // specify the packing.  Any remaining interface block qualified with row_major shouldn't
+        // have any matrices inside.
+        ASSERT(type.getLayoutQualifier().matrixPacking != EmpRowMajor ||
+               !interfaceBlock->containsMatrices());
     }
 
     if (needsCustomLayout)
@@ -127,6 +129,14 @@ void TOutputVulkanGLSL::writeLayoutQualifier(TIntermTyped *variable)
     {
         out << "@@";
     }
+}
+
+void TOutputVulkanGLSL::writeFieldLayoutQualifier(const TField *field)
+{
+    // We expect all interface blocks to have been transformed to column major, as Vulkan GLSL
+    // doesn't allow layout qualifiers on interface block fields.  Any remaining interface block
+    // qualified with row_major shouldn't have any matrices inside, so the qualifier can be
+    // dropped.
 }
 
 void TOutputVulkanGLSL::writeQualifier(TQualifier qualifier,
@@ -180,35 +190,4 @@ void TOutputVulkanGLSL::writeStructType(const TStructure *structure)
     }
 }
 
-void TOutputVulkanGLSL::visitSymbol(TIntermSymbol *node)
-{
-    TInfoSinkBase &out = objSink();
-
-    // All the special cases are built-ins, so if it's not a built-in we can return early.
-    if (node->variable().symbolType() != SymbolType::BuiltIn)
-    {
-        TOutputGLSL::visitSymbol(node);
-        return;
-    }
-
-    // Some built-ins get a special translation.
-    const ImmutableString &name = node->getName();
-    if (name == "gl_VertexID")
-    {
-        // gl_VertexIndex in Vulkan GLSL has the same semantics as gl_VertexID.
-        out << "gl_VertexIndex";
-    }
-    else if (name == "gl_InstanceID")
-    {
-        // gl_InstanceIndex in Vulkan GLSL is equal to
-        // gl_InstanceID + baseInstance, but in OpenGL ES,
-        // baseInstance is always zero.
-        // (OpenGL ES 3.2 spec page 278 footnote 3)
-        out << "gl_InstanceIndex";
-    }
-    else
-    {
-        TOutputGLSL::visitSymbol(node);
-    }
-}
 }  // namespace sh

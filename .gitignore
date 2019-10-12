@@ -27,8 +27,6 @@
 /angle-internal
 /src/tests/third_party/gles_conformance_tests
 /testing
-/tools/glslang/glslang_validator
-/tools/glslang/glslang_validator.exe
 /third_party/cherry
 /third_party/deqp/src
 /third_party/fuchsia-sdk
@@ -47,13 +45,18 @@
 /third_party/rapidjson/src
 /third_party/spirv-headers/src
 /third_party/spirv-tools/src
+/third_party/SwiftShader
 /third_party/vulkan-headers/src
 /third_party/vulkan-loader/src
 /third_party/vulkan-tools/src
 /third_party/vulkan-validation-layers/src
 /third_party/yasm
 /third_party/zlib
+/tools/clang
+/tools/glslang/glslang_validator
+/tools/glslang/glslang_validator.exe
 /tools/md_browser
+/tools/memory
 angle_debug.txt
 build
 buildtools/
@@ -72,6 +75,4 @@ Release_ARM/
 Release_Win32/
 Release_x64/
 TestResults.qpa
-tools/clang
 .idea/
-DerivedData/

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2014 The ANGLE Project Authors. All rights reserved.
+// Copyright 2014 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -287,7 +287,7 @@ bool DisplayD3D::isValidNativeWindow(EGLNativeWindowType window) const
     return mRenderer->isValidNativeWindow(window);
 }
 
-egl::Error DisplayD3D::validateClientBuffer(const egl::Config *configuration,
+egl::Error DisplayD3D::validateClientBuffer(const egl::Config *config,
                                             EGLenum buftype,
                                             EGLClientBuffer clientBuffer,
                                             const egl::AttributeMap &attribs) const
@@ -295,16 +295,16 @@ egl::Error DisplayD3D::validateClientBuffer(const egl::Config *configuration,
     switch (buftype)
     {
         case EGL_D3D_TEXTURE_2D_SHARE_HANDLE_ANGLE:
-            return mRenderer->validateShareHandle(configuration, static_cast<HANDLE>(clientBuffer),
+            return mRenderer->validateShareHandle(config, static_cast<HANDLE>(clientBuffer),
                                                   attribs);
 
         case EGL_D3D_TEXTURE_ANGLE:
-            return mRenderer->getD3DTextureInfo(configuration,
-                                                static_cast<IUnknown *>(clientBuffer), nullptr,
-                                                nullptr, nullptr, nullptr);
+            return mRenderer->getD3DTextureInfo(config, static_cast<IUnknown *>(clientBuffer),
+                                                attribs, nullptr, nullptr, nullptr, nullptr,
+                                                nullptr);
 
         default:
-            return DisplayImpl::validateClientBuffer(configuration, buftype, clientBuffer, attribs);
+            return DisplayImpl::validateClientBuffer(config, buftype, clientBuffer, attribs);
     }
 }
 
@@ -318,7 +318,8 @@ egl::Error DisplayD3D::validateImageClientBuffer(const gl::Context *context,
         case EGL_D3D11_TEXTURE_ANGLE:
         {
             return mRenderer->getD3DTextureInfo(nullptr, static_cast<IUnknown *>(clientBuffer),
-                                                nullptr, nullptr, nullptr, nullptr);
+                                                attribs, nullptr, nullptr, nullptr, nullptr,
+                                                nullptr);
         }
 
         default:
@@ -384,6 +385,11 @@ egl::Error DisplayD3D::waitNative(const gl::Context *context, EGLint engine)
 gl::Version DisplayD3D::getMaxSupportedESVersion() const
 {
     return mRenderer->getMaxSupportedESVersion();
+}
+
+gl::Version DisplayD3D::getMaxConformantESVersion() const
+{
+    return mRenderer->getMaxConformantESVersion();
 }
 
 void DisplayD3D::handleResult(HRESULT hr,

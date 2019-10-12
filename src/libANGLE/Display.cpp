@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2002-2014 The ANGLE Project Authors. All rights reserved.
+// Copyright 2002 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -19,6 +19,7 @@
 #include <EGL/eglext.h>
 #include <platform/Platform.h>
 
+#include "anglebase/no_destructor.h"
 #include "common/android_util.h"
 #include "common/debug.h"
 #include "common/mathutil.h"
@@ -39,10 +40,6 @@
 #include "libANGLE/renderer/DisplayImpl.h"
 #include "libANGLE/renderer/ImageImpl.h"
 #include "libANGLE/trace.h"
-
-#if ANGLE_CAPTURE_ENABLED
-#    include "libANGLE/FrameCapture.h"
-#endif  // ANGLE_CAPTURE_ENABLED
 
 #if defined(ANGLE_ENABLE_D3D9) || defined(ANGLE_ENABLE_D3D11)
 #    include "libANGLE/renderer/d3d/DisplayD3D.h"
@@ -97,22 +94,22 @@ typedef std::map<EGLNativeWindowType, Surface *> WindowSurfaceMap;
 // associated with it.
 static WindowSurfaceMap *GetWindowSurfaces()
 {
-    static WindowSurfaceMap windowSurfaces;
-    return &windowSurfaces;
+    static angle::base::NoDestructor<WindowSurfaceMap> windowSurfaces;
+    return windowSurfaces.get();
 }
 
 typedef std::map<EGLNativeDisplayType, Display *> ANGLEPlatformDisplayMap;
 static ANGLEPlatformDisplayMap *GetANGLEPlatformDisplayMap()
 {
-    static ANGLEPlatformDisplayMap displays;
-    return &displays;
+    static angle::base::NoDestructor<ANGLEPlatformDisplayMap> displays;
+    return displays.get();
 }
 
 typedef std::map<Device *, Display *> DevicePlatformDisplayMap;
 static DevicePlatformDisplayMap *GetDevicePlatformDisplayMap()
 {
-    static DevicePlatformDisplayMap displays;
-    return &displays;
+    static angle::base::NoDestructor<DevicePlatformDisplayMap> displays;
+    return displays.get();
 }
 
 rx::DisplayImpl *CreateDisplayFromDevice(Device *eglDevice, const DisplayState &state)
@@ -149,7 +146,7 @@ rx::DisplayImpl *CreateDisplayFromDevice(Device *eglDevice, const DisplayState &
 // On platforms with support for multiple back-ends, allow an environment variable to control
 // the default.  This is useful to run angle with benchmarks without having to modify the
 // benchmark source.  Possible values for this environment variable (ANGLE_DEFAULT_PLATFORM)
-// are: vulkan, gl, d3d11.
+// are: vulkan, gl, d3d11, null.
 EGLAttrib GetDisplayTypeFromEnvironment()
 {
     std::string angleDefaultEnv = angle::GetEnvironmentVar("ANGLE_DEFAULT_PLATFORM");
@@ -176,7 +173,35 @@ EGLAttrib GetDisplayTypeFromEnvironment()
     }
 #endif
 
+#if defined(ANGLE_ENABLE_NULL)
+    if (angleDefaultEnv == "null")
+    {
+        return EGL_PLATFORM_ANGLE_TYPE_NULL_ANGLE;
+    }
+#endif
+
+#if defined(ANGLE_ENABLE_D3D11)
+    return EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE;
+#elif defined(ANGLE_ENABLE_D3D9)
+    return EGL_PLATFORM_ANGLE_TYPE_D3D9_ANGLE;
+#elif defined(ANGLE_ENABLE_VULKAN) && defined(ANGLE_PLATFORM_ANDROID)
+    return EGL_PLATFORM_ANGLE_TYPE_VULKAN_ANGLE;
+#elif defined(ANGLE_ENABLE_METAL)
+    // TODO(hqle): Metal renderer doesn't have dedicated enum yet. Use default value.
     return EGL_PLATFORM_ANGLE_TYPE_DEFAULT_ANGLE;
+#elif defined(ANGLE_ENABLE_OPENGL)
+#    if defined(ANGLE_PLATFORM_ANDROID) || defined(ANGLE_USE_OZONE)
+    return EGL_PLATFORM_ANGLE_TYPE_OPENGLES_ANGLE;
+#    else
+    return EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE;
+#    endif
+#elif defined(ANGLE_ENABLE_VULKAN)
+    return EGL_PLATFORM_ANGLE_TYPE_VULKAN_ANGLE;
+#elif defined(ANGLE_ENABLE_NULL)
+    return EGL_PLATFORM_ANGLE_TYPE_NULL_ANGLE;
+#else
+#    error No default ANGLE platform type
+#endif
 }
 
 rx::DisplayImpl *CreateDisplayFromAttribs(const AttributeMap &attribMap, const DisplayState &state)
@@ -193,31 +218,16 @@ rx::DisplayImpl *CreateDisplayFromAttribs(const AttributeMap &attribMap, const D
     switch (displayType)
     {
         case EGL_PLATFORM_ANGLE_TYPE_DEFAULT_ANGLE:
-#if defined(ANGLE_ENABLE_D3D9) || defined(ANGLE_ENABLE_D3D11)
-            // Default to D3D displays
-            impl = new rx::DisplayD3D(state);
-#elif defined(ANGLE_USE_X11)
-            impl = new rx::DisplayGLX(state);
-#elif defined(ANGLE_PLATFORM_APPLE)
+#if defined(ANGLE_PLATFORM_APPLE)
 #    if defined(ANGLE_ENABLE_METAL)
+            // TODO(hqle): Metal doesn't have dedicated enum yet, so we handle
+            // default case here.
             impl = new rx::DisplayMtl(state);
-#    else
-            impl = new rx::DisplayCGL(state);
+            break;
 #    endif
-#elif defined(ANGLE_PLATFORM_FUCHSIA)
-            impl = new rx::DisplayVkFuchsia(state);
-#elif defined(ANGLE_USE_OZONE)
-            impl = new rx::DisplayOzone(state);
-#elif defined(ANGLE_PLATFORM_ANDROID)
-#    if defined(ANGLE_ENABLE_VULKAN)
-            impl = new rx::DisplayVkAndroid(state);
-#    else
-            impl = new rx::DisplayAndroid(state);
-#    endif
-#else
+#endif
             // No display available
             UNREACHABLE();
-#endif
             break;
 
         case EGL_PLATFORM_ANGLE_TYPE_D3D9_ANGLE:
@@ -401,7 +411,10 @@ Display *Display::GetExistingDisplayFromNativeDisplay(EGLNativeDisplayType nativ
     const auto &iter                  = displays->find(nativeDisplay);
 
     // Check that there is a matching display
-    ASSERT(iter != displays->end());
+    if (iter == displays->end())
+    {
+        return nullptr;
+    }
 
     return iter->second;
 }
@@ -472,13 +485,8 @@ Display::Display(EGLenum platform, EGLNativeDisplayType displayId, Device *eglDe
       mTextureManager(nullptr),
       mBlobCache(gl::kDefaultMaxProgramCacheMemoryBytes),
       mMemoryProgramCache(mBlobCache),
-      mGlobalTextureShareGroupUsers(0),
-      mFrameCapture(nullptr)
-{
-#if ANGLE_CAPTURE_ENABLED
-    mFrameCapture = new FrameCapture;
-#endif  // ANGLE_CAPTURE_ENABLED
-}
+      mGlobalTextureShareGroupUsers(0)
+{}
 
 Display::~Display()
 {
@@ -510,10 +518,6 @@ Display::~Display()
 
     SafeDelete(mDevice);
     SafeDelete(mImplementation);
-
-#if ANGLE_CAPTURE_ENABLED
-    SafeDelete(mFrameCapture);
-#endif  // ANGLE_CAPTURE_ENABLED
 }
 
 void Display::setLabel(EGLLabelKHR label)
@@ -849,11 +853,11 @@ Error Display::createImage(const gl::Context *context,
     egl::ImageSibling *sibling = nullptr;
     if (IsTextureTarget(target))
     {
-        sibling = context->getTexture(egl_gl::EGLClientBufferToGLObjectHandle(buffer));
+        sibling = context->getTexture({egl_gl::EGLClientBufferToGLObjectHandle(buffer)});
     }
     else if (IsRenderbufferTarget(target))
     {
-        sibling = context->getRenderbuffer(egl_gl::EGLClientBufferToGLObjectHandle(buffer));
+        sibling = context->getRenderbuffer({egl_gl::EGLClientBufferToGLObjectHandle(buffer)});
     }
     else if (IsExternalImageTarget(target))
     {
@@ -897,7 +901,7 @@ Error Display::createStream(const AttributeMap &attribs, Stream **outStream)
 }
 
 Error Display::createContext(const Config *configuration,
-                             const gl::Context *shareContext,
+                             gl::Context *shareContext,
                              EGLenum clientType,
                              const AttributeMap &attribs,
                              gl::Context **outContext)
@@ -936,7 +940,8 @@ Error Display::createContext(const Config *configuration,
     if (usesProgramCacheControl)
     {
         bool programCacheControlEnabled =
-            mAttributeMap.get(EGL_CONTEXT_PROGRAM_BINARY_CACHE_ENABLED_ANGLE, GL_FALSE);
+            (mAttributeMap.get(EGL_CONTEXT_PROGRAM_BINARY_CACHE_ENABLED_ANGLE, GL_FALSE) ==
+             GL_TRUE);
         // A program cache size of zero indicates it should be disabled.
         if (!programCacheControlEnabled || mMemoryProgramCache.maxSize() == 0)
         {
@@ -945,8 +950,12 @@ Error Display::createContext(const Config *configuration,
     }
 
     gl::Context *context =
-        new gl::Context(mImplementation, configuration, shareContext, shareTextures, cachePointer,
-                        clientType, attribs, mDisplayExtensions, GetClientExtensions());
+        new gl::Context(this, configuration, shareContext, shareTextures, cachePointer, clientType,
+                        attribs, mDisplayExtensions, GetClientExtensions());
+    if (shareContext != nullptr)
+    {
+        shareContext->setShared();
+    }
 
     ASSERT(context != nullptr);
     mContextSet.insert(context);
@@ -1002,8 +1011,7 @@ Error Display::makeCurrent(const Thread *thread,
 
     if (context != nullptr)
     {
-        ASSERT(readSurface == drawSurface);
-        ANGLE_TRY(context->makeCurrent(this, drawSurface));
+        ANGLE_TRY(context->makeCurrent(this, drawSurface, readSurface));
     }
 
     return NoError();
@@ -1072,8 +1080,8 @@ Error Display::destroyContext(const Thread *thread, gl::Context *context)
     Surface *currentReadSurface   = thread->getCurrentReadSurface();
     bool changeContextForDeletion = context != currentContext;
 
-    // Make the context being deleted current during it's deletion.  This allows it to delete any
-    // resources it's holding.
+    // Make the context being deleted current during it's deletion.  This allows it to delete
+    // any resources it's holding.
     if (changeContextForDeletion)
     {
         ANGLE_TRY(makeCurrent(thread, nullptr, nullptr, context));
@@ -1084,8 +1092,9 @@ Error Display::destroyContext(const Thread *thread, gl::Context *context)
         ASSERT(mGlobalTextureShareGroupUsers >= 1 && mTextureManager != nullptr);
         if (mGlobalTextureShareGroupUsers == 1)
         {
-            // If this is the last context using the global share group, destroy the global texture
-            // manager so that the textures can be destroyed while a context still exists
+            // If this is the last context using the global share group, destroy the global
+            // texture manager so that the textures can be destroyed while a context still
+            // exists
             mTextureManager->release(context);
             mTextureManager = nullptr;
         }
@@ -1248,7 +1257,8 @@ static ClientExtensions GenerateClientExtensions()
 #endif
 
 #if defined(ANGLE_ENABLE_VULKAN)
-    extensions.platformANGLEVulkan = true;
+    extensions.platformANGLEVulkan                = true;
+    extensions.platformANGLEDeviceTypeSwiftShader = true;
 #endif
 
 #if defined(ANGLE_USE_X11)
@@ -1284,9 +1294,9 @@ const ClientExtensions &Display::GetClientExtensions()
 // static
 const std::string &Display::GetClientExtensionString()
 {
-    static const std::string clientExtensionsString =
-        GenerateExtensionsString(GetClientExtensions());
-    return clientExtensionsString;
+    static const angle::base::NoDestructor<std::string> clientExtensionsString(
+        GenerateExtensionsString(GetClientExtensions()));
+    return *clientExtensionsString;
 }
 
 void Display::initDisplayExtensions()
@@ -1313,9 +1323,12 @@ void Display::initDisplayExtensions()
     // Blob cache extension is provided by the ANGLE frontend
     mDisplayExtensions.blobCache = true;
 
-    // The EGL_ANDROID_recordable extension is provided by the ANGLE frontend, and will always say
-    // that ANativeWindow is not recordable.
+    // The EGL_ANDROID_recordable extension is provided by the ANGLE frontend, and will always
+    // say that ANativeWindow is not recordable.
     mDisplayExtensions.recordable = true;
+
+    // All backends support specific context versions
+    mDisplayExtensions.createContextBackwardsCompatible = true;
 
     mDisplayExtensionString = GenerateExtensionsString(mDisplayExtensions);
 }
@@ -1372,7 +1385,7 @@ bool Display::isValidNativeDisplay(EGLNativeDisplayType display)
         return true;
     }
 
-#if defined(ANGLE_PLATFORM_WINDOWS) && !defined(ANGLE_ENABLE_WINDOWS_STORE)
+#if defined(ANGLE_PLATFORM_WINDOWS) && !defined(ANGLE_ENABLE_WINDOWS_UWP)
     if (display == EGL_SOFTWARE_DISPLAY_ANGLE || display == EGL_D3D11_ELSE_D3D9_DISPLAY_ANGLE ||
         display == EGL_D3D11_ONLY_DISPLAY_ANGLE)
     {
@@ -1392,8 +1405,8 @@ void Display::initVendorString()
 void Display::initializeFrontendFeatures()
 {
     // Enable on all Impls
-    mFrontendFeatures.loseContextOnOutOfMemory.enabled          = true;
-    mFrontendFeatures.scalarizeVecAndMatConstructorArgs.enabled = true;
+    ANGLE_FEATURE_CONDITION((&mFrontendFeatures), loseContextOnOutOfMemory, true)
+    ANGLE_FEATURE_CONDITION((&mFrontendFeatures), scalarizeVecAndMatConstructorArgs, true)
 
     mImplementation->initializeFrontendFeatures(&mFrontendFeatures);
 
@@ -1546,6 +1559,9 @@ const char *Display::queryStringi(const EGLint name, const EGLint index)
         case EGL_FEATURE_STATUS_ANGLE:
             result = angle::FeatureStatusToString(mFeatures[index]->enabled);
             break;
+        case EGL_FEATURE_CONDITION_ANGLE:
+            result = mFeatures[index]->condition;
+            break;
         default:
             UNREACHABLE();
             return nullptr;
@@ -1570,13 +1586,5 @@ EGLAttrib Display::queryAttrib(const EGLint attribute)
             UNREACHABLE();
     }
     return value;
-}
-
-void Display::onPostSwap() const
-{
-#if ANGLE_CAPTURE_ENABLED
-    // Dump frame capture if enabled.
-    mFrameCapture->onEndFrame();
-#endif  // ANGLE_CAPTURE_ENABLED
 }
 }  // namespace egl

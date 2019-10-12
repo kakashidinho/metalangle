@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2014-2015 The ANGLE Project Authors. All rights reserved.
+// Copyright 2014 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -112,15 +112,16 @@ inline void Load32FTo16F(size_t width, size_t height, size_t depth,
     }
 }
 
-template <size_t blockWidth, size_t blockHeight, size_t blockSize>
+template <size_t blockWidth, size_t blockHeight, size_t blockDepth, size_t blockSize>
 inline void LoadCompressedToNative(size_t width, size_t height, size_t depth,
                                    const uint8_t *input, size_t inputRowPitch, size_t inputDepthPitch,
                                    uint8_t *output, size_t outputRowPitch, size_t outputDepthPitch)
 {
     const size_t columns = (width + (blockWidth - 1)) / blockWidth;
     const size_t rows = (height + (blockHeight - 1)) / blockHeight;
+    const size_t layers = (depth + (blockDepth - 1)) / blockDepth;
 
-    for (size_t z = 0; z < depth; ++z)
+    for (size_t z = 0; z < layers; ++z)
     {
         for (size_t y = 0; y < rows; ++y)
         {

@@ -23,6 +23,7 @@ struct GPUTestConfig
         kAPIGLDesktop,
         kAPIGLES,
         kAPIVulkan,
+        kAPISwiftShader,
         kAPIMetal,
     };
 
@@ -63,6 +64,7 @@ struct GPUTestConfig
         kConditionNexus5X,
         kConditionPixel2,
         kConditionNVIDIAQuadroP400,
+        kConditionSwiftShader,
 
         kNumberOfConditions,
     };

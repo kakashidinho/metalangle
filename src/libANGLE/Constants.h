@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2013 The ANGLE Project Authors. All rights reserved.
+// Copyright 2013 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -10,6 +10,8 @@
 #define LIBANGLE_CONSTANTS_H_
 
 #include "common/platform.h"
+
+#include <stdint.h>
 
 namespace gl
 {
@@ -32,11 +34,11 @@ enum
         IMPLEMENTATION_MAX_DRAW_BUFFERS + 2,  // 2 extra for depth and/or stencil buffers
 
     IMPLEMENTATION_MAX_VERTEX_SHADER_UNIFORM_BUFFERS   = 16,
+    IMPLEMENTATION_MAX_GEOMETRY_SHADER_UNIFORM_BUFFERS = 16,
     IMPLEMENTATION_MAX_FRAGMENT_SHADER_UNIFORM_BUFFERS = 16,
     IMPLEMENTATION_MAX_COMPUTE_SHADER_UNIFORM_BUFFERS  = 16,
-    IMPLEMENTATION_MAX_COMBINED_SHADER_UNIFORM_BUFFERS =
-        IMPLEMENTATION_MAX_VERTEX_SHADER_UNIFORM_BUFFERS +
-        IMPLEMENTATION_MAX_FRAGMENT_SHADER_UNIFORM_BUFFERS,
+    // GL_EXT_geometry_shader increases the minimum value of GL_MAX_COMBINED_UNIFORM_BLOCKS to 36.
+    IMPLEMENTATION_MAX_COMBINED_SHADER_UNIFORM_BUFFERS = 36,
 
     // GL_EXT_geometry_shader increases the minimum value of GL_MAX_UNIFORM_BUFFER_BINDINGS to 48.
     IMPLEMENTATION_MAX_UNIFORM_BUFFER_BINDINGS = 48,
@@ -72,6 +74,14 @@ enum
     // Implementation upper limits, real maximums depend on the hardware.
     IMPLEMENTATION_MAX_SHADER_STORAGE_BUFFER_BINDINGS = 64
 };
+
+namespace limits
+{
+// Some of the minimums required by GL, used to detect if the backend meets the minimum requirement.
+// Currently, there's no need to separate these values per spec version.
+constexpr uint32_t kMinimumComputeStorageBuffers = 4;
+}  // namespace limits
+
 }  // namespace gl
 
 #endif  // LIBANGLE_CONSTANTS_H_

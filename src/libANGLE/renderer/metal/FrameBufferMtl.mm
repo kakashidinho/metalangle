@@ -402,7 +402,8 @@ angle::Result FramebufferMtl::updateCachedRenderTarget(const gl::Context *contex
     if (attachment)
     {
         ASSERT(attachment->isAttached());
-        ANGLE_TRY(attachment->getRenderTarget(context, &newRenderTarget));
+        ANGLE_TRY(attachment->getRenderTarget(context, attachment->getRenderToTextureSamples(),
+                                              &newRenderTarget));
     }
     *cachedRenderTarget = newRenderTarget;
     return angle::Result::Continue;
@@ -414,7 +415,7 @@ angle::Result FramebufferMtl::prepareRenderPass(const gl::Context *context,
 {
     auto &desc = *pDescOut;
 
-    desc.numColorAttachments = drawColorBuffers.count();
+    desc.numColorAttachments = static_cast<uint32_t>(drawColorBuffers.count());
     size_t attachmentIdx     = 0;
 
     for (size_t colorIndexGL : drawColorBuffers)
@@ -474,7 +475,7 @@ angle::Result FramebufferMtl::clearWithLoadOp(const gl::Context *context,
     {
         ASSERT(colorIndexGL < kMaxRenderTargets);
 
-        auto attachmentIdx = attachmentCount++;
+        uint32_t attachmentIdx = static_cast<uint32_t>(attachmentCount++);
         mtl::RenderPassColorAttachmentDesc &colorAttachment =
             tempDesc.colorAttachments[attachmentIdx];
         mtl::TextureRef texture = colorAttachment.texture;
@@ -704,7 +705,7 @@ angle::Result FramebufferMtl::readPixelsImpl(const gl::Context *context,
     const angle::Format &readAngleFormat = readFormat.actualAngleFormat();
 
     // TODO(hqle): resolve MSAA texture before readback
-    size_t srcRowPitch      = area.width * readAngleFormat.pixelBytes;
+    int srcRowPitch         = area.width * readAngleFormat.pixelBytes;
     auto readPixelRowBuffer = new (std::nothrow) uint8_t[srcRowPitch];
 
     ANGLE_CHECK_GL_ALLOC(contextMtl, readPixelRowBuffer);
@@ -712,8 +713,8 @@ angle::Result FramebufferMtl::readPixelsImpl(const gl::Context *context,
     auto packPixelsRowParams  = packPixelsParams;
     MTLRegion mtlSrcRowRegion = MTLRegionMake2D(area.x, area.y, area.width, 1);
 
-    NSInteger rowOffset = packPixelsParams.reverseRowOrder ? -1 : 1;
-    NSUInteger startRow = packPixelsParams.reverseRowOrder ? (area.y1() - 1) : area.y;
+    int rowOffset = packPixelsParams.reverseRowOrder ? -1 : 1;
+    int startRow  = packPixelsParams.reverseRowOrder ? (area.y1() - 1) : area.y;
 
     // Make sure GPU & CPU contents are synchronized
     if (texture->isCPUReadMemDirty())
@@ -729,15 +730,15 @@ angle::Result FramebufferMtl::readPixelsImpl(const gl::Context *context,
     // Copy pixels row by row
     packPixelsRowParams.area.height     = 1;
     packPixelsRowParams.reverseRowOrder = false;
-    for (NSUInteger r = startRow, i = 0; i < static_cast<NSUInteger>(area.height);
+    for (int r = startRow, i = 0; i < area.height;
          ++i, r += rowOffset, pixels += packPixelsRowParams.outputPitch)
     {
         mtlSrcRowRegion.origin.y   = r;
         packPixelsRowParams.area.y = packPixelsParams.area.y + i;
 
         // Read the pixels data to the row buffer
-        texture->getBytes(contextMtl, srcRowPitch, mtlSrcRowRegion, renderTarget->getLevelIndex(),
-                          readPixelRowBuffer);
+        texture->getBytes(contextMtl, srcRowPitch, mtlSrcRowRegion,
+                          static_cast<uint32_t>(renderTarget->getLevelIndex()), readPixelRowBuffer);
 
         // Convert to destination format
         PackPixels(packPixelsRowParams, readAngleFormat, srcRowPitch, readPixelRowBuffer, pixels);

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2017 The ANGLE Project Authors. All rights reserved.
+// Copyright 2017 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -26,7 +26,7 @@ struct InterfaceBlock;
 struct ShaderVariable;
 class BlockEncoderVisitor;
 class ShaderVariableVisitor;
-struct Uniform;
+struct ShaderVariable;
 }  // namespace sh
 
 namespace gl
@@ -40,6 +40,7 @@ enum class LinkMismatchError;
 struct LinkedUniform;
 class ProgramState;
 class ProgramBindings;
+class ProgramAliasedBindings;
 class Shader;
 struct ShaderVariableBuffer;
 struct UnusedUniform;
@@ -53,7 +54,9 @@ class UniformLinker final : angle::NonCopyable
     UniformLinker(const ProgramState &state);
     ~UniformLinker();
 
-    bool link(const Caps &caps, InfoLog &infoLog, const ProgramBindings &uniformLocationBindings);
+    bool link(const Caps &caps,
+              InfoLog &infoLog,
+              const ProgramAliasedBindings &uniformLocationBindings);
 
     void getResults(std::vector<LinkedUniform> *uniforms,
                     std::vector<UnusedUniform> *unusedUniforms,
@@ -73,11 +76,12 @@ class UniformLinker final : angle::NonCopyable
     bool flattenUniformsAndCheckCaps(const Caps &caps, InfoLog &infoLog);
     bool checkMaxCombinedAtomicCounters(const Caps &caps, InfoLog &infoLog);
 
-    bool indexUniforms(InfoLog &infoLog, const ProgramBindings &uniformLocationBindings);
-    bool gatherUniformLocationsAndCheckConflicts(InfoLog &infoLog,
-                                                 const ProgramBindings &uniformLocationBindings,
-                                                 std::set<GLuint> *ignoredLocations,
-                                                 int *maxUniformLocation);
+    bool indexUniforms(InfoLog &infoLog, const ProgramAliasedBindings &uniformLocationBindings);
+    bool gatherUniformLocationsAndCheckConflicts(
+        InfoLog &infoLog,
+        const ProgramAliasedBindings &uniformLocationBindings,
+        std::set<GLuint> *ignoredLocations,
+        int *maxUniformLocation);
     void pruneUnusedUniforms();
 
     const ProgramState &mState;
@@ -232,11 +236,11 @@ class ProgramLinkedResourcesLinker final : angle::NonCopyable
         : mCustomEncoderFactory(customEncoderFactory)
     {}
 
-    void linkResources(const gl::ProgramState &programState,
-                       const gl::ProgramLinkedResources &resources) const;
+    void linkResources(const ProgramState &programState,
+                       const ProgramLinkedResources &resources) const;
 
   private:
-    void getAtomicCounterBufferSizeMap(const gl::ProgramState &programState,
+    void getAtomicCounterBufferSizeMap(const ProgramState &programState,
                                        std::map<int, unsigned int> &sizeMapOut) const;
 
     CustomBlockLayoutEncoderFactory *mCustomEncoderFactory;

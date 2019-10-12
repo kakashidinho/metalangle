@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2015 The ANGLE Project Authors. All rights reserved.
+// Copyright 2015 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -498,7 +498,7 @@ FramebufferImpl *D3DTextureSurfaceWGL::createDefaultFramebuffer(const gl::Contex
                                            mDepthStencilRenderbufferID);
     }
 
-    return new FramebufferGL(data, framebufferID, true);
+    return new FramebufferGL(data, framebufferID, true, false);
 }
 
 HDC D3DTextureSurfaceWGL::getDC() const

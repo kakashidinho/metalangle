@@ -31,17 +31,17 @@ angle::Result InitializeTextureContents(const gl::Context *context,
 
 MTLViewport GetViewport(const gl::Rectangle &rect, double znear = 0, double zfar = 1);
 MTLViewport GetViewportFlipY(const gl::Rectangle &rect,
-                             double screenHeight,
+                             NSUInteger screenHeight,
                              double znear = 0,
                              double zfar  = 1);
 MTLViewport GetViewport(const gl::Rectangle &rect,
-                        double screenHeight,
+                        NSUInteger screenHeight,
                         bool flipY,
                         double znear = 0,
                         double zfar  = 1);
 MTLScissorRect GetScissorRect(const gl::Rectangle &rect,
-                              double screenHeight = 0,
-                              bool flipY          = false);
+                              NSUInteger screenHeight = 0,
+                              bool flipY              = false);
 
 AutoObjCPtr<id<MTLLibrary>> CreateShaderLibrary(id<MTLDevice> metalDevice,
                                                 const std::string &source,

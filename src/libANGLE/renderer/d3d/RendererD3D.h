@@ -1,5 +1,5 @@
 
-// Copyright (c) 2014 The ANGLE Project Authors. All rights reserved.
+// Copyright 2014 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -180,9 +180,11 @@ class RendererD3D : public BufferFactoryD3D
                                           EGLint samples)                          = 0;
     virtual egl::Error getD3DTextureInfo(const egl::Config *configuration,
                                          IUnknown *d3dTexture,
+                                         const egl::AttributeMap &attribs,
                                          EGLint *width,
                                          EGLint *height,
-                                         EGLint *samples,
+                                         GLsizei *samples,
+                                         gl::Format *glFormat,
                                          const angle::Format **angleFormat) const  = 0;
     virtual egl::Error validateShareHandle(const egl::Config *config,
                                            HANDLE shareHandle,
@@ -275,7 +277,7 @@ class RendererD3D : public BufferFactoryD3D
     virtual UniformStorageD3D *createUniformStorage(size_t storageSize) = 0;
 
     // Image operations
-    virtual ImageD3D *createImage()                                                        = 0;
+    virtual ImageD3D *createImage() = 0;
     virtual ExternalImageSiblingImpl *createExternalImageSibling(
         const gl::Context *context,
         EGLenum target,
@@ -386,7 +388,8 @@ class RendererD3D : public BufferFactoryD3D
     // Necessary hack for default framebuffers in D3D.
     virtual FramebufferImpl *createDefaultFramebuffer(const gl::FramebufferState &state) = 0;
 
-    virtual gl::Version getMaxSupportedESVersion() const = 0;
+    virtual gl::Version getMaxSupportedESVersion() const  = 0;
+    virtual gl::Version getMaxConformantESVersion() const = 0;
 
     angle::Result initRenderTarget(const gl::Context *context, RenderTargetD3D *renderTarget);
 

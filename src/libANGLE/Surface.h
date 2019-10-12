@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2002-2014 The ANGLE Project Authors. All rights reserved.
+// Copyright 2002 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -96,7 +96,8 @@ class Surface : public LabeledObject, public gl::FramebufferAttachmentObject
     void setFixedWidth(EGLint width);
     void setFixedHeight(EGLint height);
 
-    gl::Framebuffer *createDefaultFramebuffer(const gl::Context *context);
+    gl::Framebuffer *createDefaultFramebuffer(const gl::Context *context,
+                                              egl::Surface *readSurface);
 
     const Config *getConfig() const;
 
@@ -227,7 +228,7 @@ class Surface : public LabeledObject, public gl::FramebufferAttachmentObject
   private:
     Error destroyImpl(const Display *display);
 
-    void postSwap(const Display *display);
+    void postSwap(const gl::Context *context);
     Error releaseRef(const Display *display);
 
     gl::InitState mInitState;

@@ -13,6 +13,7 @@
 #include "libANGLE/Context.h"
 #include "libANGLE/Context.inl.h"
 #include "libANGLE/entry_points_utils.h"
+#include "libANGLE/gl_enum_utils_autogen.h"
 #include "libANGLE/validationEGL.h"
 #include "libANGLE/validationES.h"
 #include "libANGLE/validationES1.h"
@@ -35,24 +36,28 @@ void GL_APIENTRY CopyTexSubImage3D(GLenum target,
                                    GLsizei width,
                                    GLsizei height)
 {
-    EVENT(
-        "(GLenum target = 0x%X, GLint level = %d, GLint xoffset = %d, GLint yoffset = %d, GLint "
-        "zoffset = %d, GLint x = %d, GLint y = %d, GLsizei width = %d, GLsizei height = %d)",
-        target, level, xoffset, yoffset, zoffset, x, y, width, height);
-
     Context *context = GetValidGlobalContext();
+    EVENT("glCopyTexSubImage3D",
+          "context = %d, GLenum target = %s, GLint level = %d, GLint xoffset = %d, GLint yoffset = "
+          "%d, GLint zoffset = %d, GLint x = %d, GLint y = %d, GLsizei width = %d, GLsizei height "
+          "= %d",
+          CID(context), GLenumToString(GLenumGroup::TextureTarget, target), level, xoffset, yoffset,
+          zoffset, x, y, width, height);
+
     if (context)
     {
-        TextureTarget targetPacked = FromGLenum<TextureTarget>(target);
-        ANGLE_CAPTURE(CopyTexSubImage3D, context, targetPacked, level, xoffset, yoffset, zoffset, x,
-                      y, width, height);
-        if (context->skipValidation() ||
-            ValidateCopyTexSubImage3D(context, targetPacked, level, xoffset, yoffset, zoffset, x, y,
-                                      width, height))
+        TextureTarget targetPacked                    = FromGL<TextureTarget>(target);
+        std::unique_lock<std::mutex> shareContextLock = GetShareGroupLock(context);
+        bool isCallValid                              = (context->skipValidation() ||
+                            ValidateCopyTexSubImage3D(context, targetPacked, level, xoffset,
+                                                      yoffset, zoffset, x, y, width, height));
+        if (isCallValid)
         {
             context->copyTexSubImage3D(targetPacked, level, xoffset, yoffset, zoffset, x, y, width,
                                        height);
         }
+        ANGLE_CAPTURE(CopyTexSubImage3D, isCallValid, context, targetPacked, level, xoffset,
+                      yoffset, zoffset, x, y, width, height);
     }
 }
 
@@ -63,23 +68,27 @@ void GL_APIENTRY DrawRangeElements(GLenum mode,
                                    GLenum type,
                                    const void *indices)
 {
-    EVENT(
-        "(GLenum mode = 0x%X, GLuint start = %u, GLuint end = %u, GLsizei count = %d, GLenum type "
-        "= 0x%X, const void *indices = 0x%016" PRIxPTR ")",
-        mode, start, end, count, type, (uintptr_t)indices);
-
     Context *context = GetValidGlobalContext();
+    EVENT("glDrawRangeElements",
+          "context = %d, GLenum mode = %s, GLuint start = %u, GLuint end = %u, GLsizei count = %d, "
+          "GLenum type = %s, const void *indices = 0x%016" PRIxPTR "",
+          CID(context), GLenumToString(GLenumGroup::PrimitiveType, mode), start, end, count,
+          GLenumToString(GLenumGroup::DrawElementsType, type), (uintptr_t)indices);
+
     if (context)
     {
-        PrimitiveMode modePacked    = FromGLenum<PrimitiveMode>(mode);
-        DrawElementsType typePacked = FromGLenum<DrawElementsType>(type);
-        ANGLE_CAPTURE(DrawRangeElements, context, modePacked, start, end, count, typePacked,
-                      indices);
-        if (context->skipValidation() ||
-            ValidateDrawRangeElements(context, modePacked, start, end, count, typePacked, indices))
+        PrimitiveMode modePacked                      = FromGL<PrimitiveMode>(mode);
+        DrawElementsType typePacked                   = FromGL<DrawElementsType>(type);
+        std::unique_lock<std::mutex> shareContextLock = GetShareGroupLock(context);
+        bool isCallValid =
+            (context->skipValidation() || ValidateDrawRangeElements(context, modePacked, start, end,
+                                                                    count, typePacked, indices));
+        if (isCallValid)
         {
             context->drawRangeElements(modePacked, start, end, count, typePacked, indices);
         }
+        ANGLE_CAPTURE(DrawRangeElements, isCallValid, context, modePacked, start, end, count,
+                      typePacked, indices);
     }
 }
 
@@ -94,26 +103,29 @@ void GL_APIENTRY TexImage3D(GLenum target,
                             GLenum type,
                             const void *pixels)
 {
-    EVENT(
-        "(GLenum target = 0x%X, GLint level = %d, GLint internalformat = %d, GLsizei width = %d, "
-        "GLsizei height = %d, GLsizei depth = %d, GLint border = %d, GLenum format = 0x%X, GLenum "
-        "type = 0x%X, const void *pixels = 0x%016" PRIxPTR ")",
-        target, level, internalformat, width, height, depth, border, format, type,
-        (uintptr_t)pixels);
-
     Context *context = GetValidGlobalContext();
+    EVENT("glTexImage3D",
+          "context = %d, GLenum target = %s, GLint level = %d, GLint internalformat = %d, GLsizei "
+          "width = %d, GLsizei height = %d, GLsizei depth = %d, GLint border = %d, GLenum format = "
+          "%s, GLenum type = %s, const void *pixels = 0x%016" PRIxPTR "",
+          CID(context), GLenumToString(GLenumGroup::TextureTarget, target), level, internalformat,
+          width, height, depth, border, GLenumToString(GLenumGroup::PixelFormat, format),
+          GLenumToString(GLenumGroup::PixelType, type), (uintptr_t)pixels);
+
     if (context)
     {
-        TextureTarget targetPacked = FromGLenum<TextureTarget>(target);
-        ANGLE_CAPTURE(TexImage3D, context, targetPacked, level, internalformat, width, height,
-                      depth, border, format, type, pixels);
-        if (context->skipValidation() ||
-            ValidateTexImage3D(context, targetPacked, level, internalformat, width, height, depth,
-                               border, format, type, pixels))
+        TextureTarget targetPacked                    = FromGL<TextureTarget>(target);
+        std::unique_lock<std::mutex> shareContextLock = GetShareGroupLock(context);
+        bool isCallValid                              = (context->skipValidation() ||
+                            ValidateTexImage3D(context, targetPacked, level, internalformat, width,
+                                               height, depth, border, format, type, pixels));
+        if (isCallValid)
         {
             context->texImage3D(targetPacked, level, internalformat, width, height, depth, border,
                                 format, type, pixels);
         }
+        ANGLE_CAPTURE(TexImage3D, isCallValid, context, targetPacked, level, internalformat, width,
+                      height, depth, border, format, type, pixels);
     }
 }
 
@@ -129,26 +141,30 @@ void GL_APIENTRY TexSubImage3D(GLenum target,
                                GLenum type,
                                const void *pixels)
 {
-    EVENT(
-        "(GLenum target = 0x%X, GLint level = %d, GLint xoffset = %d, GLint yoffset = %d, GLint "
-        "zoffset = %d, GLsizei width = %d, GLsizei height = %d, GLsizei depth = %d, GLenum format "
-        "= 0x%X, GLenum type = 0x%X, const void *pixels = 0x%016" PRIxPTR ")",
-        target, level, xoffset, yoffset, zoffset, width, height, depth, format, type,
-        (uintptr_t)pixels);
-
     Context *context = GetValidGlobalContext();
+    EVENT("glTexSubImage3D",
+          "context = %d, GLenum target = %s, GLint level = %d, GLint xoffset = %d, GLint yoffset = "
+          "%d, GLint zoffset = %d, GLsizei width = %d, GLsizei height = %d, GLsizei depth = %d, "
+          "GLenum format = %s, GLenum type = %s, const void *pixels = 0x%016" PRIxPTR "",
+          CID(context), GLenumToString(GLenumGroup::TextureTarget, target), level, xoffset, yoffset,
+          zoffset, width, height, depth, GLenumToString(GLenumGroup::PixelFormat, format),
+          GLenumToString(GLenumGroup::PixelType, type), (uintptr_t)pixels);
+
     if (context)
     {
-        TextureTarget targetPacked = FromGLenum<TextureTarget>(target);
-        ANGLE_CAPTURE(TexSubImage3D, context, targetPacked, level, xoffset, yoffset, zoffset, width,
-                      height, depth, format, type, pixels);
-        if (context->skipValidation() ||
-            ValidateTexSubImage3D(context, targetPacked, level, xoffset, yoffset, zoffset, width,
-                                  height, depth, format, type, pixels))
+        TextureTarget targetPacked                    = FromGL<TextureTarget>(target);
+        std::unique_lock<std::mutex> shareContextLock = GetShareGroupLock(context);
+        bool isCallValid =
+            (context->skipValidation() ||
+             ValidateTexSubImage3D(context, targetPacked, level, xoffset, yoffset, zoffset, width,
+                                   height, depth, format, type, pixels));
+        if (isCallValid)
         {
             context->texSubImage3D(targetPacked, level, xoffset, yoffset, zoffset, width, height,
                                    depth, format, type, pixels);
         }
+        ANGLE_CAPTURE(TexSubImage3D, isCallValid, context, targetPacked, level, xoffset, yoffset,
+                      zoffset, width, height, depth, format, type, pixels);
     }
 }
 }  // namespace gl

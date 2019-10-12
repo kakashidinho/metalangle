@@ -157,6 +157,11 @@ gl::Version DisplayMtl::getMaxSupportedESVersion() const
     return kMaxSupportedGLVersion;
 }
 
+gl::Version DisplayMtl::getMaxConformantESVersion() const
+{
+    return std::min(getMaxSupportedESVersion(), gl::Version(2, 0));
+}
+
 EGLSyncImpl *DisplayMtl::createSync(const egl::AttributeMap &attribs)
 {
     // TODO(hqle)

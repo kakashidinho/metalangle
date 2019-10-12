@@ -1,5 +1,5 @@
 //
-// Copyright(c) 2014 The ANGLE Project Authors. All rights reserved.
+// Copyright 2014 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -56,6 +56,11 @@ ANGLE_INLINE Context *GetValidGlobalContext()
     return thread->getValidContext();
 }
 
+ANGLE_INLINE std::unique_lock<std::mutex> GetShareGroupLock(const Context *context)
+{
+    return context->isShared() ? std::unique_lock<std::mutex>(egl::GetGlobalMutex())
+                               : std::unique_lock<std::mutex>();
+}
 }  // namespace gl
 
 #endif  // LIBGLESV2_GLOBALSTATE_H_

@@ -70,6 +70,14 @@ void SetMaxShaderCompilerThreads(const rx::FunctionsGL *functions, GLuint count)
     }
 }
 
+#if defined(ANGLE_PLATFORM_ANDROID)
+const char *kIgnoredErrors[] = {
+    // Wrong error message on Android Q Pixel 2. http://anglebug.com/3491
+    "FreeAllocationOnTimestamp - Reference to buffer created from "
+    "different context without a share list. Application failed to pass "
+    "share_context to eglCreateContext. Results are undefined.",
+};
+#endif  // defined(ANGLE_PLATFORM_ANDROID)
 }  // namespace
 
 static void INTERNAL_GL_APIENTRY LogGLDebugMessage(GLenum source,
@@ -155,6 +163,21 @@ static void INTERNAL_GL_APIENTRY LogGLDebugMessage(GLenum source,
             break;
     }
 
+#if defined(ANGLE_PLATFORM_ANDROID)
+    if (type == GL_DEBUG_TYPE_ERROR)
+    {
+        for (const char *&err : kIgnoredErrors)
+        {
+            if (strncmp(err, message, length) == 0)
+            {
+                // There is only one ignored message right now and it is quite spammy, around 3MB
+                // for a complete end2end tests run, so don't print it even as a warning.
+                return;
+            }
+        }
+    }
+#endif  // defined(ANGLE_PLATFORM_ANDROID)
+
     if (type == GL_DEBUG_TYPE_ERROR)
     {
         ERR() << std::endl
@@ -198,7 +221,8 @@ RendererGL::RendererGL(std::unique_ptr<FunctionsGL> functions,
     ASSERT(mFunctions);
     nativegl_gl::InitializeFeatures(mFunctions.get(), &mFeatures);
     OverrideFeaturesWithDisplayState(&mFeatures, display->getState());
-    mStateManager = new StateManagerGL(mFunctions.get(), getNativeCaps(), getNativeExtensions());
+    mStateManager =
+        new StateManagerGL(mFunctions.get(), getNativeCaps(), getNativeExtensions(), mFeatures);
     mBlitter          = new BlitGL(mFunctions.get(), mFeatures, mStateManager);
     mMultiviewClearer = new ClearMultiviewGL(mFunctions.get(), mStateManager);
 

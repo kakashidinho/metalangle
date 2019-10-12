@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2014 The ANGLE Project Authors. All rights reserved.
+// Copyright 2014 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -83,7 +83,7 @@ void InitMinimumTextureCapsMap(const Version &clientVersion,
                                const Extensions &extensions,
                                TextureCapsMap *capsMap);
 
-// Returns true if all the formats required to support GL_CHROMIUM_compressed_texture_etc are
+// Returns true if all the formats required to support GL_ANGLE_compressed_texture_etc are
 // present. Does not determine if they are natively supported without decompression.
 bool DetermineCompressedTextureETCSupport(const TextureCapsMap &textureCaps);
 
@@ -106,7 +106,9 @@ struct Extensions
     // GL_EXT_texture_rg
     // GL_EXT_texture_compression_dxt1, GL_ANGLE_texture_compression_dxt3,
     // GL_ANGLE_texture_compression_dxt5
-    // GL_KHR_texture_compression_astc_hdr, GL_KHR_texture_compression_astc_ldr
+    // GL_KHR_texture_compression_astc_ldr, GL_OES_texture_compression_astc.
+    //     NOTE: GL_KHR_texture_compression_astc_hdr must be enabled separately. Support for the
+    //           HDR profile cannot be determined from the format enums alone.
     // GL_OES_compressed_ETC1_RGB8_texture
     // GL_EXT_sRGB
     // GL_ANGLE_depth_texture, GL_OES_depth32
@@ -158,6 +160,9 @@ struct Extensions
     bool textureHalfFloat       = false;
     bool textureHalfFloatLinear = false;
 
+    // GL_EXT_texture_type_2_10_10_10_REV
+    bool textureFormat2101010REV = false;
+
     // GL_OES_texture_float and GL_OES_texture_float_linear
     // Implies that TextureCaps for GL_RGB32F, GL_RGBA32F, GL_ALPHA16F_EXT, GL_LUMINANCE16F_EXT and
     // GL_LUMINANCE_ALPHA16F_EXT exist
@@ -183,11 +188,14 @@ struct Extensions
     // GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT
     bool textureCompressionS3TCsRGB = false;
 
-    // GL_KHR_texture_compression_astc_hdr
-    bool textureCompressionASTCHDR = false;
-
     // GL_KHR_texture_compression_astc_ldr
-    bool textureCompressionASTCLDR = false;
+    bool textureCompressionASTCLDRKHR = false;
+
+    // GL_KHR_texture_compression_astc_hdr
+    bool textureCompressionASTCHDRKHR = false;
+
+    // GL_OES_texture_compression_astc
+    bool textureCompressionASTCOES = false;
 
     // GL_EXT_texture_compression_bptc
     bool textureCompressionBPTC = false;
@@ -226,7 +234,7 @@ struct Extensions
     // OES_compressed_EAC_RG11_signed_texture
     bool compressedEACRG11SignedTexture = false;
 
-    // GL_CHROMIUM_compressed_texture_etc
+    // ANGLE_compressed_texture_etc
     // ONLY exposed if ETC texture formats are natively supported without decompression
     // Backends should enable this extension explicitly. It is not enabled with
     // setTextureExtensionSupport, use DetermineCompressedTextureETCSupport to check if all of the
@@ -299,6 +307,9 @@ struct Extensions
 
     // GL_ANGLE_framebuffer_multisample
     bool framebufferMultisample = false;
+
+    // GL_EXT_multisampled_render_to_texture
+    bool multisampledRenderToTexture = false;
 
     // GL_ANGLE_instanced_arrays
     bool instancedArraysANGLE = false;
@@ -374,8 +385,14 @@ struct Extensions
     // NV_pack_subimage
     bool packSubimage = false;
 
+    // GL_OES_vertex_half_float
+    bool vertexHalfFloat = false;
+
     // GL_OES_vertex_array_object
     bool vertexArrayObject = false;
+
+    // GL_OES_vertex_type_10_10_10_2
+    bool vertexAttribType1010102 = false;
 
     // GL_KHR_debug
     bool debug                     = false;
@@ -521,6 +538,9 @@ struct Extensions
 
     // GL_ANGLE_texture_external_update
     bool textureExternalUpdateANGLE = false;
+
+    // GL_ANGLE_base_vertex_base_instance
+    bool baseVertexBaseInstance = false;
 };
 
 struct ExtensionInfo
@@ -908,6 +928,15 @@ struct DisplayExtensions
 
     // EGL_ANDROID_get_native_client_buffer
     bool getNativeClientBufferANDROID = false;
+
+    // EGL_ANDROID_native_fence_sync
+    bool nativeFenceSyncANDROID = false;
+
+    // EGL_ANGLE_create_context_backwards_compatible
+    bool createContextBackwardsCompatible = false;
+
+    // EGL_KHR_no_config_context
+    bool noConfigContext = false;
 };
 
 struct DeviceExtensions
@@ -919,6 +948,9 @@ struct DeviceExtensions
 
     // EGL_ANGLE_device_d3d
     bool deviceD3D = false;
+
+    // EGL_ANGLE_device_cgl
+    bool deviceCGL = false;
 };
 
 struct ClientExtensions
@@ -953,6 +985,9 @@ struct ClientExtensions
     // EGL_ANGLE_platform_angle_vulkan
     bool platformANGLEVulkan = false;
 
+    // EGL_ANGLE_platform_angle_metal
+    bool platformANGLEMetal = false;
+
     // EGL_ANGLE_platform_angle_context_virtualization
     bool platformANGLEContextVirtualization = false;
 
@@ -979,6 +1014,9 @@ struct ClientExtensions
 
     // EGL_ANGLE_feature_control
     bool featureControlANGLE = false;
+
+    // EGL_ANGLE_platform_angle_device_type_swiftshader
+    bool platformANGLEDeviceTypeSwiftShader = false;
 };
 
 }  // namespace egl

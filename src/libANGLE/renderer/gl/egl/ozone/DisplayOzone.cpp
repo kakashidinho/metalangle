@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016 The ANGLE Project Authors. All rights reserved.
+// Copyright 2016 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -317,7 +317,7 @@ GLuint DisplayOzone::Buffer::createGLFB(const gl::Context *context)
 FramebufferGL *DisplayOzone::Buffer::framebufferGL(const gl::Context *context,
                                                    const gl::FramebufferState &state)
 {
-    return new FramebufferGL(state, createGLFB(context), true);
+    return new FramebufferGL(state, createGLFB(context), true, false);
 }
 
 void DisplayOzone::Buffer::present(const gl::Context *context)
@@ -904,7 +904,7 @@ SurfaceImpl *DisplayOzone::createPbufferSurface(const egl::SurfaceState &state,
     EGLAttrib height = attribs.get(EGL_HEIGHT, 0);
     Buffer *buffer   = new Buffer(this, GBM_BO_USE_RENDERING, GBM_FORMAT_ARGB8888,
                                 DRM_FORMAT_ARGB8888, DRM_FORMAT_XRGB8888, true, true);
-    if (!buffer || !buffer->initialize(width, height))
+    if (!buffer || !buffer->initialize(static_cast<int>(width), static_cast<int>(height)))
     {
         return nullptr;
     }

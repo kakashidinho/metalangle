@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2002-2014 The ANGLE Project Authors. All rights reserved.
+// Copyright 2002 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -29,6 +29,15 @@
 #include "libANGLE/Context_gl_2_1_autogen.h"
 #include "libANGLE/Context_gl_3_0_autogen.h"
 #include "libANGLE/Context_gl_3_1_autogen.h"
+#include "libANGLE/Context_gl_3_2_autogen.h"
+#include "libANGLE/Context_gl_3_3_autogen.h"
+#include "libANGLE/Context_gl_4_0_autogen.h"
+#include "libANGLE/Context_gl_4_1_autogen.h"
+#include "libANGLE/Context_gl_4_2_autogen.h"
+#include "libANGLE/Context_gl_4_3_autogen.h"
+#include "libANGLE/Context_gl_4_4_autogen.h"
+#include "libANGLE/Context_gl_4_5_autogen.h"
+#include "libANGLE/Context_gl_4_6_autogen.h"
 #include "libANGLE/Context_gles_1_0_autogen.h"
 #include "libANGLE/Context_gles_2_0_autogen.h"
 #include "libANGLE/Context_gles_3_0_autogen.h"
@@ -113,6 +122,7 @@ enum class VertexAttribTypeCase
     Invalid        = 0,
     Valid          = 1,
     ValidSize4Only = 2,
+    ValidSize3or4  = 3,
 };
 
 // Helper class for managing cache variables and state changes.
@@ -238,6 +248,13 @@ class StateCache final : angle::NonCopyable
         return mCachedIntegerVertexAttribTypesValidation[type];
     }
 
+    // Places that can trigger updateActiveShaderStorageBufferIndices:
+    // 1. onProgramExecutableChange.
+    StorageBuffersMask getActiveShaderStorageBufferIndices() const
+    {
+        return mCachedActiveShaderStorageBufferIndices;
+    }
+
     // State change notifications.
     void onVertexArrayBindingChange(Context *context);
     void onProgramExecutableChange(Context *context);
@@ -269,6 +286,7 @@ class StateCache final : angle::NonCopyable
     void updateBasicDrawElementsError();
     void updateTransformFeedbackActiveUnpaused(Context *context);
     void updateVertexAttribTypesValidation(Context *context);
+    void updateActiveShaderStorageBufferIndices(Context *context);
 
     void setValidDrawModes(bool pointsOK, bool linesOK, bool trisOK, bool lineAdjOK, bool triAdjOK);
 
@@ -286,6 +304,7 @@ class StateCache final : angle::NonCopyable
     mutable intptr_t mCachedBasicDrawStatesError;
     mutable intptr_t mCachedBasicDrawElementsError;
     bool mCachedTransformFeedbackActiveUnpaused;
+    StorageBuffersMask mCachedActiveShaderStorageBufferIndices;
 
     // Reserve an extra slot at the end of these maps for invalid enum.
     angle::PackedEnumMap<PrimitiveMode, bool, angle::EnumSize<PrimitiveMode>() + 1>
@@ -307,7 +326,7 @@ class StateCache final : angle::NonCopyable
 class Context final : public egl::LabeledObject, angle::NonCopyable, public angle::ObserverInterface
 {
   public:
-    Context(rx::EGLImplFactory *implFactory,
+    Context(egl::Display *display,
             const egl::Config *config,
             const Context *shareContext,
             TextureManager *shareTextures,
@@ -317,55 +336,60 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
             const egl::DisplayExtensions &displayExtensions,
             const egl::ClientExtensions &clientExtensions);
 
+    // Use for debugging.
+    int id() const { return mState.mID; }
+
     egl::Error onDestroy(const egl::Display *display);
     ~Context() override;
 
     void setLabel(EGLLabelKHR label) override;
     EGLLabelKHR getLabel() const override;
 
-    egl::Error makeCurrent(egl::Display *display, egl::Surface *surface);
+    egl::Error makeCurrent(egl::Display *display,
+                           egl::Surface *drawSurface,
+                           egl::Surface *readSurface);
     egl::Error unMakeCurrent(const egl::Display *display);
 
     // These create  and destroy methods are merely pass-throughs to
     // ResourceManager, which owns these object types
-    GLuint createBuffer();
-    GLuint createTexture();
-    GLuint createRenderbuffer();
-    GLuint createProgramPipeline();
-    GLuint createMemoryObject();
-    GLuint createSemaphore();
+    BufferID createBuffer();
+    TextureID createTexture();
+    RenderbufferID createRenderbuffer();
+    ProgramPipelineID createProgramPipeline();
+    MemoryObjectID createMemoryObject();
+    SemaphoreID createSemaphore();
 
-    void deleteBuffer(GLuint buffer);
-    void deleteTexture(GLuint texture);
-    void deleteRenderbuffer(GLuint renderbuffer);
-    void deleteProgramPipeline(GLuint pipeline);
-    void deleteMemoryObject(GLuint memoryObject);
-    void deleteSemaphore(GLuint semaphore);
+    void deleteBuffer(BufferID buffer);
+    void deleteTexture(TextureID texture);
+    void deleteRenderbuffer(RenderbufferID renderbuffer);
+    void deleteProgramPipeline(ProgramPipelineID pipeline);
+    void deleteMemoryObject(MemoryObjectID memoryObject);
+    void deleteSemaphore(SemaphoreID semaphore);
 
     // CHROMIUM_path_rendering
-    bool isPathGenerated(GLuint path) const;
+    bool isPathGenerated(PathID path) const;
 
-    void bindReadFramebuffer(GLuint framebufferHandle);
-    void bindDrawFramebuffer(GLuint framebufferHandle);
+    void bindReadFramebuffer(FramebufferID framebufferHandle);
+    void bindDrawFramebuffer(FramebufferID framebufferHandle);
 
-    Buffer *getBuffer(GLuint handle) const;
-    FenceNV *getFenceNV(GLuint handle);
+    Buffer *getBuffer(BufferID handle) const;
+    FenceNV *getFenceNV(FenceNVID handle);
     Sync *getSync(GLsync handle) const;
-    ANGLE_INLINE Texture *getTexture(GLuint handle) const
+    ANGLE_INLINE Texture *getTexture(TextureID handle) const
     {
         return mState.mTextureManager->getTexture(handle);
     }
 
-    Framebuffer *getFramebuffer(GLuint handle) const;
-    Renderbuffer *getRenderbuffer(GLuint handle) const;
-    VertexArray *getVertexArray(GLuint handle) const;
-    Sampler *getSampler(GLuint handle) const;
-    Query *getQuery(GLuint handle, bool create, QueryType type);
-    Query *getQuery(GLuint handle) const;
-    TransformFeedback *getTransformFeedback(GLuint handle) const;
-    ProgramPipeline *getProgramPipeline(GLuint handle) const;
-    MemoryObject *getMemoryObject(GLuint handle) const;
-    Semaphore *getSemaphore(GLuint handle) const;
+    Framebuffer *getFramebuffer(FramebufferID handle) const;
+    Renderbuffer *getRenderbuffer(RenderbufferID handle) const;
+    VertexArray *getVertexArray(VertexArrayID handle) const;
+    Sampler *getSampler(SamplerID handle) const;
+    Query *getQuery(QueryID handle, bool create, QueryType type);
+    Query *getQuery(QueryID handle) const;
+    TransformFeedback *getTransformFeedback(TransformFeedbackID handle) const;
+    ProgramPipeline *getProgramPipeline(ProgramPipelineID handle) const;
+    MemoryObject *getMemoryObject(MemoryObjectID handle) const;
+    Semaphore *getSemaphore(SemaphoreID handle) const;
 
     Texture *getTextureByType(TextureType type) const;
     Texture *getTextureByTarget(TextureTarget target) const;
@@ -373,8 +397,8 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
 
     Compiler *getCompiler() const;
 
-    bool isVertexArrayGenerated(GLuint vertexArray);
-    bool isTransformFeedbackGenerated(GLuint vertexArray);
+    bool isVertexArrayGenerated(VertexArrayID vertexArray);
+    bool isTransformFeedbackGenerated(TransformFeedbackID transformFeedback);
 
     void getBooleanvImpl(GLenum pname, GLboolean *params);
     void getFloatvImpl(GLenum pname, GLfloat *params);
@@ -383,10 +407,10 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     void getPointerv(GLenum pname, void **params) const;
 
     // Framebuffers are owned by the Context, so these methods do not pass through
-    GLuint createFramebuffer();
-    void deleteFramebuffer(GLuint framebuffer);
+    FramebufferID createFramebuffer();
+    void deleteFramebuffer(FramebufferID framebuffer);
 
-    bool hasActiveTransformFeedback(GLuint program) const;
+    bool hasActiveTransformFeedback(ShaderProgramID program) const;
 
     // GL emulation: Interface to entry points
     ANGLE_GL_1_0_CONTEXT_API
@@ -399,6 +423,15 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     ANGLE_GL_2_1_CONTEXT_API
     ANGLE_GL_3_0_CONTEXT_API
     ANGLE_GL_3_1_CONTEXT_API
+    ANGLE_GL_3_2_CONTEXT_API
+    ANGLE_GL_3_3_CONTEXT_API
+    ANGLE_GL_4_0_CONTEXT_API
+    ANGLE_GL_4_1_CONTEXT_API
+    ANGLE_GL_4_2_CONTEXT_API
+    ANGLE_GL_4_3_CONTEXT_API
+    ANGLE_GL_4_4_CONTEXT_API
+    ANGLE_GL_4_5_CONTEXT_API
+    ANGLE_GL_4_6_CONTEXT_API
 
     // GLES emulation: Interface to entry points
     ANGLE_GLES_1_0_CONTEXT_API
@@ -443,14 +476,15 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
                                               angle::MemoryBuffer **zeroBufferOut) const;
     angle::ScratchBuffer *getScratchBuffer() const { return &mScratchBuffer; }
 
+    angle::Result prepareForCopyImage();
     angle::Result prepareForDispatch();
 
     MemoryProgramCache *getMemoryProgramCache() const { return mMemoryProgramCache; }
 
     bool hasBeenCurrent() const { return mHasBeenCurrent; }
     egl::Display *getDisplay() const { return mDisplay; }
-    egl::Surface *getCurrentDrawSurface() const { return mCurrentSurface; }
-    egl::Surface *getCurrentReadSurface() const { return mCurrentSurface; }
+    egl::Surface *getCurrentDrawSurface() const { return mCurrentDrawSurface; }
+    egl::Surface *getCurrentReadSurface() const { return mCurrentReadSurface; }
 
     bool isRobustResourceInitEnabled() const { return mState.isRobustResourceInitEnabled(); }
 
@@ -460,6 +494,10 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     {
         return mState.isCurrentVertexArray(va);
     }
+
+    bool isShared() const { return mShared; }
+    // Once a context is setShared() it cannot be undone
+    void setShared() { mShared = true; }
 
     const State &getState() const { return mState; }
     GLint getClientMajorVersion() const { return mState.getClientMajorVersion(); }
@@ -476,7 +514,7 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     bool getQueryParameterInfo(GLenum pname, GLenum *type, unsigned int *numParams) const;
     bool getIndexedQueryParameterInfo(GLenum target, GLenum *type, unsigned int *numParams) const;
 
-    ANGLE_INLINE Program *getProgramResolveLink(GLuint handle) const
+    ANGLE_INLINE Program *getProgramResolveLink(ShaderProgramID handle) const
     {
         Program *program = mState.mShaderProgramManager->getProgram(handle);
         if (program)
@@ -486,22 +524,22 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
         return program;
     }
 
-    Program *getProgramNoResolveLink(GLuint handle) const;
-    Shader *getShader(GLuint handle) const;
+    Program *getProgramNoResolveLink(ShaderProgramID handle) const;
+    Shader *getShader(ShaderProgramID handle) const;
 
-    ANGLE_INLINE bool isTextureGenerated(GLuint texture) const
+    ANGLE_INLINE bool isTextureGenerated(TextureID texture) const
     {
         return mState.mTextureManager->isHandleGenerated(texture);
     }
 
-    ANGLE_INLINE bool isBufferGenerated(GLuint buffer) const
+    ANGLE_INLINE bool isBufferGenerated(BufferID buffer) const
     {
         return mState.mBufferManager->isHandleGenerated(buffer);
     }
 
-    bool isRenderbufferGenerated(GLuint renderbuffer) const;
-    bool isFramebufferGenerated(GLuint framebuffer) const;
-    bool isProgramPipelineGenerated(GLuint pipeline) const;
+    bool isRenderbufferGenerated(RenderbufferID renderbuffer) const;
+    bool isFramebufferGenerated(FramebufferID framebuffer) const;
+    bool isProgramPipelineGenerated(ProgramPipelineID pipeline) const;
 
     bool usingDisplayTextureShareGroup() const;
 
@@ -531,7 +569,9 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
 
     const angle::FrontendFeatures &getFrontendFeatures() const;
 
-    angle::FrameCapture *getFrameCapture();
+    angle::FrameCapture *getFrameCapture() { return mFrameCapture.get(); }
+
+    void onPostSwap() const;
 
   private:
     void initialize();
@@ -551,24 +591,24 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     angle::Result syncStateForBlit();
     angle::Result syncStateForPathOperation();
 
-    VertexArray *checkVertexArrayAllocation(GLuint vertexArrayHandle);
-    TransformFeedback *checkTransformFeedbackAllocation(GLuint transformFeedback);
+    VertexArray *checkVertexArrayAllocation(VertexArrayID vertexArrayHandle);
+    TransformFeedback *checkTransformFeedbackAllocation(TransformFeedbackID transformFeedback);
 
     angle::Result onProgramLink(Program *programObject);
 
     void detachBuffer(Buffer *buffer);
-    void detachTexture(GLuint texture);
-    void detachFramebuffer(GLuint framebuffer);
-    void detachRenderbuffer(GLuint renderbuffer);
-    void detachVertexArray(GLuint vertexArray);
-    void detachTransformFeedback(GLuint transformFeedback);
-    void detachSampler(GLuint sampler);
-    void detachProgramPipeline(GLuint pipeline);
+    void detachTexture(TextureID texture);
+    void detachFramebuffer(FramebufferID framebuffer);
+    void detachRenderbuffer(RenderbufferID renderbuffer);
+    void detachVertexArray(VertexArrayID vertexArray);
+    void detachTransformFeedback(TransformFeedbackID transformFeedback);
+    void detachSampler(SamplerID sampler);
+    void detachProgramPipeline(ProgramPipelineID pipeline);
 
     // A small helper method to facilitate using the ANGLE_CONTEXT_TRY macro.
-    void tryGenPaths(GLsizei range, GLuint *createdOut);
+    void tryGenPaths(GLsizei range, PathID *createdOut);
 
-    egl::Error setDefaultFramebuffer(egl::Surface *surface);
+    egl::Error setDefaultFramebuffer(egl::Surface *drawSurface, egl::Surface *readSurface);
     egl::Error unsetDefaultFramebuffer();
 
     void initRendererString();
@@ -585,6 +625,7 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     void setUniform1iImpl(Program *program, GLint location, GLsizei count, const GLint *v);
 
     State mState;
+    bool mShared;
     bool mSkipValidation;
     bool mDisplayTextureShareGroup;
 
@@ -606,20 +647,19 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     mutable BindingPointer<Compiler> mCompiler;
 
     const egl::Config *mConfig;
-    EGLenum mClientType;
 
     TextureMap mZeroTextures;
 
-    ResourceMap<FenceNV> mFenceNVMap;
+    ResourceMap<FenceNV, FenceNVID> mFenceNVMap;
     HandleAllocator mFenceNVHandleAllocator;
 
-    ResourceMap<Query> mQueryMap;
+    ResourceMap<Query, QueryID> mQueryMap;
     HandleAllocator mQueryHandleAllocator;
 
-    ResourceMap<VertexArray> mVertexArrayMap;
+    ResourceMap<VertexArray, VertexArrayID> mVertexArrayMap;
     HandleAllocator mVertexArrayHandleAllocator;
 
-    ResourceMap<TransformFeedback> mTransformFeedbackMap;
+    ResourceMap<TransformFeedback, TransformFeedbackID> mTransformFeedbackMap;
     HandleAllocator mTransformFeedbackHandleAllocator;
 
     const char *mVersionString;
@@ -642,7 +682,8 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     const bool mRobustAccess;
     const bool mSurfacelessSupported;
     const bool mExplicitContextAvailable;
-    egl::Surface *mCurrentSurface;
+    egl::Surface *mCurrentDrawSurface;
+    egl::Surface *mCurrentReadSurface;
     egl::Display *mDisplay;
     const bool mWebGLContext;
     bool mBufferAccessValidationEnabled;
@@ -665,6 +706,7 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     State::DirtyObjects mBlitDirtyObjects;
     State::DirtyBits mComputeDirtyBits;
     State::DirtyObjects mComputeDirtyObjects;
+    State::DirtyBits mCopyImageDirtyBits;
     State::DirtyObjects mCopyImageDirtyObjects;
 
     // Binding to container objects that use dependent state updates.
@@ -673,12 +715,18 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     angle::ObserverBinding mReadFramebufferObserverBinding;
     std::vector<angle::ObserverBinding> mUniformBufferObserverBindings;
     std::vector<angle::ObserverBinding> mSamplerObserverBindings;
+    std::vector<angle::ObserverBinding> mImageObserverBindings;
 
     // Not really a property of context state. The size and contexts change per-api-call.
     mutable angle::ScratchBuffer mScratchBuffer;
     mutable angle::ScratchBuffer mZeroFilledBuffer;
 
     std::shared_ptr<angle::WorkerThreadPool> mThreadPool;
+
+    // Note: we use a raw pointer here so we can exclude frame capture sources from the build.
+    std::unique_ptr<angle::FrameCapture> mFrameCapture;
+
+    OverlayType mOverlay;
 };
 
 }  // namespace gl

@@ -1095,6 +1095,7 @@ ANGLE_INSTANTIATE_TEST(SimpleOperationTest,
                        ES3_OPENGL(),
                        ES2_OPENGLES(),
                        ES3_OPENGLES(),
-                       ES2_VULKAN());
+                       ES2_VULKAN(),
+                       ES2_VULKAN_SWIFTSHADER());
 
 }  // namespace

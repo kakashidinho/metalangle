@@ -666,6 +666,10 @@ TEST_P(MipmapTest, RenderOntoLevelZeroAfterGenerateMipmap)
 // already uploaded before. The test expects that mip to be usable.
 TEST_P(MipmapTest, DefineValidExtraLevelAndUseItLater)
 {
+    // TODO(cnorthrop): Enabled the group to cover texture base level, but this test
+    // needs some triage: http://anglebug.com/3950
+    ANGLE_SKIP_TEST_IF(IsVulkan());
+
     glBindTexture(GL_TEXTURE_2D, mTexture2D);
 
     GLubyte *levels[] = {mLevelZeroBlueInitData.data(), mLevelOneGreenInitData.data(),
@@ -940,6 +944,10 @@ TEST_P(MipmapTestES3, MipmapForDeepTextureArray)
 // Then tests if the mipmaps are rendered correctly for all two layers.
 TEST_P(MipmapTestES3, MipmapsForTexture3D)
 {
+    // TODO(cnorthrop): Enabled the group to cover texture base level, but this test
+    // needs some triage: http://anglebug.com/3950
+    ANGLE_SKIP_TEST_IF(IsVulkan());
+
     int px = getWindowWidth() / 2;
     int py = getWindowHeight() / 2;
 
@@ -1093,6 +1101,7 @@ TEST_P(MipmapTestES3, GenerateMipmapCubeBaseLevel)
 
     // Observed incorrect rendering on NVIDIA, level zero seems to be incorrectly affected by
     // GenerateMipmap.
+    // http://anglebug.com/3851
     ANGLE_SKIP_TEST_IF(IsNVIDIA() && IsOpenGL());
 
     // Draw using level 0. It should still be blue.
@@ -1183,6 +1192,9 @@ TEST_P(MipmapTestES3, GenerateMipmapBaseLevelOutOfRange)
 // be clamped, so the call doesn't generate an error.
 TEST_P(MipmapTestES3, GenerateMipmapBaseLevelOutOfRangeImmutableTexture)
 {
+    // TODO(cnorthrop): Interacts with immutable texture supprt: http://anglebug.com/3950
+    ANGLE_SKIP_TEST_IF(IsVulkan());
+
     glBindTexture(GL_TEXTURE_2D, mTexture);
 
     glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, 1, 1);
@@ -1214,6 +1226,9 @@ TEST_P(MipmapTestES3, BaseLevelTextureBug)
     // Probably not Intel.
     ANGLE_SKIP_TEST_IF(IsOSX() && (IsNVIDIA() || IsIntel()));
 
+    // TODO(cnorthrop): Figure out what's going on here: http://anglebug.com/3950
+    ANGLE_SKIP_TEST_IF(IsVulkan());
+
     std::vector<GLColor> texDataRed(2u * 2u, GLColor::red);
 
     glBindTexture(GL_TEXTURE_2D, mTexture);
@@ -1244,5 +1259,6 @@ ANGLE_INSTANTIATE_TEST(MipmapTest,
                        ES3_OPENGL(),
                        ES2_OPENGLES(),
                        ES3_OPENGLES(),
-                       ES2_VULKAN());
-ANGLE_INSTANTIATE_TEST(MipmapTestES3, ES3_D3D11(), ES3_OPENGL(), ES3_OPENGLES());
+                       ES2_VULKAN(),
+                       ES3_VULKAN());
+ANGLE_INSTANTIATE_TEST(MipmapTestES3, ES3_D3D11(), ES3_OPENGL(), ES3_OPENGLES(), ES3_VULKAN());

@@ -29,25 +29,18 @@
 // fails on Nexus5X with GLES backend (hangs)
 //  91531 NEXUS5X GLES : conformance_more_* = SKIP
 
-// Relates to a difference in spec with ES and Core GL.
-3381 : KHR-GLES2.shaders.negative.initialize = FAIL
-
-// Failures with floating point extensions
-3451 D3D9 D3D11 OPENGL GLES : KHR-GLES2.core.internalformat.texture2d.rgb_half_float_rgb16f = FAIL
-3451 D3D9 D3D11 OPENGL GLES : KHR-GLES2.core.internalformat.texture2d.rgba_half_float_rgba16f = FAIL
-3451 D3D9 D3D11 OPENGL GLES : KHR-GLES2.core.internalformat.texture2d.rgb_half_float_rgb16f_linear = FAIL
-3451 D3D9 D3D11 OPENGL GLES : KHR-GLES2.core.internalformat.texture2d.rgba_half_float_rgba16f_linear = FAIL
-
 // Depth/stencil related failures.
 3457 VULKAN : KHR-GLES2.core.internalformat.texture2d.depth_stencil_unsigned_int_24_8_depth_stencil = FAIL
 
-// 3d texture framebuffer tests
-3188 VULKAN : KHR-GLES2.texture_3d.framebuffer_* = SKIP
+// Test bug, use of sized internal format. Passes with patch from bug.
+3797 VULKAN : KHR-GLES2.texture_3d.framebuffer_texture.rgba8 = SKIP
 
-// Unclear what is happening here, failing to validate a 2D texture format
-3190 VULKAN : KHR-GLES2.texture_3d.copy_sub_image.rgba8 = SKIP
+// GL_RGBA8 is not supported in GLES2
+// GL_OES_rgb8_rgba8 only enables GL_RGBA8 for render buffers (not textures)
+3797 VULKAN : KHR-GLES2.texture_3d.copy_sub_image.rgba8 = FAIL
 
-// Compressed texture tests on Android
-3190 VULKAN PIXEL2 : KHR-GLES2.texture_3d.compressed_texture.rgba_astc_* = FAIL
-3190 VULKAN PIXEL2 : KHR-GLES2.texture_3d.compressed_texture.sgb8_alpha8_astc_* = FAIL
-3190 VULKAN PIXEL2 : KHR-GLES2.texture_3d.compressed_texture.srgb8_alpha8_astc_* = FAIL
+// Bug in dEQP uses an incorrect enum (GL_HALF_FLOAT instead of GL_HALF_FLOAT_OES)
+3451 : KHR-GLES2.core.internalformat.texture2d.rgb_half_float_rgb16f = FAIL
+3451 : KHR-GLES2.core.internalformat.texture2d.rgba_half_float_rgba16f = FAIL
+3451 : KHR-GLES2.core.internalformat.texture2d.rgb_half_float_rgb16f_linear = FAIL
+3451 : KHR-GLES2.core.internalformat.texture2d.rgba_half_float_rgba16f_linear = FAIL

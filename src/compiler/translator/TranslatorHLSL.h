@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2002-2013 The ANGLE Project Authors. All rights reserved.
+// Copyright 2002 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -30,9 +30,9 @@ class TranslatorHLSL : public TCompiler
     const std::set<std::string> *getUsedImage2DFunctionNames() const;
 
   protected:
-    void translate(TIntermBlock *root,
-                   ShCompileOptions compileOptions,
-                   PerformanceDiagnostics *perfDiagnostics) override;
+    ANGLE_NO_DISCARD bool translate(TIntermBlock *root,
+                                    ShCompileOptions compileOptions,
+                                    PerformanceDiagnostics *perfDiagnostics) override;
     bool shouldFlattenPragmaStdglInvariantAll() override;
 
     // collectVariables needs to be run always so registers can be assigned.

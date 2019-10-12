@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2002-2014 The ANGLE Project Authors. All rights reserved.
+// Copyright 2002 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -38,7 +38,7 @@ BufferState::BufferState()
 
 BufferState::~BufferState() {}
 
-Buffer::Buffer(rx::GLImplFactory *factory, GLuint id)
+Buffer::Buffer(rx::GLImplFactory *factory, BufferID id)
     : RefCountObject(id),
       mImpl(factory->createBuffer(mState)),
       mImplObserver(this, kImplementationSubjectIndex)
@@ -210,20 +210,14 @@ angle::Result Buffer::unmap(const Context *context, GLboolean *result)
     return angle::Result::Continue;
 }
 
-void Buffer::onTransformFeedback()
+void Buffer::onDataChanged()
 {
     mIndexRangeCache.clear();
 
     // Notify when data changes.
     onStateChange(angle::SubjectMessage::ContentsChanged);
-}
 
-void Buffer::onPixelPack()
-{
-    mIndexRangeCache.clear();
-
-    // Notify when data changes.
-    onStateChange(angle::SubjectMessage::ContentsChanged);
+    mImpl->onDataChanged();
 }
 
 angle::Result Buffer::getIndexRange(const gl::Context *context,

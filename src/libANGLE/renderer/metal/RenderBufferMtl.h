@@ -36,6 +36,7 @@ class RenderbufferMtl : public RenderbufferImpl
     angle::Result getAttachmentRenderTarget(const gl::Context *context,
                                             GLenum binding,
                                             const gl::ImageIndex &imageIndex,
+                                            GLsizei samples,
                                             FramebufferAttachmentRenderTarget **rtOut) override;
 
     angle::Result initializeContents(const gl::Context *context,

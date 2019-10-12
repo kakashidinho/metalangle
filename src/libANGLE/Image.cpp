@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2015 The ANGLE Project Authors. All rights reserved.
+// Copyright 2015 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -41,7 +41,7 @@ gl::ImageIndex GetImageIndex(EGLenum eglTarget, const egl::AttributeMap &attribs
     else
     {
         ASSERT(layer == 0);
-        return gl::ImageIndex::MakeFromTarget(target, mip);
+        return gl::ImageIndex::MakeFromTarget(target, mip, 1);
     }
 }
 
@@ -173,7 +173,7 @@ gl::Format ExternalImageSibling::getAttachmentFormat(GLenum binding,
 
 GLsizei ExternalImageSibling::getAttachmentSamples(const gl::ImageIndex &imageIndex) const
 {
-    return mImplementation->getSamples();
+    return static_cast<GLsizei>(mImplementation->getSamples());
 }
 
 bool ExternalImageSibling::isRenderable(const gl::Context *context,
@@ -251,6 +251,9 @@ void Image::onDestroy(const Display *display)
     // no siblings left.
     ASSERT(mState.targets.empty());
 
+    // Make sure the implementation gets a chance to clean up before we delete the source.
+    mImplementation->onDestroy(display);
+
     // Tell the source that it is no longer used by this image
     if (mState.source != nullptr)
     {
@@ -266,8 +269,6 @@ void Image::onDestroy(const Display *display)
 
         mState.source = nullptr;
     }
-
-    mImplementation->onDestroy(display);
 }
 
 Image::~Image()

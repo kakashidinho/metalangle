@@ -39,6 +39,7 @@ class RenderbufferVk : public RenderbufferImpl
     angle::Result getAttachmentRenderTarget(const gl::Context *context,
                                             GLenum binding,
                                             const gl::ImageIndex &imageIndex,
+                                            GLsizei samples,
                                             FramebufferAttachmentRenderTarget **rtOut) override;
 
     angle::Result initializeContents(const gl::Context *context,
@@ -60,7 +61,6 @@ class RenderbufferVk : public RenderbufferImpl
     bool mOwnsImage;
     vk::ImageHelper *mImage;
     vk::ImageView mImageView;
-    vk::ImageView mCubeImageFetchView;
     RenderTargetVk mRenderTarget;
 };
 

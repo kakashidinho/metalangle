@@ -383,7 +383,7 @@ SamplerDesc::SamplerDesc(const gl::SamplerState &glState) : SamplerDesc()
     magFilter = GetFilter(glState.getMagFilter());
     mipFilter = GetMipmapFilter(glState.getMinFilter());
 
-    maxAnisotropy = glState.getMaxAnisotropy();
+    maxAnisotropy = static_cast<uint32_t>(glState.getMaxAnisotropy());
 }
 
 void SamplerDesc::set()

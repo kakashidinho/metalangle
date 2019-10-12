@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2014 The ANGLE Project Authors. All rights reserved.
+// Copyright 2014 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -37,7 +37,7 @@ struct InterleavedAttributeDataParams final : public RenderTestParams
 
 std::ostream &operator<<(std::ostream &os, const InterleavedAttributeDataParams &params)
 {
-    os << params.suffix().substr(1);
+    os << params.backendAndStory().substr(1);
 
     if (params.eglParameters.majorVersion != EGL_DONT_CARE)
     {

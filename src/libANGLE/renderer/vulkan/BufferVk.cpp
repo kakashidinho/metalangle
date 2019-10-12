@@ -26,6 +26,7 @@ namespace
 // On some hardware, reading 4 bytes from address 4k returns 0, making it impossible to read the
 // last n bytes.  By rounding up the buffer sizes to a multiple of 4, the problem is alleviated.
 constexpr size_t kBufferSizeGranularity = 4;
+static_assert(gl::isPow2(kBufferSizeGranularity), "use as alignment, must be power of two");
 
 // Start with a fairly small buffer size. We can increase this dynamically as we convert more data.
 constexpr size_t kConvertedArrayBufferInitialSize = 1024 * 8;
@@ -77,11 +78,12 @@ void BufferVk::destroy(const gl::Context *context)
 
 void BufferVk::release(ContextVk *contextVk)
 {
-    mBuffer.release(contextVk);
+    RendererVk *renderer = contextVk->getRenderer();
+    mBuffer.release(renderer);
 
     for (ConversionBuffer &buffer : mVertexConversionBuffers)
     {
-        buffer.data.release(contextVk);
+        buffer.data.release(renderer);
     }
 }
 
@@ -104,12 +106,12 @@ angle::Result BufferVk::setData(const gl::Context *context,
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT |
             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
-            VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
+            VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
 
         VkBufferCreateInfo createInfo    = {};
         createInfo.sType                 = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         createInfo.flags                 = 0;
-        createInfo.size                  = roundUp(size, kBufferSizeGranularity);
+        createInfo.size                  = roundUpPow2(size, kBufferSizeGranularity);
         createInfo.usage                 = usageFlags;
         createInfo.sharingMode           = VK_SHARING_MODE_EXCLUSIVE;
         createInfo.queueFamilyIndexCount = 0;
@@ -221,7 +223,9 @@ angle::Result BufferVk::mapRangeImpl(ContextVk *contextVk,
             ANGLE_TRY(contextVk->flushImpl(nullptr));
         }
         // Make sure the GPU is done with the buffer.
-        ANGLE_TRY(contextVk->finishToSerial(mBuffer.getStoredQueueSerial()));
+        ANGLE_TRY(contextVk->finishToSerial(mBuffer.getLatestSerial()));
+
+        ASSERT(!mBuffer.isResourceInUse(contextVk));
     }
 
     ANGLE_VK_TRY(contextVk, mBuffer.getDeviceMemory().map(contextVk->getDevice(), offset, length, 0,
@@ -231,10 +235,16 @@ angle::Result BufferVk::mapRangeImpl(ContextVk *contextVk,
 
 angle::Result BufferVk::unmap(const gl::Context *context, GLboolean *result)
 {
-    return unmapImpl(vk::GetImpl(context));
+    unmapImpl(vk::GetImpl(context));
+
+    // This should be false if the contents have been corrupted through external means.  Vulkan
+    // doesn't provide such information.
+    *result = true;
+
+    return angle::Result::Continue;
 }
 
-angle::Result BufferVk::unmapImpl(ContextVk *contextVk)
+void BufferVk::unmapImpl(ContextVk *contextVk)
 {
     ASSERT(mBuffer.valid());
 
@@ -242,8 +252,6 @@ angle::Result BufferVk::unmapImpl(ContextVk *contextVk)
     mBuffer.onExternalWrite(VK_ACCESS_HOST_WRITE_BIT);
 
     markConversionBuffersDirty();
-
-    return angle::Result::Continue;
 }
 
 angle::Result BufferVk::getIndexRange(const gl::Context *context,
@@ -312,7 +320,7 @@ angle::Result BufferVk::setDataImpl(ContextVk *contextVk,
                                          VK_ACCESS_HOST_WRITE_BIT, copyRegion));
 
         // Immediately release staging buffer. We should probably be using a DynamicBuffer here.
-        contextVk->releaseObject(contextVk->getCurrentQueueSerial(), &stagingBuffer);
+        stagingBuffer.release(contextVk);
     }
     else
     {
@@ -371,6 +379,11 @@ void BufferVk::markConversionBuffersDirty()
     {
         buffer.dirty = true;
     }
+}
+
+void BufferVk::onDataChanged()
+{
+    markConversionBuffersDirty();
 }
 
 }  // namespace rx

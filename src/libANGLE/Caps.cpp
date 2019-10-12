@@ -1,11 +1,12 @@
 //
-// Copyright (c) 2014 The ANGLE Project Authors. All rights reserved.
+// Copyright 2014 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
 
 #include "libANGLE/Caps.h"
 
+#include "anglebase/no_destructor.h"
 #include "common/angleutils.h"
 #include "common/debug.h"
 
@@ -75,8 +76,7 @@ TextureCaps GenerateMinimumTextureCaps(GLenum sizedInternalFormat,
     if (internalFormatInfo.isRequiredRenderbufferFormat(clientVersion))
     {
         if ((clientVersion.major >= 3 && clientVersion.minor >= 1) ||
-            (clientVersion.major >= 3 && internalFormatInfo.componentType != GL_UNSIGNED_INT &&
-             internalFormatInfo.componentType != GL_INT))
+            (clientVersion.major >= 3 && !internalFormatInfo.isInt()))
         {
             caps.sampleCounts.insert(4);
         }
@@ -257,11 +257,20 @@ static bool DetermineHalfFloatTextureSupport(const TextureCapsMap &textureCaps)
 }
 
 // Checks for GL_OES_texture_half_float_linear support
-static bool DetermineHalfFloatTextureFilteringSupport(const TextureCapsMap &textureCaps)
+static bool DetermineHalfFloatTextureFilteringSupport(const TextureCapsMap &textureCaps,
+                                                      bool checkLegacyFormats)
 {
-    constexpr GLenum requiredFormats[] = {
-        GL_RGBA16F, GL_RGB16F, GL_LUMINANCE_ALPHA16F_EXT, GL_LUMINANCE16F_EXT, GL_ALPHA16F_EXT,
-    };
+    constexpr GLenum requiredFormats[] = {GL_RGBA16F, GL_RGB16F};
+    // If GL_OES_texture_half_float is present, this extension must also support legacy formats
+    // introduced by that extension
+    constexpr GLenum requiredFormatsES2[] = {GL_LUMINANCE_ALPHA16F_EXT, GL_LUMINANCE16F_EXT,
+                                             GL_ALPHA16F_EXT};
+
+    if (checkLegacyFormats &&
+        !GetFormatSupport(textureCaps, requiredFormatsES2, false, true, false, false))
+    {
+        return false;
+    }
 
     return GetFormatSupport(textureCaps, requiredFormats, false, true, false, false);
 }
@@ -277,11 +286,26 @@ static bool DetermineFloatTextureSupport(const TextureCapsMap &textureCaps)
 }
 
 // Checks for GL_OES_texture_float_linear support
-static bool DetermineFloatTextureFilteringSupport(const TextureCapsMap &textureCaps)
+static bool DetermineFloatTextureFilteringSupport(const TextureCapsMap &textureCaps,
+                                                  bool checkLegacyFormats)
 {
     constexpr GLenum requiredFormats[] = {
-        GL_RGBA32F, GL_RGB32F, GL_LUMINANCE_ALPHA32F_EXT, GL_LUMINANCE32F_EXT, GL_ALPHA32F_EXT,
+        GL_RGBA32F,
+        GL_RGB32F,
     };
+    // If GL_OES_texture_float is present, this extension must also support legacy formats
+    // introduced by that extension
+    constexpr GLenum requiredFormatsES2[] = {
+        GL_LUMINANCE_ALPHA32F_EXT,
+        GL_LUMINANCE32F_EXT,
+        GL_ALPHA32F_EXT,
+    };
+
+    if (checkLegacyFormats &&
+        !GetFormatSupport(textureCaps, requiredFormatsES2, false, true, false, false))
+    {
+        return false;
+    }
 
     return GetFormatSupport(textureCaps, requiredFormats, false, true, false, false);
 }
@@ -363,8 +387,8 @@ static bool DetermineS3TCsRGBTextureSupport(const TextureCapsMap &textureCaps)
     return GetFormatSupport(textureCaps, requiredFormats, true, true, false, false);
 }
 
-// Check for GL_KHR_texture_compression_astc_hdr and GL_KHR_texture_compression_astc_ldr
-static bool DetermineASTCTextureSupport(const TextureCapsMap &textureCaps)
+// Check for GL_KHR_texture_compression_astc_ldr
+static bool DetermineASTCLDRTextureSupport(const TextureCapsMap &textureCaps)
 {
     constexpr GLenum requiredFormats[] = {
         GL_COMPRESSED_RGBA_ASTC_4x4_KHR,           GL_COMPRESSED_RGBA_ASTC_5x4_KHR,
@@ -381,6 +405,31 @@ static bool DetermineASTCTextureSupport(const TextureCapsMap &textureCaps)
         GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x5_KHR,  GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x6_KHR,
         GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x8_KHR,  GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x10_KHR,
         GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x10_KHR, GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x12_KHR,
+    };
+
+    return GetFormatSupport(textureCaps, requiredFormats, true, true, false, false);
+}
+
+// Check for GL_OES_texture_compression_astc
+static bool DetermineASTCOESTExtureSupport(const TextureCapsMap &textureCaps)
+{
+    if (!DetermineASTCLDRTextureSupport(textureCaps))
+    {
+        return false;
+    }
+
+    // The OES version of the extension also requires the 3D ASTC formats
+    constexpr GLenum requiredFormats[] = {
+        GL_COMPRESSED_RGBA_ASTC_3x3x3_OES,         GL_COMPRESSED_RGBA_ASTC_4x3x3_OES,
+        GL_COMPRESSED_RGBA_ASTC_4x4x3_OES,         GL_COMPRESSED_RGBA_ASTC_4x4x4_OES,
+        GL_COMPRESSED_RGBA_ASTC_5x4x4_OES,         GL_COMPRESSED_RGBA_ASTC_5x5x4_OES,
+        GL_COMPRESSED_RGBA_ASTC_5x5x5_OES,         GL_COMPRESSED_RGBA_ASTC_6x5x5_OES,
+        GL_COMPRESSED_RGBA_ASTC_6x6x5_OES,         GL_COMPRESSED_RGBA_ASTC_6x6x6_OES,
+        GL_COMPRESSED_SRGB8_ALPHA8_ASTC_3x3x3_OES, GL_COMPRESSED_SRGB8_ALPHA8_ASTC_4x3x3_OES,
+        GL_COMPRESSED_SRGB8_ALPHA8_ASTC_4x4x3_OES, GL_COMPRESSED_SRGB8_ALPHA8_ASTC_4x4x4_OES,
+        GL_COMPRESSED_SRGB8_ALPHA8_ASTC_5x4x4_OES, GL_COMPRESSED_SRGB8_ALPHA8_ASTC_5x5x4_OES,
+        GL_COMPRESSED_SRGB8_ALPHA8_ASTC_5x5x5_OES, GL_COMPRESSED_SRGB8_ALPHA8_ASTC_6x5x5_OES,
+        GL_COMPRESSED_SRGB8_ALPHA8_ASTC_6x6x5_OES, GL_COMPRESSED_SRGB8_ALPHA8_ASTC_6x6x6_OES,
     };
 
     return GetFormatSupport(textureCaps, requiredFormats, true, true, false, false);
@@ -659,20 +708,20 @@ void Extensions::setTextureExtensionSupport(const TextureCapsMap &textureCaps)
     textureFormatBGRA8888 = DetermineBGRA8TextureSupport(textureCaps);
     textureHalfFloat      = DetermineHalfFloatTextureSupport(textureCaps);
     textureHalfFloatLinear =
-        textureHalfFloat && DetermineHalfFloatTextureFilteringSupport(textureCaps);
+        DetermineHalfFloatTextureFilteringSupport(textureCaps, textureHalfFloat);
     textureFloat           = DetermineFloatTextureSupport(textureCaps);
-    textureFloatLinear     = textureFloat && DetermineFloatTextureFilteringSupport(textureCaps);
+    textureFloatLinear     = DetermineFloatTextureFilteringSupport(textureCaps, textureFloat);
     textureRG              = DetermineRGTextureSupport(textureCaps, textureHalfFloat, textureFloat);
     colorBufferHalfFloat   = textureHalfFloat && DetermineColorBufferHalfFloatSupport(textureCaps);
     textureCompressionDXT1 = DetermineDXT1TextureSupport(textureCaps);
     textureCompressionDXT3 = DetermineDXT3TextureSupport(textureCaps);
     textureCompressionDXT5 = DetermineDXT5TextureSupport(textureCaps);
-    textureCompressionS3TCsRGB = DetermineS3TCsRGBTextureSupport(textureCaps);
-    textureCompressionASTCHDR  = DetermineASTCTextureSupport(textureCaps);
-    textureCompressionASTCLDR  = textureCompressionASTCHDR;
-    compressedETC1RGB8Texture  = DetermineETC1RGB8TextureSupport(textureCaps);
-    compressedETC2RGB8Texture  = DetermineETC2RGB8TextureSupport(textureCaps);
-    compressedETC2sRGB8Texture = DetermineETC2sRGB8TextureSupport(textureCaps);
+    textureCompressionS3TCsRGB   = DetermineS3TCsRGBTextureSupport(textureCaps);
+    textureCompressionASTCLDRKHR = DetermineASTCLDRTextureSupport(textureCaps);
+    textureCompressionASTCOES    = DetermineASTCOESTExtureSupport(textureCaps);
+    compressedETC1RGB8Texture    = DetermineETC1RGB8TextureSupport(textureCaps);
+    compressedETC2RGB8Texture    = DetermineETC2RGB8TextureSupport(textureCaps);
+    compressedETC2sRGB8Texture   = DetermineETC2sRGB8TextureSupport(textureCaps);
     compressedETC2PunchthroughARGB8Texture =
         DetermineETC2PunchthroughARGB8TextureSupport(textureCaps);
     compressedETC2PunchthroughAsRGB8AlphaTexture =
@@ -720,6 +769,7 @@ const ExtensionInfoMap &GetExtensionInfoMap()
         map["GL_OES_get_program_binary"] = enableableExtension(&Extensions::getProgramBinary);
         map["GL_OES_rgb8_rgba8"] = enableableExtension(&Extensions::rgb8rgba8);
         map["GL_EXT_texture_format_BGRA8888"] = enableableExtension(&Extensions::textureFormatBGRA8888);
+        map["GL_EXT_texture_type_2_10_10_10_REV"] = enableableExtension(&Extensions::textureFormat2101010REV);
         map["GL_EXT_read_format_bgra"] = esOnlyExtension(&Extensions::readFormatBGRA);
         map["GL_NV_pixel_buffer_object"] = enableableExtension(&Extensions::pixelBufferObject);
         map["GL_OES_mapbuffer"] = enableableExtension(&Extensions::mapBuffer);
@@ -734,8 +784,9 @@ const ExtensionInfoMap &GetExtensionInfoMap()
         map["GL_ANGLE_texture_compression_dxt3"] = enableableExtension(&Extensions::textureCompressionDXT3);
         map["GL_ANGLE_texture_compression_dxt5"] = enableableExtension(&Extensions::textureCompressionDXT5);
         map["GL_EXT_texture_compression_s3tc_srgb"] = enableableExtension(&Extensions::textureCompressionS3TCsRGB);
-        map["GL_KHR_texture_compression_astc_hdr"] = enableableExtension(&Extensions::textureCompressionASTCHDR);
-        map["GL_KHR_texture_compression_astc_ldr"] = enableableExtension(&Extensions::textureCompressionASTCLDR);
+        map["GL_KHR_texture_compression_astc_ldr"] = enableableExtension(&Extensions::textureCompressionASTCLDRKHR);
+        map["GL_KHR_texture_compression_astc_hdr"] = enableableExtension(&Extensions::textureCompressionASTCHDRKHR);
+        map["GL_OES_texture_compression_astc"] = enableableExtension(&Extensions::textureCompressionASTCOES);
         map["GL_EXT_texture_compression_bptc"] = enableableExtension(&Extensions::textureCompressionBPTC);
         map["GL_OES_compressed_ETC1_RGB8_texture"] = enableableExtension(&Extensions::compressedETC1RGB8Texture);
         map["OES_compressed_ETC2_RGB8_texture"] = enableableExtension(&Extensions::compressedETC2RGB8Texture);
@@ -748,7 +799,7 @@ const ExtensionInfoMap &GetExtensionInfoMap()
         map["OES_compressed_EAC_R11_signed_texture"] = enableableExtension(&Extensions::compressedEACR11SignedTexture);
         map["OES_compressed_EAC_RG11_unsigned_texture"] = enableableExtension(&Extensions::compressedEACRG11UnsignedTexture);
         map["OES_compressed_EAC_RG11_signed_texture"] = enableableExtension(&Extensions::compressedEACRG11SignedTexture);
-        map["GL_CHROMIUM_compressed_texture_etc"] = enableableExtension(&Extensions::compressedTextureETC);
+        map["GL_ANGLE_compressed_texture_etc"] = enableableExtension(&Extensions::compressedTextureETC);
         map["GL_IMG_texture_compression_pvrtc"] = enableableExtension(&Extensions::compressedTexturePVRTC);
         map["GL_EXT_pvrtc_sRGB"] = enableableExtension(&Extensions::compressedTexturePVRTCsRGB);
         map["GL_EXT_sRGB"] = enableableExtension(&Extensions::sRGB);
@@ -769,6 +820,7 @@ const ExtensionInfoMap &GetExtensionInfoMap()
         map["GL_EXT_blend_minmax"] = enableableExtension(&Extensions::blendMinMax);
         map["GL_ANGLE_framebuffer_blit"] = enableableExtension(&Extensions::framebufferBlit);
         map["GL_ANGLE_framebuffer_multisample"] = enableableExtension(&Extensions::framebufferMultisample);
+        map["GL_EXT_multisampled_render_to_texture"] = enableableExtension(&Extensions::multisampledRenderToTexture);
         map["GL_ANGLE_instanced_arrays"] = enableableExtension(&Extensions::instancedArraysANGLE);
         map["GL_EXT_instanced_arrays"] = enableableExtension(&Extensions::instancedArraysEXT);
         map["GL_ANGLE_pack_reverse_row_order"] = enableableExtension(&Extensions::packReverseRowOrder);
@@ -794,7 +846,9 @@ const ExtensionInfoMap &GetExtensionInfoMap()
         map["GL_EXT_unpack_subimage"] = enableableExtension(&Extensions::unpackSubimage);
         map["GL_NV_pack_subimage"] = enableableExtension(&Extensions::packSubimage);
         map["GL_EXT_color_buffer_float"] = enableableExtension(&Extensions::colorBufferFloat);
+        map["GL_OES_vertex_half_float"] = enableableExtension(&Extensions::vertexHalfFloat);
         map["GL_OES_vertex_array_object"] = enableableExtension(&Extensions::vertexArrayObject);
+        map["GL_OES_vertex_type_10_10_10_2"] = enableableExtension(&Extensions::vertexAttribType1010102);
         map["GL_KHR_debug"] = esOnlyExtension(&Extensions::debug);
         map["GL_OES_texture_border_clamp"] = enableableExtension(&Extensions::textureBorderClamp);
         // TODO(jmadill): Enable this when complete.
@@ -835,6 +889,7 @@ const ExtensionInfoMap &GetExtensionInfoMap()
         map["GL_ANGLE_provoking_vertex"] = enableableExtension(&Extensions::provokingVertex);
         map["GL_CHROMIUM_lose_context"] = enableableExtension(&Extensions::loseContextCHROMIUM);
         map["GL_ANGLE_texture_external_update"] = enableableExtension(&Extensions::textureExternalUpdateANGLE);
+        map["GL_ANGLE_base_vertex_base_instance"] = enableableExtension(&Extensions::baseVertexBaseInstance);
         // GLES1 extensinos
         map["GL_OES_point_size_array"] = enableableExtension(&Extensions::pointSizeArray);
         map["GL_OES_texture_cube_map"] = enableableExtension(&Extensions::textureCubeMap);
@@ -846,8 +901,8 @@ const ExtensionInfoMap &GetExtensionInfoMap()
         return map;
     };
 
-    static const ExtensionInfoMap extensionInfo = buildExtensionInfoMap();
-    return extensionInfo;
+    static const angle::base::NoDestructor<ExtensionInfoMap> extensionInfo(buildExtensionInfoMap());
+    return *extensionInfo;
 }
 
 TypePrecision::TypePrecision() = default;
@@ -941,6 +996,9 @@ Caps GenerateMinimumCaps(const Version &clientVersion, const Extensions &extensi
         caps.maxShaderTextureImageUnits[ShaderType::Fragment] = 8;
         caps.maxFragmentUniformVectors                        = 16;
         caps.maxRenderbufferSize                              = 1;
+
+        // Table 3.35
+        caps.maxSamples = 4;
     }
 
     if (clientVersion >= Version(3, 0))
@@ -1009,9 +1067,6 @@ Caps GenerateMinimumCaps(const Version &clientVersion, const Extensions &extensi
         caps.maxTransformFeedbackInterleavedComponents = 64;
         caps.maxTransformFeedbackSeparateAttributes    = 4;
         caps.maxTransformFeedbackSeparateComponents    = 4;
-
-        // Table 3.35
-        caps.maxSamples = 4;
     }
 
     if (clientVersion >= Version(3, 1))
@@ -1184,6 +1239,9 @@ std::vector<std::string> DisplayExtensions::getStrings() const
     InsertExtensionString("EGL_ANGLE_power_preference",                          powerPreference,                    &extensionStrings);
     InsertExtensionString("EGL_ANGLE_image_d3d11_texture",                       imageD3D11Texture,                  &extensionStrings);
     InsertExtensionString("EGL_ANDROID_get_native_client_buffer",                getNativeClientBufferANDROID,       &extensionStrings);
+    InsertExtensionString("EGL_ANDROID_native_fence_sync",                       nativeFenceSyncANDROID,             &extensionStrings);
+    InsertExtensionString("EGL_ANGLE_create_context_backwards_compatible",       createContextBackwardsCompatible,   &extensionStrings);
+    InsertExtensionString("EGL_KHR_no_config_context",                           noConfigContext,                    &extensionStrings);
     // TODO(jmadill): Enable this when complete.
     //InsertExtensionString("KHR_create_context_no_error",                       createContextNoError,               &extensionStrings);
     // clang-format on
@@ -1200,6 +1258,7 @@ std::vector<std::string> DeviceExtensions::getStrings() const
     // clang-format off
     //                   | Extension name                                 | Supported flag                | Output vector   |
     InsertExtensionString("EGL_ANGLE_device_d3d",                          deviceD3D,                      &extensionStrings);
+    InsertExtensionString("EGL_ANGLE_device_cgl",                          deviceCGL,                      &extensionStrings);
     // clang-format on
 
     return extensionStrings;
@@ -1213,24 +1272,26 @@ std::vector<std::string> ClientExtensions::getStrings() const
     std::vector<std::string> extensionStrings;
 
     // clang-format off
-    //                   | Extension name                                   | Supported flag                   | Output vector   |
-    InsertExtensionString("EGL_EXT_client_extensions",                       clientExtensions,                   &extensionStrings);
-    InsertExtensionString("EGL_EXT_platform_base",                           platformBase,                       &extensionStrings);
-    InsertExtensionString("EGL_EXT_platform_device",                         platformDevice,                     &extensionStrings);
-    InsertExtensionString("EGL_ANGLE_platform_angle",                        platformANGLE,                      &extensionStrings);
-    InsertExtensionString("EGL_ANGLE_platform_angle_d3d",                    platformANGLED3D,                   &extensionStrings);
-    InsertExtensionString("EGL_ANGLE_platform_angle_opengl",                 platformANGLEOpenGL,                &extensionStrings);
-    InsertExtensionString("EGL_ANGLE_platform_angle_null",                   platformANGLENULL,                  &extensionStrings);
-    InsertExtensionString("EGL_ANGLE_platform_angle_vulkan",                 platformANGLEVulkan,                &extensionStrings);
-    InsertExtensionString("EGL_ANGLE_platform_angle_context_virtualization", platformANGLEContextVirtualization, &extensionStrings);
-    InsertExtensionString("EGL_ANGLE_device_creation",                       deviceCreation,                     &extensionStrings);
-    InsertExtensionString("EGL_ANGLE_device_creation_d3d11",                 deviceCreationD3D11,                &extensionStrings);
-    InsertExtensionString("EGL_ANGLE_x11_visual",                            x11Visual,                          &extensionStrings);
-    InsertExtensionString("EGL_ANGLE_experimental_present_path",             experimentalPresentPath,            &extensionStrings);
-    InsertExtensionString("EGL_KHR_client_get_all_proc_addresses",           clientGetAllProcAddresses,          &extensionStrings);
-    InsertExtensionString("EGL_KHR_debug",                                   debug,                              &extensionStrings);
-    InsertExtensionString("EGL_ANGLE_explicit_context",                      explicitContext,                    &extensionStrings);
-    InsertExtensionString("EGL_ANGLE_feature_control",                       featureControlANGLE,                &extensionStrings);
+    //                   | Extension name                                    | Supported flag                   | Output vector   |
+    InsertExtensionString("EGL_EXT_client_extensions",                        clientExtensions,                   &extensionStrings);
+    InsertExtensionString("EGL_EXT_platform_base",                            platformBase,                       &extensionStrings);
+    InsertExtensionString("EGL_EXT_platform_device",                          platformDevice,                     &extensionStrings);
+    InsertExtensionString("EGL_ANGLE_platform_angle",                         platformANGLE,                      &extensionStrings);
+    InsertExtensionString("EGL_ANGLE_platform_angle_d3d",                     platformANGLED3D,                   &extensionStrings);
+    InsertExtensionString("EGL_ANGLE_platform_angle_device_type_swiftshader", platformANGLEDeviceTypeSwiftShader, &extensionStrings);
+    InsertExtensionString("EGL_ANGLE_platform_angle_opengl",                  platformANGLEOpenGL,                &extensionStrings);
+    InsertExtensionString("EGL_ANGLE_platform_angle_null",                    platformANGLENULL,                  &extensionStrings);
+    InsertExtensionString("EGL_ANGLE_platform_angle_vulkan",                  platformANGLEVulkan,                &extensionStrings);
+    InsertExtensionString("EGL_ANGLE_platform_angle_metal",                   platformANGLEMetal,                 &extensionStrings);
+    InsertExtensionString("EGL_ANGLE_platform_angle_context_virtualization",  platformANGLEContextVirtualization, &extensionStrings);
+    InsertExtensionString("EGL_ANGLE_device_creation",                        deviceCreation,                     &extensionStrings);
+    InsertExtensionString("EGL_ANGLE_device_creation_d3d11",                  deviceCreationD3D11,                &extensionStrings);
+    InsertExtensionString("EGL_ANGLE_x11_visual",                             x11Visual,                          &extensionStrings);
+    InsertExtensionString("EGL_ANGLE_experimental_present_path",              experimentalPresentPath,            &extensionStrings);
+    InsertExtensionString("EGL_KHR_client_get_all_proc_addresses",            clientGetAllProcAddresses,          &extensionStrings);
+    InsertExtensionString("EGL_KHR_debug",                                    debug,                              &extensionStrings);
+    InsertExtensionString("EGL_ANGLE_explicit_context",                       explicitContext,                    &extensionStrings);
+    InsertExtensionString("EGL_ANGLE_feature_control",                        featureControlANGLE,                &extensionStrings);
     // clang-format on
 
     return extensionStrings;

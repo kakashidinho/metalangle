@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2002-2014 The ANGLE Project Authors. All rights reserved.
+// Copyright 2002 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -38,13 +38,14 @@ class OutputHLSL : public TIntermTraverser
 {
   public:
     OutputHLSL(sh::GLenum shaderType,
+               ShShaderSpec shaderSpec,
                int shaderVersion,
                const TExtensionBehavior &extensionBehavior,
                const char *sourcePath,
                ShShaderOutput outputType,
                int numRenderTargets,
                int maxDualSourceDrawBuffers,
-               const std::vector<Uniform> &uniforms,
+               const std::vector<ShaderVariable> &uniforms,
                ShCompileOptions compileOptions,
                sh::WorkGroupSize workGroupSize,
                TSymbolTable *symbolTable,
@@ -151,6 +152,7 @@ class OutputHLSL : public TIntermTraverser
     const char *generateOutputCall() const;
 
     sh::GLenum mShaderType;
+    ShShaderSpec mShaderSpec;
     int mShaderVersion;
     const TExtensionBehavior &mExtensionBehavior;
     const char *mSourcePath;

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2002-2014 The ANGLE Project Authors. All rights reserved.
+// Copyright 2002 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -92,6 +92,10 @@ void InitExtensionBehavior(const ShBuiltInResources &resources, TExtensionBehavi
     if (resources.ANGLE_multi_draw)
     {
         extBehavior[TExtension::ANGLE_multi_draw] = EBhUndefined;
+    }
+    if (resources.ANGLE_base_vertex_base_instance)
+    {
+        extBehavior[TExtension::ANGLE_base_vertex_base_instance] = EBhUndefined;
     }
 }
 

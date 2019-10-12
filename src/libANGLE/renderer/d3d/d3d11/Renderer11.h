@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2012-2014 The ANGLE Project Authors. All rights reserved.
+// Copyright 2012 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -141,9 +141,11 @@ class Renderer11 : public RendererD3D
                                   EGLint samples) override;
     egl::Error getD3DTextureInfo(const egl::Config *configuration,
                                  IUnknown *d3dTexture,
+                                 const egl::AttributeMap &attribs,
                                  EGLint *width,
                                  EGLint *height,
-                                 EGLint *samples,
+                                 GLsizei *samples,
+                                 gl::Format *glFormat,
                                  const angle::Format **angleFormat) const override;
     egl::Error validateShareHandle(const egl::Config *config,
                                    HANDLE shareHandle,
@@ -408,14 +410,17 @@ class Renderer11 : public RendererD3D
                              gl::PrimitiveMode mode,
                              GLint firstVertex,
                              GLsizei vertexCount,
-                             GLsizei instanceCount);
+                             GLsizei instanceCount,
+                             GLuint baseInstance);
     angle::Result drawElements(const gl::Context *context,
                                gl::PrimitiveMode mode,
                                GLint startVertex,
                                GLsizei indexCount,
                                gl::DrawElementsType indexType,
                                const void *indices,
-                               GLsizei instanceCount);
+                               GLsizei instanceCount,
+                               GLint baseVertex,
+                               GLuint baseInstance);
     angle::Result drawArraysIndirect(const gl::Context *context, const void *indirect);
     angle::Result drawElementsIndirect(const gl::Context *context, const void *indirect);
 
@@ -427,6 +432,7 @@ class Renderer11 : public RendererD3D
                                          angle::MemoryBuffer **bufferOut);
 
     gl::Version getMaxSupportedESVersion() const override;
+    gl::Version getMaxConformantESVersion() const override;
 
     angle::Result dispatchCompute(const gl::Context *context,
                                   GLuint numGroupsX,

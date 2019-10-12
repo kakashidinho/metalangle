@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2002-2010 The ANGLE Project Authors. All rights reserved.
+// Copyright 2002 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -233,7 +233,7 @@ angle::Result Blit9::copy2D(const gl::Context *context,
     ASSERT(colorbuffer);
 
     RenderTarget9 *renderTarget9 = nullptr;
-    ANGLE_TRY(colorbuffer->getRenderTarget(context, &renderTarget9));
+    ANGLE_TRY(colorbuffer->getRenderTarget(context, 0, &renderTarget9));
     ASSERT(renderTarget9);
 
     angle::ComPtr<IDirect3DSurface9> source = renderTarget9->getSurface();
@@ -267,7 +267,7 @@ angle::Result Blit9::copyCube(const gl::Context *context,
     ASSERT(colorbuffer);
 
     RenderTarget9 *renderTarget9 = nullptr;
-    ANGLE_TRY(colorbuffer->getRenderTarget(context, &renderTarget9));
+    ANGLE_TRY(colorbuffer->getRenderTarget(context, 0, &renderTarget9));
     ASSERT(renderTarget9);
 
     angle::ComPtr<IDirect3DSurface9> source = renderTarget9->getSurface();

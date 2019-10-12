@@ -172,6 +172,18 @@
         "A32_FLOAT": {
             "image": "R32_FLOAT"
         },
+        "L16_FLOAT": {
+            "image": "R16_FLOAT"
+        },
+        "L32_FLOAT": {
+            "image": "R32_FLOAT"
+        },
+        "L16A16_FLOAT": {
+            "image": "R16G16_FLOAT"
+        },
+        "L32A32_FLOAT": {
+            "image": "R32G32_FLOAT"
+        },
         "A8_UNORM": {
             "image": "R8_UNORM"
         },
@@ -219,6 +231,106 @@
             "buffer": "R32G32B32_FLOAT"
         },
         "R32G32B32A32_FIXED": {
+            "buffer": "R32G32B32A32_FLOAT"
+        },
+        "R32_UNORM": {
+            "buffer": "R32_FLOAT"
+        },
+        "R32G32_UNORM": {
+            "buffer": "R32G32_FLOAT"
+        },
+        "R32G32B32_UNORM": {
+            "buffer": "R32G32B32_FLOAT"
+        },
+        "R32G32B32A32_UNORM": {
+            "buffer": "R32G32B32A32_FLOAT"
+        },
+        "R32_SNORM": {
+            "buffer": "R32_FLOAT"
+        },
+        "R32G32_SNORM": {
+            "buffer": "R32G32_FLOAT"
+        },
+        "R32G32B32_SNORM": {
+            "buffer": "R32G32B32_FLOAT"
+        },
+        "R32G32B32A32_SNORM": {
+            "buffer": "R32G32B32A32_FLOAT"
+        },
+        "R32_USCALED": {
+            "buffer": "R32_FLOAT"
+        },
+        "R32G32_USCALED": {
+            "buffer": "R32G32_FLOAT"
+        },
+        "R32G32B32_USCALED": {
+            "buffer": "R32G32B32_FLOAT"
+        },
+        "R32G32B32A32_USCALED": {
+            "buffer": "R32G32B32A32_FLOAT"
+        },
+        "R32_SSCALED": {
+            "buffer": "R32_FLOAT"
+        },
+        "R32G32_SSCALED": {
+            "buffer": "R32G32_FLOAT"
+        },
+        "R32G32B32_SSCALED": {
+            "buffer": "R32G32B32_FLOAT"
+        },
+        "R32G32B32A32_SSCALED": {
+            "buffer": "R32G32B32A32_FLOAT"
+        },
+        "R10G10B10X2_UNORM": {
+            "buffer": "NONE",
+            "image": "R10G10B10A2_UNORM"
+        },
+        "A2R10G10B10_SINT_VERTEX": {
+            "image": "NONE",
+            "buffer": "R32G32B32A32_FLOAT"
+        },
+        "A2R10G10B10_UINT_VERTEX": {
+            "image": "NONE",
+            "buffer": "R32G32B32A32_FLOAT"
+        },
+        "A2R10G10B10_SSCALED_VERTEX": {
+            "image": "NONE",
+            "buffer": "R32G32B32A32_FLOAT"
+        },
+        "A2R10G10B10_USCALED_VERTEX": {
+            "image": "NONE",
+            "buffer": "R32G32B32A32_FLOAT"
+        },
+        "A2R10G10B10_SNORM_VERTEX": {
+            "image": "NONE",
+            "buffer": "R32G32B32A32_FLOAT"
+        },
+        "A2R10G10B10_UNORM_VERTEX": {
+            "image": "NONE",
+            "buffer": "R32G32B32A32_FLOAT"
+        },
+        "X2R10G10B10_SINT_VERTEX": {
+            "image": "NONE",
+            "buffer": "R32G32B32A32_FLOAT"
+        },
+        "X2R10G10B10_USCALED_VERTEX": {
+            "image": "NONE",
+            "buffer": "R32G32B32A32_FLOAT"
+        },
+        "X2R10G10B10_SSCALED_VERTEX": {
+            "image": "NONE",
+            "buffer": "R32G32B32A32_FLOAT"
+        },
+        "X2R10G10B10_UINT_VERTEX": {
+            "image": "NONE",
+            "buffer": "R32G32B32A32_FLOAT"
+        },
+        "X2R10G10B10_SNORM_VERTEX": {
+            "image": "NONE",
+            "buffer": "R32G32B32A32_FLOAT"
+        },
+        "X2R10G10B10_UNORM_VERTEX": {
+            "image": "NONE",
             "buffer": "R32G32B32A32_FLOAT"
         }
     },
@@ -341,22 +453,72 @@
             "image": "R32G32B32A32_SINT"
         },
         "R16G16B16_UINT": {
-            "image": "R16G16B16A16_UINT"
+            "image": "R16G16B16A16_UINT",
+            "buffer": "R16G16B16A16_UINT"
         },
         "R16G16B16_SINT": {
-            "image": "R16G16B16A16_SINT"
+            "image": "R16G16B16A16_SINT",
+            "buffer": "R16G16B16A16_SINT"
         },
         "R8G8B8_UINT": {
-            "image": "R8G8B8A8_UINT"
+            "image": "R8G8B8A8_UINT",
+            "buffer": "R8G8B8A8_UINT"
         },
         "R8G8B8_SINT": {
-            "image": "R8G8B8A8_SINT"
+            "image": "R8G8B8A8_SINT",
+            "buffer": "R8G8B8A8_SINT"
         },
         "R16G16B16_FLOAT": {
-            "image": "R16G16B16A16_FLOAT"
+            "image": "R16G16B16A16_FLOAT",
+            "buffer": "R16G16B16A16_FLOAT"
         },
         "R32G32B32_FLOAT": {
             "image": "R32G32B32A32_FLOAT"
+        },
+        "ETC2_R8G8B8_UNORM_BLOCK": {
+            "image": "R8G8B8A8_UNORM"
+        },
+        "ETC2_R8G8B8_SRGB_BLOCK": {
+            "image": "R8G8B8A8_UNORM_SRGB"
+        },
+        "ETC2_R8G8B8A1_UNORM_BLOCK": {
+            "image": "R8G8B8A8_UNORM"
+        },
+        "ETC2_R8G8B8A1_SRGB_BLOCK": {
+            "image": "R8G8B8A8_UNORM_SRGB"
+        },
+        "ETC2_R8G8B8A8_UNORM_BLOCK": {
+            "image": "R8G8B8A8_UNORM"
+        },
+        "ETC2_R8G8B8A8_SRGB_BLOCK": {
+            "image": "R8G8B8A8_UNORM_SRGB"
+        },
+        "EAC_R11_UNORM_BLOCK": {
+            "image": ["R16_UNORM", "R16_FLOAT"]
+        },
+        "EAC_R11_SNORM_BLOCK": {
+            "image": ["R16_SNORM", "R16_FLOAT"]
+        },
+        "EAC_R11G11_UNORM_BLOCK": {
+            "image": ["R16G16_UNORM", "R16G16_FLOAT"]
+        },
+        "EAC_R11G11_SNORM_BLOCK": {
+            "image": ["R16G16_SNORM", "R16G16_FLOAT"]
+        },
+        "R10G10B10A2_SNORM": {
+            "buffer": "R32G32B32A32_FLOAT"
+        },
+        "R10G10B10A2_USCALED": {
+            "buffer": "R32G32B32A32_FLOAT"
+        },
+        "R10G10B10A2_SSCALED": {
+            "buffer": "R32G32B32A32_FLOAT"
+        },
+        "R10G10B10A2_UINT": {
+            "buffer": "R16G16B16A16_UINT"
+        },
+        "R10G10B10A2_SINT": {
+            "buffer": "R16G16B16A16_SINT"
         }
     }
 }

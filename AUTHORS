@@ -1,4 +1,4 @@
-﻿# This is the official list of The ANGLE Project Authors
+# This is the official list of The ANGLE Project Authors
 # for copyright purposes.
 # This file is distinct from the CONTRIBUTORS files.
 # See the latter for an explanation.
@@ -31,6 +31,7 @@ LG Electronics, Inc.
 IBM Inc.
 AdaptVis GmbH
 Samsung Electronics, Inc.
+Arm Ltd.
 
 Jacek Caban
 Mark Callow
@@ -57,4 +58,5 @@ Jérôme Duval
 Thomas Miller
 Till Rathmann
 Nick Shaforostov
+Jaime Bernardo
 Le Hoang Quyen

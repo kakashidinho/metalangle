@@ -115,6 +115,29 @@ def verify_vk_map_keys(angle_to_gl, vk_json_data):
     return no_error
 
 
+def get_vertex_copy_function(src_format, dst_format, vk_format):
+    if "_PACK" in vk_format:
+        pack_bits = int(re.search(r'_PACK(\d+)', vk_format).group(1))
+        base_type = None
+        if pack_bits == 8:
+            base_type = 'byte'
+        elif pack_bits == 16:
+            base_type = 'short'
+        elif pack_bits == 32:
+            base_type = 'int'
+        else:
+            return 'nullptr'
+        return 'CopyNativeVertexData<GLu%s, 1, 1, 0>' % base_type
+    if 'R10G10B10A2' in src_format:
+        # When the R10G10B10A2 type can't be used by the vertex buffer,
+        # it needs to be converted to the type which can be used by it.
+        is_signed = 'false' if 'UINT' in src_format or 'UNORM' in src_format or 'USCALED' in src_format else 'true'
+        normalized = 'true' if 'NORM' in src_format else 'false'
+        to_float = 'false' if 'INT' in src_format else 'true'
+        return 'CopyXYZ10W2ToXYZW32FVertexData<%s, %s, %s>' % (is_signed, normalized, to_float)
+    return angle_format.get_vertex_copy_function(src_format, dst_format)
+
+
 def gen_format_case(angle, internal_format, vk_json_data):
     vk_map = vk_json_data["map"]
     vk_overrides = vk_json_data["overrides"]
@@ -143,11 +166,12 @@ def gen_format_case(angle, internal_format, vk_json_data):
                 internal_format, format))
 
     def buffer_args(format):
+        vk_buffer_format = vk_map[format]
         return dict(
             buffer="angle::FormatID::" + format,
-            vk_buffer_format=vk_map[format],
-            vk_buffer_format_is_packed=is_packed(vk_map[format]),
-            vertex_load_function=angle_format.get_vertex_copy_function(angle, format),
+            vk_buffer_format=vk_buffer_format,
+            vk_buffer_format_is_packed=is_packed(vk_buffer_format),
+            vertex_load_function=get_vertex_copy_function(angle, format, vk_buffer_format),
             vertex_load_converts='false' if angle == format else 'true',
         )
 

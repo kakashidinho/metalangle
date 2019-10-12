@@ -92,7 +92,7 @@ MTLViewport GetViewport(const gl::Rectangle &rect, double znear, double zfar)
 }
 
 MTLViewport GetViewportFlipY(const gl::Rectangle &rect,
-                             double screenHeight,
+                             NSUInteger screenHeight,
                              double znear,
                              double zfar)
 {
@@ -109,7 +109,7 @@ MTLViewport GetViewportFlipY(const gl::Rectangle &rect,
 }
 
 MTLViewport GetViewport(const gl::Rectangle &rect,
-                        double screenHeight,
+                        NSUInteger screenHeight,
                         bool flipY,
                         double znear,
                         double zfar)
@@ -122,7 +122,7 @@ MTLViewport GetViewport(const gl::Rectangle &rect,
     return GetViewport(rect, znear, zfar);
 }
 
-MTLScissorRect GetScissorRect(const gl::Rectangle &rect, double screenHeight, bool flipY)
+MTLScissorRect GetScissorRect(const gl::Rectangle &rect, NSUInteger screenHeight, bool flipY)
 {
     MTLScissorRect re;
 

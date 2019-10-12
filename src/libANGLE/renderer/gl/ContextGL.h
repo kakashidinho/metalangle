@@ -85,6 +85,9 @@ class ContextGL : public ContextImpl
     // Semaphore creation.
     SemaphoreImpl *createSemaphore() override;
 
+    // Overlay creation.
+    OverlayImpl *createOverlay(const gl::OverlayState &state) override;
+
     // Flush and finish.
     angle::Result flush(const gl::Context *context) override;
     angle::Result finish(const gl::Context *context) override;
@@ -99,6 +102,12 @@ class ContextGL : public ContextImpl
                                       GLint first,
                                       GLsizei count,
                                       GLsizei instanceCount) override;
+    angle::Result drawArraysInstancedBaseInstance(const gl::Context *context,
+                                                  gl::PrimitiveMode mode,
+                                                  GLint first,
+                                                  GLsizei count,
+                                                  GLsizei instanceCount,
+                                                  GLuint baseInstance) override;
 
     angle::Result drawElements(const gl::Context *context,
                                gl::PrimitiveMode mode,
@@ -111,6 +120,14 @@ class ContextGL : public ContextImpl
                                         gl::DrawElementsType type,
                                         const void *indices,
                                         GLsizei instances) override;
+    angle::Result drawElementsInstancedBaseVertexBaseInstance(const gl::Context *context,
+                                                              gl::PrimitiveMode mode,
+                                                              GLsizei count,
+                                                              gl::DrawElementsType type,
+                                                              const void *indices,
+                                                              GLsizei instances,
+                                                              GLint baseVertex,
+                                                              GLuint baseInstance) override;
     angle::Result drawRangeElements(const gl::Context *context,
                                     gl::PrimitiveMode mode,
                                     GLuint start,
@@ -225,6 +242,8 @@ class ContextGL : public ContextImpl
 
     void invalidateTexture(gl::TextureType target) override;
 
+    void validateState() const;
+
   private:
     angle::Result setDrawArraysState(const gl::Context *context,
                                      GLint first,
@@ -237,6 +256,10 @@ class ContextGL : public ContextImpl
                                        const void *indices,
                                        GLsizei instanceCount,
                                        const void **outIndices);
+
+    gl::AttributesMask updateAttributesForBaseInstance(const gl::Program *program,
+                                                       GLuint baseInstance);
+    void resetUpdatedAttributes(gl::AttributesMask attribMask);
 
   protected:
     std::shared_ptr<RendererGL> mRenderer;

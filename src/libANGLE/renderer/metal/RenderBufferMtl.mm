@@ -54,8 +54,9 @@ angle::Result RenderbufferMtl::setStorageImpl(const gl::Context *context,
 
     if ((mTexture == nullptr || !mTexture->valid()) && (width != 0 && height != 0))
     {
-        ANGLE_TRY(mtl::Texture::Make2DTexture(contextMtl, mFormat.metalFormat, width, height, 1,
-                                              true, &mTexture));
+        ANGLE_TRY(mtl::Texture::Make2DTexture(contextMtl, mFormat.metalFormat,
+                                              static_cast<uint32_t>(width),
+                                              static_cast<uint32_t>(height), 1, true, &mTexture));
 
         mRenderTarget.set(mTexture, 0, 0, mFormat);
     }
@@ -93,8 +94,10 @@ angle::Result RenderbufferMtl::setStorageEGLImageTarget(const gl::Context *conte
 angle::Result RenderbufferMtl::getAttachmentRenderTarget(const gl::Context *context,
                                                          GLenum binding,
                                                          const gl::ImageIndex &imageIndex,
+                                                         GLsizei samples,
                                                          FramebufferAttachmentRenderTarget **rtOut)
 {
+    // TODO(hqle): Support MSAA.
     ASSERT(mTexture && mTexture->valid());
     *rtOut = &mRenderTarget;
     return angle::Result::Continue;

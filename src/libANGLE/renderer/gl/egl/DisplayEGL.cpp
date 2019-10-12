@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016 The ANGLE Project Authors. All rights reserved.
+// Copyright 2016 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -148,6 +148,10 @@ void DisplayEGL::generateExtensions(egl::DisplayExtensions *outExtensions) const
 
     outExtensions->getNativeClientBufferANDROID =
         mEGL->hasExtension("EGL_ANDROID_get_native_client_buffer");
+
+    outExtensions->nativeFenceSyncANDROID = mEGL->hasExtension("EGL_ANDROID_native_fence_sync");
+
+    outExtensions->noConfigContext = mEGL->hasExtension("EGL_KHR_no_config_context");
 
     DisplayGL::generateExtensions(outExtensions);
 }

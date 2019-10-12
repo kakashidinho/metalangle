@@ -55,7 +55,7 @@ PoolAllocator::PoolAllocator(int growthIncrement, int allocationAlignment)
         mAlignment &= ~(minAlign - 1);
         if (mAlignment < minAlign)
             mAlignment = minAlign;
-        mAlignment     = gl::ceilPow2(mAlignment);
+        mAlignment     = gl::ceilPow2(static_cast<unsigned int>(mAlignment));
         mAlignmentMask = mAlignment - 1;
 
 #if !defined(ANGLE_DISABLE_POOL_ALLOC)
@@ -65,7 +65,7 @@ PoolAllocator::PoolAllocator(int growthIncrement, int allocationAlignment)
         mHeaderSkip = minAlign;
         if (mHeaderSkip < sizeof(Header))
         {
-            mHeaderSkip = rx::roundUp(sizeof(Header), mAlignment);
+            mHeaderSkip = rx::roundUpPow2(sizeof(Header), mAlignment);
         }
     }
     //

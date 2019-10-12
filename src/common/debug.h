@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2002-2010 The ANGLE Project Authors. All rights reserved.
+// Copyright 2002 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -241,16 +241,21 @@ std::ostream &FmtHex(std::ostream &os, T value)
 // A macro to log a performance event around a scope.
 #if defined(ANGLE_TRACE_ENABLED)
 #    if defined(_MSC_VER)
-#        define EVENT(message, ...)                                                      \
-            gl::ScopedPerfEventHelper scopedPerfEventHelper##__LINE__("%s" message "\n", \
-                                                                      __FUNCTION__, __VA_ARGS__)
+#        define EVENT(function, message, ...)                                                      \
+            gl::ScopedPerfEventHelper scopedPerfEventHelper##__LINE__("%s(" message ")", function, \
+                                                                      __VA_ARGS__)
 #    else
-#        define EVENT(message, ...)                                                          \
-            gl::ScopedPerfEventHelper scopedPerfEventHelper("%s" message "\n", __FUNCTION__, \
+#        define EVENT(function, message, ...)                                            \
+            gl::ScopedPerfEventHelper scopedPerfEventHelper("%s(" message ")", function, \
                                                             ##__VA_ARGS__)
 #    endif  // _MSC_VER
 #else
 #    define EVENT(message, ...) (void(0))
+#endif
+
+// The state tracked by ANGLE will be validated with the driver state before each call
+#if defined(ANGLE_ENABLE_ASSERTS)
+#    define ANGLE_STATE_VALIDATION_ENABLED
 #endif
 
 #if defined(__GNUC__)

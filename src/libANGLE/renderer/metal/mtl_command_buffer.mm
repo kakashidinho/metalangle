@@ -431,7 +431,7 @@ RenderCommandEncoder &RenderCommandEncoder::restart(const RenderPassDesc &desc)
         {                                                                    \
             STOREACTION = MTLStoreActionDontCare;                            \
         }                                                                    \
-    } while (0);
+    } while (0)
 
         // mask writing dependency
         for (uint32_t i = 0; i < mRenderPassDesc.numColorAttachments; ++i)

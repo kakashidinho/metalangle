@@ -101,8 +101,8 @@ struct VertexAttributeDesc
     }
     inline bool operator!=(const VertexAttributeDesc &rhs) const { return !(*this == rhs); }
     MTLVertexFormat format;
-    uint32_t offset;
-    uint32_t bufferIndex;
+    NSUInteger offset;
+    NSUInteger bufferIndex;
 };
 
 struct VertexBufferLayoutDesc
@@ -114,8 +114,8 @@ struct VertexBufferLayoutDesc
     inline bool operator!=(const VertexBufferLayoutDesc &rhs) const { return !(*this == rhs); }
 
     MTLVertexStepFunction stepFunction;
-    uint32_t stepRate;
-    uint32_t stride;
+    NSUInteger stepRate;
+    NSUInteger stride;
 };
 
 struct VertexDesc

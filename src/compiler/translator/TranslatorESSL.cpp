@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2002-2013 The ANGLE Project Authors. All rights reserved.
+// Copyright 2002 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -28,7 +28,7 @@ void TranslatorESSL::initBuiltInFunctionEmulator(BuiltInFunctionEmulator *emu,
     }
 }
 
-void TranslatorESSL::translate(TIntermBlock *root,
+bool TranslatorESSL::translate(TIntermBlock *root,
                                ShCompileOptions compileOptions,
                                PerformanceDiagnostics * /*perfDiagnostics*/)
 {
@@ -54,11 +54,17 @@ void TranslatorESSL::translate(TIntermBlock *root,
     {
         EmulatePrecision emulatePrecision(&getSymbolTable());
         root->traverse(&emulatePrecision);
-        emulatePrecision.updateTree();
+        if (!emulatePrecision.updateTree(this, root))
+        {
+            return false;
+        }
         emulatePrecision.writeEmulationHelpers(sink, shaderVer, SH_ESSL_OUTPUT);
     }
 
-    RecordConstantPrecision(root, &getSymbolTable());
+    if (!RecordConstantPrecision(this, root, &getSymbolTable()))
+    {
+        return false;
+    }
 
     // Write emulated built-in functions if needed.
     if (!getBuiltInFunctionEmulator().isOutputEmpty())
@@ -84,11 +90,9 @@ void TranslatorESSL::translate(TIntermBlock *root,
     // Write array bounds clamping emulation if needed.
     getArrayBoundsClamper().OutputClampingFunctionDefinition(sink);
 
-    if (getShaderType() == GL_COMPUTE_SHADER && isComputeShaderLocalSizeDeclared())
+    if (getShaderType() == GL_COMPUTE_SHADER)
     {
-        const sh::WorkGroupSize &localSize = getComputeShaderLocalSize();
-        sink << "layout (local_size_x=" << localSize[0] << ", local_size_y=" << localSize[1]
-             << ", local_size_z=" << localSize[2] << ") in;\n";
+        EmitWorkGroupSizeGLSL(*this, sink);
     }
 
     if (getShaderType() == GL_GEOMETRY_SHADER_EXT)
@@ -104,6 +108,8 @@ void TranslatorESSL::translate(TIntermBlock *root,
                            compileOptions);
 
     root->traverse(&outputESSL);
+
+    return true;
 }
 
 bool TranslatorESSL::shouldFlattenPragmaStdglInvariantAll()
@@ -166,6 +172,12 @@ void TranslatorESSL::writeExtensionBehavior(ShCompileOptions compileOptions)
             {
                 // Don't emit anything. This extension is emulated
                 ASSERT((compileOptions & SH_EMULATE_GL_DRAW_ID) != 0);
+                continue;
+            }
+            else if (iter->first == TExtension::ANGLE_base_vertex_base_instance)
+            {
+                // Don't emit anything. This extension is emulated
+                ASSERT((compileOptions & SH_EMULATE_GL_BASE_VERTEX_BASE_INSTANCE) != 0);
                 continue;
             }
             else

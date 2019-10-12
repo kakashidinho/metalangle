@@ -1,5 +1,5 @@
 //
-// Copyright(c) 2014 The ANGLE Project Authors. All rights reserved.
+// Copyright 2014 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -213,6 +213,9 @@ ANGLE_EXPORT const char *EGLAPIENTRY EGL_QueryStringiANGLE(EGLDisplay dpy,
 // EGL_ANDROID_get_native_client_buffer
 ANGLE_EXPORT EGLClientBuffer EGLAPIENTRY
 EGL_GetNativeClientBufferANDROID(const struct AHardwareBuffer *buffer);
+
+// EGL_ANDROID_native_fence_sync
+ANGLE_EXPORT EGLint EGLAPIENTRY EGL_DupNativeFenceFDANDROID(EGLDisplay dpy, EGLSyncKHR sync);
 
 }  // extern "C"
 

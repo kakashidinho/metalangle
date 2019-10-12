@@ -27,10 +27,10 @@ namespace gl
 {
 class Context;
 
-class Semaphore final : public RefCountObject
+class Semaphore final : public RefCountObject<SemaphoreID>
 {
   public:
-    Semaphore(rx::GLImplFactory *factory, GLuint id);
+    Semaphore(rx::GLImplFactory *factory, SemaphoreID id);
     ~Semaphore() override;
 
     void onDestroy(const Context *context) override;

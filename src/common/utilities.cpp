@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2002-2013 The ANGLE Project Authors. All rights reserved.
+// Copyright 2002 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -13,7 +13,7 @@
 
 #include <set>
 
-#if defined(ANGLE_ENABLE_WINDOWS_STORE)
+#if defined(ANGLE_ENABLE_WINDOWS_UWP)
 #    include <windows.applicationmodel.core.h>
 #    include <windows.graphics.display.h>
 #    include <wrl.h>
@@ -422,6 +422,20 @@ bool IsSamplerType(GLenum type)
     return false;
 }
 
+bool IsSamplerCubeType(GLenum type)
+{
+    switch (type)
+    {
+        case GL_SAMPLER_CUBE:
+        case GL_INT_SAMPLER_CUBE:
+        case GL_UNSIGNED_INT_SAMPLER_CUBE:
+        case GL_SAMPLER_CUBE_SHADOW:
+            return true;
+    }
+
+    return false;
+}
+
 bool IsImageType(GLenum type)
 {
     switch (type)
@@ -770,6 +784,16 @@ std::string ParseResourceName(const std::string &name, std::vector<unsigned int>
     return name.substr(0, baseNameLength);
 }
 
+std::string StripLastArrayIndex(const std::string &name)
+{
+    size_t strippedNameLength = name.find_last_of('[');
+    if (strippedNameLength != std::string::npos && name.back() == ']')
+    {
+        return name.substr(0, strippedNameLength);
+    }
+    return name;
+}
+
 const sh::ShaderVariable *FindShaderVarField(const sh::ShaderVariable &var,
                                              const std::string &fullName,
                                              GLuint *fieldIndexOut)
@@ -1057,7 +1081,7 @@ EGLClientBuffer GLObjectHandleToEGLClientBuffer(GLuint handle)
 
 }  // namespace gl_egl
 
-#if !defined(ANGLE_ENABLE_WINDOWS_STORE)
+#if !defined(ANGLE_ENABLE_WINDOWS_UWP)
 std::string getTempPath()
 {
 #    ifdef ANGLE_PLATFORM_WINDOWS
@@ -1095,7 +1119,7 @@ void writeFile(const char *path, const void *content, size_t size)
     fwrite(content, sizeof(char), size, file);
     fclose(file);
 }
-#endif  // !ANGLE_ENABLE_WINDOWS_STORE
+#endif  // !ANGLE_ENABLE_WINDOWS_UWP
 
 #if defined(ANGLE_PLATFORM_WINDOWS)
 

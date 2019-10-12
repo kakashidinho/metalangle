@@ -91,6 +91,18 @@ angle::Result ContextMtl::drawArraysInstanced(const gl::Context *context,
     return angle::Result::Stop;
 }
 
+angle::Result ContextMtl::drawArraysInstancedBaseInstance(const gl::Context *context,
+                                                          gl::PrimitiveMode mode,
+                                                          GLint first,
+                                                          GLsizei count,
+                                                          GLsizei instanceCount,
+                                                          GLuint baseInstance)
+{
+    // TODO(hqle)
+    UNIMPLEMENTED();
+    return angle::Result::Stop;
+}
+
 angle::Result ContextMtl::drawElements(const gl::Context *context,
                                        gl::PrimitiveMode mode,
                                        GLsizei count,
@@ -153,6 +165,19 @@ angle::Result ContextMtl::drawElementsInstanced(const gl::Context *context,
                                                 GLsizei instanceCount)
 {
     // TODO(hqle): ES 3.0
+    UNIMPLEMENTED();
+    return angle::Result::Stop;
+}
+angle::Result ContextMtl::drawElementsInstancedBaseVertexBaseInstance(const gl::Context *context,
+                                                                      gl::PrimitiveMode mode,
+                                                                      GLsizei count,
+                                                                      gl::DrawElementsType type,
+                                                                      const void *indices,
+                                                                      GLsizei instances,
+                                                                      GLint baseVertex,
+                                                                      GLuint baseInstance)
+{
+    // TODO(hqle)
     UNIMPLEMENTED();
     return angle::Result::Stop;
 }
@@ -598,6 +623,13 @@ MemoryObjectImpl *ContextMtl::createMemoryObject()
 
 // Semaphore creation.
 SemaphoreImpl *ContextMtl::createSemaphore()
+{
+    // TODO(hqle)
+    UNIMPLEMENTED();
+    return nullptr;
+}
+
+OverlayImpl *ContextMtl::createOverlay(const gl::OverlayState &state)
 {
     // TODO(hqle)
     UNIMPLEMENTED();

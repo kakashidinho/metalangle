@@ -18,13 +18,16 @@ namespace gl
 class Context;
 
 bool ValidateGetActiveUniformName(Context *context,
-                                  GLuint program,
+                                  ShaderProgramID programPacked,
                                   GLuint uniformIndex,
                                   GLsizei bufSize,
                                   GLsizei *length,
                                   GLchar *uniformName);
 bool ValidatePrimitiveRestartIndex(Context *context, GLuint index);
-bool ValidateTexBuffer(Context *context, GLenum target, GLenum internalformat, GLuint buffer);
+bool ValidateTexBuffer(Context *context,
+                       GLenum target,
+                       GLenum internalformat,
+                       BufferID bufferPacked);
 }  // namespace gl
 
 #endif  // LIBANGLE_VALIDATION_GL31_AUTOGEN_H_

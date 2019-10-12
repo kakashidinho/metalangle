@@ -173,6 +173,9 @@ TEST_P(StateChangeTest, FramebufferIncompleteWithTexStorage)
 // Test that caching works when color attachments change with CompressedTexImage2D.
 TEST_P(StateChangeTestES3, FramebufferIncompleteWithCompressedTex)
 {
+    // ETC texture formats are not supported on Mac OpenGL. http://anglebug.com/3853
+    ANGLE_SKIP_TEST_IF(IsOSX() && IsDesktopOpenGL());
+
     glBindFramebuffer(GL_FRAMEBUFFER, mFramebuffer);
     glBindTexture(GL_TEXTURE_2D, mTextures[0]);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 16, 16, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
@@ -1768,6 +1771,81 @@ TEST_P(SimpleStateChangeTest, DrawElementsUBYTEX2ThenDrawElementsUSHORT)
     EXPECT_PIXEL_COLOR_EQ(quarterWidth, quarterHeight * 2, GLColor::blue);
 }
 
+// Draw a points use multiple unaligned vertex buffer with same data,
+// verify all the rendering results are the same.
+TEST_P(SimpleStateChangeTest, DrawRepeatUnalignedVboChange)
+{
+    const int kRepeat = 2;
+
+    // set up VBO, colorVBO is unaligned
+    GLBuffer positionBuffer;
+    constexpr size_t posOffset = 0;
+    const GLfloat posData[]    = {0.5f, 0.5f};
+    glBindBuffer(GL_ARRAY_BUFFER, positionBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(posData), posData, GL_STATIC_DRAW);
+
+    GLBuffer colorBuffers[kRepeat];
+    constexpr size_t colorOffset                = 1;
+    const GLfloat colorData[]                   = {0.515f, 0.515f, 0.515f, 1.0f};
+    constexpr size_t colorBufferSize            = colorOffset + sizeof(colorData);
+    uint8_t colorDataUnaligned[colorBufferSize] = {0};
+    memcpy(reinterpret_cast<void *>(colorDataUnaligned + colorOffset), colorData,
+           sizeof(colorData));
+    for (uint32_t i = 0; i < kRepeat; i++)
+    {
+        glBindBuffer(GL_ARRAY_BUFFER, colorBuffers[i]);
+        glBufferData(GL_ARRAY_BUFFER, colorBufferSize, colorDataUnaligned, GL_STATIC_DRAW);
+    }
+
+    // set up frame buffer
+    GLFramebuffer framebuffer;
+    GLTexture framebufferTexture;
+    bindTextureToFbo(framebuffer, framebufferTexture);
+
+    // set up program
+    ANGLE_GL_PROGRAM(program, kSimpleVertexShader, kSimpleFragmentShader);
+    glUseProgram(program);
+    GLuint colorAttrLocation = glGetAttribLocation(program, "color");
+    glEnableVertexAttribArray(colorAttrLocation);
+    GLuint posAttrLocation = glGetAttribLocation(program, "position");
+    glEnableVertexAttribArray(posAttrLocation);
+    EXPECT_GL_NO_ERROR();
+
+    // draw and get drawing results
+    constexpr size_t kRenderSize = kWindowSize * kWindowSize;
+    std::array<GLColor, kRenderSize> pixelBufs[kRepeat];
+
+    for (uint32_t i = 0; i < kRepeat; i++)
+    {
+        glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        glBindBuffer(GL_ARRAY_BUFFER, positionBuffer);
+        glVertexAttribPointer(posAttrLocation, 2, GL_FLOAT, GL_FALSE, 0,
+                              reinterpret_cast<const void *>(posOffset));
+        glBindBuffer(GL_ARRAY_BUFFER, colorBuffers[i]);
+        glVertexAttribPointer(colorAttrLocation, 4, GL_FLOAT, GL_FALSE, 0,
+                              reinterpret_cast<const void *>(colorOffset));
+
+        glDrawArrays(GL_POINTS, 0, 1);
+
+        // read drawing results
+        glReadPixels(0, 0, kWindowSize, kWindowSize, GL_RGBA, GL_UNSIGNED_BYTE,
+                     pixelBufs[i].data());
+        EXPECT_GL_NO_ERROR();
+    }
+
+    // verify something is drawn
+    static_assert(kRepeat >= 2, "More than one repetition required");
+    std::array<GLColor, kRenderSize> pixelAllBlack{0};
+    EXPECT_NE(pixelBufs[0], pixelAllBlack);
+    // verify drawing results are all identical
+    for (uint32_t i = 1; i < kRepeat; i++)
+    {
+        EXPECT_EQ(pixelBufs[i - 1], pixelBufs[i]);
+    }
+}
+
 // Handles deleting a Buffer when it's being used.
 TEST_P(SimpleStateChangeTest, DeleteBufferInUse)
 {
@@ -2796,9 +2874,6 @@ TEST_P(SimpleStateChangeTest, ReleaseShaderInUseThatReadsFromUniforms)
 // Tests that sampler sync isn't masked by program textures.
 TEST_P(SimpleStateChangeTestES3, SamplerSyncNotTiedToProgram)
 {
-    // glBindSampler is available only if the GLES version is 3.0 or higher - anglebug.com/3208
-    ANGLE_SKIP_TEST_IF(IsVulkan());
-
     // Create a sampler with NEAREST filtering.
     GLSampler sampler;
     glBindSampler(0, sampler);
@@ -2858,6 +2933,104 @@ void main()
     EXPECT_PIXEL_RECT_EQ(kHalfSize, 0, kHalfSize, kHalfSize, GLColor::green);
     EXPECT_PIXEL_RECT_EQ(0, kHalfSize, kHalfSize, kHalfSize, GLColor::blue);
     EXPECT_PIXEL_RECT_EQ(kHalfSize, kHalfSize, kHalfSize, kHalfSize, GLColor::yellow);
+}
+
+// Tests different samplers can be used with same texture obj on different tex units.
+TEST_P(SimpleStateChangeTestES3, MultipleSamplersWithSingleTextureObject)
+{
+    // Test overview - Create two separate sampler objects, initially with the same
+    // sampling args (NEAREST). Bind the same texture object to separate texture units.
+    // FS samples from two samplers and blends result.
+    // Bind separate sampler objects to the same texture units as the texture object.
+    // Render & verify initial results
+    // Next modify sampler0 to have LINEAR filtering instead of NEAREST
+    // Render and save results
+    // Now restore sampler0 to NEAREST filtering and make sampler1 LINEAR
+    // Render and verify results are the same as previous
+
+    // Create 2 samplers with NEAREST filtering.
+    constexpr GLsizei kNumSamplers = 2;
+    // We create/bind an extra sampler w/o bound tex object for testing purposes
+    GLSampler samplers[kNumSamplers + 1];
+    // Set samplers to initially have same state w/ NEAREST filter mode
+    for (uint32_t i = 0; i < kNumSamplers + 1; ++i)
+    {
+        glSamplerParameteri(samplers[i], GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        glSamplerParameteri(samplers[i], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glSamplerParameteri(samplers[i], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glSamplerParameteri(samplers[i], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glSamplerParameteri(samplers[i], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glSamplerParameterf(samplers[i], GL_TEXTURE_MAX_LOD, 1000);
+        glSamplerParameterf(samplers[i], GL_TEXTURE_MIN_LOD, -1000);
+        glBindSampler(i, samplers[i]);
+        ASSERT_GL_NO_ERROR();
+    }
+
+    // Create a simple texture with four colors
+    constexpr GLsizei kSize       = 2;
+    std::array<GLColor, 4> pixels = {
+        {GLColor::red, GLColor::green, GLColor::blue, GLColor::yellow}};
+    GLTexture rgbyTex;
+    // Bind same texture object to tex units 0 & 1
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, rgbyTex);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, rgbyTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, kSize, kSize, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                 pixels.data());
+
+    // Create a program that uses the texture with 2 separate samplers.
+    constexpr char kFS[] = R"(precision mediump float;
+varying vec2 v_texCoord;
+uniform sampler2D samp1;
+uniform sampler2D samp2;
+void main()
+{
+    gl_FragColor = mix(texture2D(samp1, v_texCoord), texture2D(samp2, v_texCoord), 0.5);
+})";
+
+    // Create program and bind samplers to tex units 0 & 1
+    ANGLE_GL_PROGRAM(program, essl1_shaders::vs::Texture2D(), kFS);
+    GLint s1loc = glGetUniformLocation(program, "samp1");
+    GLint s2loc = glGetUniformLocation(program, "samp2");
+    glUseProgram(program);
+    glUniform1i(s1loc, 0);
+    glUniform1i(s2loc, 1);
+    // Draw. This first draw is a sanitycheck and not really necessary for the test
+    drawQuad(program, std::string(essl1_shaders::PositionAttrib()), 0.5f);
+    ASSERT_GL_NO_ERROR();
+
+    constexpr int kHalfSize = kWindowSize / 2;
+
+    // When rendering w/ NEAREST, colors are all maxed out so should still be solid
+    EXPECT_PIXEL_RECT_EQ(0, 0, kHalfSize, kHalfSize, GLColor::red);
+    EXPECT_PIXEL_RECT_EQ(kHalfSize, 0, kHalfSize, kHalfSize, GLColor::green);
+    EXPECT_PIXEL_RECT_EQ(0, kHalfSize, kHalfSize, kHalfSize, GLColor::blue);
+    EXPECT_PIXEL_RECT_EQ(kHalfSize, kHalfSize, kHalfSize, kHalfSize, GLColor::yellow);
+
+    // Make first sampler use linear filtering
+    glSamplerParameteri(samplers[0], GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glSamplerParameteri(samplers[0], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    drawQuad(program, std::string(essl1_shaders::PositionAttrib()), 0.5f);
+    ASSERT_GL_NO_ERROR();
+    // Capture rendered pixel color with s0 linear
+    std::vector<GLColor> s0LinearColors(kWindowSize * kWindowSize);
+    glReadPixels(0, 0, kWindowSize, kWindowSize, GL_RGBA, GL_UNSIGNED_BYTE, s0LinearColors.data());
+
+    // Now restore first sampler & update second sampler
+    glSamplerParameteri(samplers[0], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glSamplerParameteri(samplers[0], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glSamplerParameteri(samplers[1], GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glSamplerParameteri(samplers[1], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    drawQuad(program, std::string(essl1_shaders::PositionAttrib()), 0.5f);
+    ASSERT_GL_NO_ERROR();
+    // Capture rendered pixel color w/ s1 linear
+    std::vector<GLColor> s1LinearColors(kWindowSize * kWindowSize);
+    glReadPixels(0, 0, kWindowSize, kWindowSize, GL_RGBA, GL_UNSIGNED_BYTE, s1LinearColors.data());
+    // Results should be the same regardless of if s0 or s1 is linear
+    EXPECT_EQ(s0LinearColors, s1LinearColors);
 }
 
 // Tests that deleting an in-flight image texture does not immediately delete the resource.
@@ -2986,8 +3159,8 @@ TEST_P(SimpleStateChangeTestES31, UpdateImageTextureInUse)
 // Test that we can alternate between image textures between different dispatchs.
 TEST_P(SimpleStateChangeTestES31, DispatchImageTextureAThenTextureBThenTextureA)
 {
-    // TODO(syoussefi): Flaky, needs investigation. http://anglebug.com/3044
-    ANGLE_SKIP_TEST_IF(IsLinux() && IsIntel() && IsDesktopOpenGL());
+    // Fails in the last EXPECT call.  http://anglebug.com/3879
+    ANGLE_SKIP_TEST_IF(IsVulkan() && IsWindows() && IsAMD());
 
     std::array<GLColor, 4> colorsTexA = {
         {GLColor::cyan, GLColor::cyan, GLColor::cyan, GLColor::cyan}};
@@ -3009,12 +3182,15 @@ TEST_P(SimpleStateChangeTestES31, DispatchImageTextureAThenTextureBThenTextureA)
     glBindImageTexture(0, texA, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
     glDispatchCompute(1, 1, 1);
 
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     glBindImageTexture(0, texB, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
     glDispatchCompute(1, 1, 1);
 
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     glBindImageTexture(0, texA, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
     glDispatchCompute(1, 1, 1);
 
+    glMemoryBarrier(GL_FRAMEBUFFER_BARRIER_BIT);
     EXPECT_PIXEL_RECT_EQ(0, 0, 2, 2, GLColor::cyan);
     ASSERT_GL_NO_ERROR();
 }
@@ -3446,6 +3622,9 @@ TEST_P(WebGL2ValidationStateChangeTest, DrawFramebufferNegativeAPI)
 // Tests various state change effects on draw framebuffer validation with MRT.
 TEST_P(WebGL2ValidationStateChangeTest, MultiAttachmentDrawFramebufferNegativeAPI)
 {
+    // Crashes on 64-bit Android.  http://anglebug.com/3878
+    ANGLE_SKIP_TEST_IF(IsVulkan() && IsAndroid());
+
     // Set up a program that writes to two outputs: one int and one float.
     constexpr char kVS[] = R"(#version 300 es
 layout(location = 0) in vec2 position;
@@ -3670,6 +3849,10 @@ void main()
 // Test sampler format validation caching works.
 TEST_P(WebGL2ValidationStateChangeTest, SamplerFormatCache)
 {
+    // Crashes in depth data upload due to lack of support for GL_UNSIGNED_INT data when
+    // DEPTH_COMPONENT24 is emulated with D32_S8X24.  http://anglebug.com/3880
+    ANGLE_SKIP_TEST_IF(IsVulkan() && IsWindows() && IsAMD());
+
     constexpr char kFS[] = R"(#version 300 es
 precision mediump float;
 uniform sampler2D sampler;
@@ -4197,8 +4380,11 @@ ANGLE_INSTANTIATE_TEST(StateChangeRenderTest,
 ANGLE_INSTANTIATE_TEST(StateChangeTestES3, ES3_D3D11(), ES3_OPENGL());
 ANGLE_INSTANTIATE_TEST(SimpleStateChangeTest, ES2_METAL(), ES2_D3D11(), ES2_VULKAN(), ES2_OPENGL());
 ANGLE_INSTANTIATE_TEST(SimpleStateChangeTestES3, ES3_OPENGL(), ES3_D3D11(), ES3_VULKAN());
-ANGLE_INSTANTIATE_TEST(SimpleStateChangeTestES31, ES31_OPENGL(), ES31_D3D11());
-ANGLE_INSTANTIATE_TEST(ValidationStateChangeTest, ES3_D3D11(), ES3_OPENGL());
-ANGLE_INSTANTIATE_TEST(WebGL2ValidationStateChangeTest, ES3_D3D11(), ES3_OPENGL());
-ANGLE_INSTANTIATE_TEST(ValidationStateChangeTestES31, ES31_OPENGL(), ES31_D3D11());
-ANGLE_INSTANTIATE_TEST(WebGLComputeValidationStateChangeTest, ES31_D3D11(), ES31_OPENGL());
+ANGLE_INSTANTIATE_TEST(SimpleStateChangeTestES31, ES31_OPENGL(), ES31_D3D11(), ES31_VULKAN());
+ANGLE_INSTANTIATE_TEST(ValidationStateChangeTest, ES3_D3D11(), ES3_OPENGL(), ES3_VULKAN());
+ANGLE_INSTANTIATE_TEST(WebGL2ValidationStateChangeTest, ES3_D3D11(), ES3_OPENGL(), ES3_VULKAN());
+ANGLE_INSTANTIATE_TEST(ValidationStateChangeTestES31, ES31_OPENGL(), ES31_D3D11(), ES31_VULKAN());
+ANGLE_INSTANTIATE_TEST(WebGLComputeValidationStateChangeTest,
+                       ES31_D3D11(),
+                       ES31_OPENGL(),
+                       ES31_VULKAN());

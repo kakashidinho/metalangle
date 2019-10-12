@@ -1,5 +1,5 @@
 //
-// Copyright(c) 2014 The ANGLE Project Authors. All rights reserved.
+// Copyright 2014 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -35,9 +35,8 @@ namespace
 {
 static TLSIndex threadTLS = TLS_INVALID_INDEX;
 Debug *g_Debug            = nullptr;
-std::atomic<std::mutex *> g_Mutex;
-static_assert(std::is_trivially_constructible<decltype(g_Mutex)>::value,
-              "global mutex is not trivially constructible");
+
+ANGLE_REQUIRE_CONSTANT_INIT std::atomic<std::mutex *> g_Mutex(nullptr);
 static_assert(std::is_trivially_destructible<decltype(g_Mutex)>::value,
               "global mutex is not trivially destructible");
 

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2014 The ANGLE Project Authors. All rights reserved.
+// Copyright 2014 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -117,7 +117,8 @@ class ProgramD3DMetadata final : angle::NonCopyable
 {
   public:
     ProgramD3DMetadata(RendererD3D *renderer,
-                       const gl::ShaderMap<const ShaderD3D *> &attachedShaders);
+                       const gl::ShaderMap<const ShaderD3D *> &attachedShaders,
+                       EGLenum clientType);
     ~ProgramD3DMetadata();
 
     int getRendererMajorShaderModel() const;
@@ -137,7 +138,7 @@ class ProgramD3DMetadata final : angle::NonCopyable
     bool usesTransformFeedbackGLPosition() const;
     bool usesSystemValuePointSize() const;
     bool usesMultipleFragmentOuts() const;
-    GLint getMajorShaderVersion() const;
+    bool usesCustomOutVars() const;
     const ShaderD3D *getFragmentShader() const;
 
   private:
@@ -147,6 +148,7 @@ class ProgramD3DMetadata final : angle::NonCopyable
     const bool mUsesViewScale;
     const bool mCanSelectViewInVertexShader;
     const gl::ShaderMap<const ShaderD3D *> mAttachedShaders;
+    const EGLenum mClientType;
 };
 
 using D3DUniformMap = std::map<std::string, D3DUniform *>;
@@ -436,7 +438,7 @@ class ProgramD3D : public ProgramImpl
 
     void defineUniformsAndAssignRegisters();
     void defineUniformBase(const gl::Shader *shader,
-                           const sh::Uniform &uniform,
+                           const sh::ShaderVariable &uniform,
                            D3DUniformMap *uniformMap);
     void assignAllSamplerRegisters();
     void assignSamplerRegisters(size_t uniformIndex);
@@ -564,7 +566,7 @@ class ProgramD3D : public ProgramImpl
     std::array<unsigned int, gl::IMPLEMENTATION_MAX_ATOMIC_COUNTER_BUFFERS>
         mComputeAtomicCounterBufferRegisterIndices;
 
-    std::vector<sh::Uniform> mImage2DUniforms;
+    std::vector<sh::ShaderVariable> mImage2DUniforms;
     gl::ImageUnitTextureTypeMap mComputeShaderImage2DBindLayoutCache;
     Optional<size_t> mCachedComputeExecutableIndex;
 

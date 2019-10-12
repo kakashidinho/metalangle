@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2012-2014 The ANGLE Project Authors. All rights reserved.
+// Copyright 2012 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -715,9 +715,11 @@ SwapChainD3D *Renderer9::createSwapChain(NativeWindowD3D *nativeWindow,
 
 egl::Error Renderer9::getD3DTextureInfo(const egl::Config *configuration,
                                         IUnknown *d3dTexture,
+                                        const egl::AttributeMap &attribs,
                                         EGLint *width,
                                         EGLint *height,
-                                        EGLint *samples,
+                                        GLsizei *samples,
+                                        gl::Format *glFormat,
                                         const angle::Format **angleFormat) const
 {
     IDirect3DTexture9 *texture = nullptr;
@@ -773,10 +775,17 @@ egl::Error Renderer9::getD3DTextureInfo(const egl::Config *configuration,
                    << "Unknown client buffer texture format: " << desc.Format;
     }
 
+    const auto &d3dFormatInfo = d3d9::GetD3DFormatInfo(desc.Format);
+    ASSERT(d3dFormatInfo.info().id != angle::FormatID::NONE);
+
+    if (glFormat)
+    {
+        *glFormat = gl::Format(d3dFormatInfo.info().glInternalFormat);
+    }
+
     if (angleFormat)
     {
-        const auto &d3dFormatInfo = d3d9::GetD3DFormatInfo(desc.Format);
-        ASSERT(d3dFormatInfo.info().id != angle::FormatID::NONE);
+
         *angleFormat = &d3dFormatInfo.info();
     }
 
@@ -1083,7 +1092,8 @@ angle::Result Renderer9::updateState(const gl::Context *context, gl::PrimitiveMo
     {
         ASSERT(firstColorAttachment->isAttached());
         RenderTarget9 *renderTarget = nullptr;
-        ANGLE_TRY(firstColorAttachment->getRenderTarget(context, &renderTarget));
+        ANGLE_TRY(firstColorAttachment->getRenderTarget(context, firstColorAttachment->getSamples(),
+                                                        &renderTarget));
         samples = renderTarget->getSamples();
     }
     gl::RasterizerState rasterizer = glState.getRasterizerState();
@@ -1118,7 +1128,8 @@ angle::Result Renderer9::setBlendDepthRasterStates(const gl::Context *context,
     {
         ASSERT(firstColorAttachment->isAttached());
         RenderTarget9 *renderTarget = nullptr;
-        ANGLE_TRY(firstColorAttachment->getRenderTarget(context, &renderTarget));
+        ANGLE_TRY(firstColorAttachment->getRenderTarget(context, firstColorAttachment->getSamples(),
+                                                        &renderTarget));
         samples = renderTarget->getSamples();
     }
     gl::RasterizerState rasterizer = glState.getRasterizerState();
@@ -3080,6 +3091,11 @@ FramebufferImpl *Renderer9::createDefaultFramebuffer(const gl::FramebufferState 
 }
 
 gl::Version Renderer9::getMaxSupportedESVersion() const
+{
+    return gl::Version(2, 0);
+}
+
+gl::Version Renderer9::getMaxConformantESVersion() const
 {
     return gl::Version(2, 0);
 }

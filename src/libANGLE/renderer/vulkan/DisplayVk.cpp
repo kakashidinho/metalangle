@@ -167,6 +167,11 @@ gl::Version DisplayVk::getMaxSupportedESVersion() const
     return mRenderer->getMaxSupportedESVersion();
 }
 
+gl::Version DisplayVk::getMaxConformantESVersion() const
+{
+    return mRenderer->getMaxConformantESVersion();
+}
+
 void DisplayVk::generateExtensions(egl::DisplayExtensions *outExtensions) const
 {
     outExtensions->createContextRobustness      = true;
@@ -191,6 +196,8 @@ void DisplayVk::generateExtensions(egl::DisplayExtensions *outExtensions) const
     outExtensions->glRenderbufferImage   = true;
     outExtensions->imageNativeBuffer =
         getRenderer()->getFeatures().supportsAndroidHardwareBuffer.enabled;
+
+    outExtensions->noConfigContext = true;
 }
 
 void DisplayVk::generateCaps(egl::Caps *outCaps) const

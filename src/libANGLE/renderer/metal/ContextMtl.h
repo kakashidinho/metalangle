@@ -48,6 +48,12 @@ class ContextMtl : public ContextImpl, public mtl::Context
                                       GLint first,
                                       GLsizei count,
                                       GLsizei instanceCount) override;
+    angle::Result drawArraysInstancedBaseInstance(const gl::Context *context,
+                                                  gl::PrimitiveMode mode,
+                                                  GLint first,
+                                                  GLsizei count,
+                                                  GLsizei instanceCount,
+                                                  GLuint baseInstance) override;
 
     angle::Result drawElements(const gl::Context *context,
                                gl::PrimitiveMode mode,
@@ -60,6 +66,14 @@ class ContextMtl : public ContextImpl, public mtl::Context
                                         gl::DrawElementsType type,
                                         const void *indices,
                                         GLsizei instanceCount) override;
+    angle::Result drawElementsInstancedBaseVertexBaseInstance(const gl::Context *context,
+                                                              gl::PrimitiveMode mode,
+                                                              GLsizei count,
+                                                              gl::DrawElementsType type,
+                                                              const void *indices,
+                                                              GLsizei instances,
+                                                              GLint baseVertex,
+                                                              GLuint baseInstance) override;
     angle::Result drawRangeElements(const gl::Context *context,
                                     gl::PrimitiveMode mode,
                                     GLuint start,
@@ -153,6 +167,9 @@ class ContextMtl : public ContextImpl, public mtl::Context
 
     // Semaphore creation.
     SemaphoreImpl *createSemaphore() override;
+
+    // Overlay creation.
+    OverlayImpl *createOverlay(const gl::OverlayState &state) override;
 
     angle::Result dispatchCompute(const gl::Context *context,
                                   GLuint numGroupsX,
@@ -328,9 +345,12 @@ class ContextMtl : public ContextImpl, public mtl::Context
         float halfRenderAreaHeight;
         float viewportYScale;
         float negViewportYScale;
+
+        // TODO(hqle): Transform feedsback is not supported yet.
         uint32_t xfbActiveUnpaused;
 
         int32_t xfbBufferOffsets[4];
+        uint32_t acbBufferOffsets[4];
 
         // We'll use x, y, z for near / far / diff respectively.
         float depthRange[4];

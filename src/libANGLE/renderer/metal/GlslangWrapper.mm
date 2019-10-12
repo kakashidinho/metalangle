@@ -455,7 +455,7 @@ void AssignAttributeLocations(const gl::ProgramState &programState,
 {
     // Parse attribute locations and replace them in the vertex shader.
     // See corresponding code in OutputVulkanGLSL.cpp.
-    for (const sh::Attribute &attribute : programState.getAttributes())
+    for (const sh::ShaderVariable &attribute : programState.getProgramInputs())
     {
         // Warning: If we endup supporting ES 3.0 shaders and up, Program::linkAttributes is going
         // to bring us all attributes in this list instead of only the active ones.

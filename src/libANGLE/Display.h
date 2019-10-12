@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2002-2013 The ANGLE Project Authors. All rights reserved.
+// Copyright 2002 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -25,11 +25,6 @@
 #include "libANGLE/Version.h"
 #include "platform/Feature.h"
 #include "platform/FrontendFeatures.h"
-
-namespace angle
-{
-class FrameCapture;
-}  // namespace angle
 
 namespace gl
 {
@@ -115,7 +110,7 @@ class Display final : public LabeledObject, angle::NonCopyable
     Error createStream(const AttributeMap &attribs, Stream **outStream);
 
     Error createContext(const Config *configuration,
-                        const gl::Context *shareContext,
+                        gl::Context *shareContext,
                         const EGLenum clientType,
                         const AttributeMap &attribs,
                         gl::Context **outContext);
@@ -212,9 +207,6 @@ class Display final : public LabeledObject, angle::NonCopyable
 
     EGLAttrib queryAttrib(const EGLint attribute);
 
-    angle::FrameCapture *getFrameCapture() { return mFrameCapture; }
-    void onPostSwap() const;
-
   private:
     Display(EGLenum platform, EGLNativeDisplayType displayId, Device *eglDevice);
 
@@ -268,11 +260,6 @@ class Display final : public LabeledObject, angle::NonCopyable
     angle::FrontendFeatures mFrontendFeatures;
 
     angle::FeatureList mFeatures;
-
-    // Might want to revisit who owns this and has access in the future. Threaded use would mean
-    // it might make sense to use different captures for EGL and GLES contexts.
-    // Note: we use a raw pointer here so we can exclude frame capture sources from the build.
-    angle::FrameCapture *mFrameCapture;
 };
 
 }  // namespace egl

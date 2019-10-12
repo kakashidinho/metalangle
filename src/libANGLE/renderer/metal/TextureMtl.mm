@@ -266,8 +266,10 @@ angle::Result TextureMtl::releaseTexImage(const gl::Context *context)
 angle::Result TextureMtl::getAttachmentRenderTarget(const gl::Context *context,
                                                     GLenum binding,
                                                     const gl::ImageIndex &imageIndex,
+                                                    GLsizei samples,
                                                     FramebufferAttachmentRenderTarget **rtOut)
 {
+    // TODO(hqle): Support MSAA.
     // Non-zero mip level attachments are an ES 3.0 feature.
     ASSERT(imageIndex.getLevelIndex() == 0);
 
@@ -430,7 +432,7 @@ angle::Result TextureMtl::setStorageImpl(const gl::Context *context,
 
             mLayeredRenderTargets.resize(gl::kCubeFaceCount);
             mLayeredTextureViews.resize(gl::kCubeFaceCount);
-            for (size_t f = 0; f < gl::kCubeFaceCount; ++f)
+            for (uint32_t f = 0; f < gl::kCubeFaceCount; ++f)
             {
                 mLayeredTextureViews[f] = mTexture->createFaceView(f);
                 mLayeredRenderTargets[f].set(mLayeredTextureViews[f], 0, 0, mFormat);
@@ -462,7 +464,7 @@ angle::Result TextureMtl::setStorageImpl(const gl::Context *context,
         {
             auto cubeFace = static_cast<gl::TextureTarget>(
                 static_cast<int>(gl::TextureTarget::CubeMapPositiveX) + layer);
-            for (size_t mip = 0; mip < mipmaps; ++mip)
+            for (uint32_t mip = 0; mip < mipmaps; ++mip)
             {
                 gl::ImageIndex index;
                 if (layers > 1)
@@ -697,7 +699,7 @@ angle::Result TextureMtl::copySubImageCPU(const gl::Context *context,
     FramebufferMtl *framebufferMtl = mtl::GetImpl(source);
 
     const angle::Format &dstFormat = angle::Format::Get(mFormat.actualFormatId);
-    const size_t dstRowPitch       = dstFormat.pixelBytes * clippedSourceArea.width;
+    const int dstRowPitch          = dstFormat.pixelBytes * clippedSourceArea.width;
     std::unique_ptr<uint8_t[]> conversionRow(new (std::nothrow) uint8_t[dstRowPitch]);
     ANGLE_CHECK_GL_ALLOC(contextMtl, conversionRow);
 

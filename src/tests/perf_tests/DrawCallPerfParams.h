@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2017 The ANGLE Project Authors. All rights reserved.
+// Copyright 2017 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -20,7 +20,7 @@ struct DrawCallPerfParams : public RenderTestParams
     DrawCallPerfParams();
     virtual ~DrawCallPerfParams();
 
-    std::string suffix() const override;
+    std::string story() const override;
 
     double runTimeSeconds;
     int numTris;
@@ -35,10 +35,6 @@ DrawCallPerfParams DrawCallOpenGL();
 DrawCallPerfParams DrawCallValidation();
 DrawCallPerfParams DrawCallVulkan();
 DrawCallPerfParams DrawCallWGL();
-
-// Mixins.
-DrawCallPerfParams Offscreen(const DrawCallPerfParams &input);
-DrawCallPerfParams NullDevice(const DrawCallPerfParams &input);
 }  // namespace params
 
 #endif  // TESTS_PERF_TESTS_DRAW_CALL_PERF_PARAMS_H_

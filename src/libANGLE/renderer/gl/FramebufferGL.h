@@ -23,7 +23,7 @@ class StateManagerGL;
 class FramebufferGL : public FramebufferImpl
 {
   public:
-    FramebufferGL(const gl::FramebufferState &data, GLuint id, bool isDefault);
+    FramebufferGL(const gl::FramebufferState &data, GLuint id, bool isDefault, bool emulatedAlpha);
     ~FramebufferGL() override;
 
     void destroy(const gl::Context *context) override;
@@ -88,6 +88,8 @@ class FramebufferGL : public FramebufferImpl
     GLuint getFramebufferID() const;
     bool isDefault() const;
 
+    bool hasEmulatedAlphaChannelTextureAttachment() const;
+
   private:
     void syncClearState(const gl::Context *context, GLbitfield mask);
     void syncClearBufferState(const gl::Context *context, GLenum buffer, GLint drawBuffer);
@@ -115,8 +117,22 @@ class FramebufferGL : public FramebufferImpl
     void maskOutInactiveOutputDrawBuffersImpl(const gl::Context *context,
                                               gl::DrawBufferMask targetAppliedDrawBuffers);
 
+    angle::Result adjustSrcDstRegion(const gl::Context *context,
+                                     const gl::Rectangle &sourceArea,
+                                     const gl::Rectangle &destArea,
+                                     gl::Rectangle *newSourceArea,
+                                     gl::Rectangle *newDestArea);
+
+    angle::Result clipSrcRegion(const gl::Context *context,
+                                const gl::Rectangle &sourceArea,
+                                const gl::Rectangle &destArea,
+                                gl::Rectangle *newSourceArea,
+                                gl::Rectangle *newDestArea);
+
     GLuint mFramebufferID;
     bool mIsDefault;
+
+    bool mHasEmulatedAlphaAttachment;
 
     gl::DrawBufferMask mAppliedEnabledDrawBuffers;
 };

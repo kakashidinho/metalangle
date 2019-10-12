@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2017 The ANGLE Project Authors. All rights reserved.
+// Copyright 2017 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -90,9 +90,9 @@ struct MultiviewPerfParams final : public RenderTestParams
         multiviewExtension = multiviewExtensionIn;
     }
 
-    std::string suffix() const override
+    std::string story() const override
     {
-        std::string name = RenderTestParams::suffix();
+        std::string name = RenderTestParams::story();
         switch (multiviewOption)
         {
             case MultiviewOption::NoAcceleration:
@@ -133,7 +133,7 @@ struct MultiviewPerfParams final : public RenderTestParams
 
 std::ostream &operator<<(std::ostream &os, const MultiviewPerfParams &params)
 {
-    os << params.suffix().substr(1);
+    os << params.backendAndStory().substr(1);
     return os;
 }
 

@@ -19,7 +19,7 @@ class Context;
 
 bool ValidateBeginConditionalRender(Context *context, GLuint id, GLenum mode);
 bool ValidateBindFragDataLocation(Context *context,
-                                  GLuint program,
+                                  ShaderProgramID programPacked,
                                   GLuint color,
                                   const GLchar *name);
 bool ValidateClampColor(Context *context, GLenum target, GLenum clamp);
@@ -35,14 +35,14 @@ bool ValidateEndConditionalRender(Context *context);
 bool ValidateFramebufferTexture1D(Context *context,
                                   GLenum target,
                                   GLenum attachment,
-                                  GLenum textarget,
-                                  GLuint texture,
+                                  TextureTarget textargetPacked,
+                                  TextureID texturePacked,
                                   GLint level);
 bool ValidateFramebufferTexture3D(Context *context,
                                   GLenum target,
                                   GLenum attachment,
                                   TextureTarget textargetPacked,
-                                  GLuint texture,
+                                  TextureID texturePacked,
                                   GLint level,
                                   GLint zoffset);
 bool ValidateGetTexParameterIiv(Context *context,

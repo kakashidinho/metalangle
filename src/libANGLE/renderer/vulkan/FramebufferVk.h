@@ -108,15 +108,15 @@ class FramebufferVk : public FramebufferImpl
     void onScissorChange(ContextVk *contextVk);
 
     const gl::DrawBufferMask &getEmulatedAlphaAttachmentMask() const;
+    RenderTargetVk *getColorDrawRenderTarget(size_t colorIndex) const;
     RenderTargetVk *getColorReadRenderTarget() const;
 
     // This will clear the current write operation if it is complete.
-    bool appendToStartedRenderPass(Serial currentQueueSerial,
+    bool appendToStartedRenderPass(vk::CommandGraph *graph,
                                    const gl::Rectangle &renderArea,
                                    vk::CommandBuffer **commandBufferOut)
     {
-        return mFramebuffer.appendToStartedRenderPass(currentQueueSerial, renderArea,
-                                                      commandBufferOut);
+        return mFramebuffer.appendToStartedRenderPass(graph, renderArea, commandBufferOut);
     }
 
     vk::FramebufferHelper *getFramebuffer() { return &mFramebuffer; }

@@ -73,9 +73,19 @@ namespace ConvertIndex_comp
 enum flags
 {
     kIsPrimitiveRestartEnabled = 0x00000001,
+    kIsIndirect                = 0x00000002,
+};
+constexpr size_t kArrayLen = 0x00000004;
+}  // namespace ConvertIndex_comp
+
+namespace ConvertIndexIndirectLineLoop_comp
+{
+enum flags
+{
+    kIs32Bit = 0x00000001,
 };
 constexpr size_t kArrayLen = 0x00000002;
-}  // namespace ConvertIndex_comp
+}  // namespace ConvertIndexIndirectLineLoop_comp
 
 namespace ConvertVertex_comp
 {
@@ -85,16 +95,30 @@ enum flags
 };
 enum Conversion
 {
-    kSintToSint   = 0x00000000,
-    kUintToUint   = 0x00000002,
-    kSintToFloat  = 0x00000004,
-    kUintToFloat  = 0x00000006,
-    kSnormToFloat = 0x00000008,
-    kUnormToFloat = 0x0000000A,
-    kFixedToFloat = 0x0000000C,
-    kFloatToFloat = 0x0000000E,
+    kSintToSint           = 0x00000000,
+    kUintToUint           = 0x00000002,
+    kSintToFloat          = 0x00000004,
+    kUintToFloat          = 0x00000006,
+    kSnormToFloat         = 0x00000008,
+    kUnormToFloat         = 0x0000000A,
+    kFixedToFloat         = 0x0000000C,
+    kFloatToFloat         = 0x0000000E,
+    kA2BGR10SintToSint    = 0x00000010,
+    kA2BGR10UintToUint    = 0x00000012,
+    kA2BGR10SintToFloat   = 0x00000014,
+    kA2BGR10UintToFloat   = 0x00000016,
+    kA2BGR10SnormToFloat  = 0x00000018,
+    kRGB10A2SintToFloat   = 0x0000001A,
+    kRGB10A2UintToFloat   = 0x0000001C,
+    kRGB10A2SnormToFloat  = 0x0000001E,
+    kRGB10A2UnormToFloat  = 0x00000020,
+    kRGB10X2SintToFloat   = 0x00000022,
+    kRGB10X2UintToFloat   = 0x00000024,
+    kRGB10X2SnormToFloat  = 0x00000026,
+    kRGB10X2UnormToFloat  = 0x00000028,
+    kHalfFloatToHalfFloat = 0x0000002A,
 };
-constexpr size_t kArrayLen = 0x00000010;
+constexpr size_t kArrayLen = 0x0000002C;
 }  // namespace ConvertVertex_comp
 
 namespace FullScreenQuad_vert
@@ -145,6 +169,32 @@ enum DestFormat
 constexpr size_t kArrayLen = 0x00000016;
 }  // namespace ImageCopy_frag
 
+namespace OverlayCull_comp
+{
+enum SubgroupSize
+{
+    kIs8x4 = 0x00000000,
+    kIs8x8 = 0x00000001,
+};
+enum SubgroupOp
+{
+    kSupportsBallot     = 0x00000000,
+    kSupportsArithmetic = 0x00000002,
+    kSupportsNone       = 0x00000004,
+};
+constexpr size_t kArrayLen = 0x00000006;
+}  // namespace OverlayCull_comp
+
+namespace OverlayDraw_comp
+{
+enum SubgroupSize
+{
+    kIs8x4 = 0x00000000,
+    kIs8x8 = 0x00000001,
+};
+constexpr size_t kArrayLen = 0x00000002;
+}  // namespace OverlayDraw_comp
+
 }  // namespace InternalShader
 
 class ShaderLibrary final : angle::NonCopyable
@@ -167,6 +217,9 @@ class ShaderLibrary final : angle::NonCopyable
     angle::Result getConvertIndex_comp(Context *context,
                                        uint32_t shaderFlags,
                                        RefCounted<ShaderAndSerial> **shaderOut);
+    angle::Result getConvertIndexIndirectLineLoop_comp(Context *context,
+                                                       uint32_t shaderFlags,
+                                                       RefCounted<ShaderAndSerial> **shaderOut);
     angle::Result getConvertVertex_comp(Context *context,
                                         uint32_t shaderFlags,
                                         RefCounted<ShaderAndSerial> **shaderOut);
@@ -179,6 +232,12 @@ class ShaderLibrary final : angle::NonCopyable
     angle::Result getImageCopy_frag(Context *context,
                                     uint32_t shaderFlags,
                                     RefCounted<ShaderAndSerial> **shaderOut);
+    angle::Result getOverlayCull_comp(Context *context,
+                                      uint32_t shaderFlags,
+                                      RefCounted<ShaderAndSerial> **shaderOut);
+    angle::Result getOverlayDraw_comp(Context *context,
+                                      uint32_t shaderFlags,
+                                      RefCounted<ShaderAndSerial> **shaderOut);
 
   private:
     RefCounted<ShaderAndSerial>
@@ -189,6 +248,8 @@ class ShaderLibrary final : angle::NonCopyable
         mBufferUtils_comp_shaders[InternalShader::BufferUtils_comp::kArrayLen];
     RefCounted<ShaderAndSerial>
         mConvertIndex_comp_shaders[InternalShader::ConvertIndex_comp::kArrayLen];
+    RefCounted<ShaderAndSerial> mConvertIndexIndirectLineLoop_comp_shaders
+        [InternalShader::ConvertIndexIndirectLineLoop_comp::kArrayLen];
     RefCounted<ShaderAndSerial>
         mConvertVertex_comp_shaders[InternalShader::ConvertVertex_comp::kArrayLen];
     RefCounted<ShaderAndSerial>
@@ -196,6 +257,10 @@ class ShaderLibrary final : angle::NonCopyable
     RefCounted<ShaderAndSerial>
         mImageClear_frag_shaders[InternalShader::ImageClear_frag::kArrayLen];
     RefCounted<ShaderAndSerial> mImageCopy_frag_shaders[InternalShader::ImageCopy_frag::kArrayLen];
+    RefCounted<ShaderAndSerial>
+        mOverlayCull_comp_shaders[InternalShader::OverlayCull_comp::kArrayLen];
+    RefCounted<ShaderAndSerial>
+        mOverlayDraw_comp_shaders[InternalShader::OverlayDraw_comp::kArrayLen];
 };
 }  // namespace vk
 }  // namespace rx

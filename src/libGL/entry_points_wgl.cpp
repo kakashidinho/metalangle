@@ -17,6 +17,7 @@
 #include "libANGLE/Surface.h"
 #include "libANGLE/Texture.h"
 #include "libANGLE/Thread.h"
+#include "libANGLE/entry_points_utils.h"
 #include "libANGLE/queryutils.h"
 #include "libANGLE/validationEGL.h"
 #include "libGL/proc_table_wgl.h"
@@ -70,13 +71,14 @@ int GL_APIENTRY wglDescribePixelFormat(HDC hdc, int ipfd, UINT cjpfd, PIXELFORMA
         ppfd->dwFlags      = ppfd->dwFlags | PFD_GENERIC_ACCELERATED;
         ppfd->dwFlags      = ppfd->dwFlags | PFD_DOUBLEBUFFER;
         ppfd->iPixelType   = PFD_TYPE_RGBA;
+        ppfd->cColorBits   = 24;
         ppfd->cRedBits     = 8;
         ppfd->cGreenBits   = 8;
         ppfd->cBlueBits    = 8;
         ppfd->cAlphaBits   = 8;
         ppfd->cDepthBits   = 24;
         ppfd->cStencilBits = 8;
-        ppfd->nVersion     = 3;
+        ppfd->nVersion     = 1;
     }
     return 1;
 }
@@ -160,7 +162,7 @@ HGLRC GL_APIENTRY wglCreateContext(HDC hDc)
         "wglCreateContext", display, nullptr);
 
     // Initialize context
-    EGLint contextAttibutes[] = {EGL_CONTEXT_CLIENT_VERSION, 3, EGL_CONTEXT_MINOR_VERSION, 3,
+    EGLint contextAttibutes[] = {EGL_CONTEXT_CLIENT_VERSION, 4, EGL_CONTEXT_MINOR_VERSION, 6,
                                  EGL_NONE};
 
     gl::Context *sharedGLContext = static_cast<gl::Context *>(nullptr);
@@ -220,7 +222,7 @@ wglGetLayerPaletteEntries(HDC hdc, int iLayerPlane, int iStart, int cEntries, CO
 PROC GL_APIENTRY wglGetProcAddress(LPCSTR lpszProc)
 {
     ANGLE_SCOPED_GLOBAL_LOCK();
-    EVENT("(const char *procname = \"%s\")", lpszProc);
+    FUNC_EVENT("const char *procname = \"%s\"", lpszProc);
     egl::Thread *thread = egl::GetCurrentThread();
 
     ProcEntry *entry =
@@ -238,17 +240,38 @@ PROC GL_APIENTRY wglGetProcAddress(LPCSTR lpszProc)
 
 BOOL GL_APIENTRY wglMakeCurrent(HDC hDc, HGLRC newContext)
 {
-    Thread *thread = egl::GetCurrentThread();
-
+    Thread *thread        = egl::GetCurrentThread();
     egl::Display *display = egl::Display::GetExistingDisplayFromNativeDisplay(hDc);
-    gl::Context *context  = reinterpret_cast<gl::Context *>(newContext);
+    const gl::Context *context =
+        GetContextIfValid(display, reinterpret_cast<gl::Context *>(newContext));
 
-    ANGLE_EGL_TRY_RETURN(
-        thread,
-        display->makeCurrent(thread, display->getWGLSurface(), display->getWGLSurface(), context),
-        "wglMakeCurrent", display, FALSE);
+    // If display or context are invalid, make thread's current rendering context not current
+    if (!context)
+    {
+        gl::Context *oldContext = thread->getContext();
+        if (oldContext)
+        {
+            ANGLE_EGL_TRY_RETURN(thread, oldContext->unMakeCurrent(display), "wglMakeCurrent",
+                                 GetContextIfValid(display, oldContext), EGL_FALSE);
+        }
+        SetContextCurrent(thread, nullptr);
+        return TRUE;
+    }
 
-    SetContextCurrent(thread, context);
+    egl::Surface *surface        = display->getWGLSurface();
+    Surface *previousDraw        = thread->getCurrentDrawSurface();
+    Surface *previousRead        = thread->getCurrentReadSurface();
+    gl::Context *previousContext = thread->getContext();
+
+    if (previousDraw != surface || previousRead != surface || previousContext != context)
+    {
+        ANGLE_EGL_TRY_RETURN(
+            thread,
+            display->makeCurrent(thread, surface, surface, const_cast<gl::Context *>(context)),
+            "wglMakeCurrent", GetContextIfValid(display, context), EGL_FALSE);
+
+        SetContextCurrent(thread, const_cast<gl::Context *>(context));
+    }
 
     return TRUE;
 }

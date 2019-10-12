@@ -1,0 +1,10 @@
+{
+  "src/libANGLE/renderer/metal/shaders/compiled/mtl_default_shaders.inc":
+    "841499d290fef75886b07dadba6d4537",
+  "src/libANGLE/renderer/metal/shaders/gen_mtl_internal_shaders.py":
+    "8248f93ce84b6f81979563fd48f38bcd",
+  "src/libANGLE/renderer/metal/shaders/master_source.metal":
+    "2aa17b03f535b3d664da48ef6fa81667",
+  "src/libANGLE/renderer/metal/shaders/mtl_default_shaders_src_autogen.inc":
+    "d48971fd503709c3208bd4b51c423278"
+}

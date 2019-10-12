@@ -283,10 +283,13 @@ angle::Result VertexArrayMtl::setupDraw(const gl::Context *glContext,
         desc.numAttribs       = kMaxVertexAttribs;
         desc.numBufferLayouts = kMaxVertexAttribs;
 
-#define ANGLE_MTL_SET_DEFAULT_ATTRIB_BUFFER_LAYOUT(DESC, INDEX)       \
-    DESC.layouts[INDEX].stepFunction = MTLVertexStepFunctionConstant; \
-    DESC.layouts[INDEX].stepRate     = 0;                             \
-    DESC.layouts[INDEX].stride       = 0;
+#define ANGLE_MTL_SET_DEFAULT_ATTRIB_BUFFER_LAYOUT(DESC, INDEX)           \
+    do                                                                    \
+    {                                                                     \
+        DESC.layouts[INDEX].stepFunction = MTLVertexStepFunctionConstant; \
+        DESC.layouts[INDEX].stepRate     = 0;                             \
+        DESC.layouts[INDEX].stride       = 0;                             \
+    } while (0)
 
         // Initialize the buffer layouts with constant step rate
         for (uint32_t b = 0; b < kMaxVertexAttribs; ++b)
@@ -517,8 +520,11 @@ angle::Result VertexArrayMtl::convertIndexBufferGPU(const gl::Context *glContext
 
     // Do the conversion on GPU.
     ANGLE_TRY(renderer->getUtils().convertIndexBuffer(
-        glContext, indexType, indexCount, idxBuffer->getCurrentBuffer(glContext), offset, newBuffer,
-        mCurrentElementArrayBufferOffset));
+        glContext, indexType, static_cast<uint32_t>(indexCount),
+        idxBuffer->getCurrentBuffer(glContext), static_cast<uint32_t>(offset), newBuffer,
+        static_cast<uint32_t>(mCurrentElementArrayBufferOffset)));
+
+    ANGLE_TRY(conversion->data.commit(contextMtl));
 
     mCurrentElementArrayBuffer = &mDynamicElementArrayBufferHolder;
     ASSERT(conversion->dirty);

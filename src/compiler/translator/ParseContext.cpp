@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2002-2014 The ANGLE Project Authors. All rights reserved.
+// Copyright 2002 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -12,7 +12,7 @@
 #include "common/mathutil.h"
 #include "compiler/preprocessor/SourceLocation.h"
 #include "compiler/translator/Declarator.h"
-#include "compiler/translator/ParseContext_autogen.h"
+#include "compiler/translator/ParseContext_interm.h"
 #include "compiler/translator/StaticType.h"
 #include "compiler/translator/ValidateGlobalInitializer.h"
 #include "compiler/translator/ValidateSwitch.h"
@@ -169,7 +169,8 @@ TParseContext::TParseContext(TSymbolTable &symt,
                              ShCompileOptions options,
                              bool checksPrecErrors,
                              TDiagnostics *diagnostics,
-                             const ShBuiltInResources &resources)
+                             const ShBuiltInResources &resources,
+                             ShShaderOutput outputType)
     : symbolTable(symt),
       mDeferredNonEmptyDeclarationErrorCheck(false),
       mShaderType(type),
@@ -217,7 +218,8 @@ TParseContext::TParseContext(TSymbolTable &symt,
       mGeometryShaderMaxVertices(-1),
       mMaxGeometryShaderInvocations(resources.MaxGeometryShaderInvocations),
       mMaxGeometryShaderMaxVertices(resources.MaxGeometryOutputVertices),
-      mFunctionBodyNewScope(false)
+      mFunctionBodyNewScope(false),
+      mOutputType(outputType)
 {}
 
 TParseContext::~TParseContext() {}
@@ -1014,15 +1016,18 @@ unsigned int TParseContext::checkIsValidArraySize(const TSourceLoc &line, TInter
         return 1u;
     }
 
-    // The size of arrays is restricted here to prevent issues further down the
-    // compiler/translator/driver stack. Shader Model 5 generation hardware is limited to
-    // 4096 registers so this should be reasonable even for aggressively optimizable code.
-    const unsigned int sizeLimit = 65536;
-
-    if (size > sizeLimit)
+    if (IsOutputHLSL(getOutputType()))
     {
-        error(line, "array size too large", "");
-        return 1u;
+        // The size of arrays is restricted here to prevent issues further down the
+        // compiler/translator/driver stack. Shader Model 5 generation hardware is limited to
+        // 4096 registers so this should be reasonable even for aggressively optimizable code.
+        const unsigned int sizeLimit = 65536;
+
+        if (size > sizeLimit)
+        {
+            error(line, "array size too large", "");
+            return 1u;
+        }
     }
 
     return size;
@@ -1987,7 +1992,8 @@ bool TParseContext::executeInitializer(const TSourceLoc &line,
 
     bool globalInitWarning = false;
     if (symbolTable.atGlobalLevel() &&
-        !ValidateGlobalInitializer(initializer, mShaderVersion, &globalInitWarning))
+        !ValidateGlobalInitializer(initializer, mShaderVersion, sh::IsWebGLBasedSpec(mShaderSpec),
+                                   &globalInitWarning))
     {
         // Error message does not completely match behavior with ESSL 1.00, but
         // we want to steer developers towards only using constant expressions.
@@ -3363,10 +3369,9 @@ TFunction *TParseContext::parseFunctionDeclarator(const TSourceLoc &location, TF
 
     if (getShaderVersion() >= 300)
     {
-        const UnmangledBuiltIn *builtIn =
-            symbolTable.getUnmangledBuiltInForShaderVersion(function->name(), getShaderVersion());
-        if (builtIn &&
-            (builtIn->extension == TExtension::UNDEFINED || isExtensionEnabled(builtIn->extension)))
+
+        if (symbolTable.isUnmangledBuiltInName(function->name(), getShaderVersion(),
+                                               extensionBehavior()))
         {
             // With ESSL 3.00 and above, names of built-in functions cannot be redeclared as
             // functions. Therefore overloading or redefining builtin functions is an error.
@@ -4640,7 +4645,8 @@ TStorageQualifierWrapper *TParseContext::parseInQualifier(const TSourceLoc &loc)
     {
         case GL_VERTEX_SHADER:
         {
-            if (mShaderVersion < 300 && !anyMultiviewExtensionAvailable())
+            if (mShaderVersion < 300 && !anyMultiviewExtensionAvailable() &&
+                !IsDesktopGLSpec(mShaderSpec))
             {
                 error(loc, "storage qualifier supported in GLSL ES 3.00 and above only", "in");
             }
@@ -4648,7 +4654,7 @@ TStorageQualifierWrapper *TParseContext::parseInQualifier(const TSourceLoc &loc)
         }
         case GL_FRAGMENT_SHADER:
         {
-            if (mShaderVersion < 300)
+            if (mShaderVersion < 300 && !IsDesktopGLSpec(mShaderSpec))
             {
                 error(loc, "storage qualifier supported in GLSL ES 3.00 and above only", "in");
             }
@@ -4680,7 +4686,7 @@ TStorageQualifierWrapper *TParseContext::parseOutQualifier(const TSourceLoc &loc
     {
         case GL_VERTEX_SHADER:
         {
-            if (mShaderVersion < 300)
+            if (mShaderVersion < 300 && !IsDesktopGLSpec(mShaderSpec))
             {
                 error(loc, "storage qualifier supported in GLSL ES 3.00 and above only", "out");
             }
@@ -4688,7 +4694,7 @@ TStorageQualifierWrapper *TParseContext::parseOutQualifier(const TSourceLoc &loc
         }
         case GL_FRAGMENT_SHADER:
         {
-            if (mShaderVersion < 300)
+            if (mShaderVersion < 300 && !IsDesktopGLSpec(mShaderSpec))
             {
                 error(loc, "storage qualifier supported in GLSL ES 3.00 and above only", "out");
             }
@@ -5217,9 +5223,11 @@ bool TParseContext::binaryOpCommonCheck(TOperator op,
             break;
     }
 
-    // GLSL ES 1.00 and 3.00 do not support implicit type casting.
-    // So the basic type should usually match.
-    if (!isBitShift && left->getBasicType() != right->getBasicType())
+    ImplicitTypeConversion conversion = GetConversion(left->getBasicType(), right->getBasicType());
+
+    // Implicit type casting only supported for GL shaders
+    if (!isBitShift && conversion != ImplicitTypeConversion::Same &&
+        (!IsDesktopGLSpec(mShaderSpec) || !IsValidImplicitConversion(conversion, op)))
     {
         return false;
     }
@@ -5913,6 +5921,14 @@ TIntermTyped *TParseContext::addNonConstructorFunctionCall(TFunctionLookup *fnCa
         // There are no inner functions, so it's enough to look for user-defined functions in the
         // global scope.
         const TSymbol *symbol = symbolTable.findGlobal(fnCall->getMangledName());
+
+        if (symbol == nullptr && IsDesktopGLSpec(mShaderSpec))
+        {
+            // If using Desktop GL spec, need to check for implicit conversion
+            symbol = symbolTable.findGlobalWithConversion(
+                fnCall->getMangledNamesForImplicitConversions());
+        }
+
         if (symbol != nullptr)
         {
             // A user-defined function - could be an overloaded built-in as well.
@@ -5927,11 +5943,15 @@ TIntermTyped *TParseContext::addNonConstructorFunctionCall(TFunctionLookup *fnCa
         }
 
         symbol = symbolTable.findBuiltIn(fnCall->getMangledName(), mShaderVersion);
-        if (symbol == nullptr)
+
+        if (symbol == nullptr && IsDesktopGLSpec(mShaderSpec))
         {
-            error(loc, "no matching overloaded function found", fnCall->name());
+            // If using Desktop GL spec, need to check for implicit conversion
+            symbol = symbolTable.findBuiltInWithConversion(
+                fnCall->getMangledNamesForImplicitConversions(), mShaderVersion);
         }
-        else
+
+        if (symbol != nullptr)
         {
             // A built-in function.
             ASSERT(symbol->symbolType() == SymbolType::BuiltIn);
@@ -5978,6 +5998,10 @@ TIntermTyped *TParseContext::addNonConstructorFunctionCall(TFunctionLookup *fnCa
             checkImageMemoryAccessForBuiltinFunctions(callNode);
             functionCallRValueLValueErrorCheck(fnCandidate, callNode);
             return callNode;
+        }
+        else
+        {
+            error(loc, "no matching overloaded function found", fnCall->name());
         }
     }
 

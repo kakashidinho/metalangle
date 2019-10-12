@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2012-2014 The ANGLE Project Authors. All rights reserved.
+// Copyright 2012 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -34,6 +34,7 @@ using angle::CheckedNumeric;
 
 namespace rx
 {
+
 VendorID GetVendorID(const FunctionsGL *functions)
 {
     std::string nativeVendorString(reinterpret_cast<const char *>(functions->getString(GL_VENDOR)));
@@ -470,11 +471,17 @@ void GenerateCaps(const FunctionsGL *functions,
         textureSizeLimit = 4096;
     }
 
+    GLint max3dArrayTextureSizeLimit = std::numeric_limits<GLint>::max();
+    if (features.limitMax3dArrayTextureSizeTo1024.enabled)
+    {
+        max3dArrayTextureSizeLimit = 1024;
+    }
+
     if (functions->isAtLeastGL(gl::Version(1, 2)) || functions->isAtLeastGLES(gl::Version(3, 0)) ||
         functions->hasGLESExtension("GL_OES_texture_3D"))
     {
-        caps->max3DTextureSize =
-            std::min(QuerySingleGLInt(functions, GL_MAX_3D_TEXTURE_SIZE), textureSizeLimit);
+        caps->max3DTextureSize = std::min({QuerySingleGLInt(functions, GL_MAX_3D_TEXTURE_SIZE),
+                                           textureSizeLimit, max3dArrayTextureSizeLimit});
     }
     else
     {
@@ -493,7 +500,8 @@ void GenerateCaps(const FunctionsGL *functions,
         functions->isAtLeastGLES(gl::Version(3, 0)))
     {
         caps->maxArrayTextureLayers =
-            std::min(QuerySingleGLInt(functions, GL_MAX_ARRAY_TEXTURE_LAYERS), textureSizeLimit);
+            std::min({QuerySingleGLInt(functions, GL_MAX_ARRAY_TEXTURE_LAYERS), textureSizeLimit,
+                      max3dArrayTextureSizeLimit});
     }
     else
     {
@@ -956,13 +964,7 @@ void GenerateCaps(const FunctionsGL *functions,
         LimitVersion(maxSupportedESVersion, gl::Version(3, 0));
     }
 
-    // OpenGL 4.2 is required for GL_ARB_compute_shader, some platform drivers have the extension,
-    // but their maximum supported GL versions are less than 4.2. Explicitly limit the minimum
-    // GL version to 4.2.
-    if (functions->isAtLeastGL(gl::Version(4, 3)) || functions->isAtLeastGLES(gl::Version(3, 1)) ||
-        (functions->isAtLeastGL(gl::Version(4, 2)) &&
-         functions->hasGLExtension("GL_ARB_compute_shader") &&
-         functions->hasGLExtension("GL_ARB_shader_storage_buffer_object")))
+    if (nativegl::SupportsCompute(functions))
     {
         for (GLuint index = 0u; index < 3u; ++index)
         {
@@ -1084,6 +1086,9 @@ void GenerateCaps(const FunctionsGL *functions,
 
     // Extension support
     extensions->setTextureExtensionSupport(*textureCapsMap);
+    extensions->textureCompressionASTCHDRKHR =
+        extensions->textureCompressionASTCLDRKHR &&
+        functions->hasGLESExtension("GL_KHR_texture_compression_astc_hdr");
     extensions->elementIndexUint = functions->standard == STANDARD_GL_DESKTOP ||
                                    functions->isAtLeastGLES(gl::Version(3, 0)) ||
                                    functions->hasGLESExtension("GL_OES_element_index_uint");
@@ -1393,7 +1398,13 @@ void GenerateCaps(const FunctionsGL *functions,
     extensions->floatBlend = functions->standard == STANDARD_GL_DESKTOP ||
                              functions->hasGLESExtension("GL_EXT_float_blend");
 
-    // GL_CHROMIUM_compressed_texture_etc
+    // ANGLE_base_vertex_base_instance
+    extensions->baseVertexBaseInstance =
+        functions->isAtLeastGL(gl::Version(3, 2)) || functions->isAtLeastGLES(gl::Version(3, 2)) ||
+        functions->hasGLESExtension("GL_OES_draw_elements_base_vertex") ||
+        functions->hasGLESExtension("GL_EXT_draw_elements_base_vertex");
+
+    // ANGLE_compressed_texture_etc
     // Expose this extension only when we support the formats or we're running on top of a native
     // ES driver.
     extensions->compressedTextureETC = functions->standard == STANDARD_GL_ES &&
@@ -1415,119 +1426,173 @@ void GenerateCaps(const FunctionsGL *functions,
     extensions->texture3DOES               = functions->isAtLeastGL(gl::Version(1, 2)) ||
                                functions->isAtLeastGLES(gl::Version(3, 0)) ||
                                functions->hasGLESExtension("GL_OES_texture_3D");
+
+    extensions->memoryObject = functions->hasGLExtension("GL_EXT_memory_object") ||
+                               functions->hasGLESExtension("GL_EXT_memory_object");
+    extensions->semaphore = functions->hasGLExtension("GL_EXT_semaphore") ||
+                            functions->hasGLESExtension("GL_EXT_semaphore");
+    extensions->memoryObjectFd = functions->hasGLExtension("GL_EXT_memory_object_fd") ||
+                                 functions->hasGLESExtension("GL_EXT_memory_object_fd");
+    extensions->semaphoreFd = functions->hasGLExtension("GL_EXT_semaphore_fd") ||
+                              functions->hasGLESExtension("GL_EXT_semaphore_fd");
 }
 
 void InitializeFeatures(const FunctionsGL *functions, angle::FeaturesGL *features)
 {
     VendorID vendor = GetVendorID(functions);
     uint32_t device = GetDeviceID(functions);
+    bool isAMD      = IsAMD(vendor);
+    bool isIntel    = IsIntel(vendor);
+    bool isNvidia   = IsNvidia(vendor);
+    bool isQualcomm = IsQualcomm(vendor);
 
-    // Don't use 1-bit alpha formats on desktop GL with AMD or Intel drivers.
-    features->avoid1BitAlphaTextureFormats.enabled =
-        functions->standard == STANDARD_GL_DESKTOP && (IsAMD(vendor));
+    // Don't use 1-bit alpha formats on desktop GL with AMD drivers.
+    ANGLE_FEATURE_CONDITION(features, avoid1BitAlphaTextureFormats,
+                            functions->standard == STANDARD_GL_DESKTOP && isAMD)
 
-    features->rgba4IsNotSupportedForColorRendering.enabled =
-        functions->standard == STANDARD_GL_DESKTOP && IsIntel(vendor);
+    ANGLE_FEATURE_CONDITION(features, rgba4IsNotSupportedForColorRendering,
+                            functions->standard == STANDARD_GL_DESKTOP && isIntel)
 
-    features->emulateAbsIntFunction.enabled = IsIntel(vendor);
+    ANGLE_FEATURE_CONDITION(features, emulateAbsIntFunction, isIntel)
 
-    features->addAndTrueToLoopCondition.enabled = IsIntel(vendor);
+    ANGLE_FEATURE_CONDITION(features, addAndTrueToLoopCondition, isIntel)
 
-    features->emulateIsnanFloat.enabled = IsIntel(vendor);
+    ANGLE_FEATURE_CONDITION(features, emulateIsnanFloat, isIntel)
 
-    features->doesSRGBClearsOnLinearFramebufferAttachments.enabled =
-        functions->standard == STANDARD_GL_DESKTOP && (IsIntel(vendor) || IsAMD(vendor));
+    ANGLE_FEATURE_CONDITION(features, doesSRGBClearsOnLinearFramebufferAttachments,
+                            functions->standard == STANDARD_GL_DESKTOP && (isIntel || isAMD))
 
-    features->emulateMaxVertexAttribStride.enabled =
-        IsLinux() && functions->standard == STANDARD_GL_DESKTOP && IsAMD(vendor);
-    features->useUnusedBlocksWithStandardOrSharedLayout.enabled = IsLinux() && IsAMD(vendor);
+    ANGLE_FEATURE_CONDITION(features, emulateMaxVertexAttribStride,
+                            IsLinux() && functions->standard == STANDARD_GL_DESKTOP && isAMD)
+    ANGLE_FEATURE_CONDITION(
+        features, useUnusedBlocksWithStandardOrSharedLayout,
+        (IsApple() && functions->standard == STANDARD_GL_DESKTOP) || (IsLinux() && isAMD))
 
-    features->doWhileGLSLCausesGPUHang.enabled                  = IsApple();
-    features->useUnusedBlocksWithStandardOrSharedLayout.enabled = IsApple();
-    features->rewriteFloatUnaryMinusOperator.enabled            = IsApple() && IsIntel(vendor);
+    ANGLE_FEATURE_CONDITION(features, doWhileGLSLCausesGPUHang, IsApple())
+    ANGLE_FEATURE_CONDITION(features, rewriteFloatUnaryMinusOperator, IsApple() && isIntel)
+
+    ANGLE_FEATURE_CONDITION(features, addBaseVertexToVertexID, IsApple() && isAMD)
 
     // Triggers a bug on Marshmallow Adreno (4xx?) driver.
     // http://anglebug.com/2046
-    features->dontInitializeUninitializedLocals.enabled = IsAndroid() && IsQualcomm(vendor);
+    ANGLE_FEATURE_CONDITION(features, dontInitializeUninitializedLocals, IsAndroid() && isQualcomm)
 
-    features->finishDoesNotCauseQueriesToBeAvailable.enabled =
-        functions->standard == STANDARD_GL_DESKTOP && IsNvidia(vendor);
+    ANGLE_FEATURE_CONDITION(features, finishDoesNotCauseQueriesToBeAvailable,
+                            functions->standard == STANDARD_GL_DESKTOP && isNvidia)
 
     // TODO(cwallez): Disable this workaround for MacOSX versions 10.9 or later.
-    features->alwaysCallUseProgramAfterLink.enabled = true;
+    ANGLE_FEATURE_CONDITION(features, alwaysCallUseProgramAfterLink, true)
 
-    features->unpackOverlappingRowsSeparatelyUnpackBuffer.enabled = IsNvidia(vendor);
-    features->packOverlappingRowsSeparatelyPackBuffer.enabled     = IsNvidia(vendor);
+    ANGLE_FEATURE_CONDITION(features, unpackOverlappingRowsSeparatelyUnpackBuffer, isNvidia)
+    ANGLE_FEATURE_CONDITION(features, packOverlappingRowsSeparatelyPackBuffer, isNvidia)
 
-    features->initializeCurrentVertexAttributes.enabled = IsNvidia(vendor);
+    ANGLE_FEATURE_CONDITION(features, initializeCurrentVertexAttributes, isNvidia)
 
-    features->unpackLastRowSeparatelyForPaddingInclusion.enabled = IsApple() || IsNvidia(vendor);
-    features->packLastRowSeparatelyForPaddingInclusion.enabled   = IsApple() || IsNvidia(vendor);
+    ANGLE_FEATURE_CONDITION(features, unpackLastRowSeparatelyForPaddingInclusion,
+                            IsApple() || isNvidia)
+    ANGLE_FEATURE_CONDITION(features, packLastRowSeparatelyForPaddingInclusion,
+                            IsApple() || isNvidia)
 
-    features->removeInvariantAndCentroidForESSL3.enabled =
-        functions->isAtMostGL(gl::Version(4, 1)) ||
-        (functions->standard == STANDARD_GL_DESKTOP && IsAMD(vendor));
+    ANGLE_FEATURE_CONDITION(features, removeInvariantAndCentroidForESSL3,
+                            functions->isAtMostGL(gl::Version(4, 1)) ||
+                                (functions->standard == STANDARD_GL_DESKTOP && isAMD))
 
     // TODO(oetuaho): Make this specific to the affected driver versions. Versions that came after
     // 364 are known to be affected, at least up to 375.
-    features->emulateAtan2Float.enabled = IsNvidia(vendor);
+    ANGLE_FEATURE_CONDITION(features, emulateAtan2Float, isNvidia)
 
-    features->reapplyUBOBindingsAfterUsingBinaryProgram.enabled = IsAMD(vendor);
+    ANGLE_FEATURE_CONDITION(features, reapplyUBOBindingsAfterUsingBinaryProgram,
+                            isAMD || IsAndroid())
 
-    features->rewriteVectorScalarArithmetic.enabled = IsNvidia(vendor);
+    ANGLE_FEATURE_CONDITION(features, rewriteVectorScalarArithmetic, isNvidia)
 
     // TODO(oetuaho): Make this specific to the affected driver versions. Versions at least up to
     // 390 are known to be affected. Versions after that are expected not to be affected.
-    features->clampFragDepth.enabled = IsNvidia(vendor);
+    ANGLE_FEATURE_CONDITION(features, clampFragDepth, isNvidia)
 
     // TODO(oetuaho): Make this specific to the affected driver versions. Versions since 397.31 are
     // not affected.
-    features->rewriteRepeatedAssignToSwizzled.enabled = IsNvidia(vendor);
+    ANGLE_FEATURE_CONDITION(features, rewriteRepeatedAssignToSwizzled, isNvidia)
 
     // TODO(jmadill): Narrow workaround range for specific devices.
-    features->reapplyUBOBindingsAfterUsingBinaryProgram.enabled = IsAndroid();
 
-    features->clampPointSize.enabled = IsAndroid() || IsNvidia(vendor);
+    ANGLE_FEATURE_CONDITION(features, clampPointSize, IsAndroid() || isNvidia)
 
-    features->dontUseLoopsToInitializeVariables.enabled = IsAndroid() && !IsNvidia(vendor);
+    ANGLE_FEATURE_CONDITION(features, dontUseLoopsToInitializeVariables, IsAndroid() && !isNvidia)
 
-    features->disableBlendFuncExtended.enabled = IsAMD(vendor) || IsIntel(vendor);
+    ANGLE_FEATURE_CONDITION(features, disableBlendFuncExtended, isAMD || isIntel)
 
-    features->unsizedsRGBReadPixelsDoesntTransform.enabled = IsAndroid() && IsQualcomm(vendor);
+    ANGLE_FEATURE_CONDITION(features, unsizedsRGBReadPixelsDoesntTransform,
+                            IsAndroid() && isQualcomm)
 
-    features->queryCounterBitsGeneratesErrors.enabled = IsNexus5X(vendor, device);
+    ANGLE_FEATURE_CONDITION(features, queryCounterBitsGeneratesErrors, IsNexus5X(vendor, device))
 
-    features->dontRelinkProgramsInParallel.enabled =
-        IsAndroid() || (IsWindows() && IsIntel(vendor));
+    ANGLE_FEATURE_CONDITION(features, dontRelinkProgramsInParallel,
+                            IsAndroid() || (IsWindows() && isIntel))
 
     // TODO(jie.a.chen@intel.com): Clean up the bugs.
     // anglebug.com/3031
     // crbug.com/922936
-    features->disableWorkerContexts.enabled =
-        (IsWindows() && (IsIntel(vendor) || IsAMD(vendor))) || (IsLinux() && IsNvidia(vendor));
+    ANGLE_FEATURE_CONDITION(features, disableWorkerContexts,
+                            (IsWindows() && (isIntel || isAMD)) || (IsLinux() && isNvidia))
 
-    features->limitMaxTextureSizeTo4096.enabled = IsAndroid();
-    features->limitMaxMSAASamplesTo4.enabled    = IsAndroid();
+    ANGLE_FEATURE_CONDITION(features, limitMaxTextureSizeTo4096,
+                            IsAndroid() || (isIntel && IsLinux()))
+    ANGLE_FEATURE_CONDITION(features, limitMaxMSAASamplesTo4, IsAndroid())
+    ANGLE_FEATURE_CONDITION(features, limitMax3dArrayTextureSizeTo1024, isIntel && IsLinux())
 
-    features->allowClearForRobustResourceInit.enabled = IsApple();
+    ANGLE_FEATURE_CONDITION(features, allowClearForRobustResourceInit, IsApple())
 
     // The WebGL conformance/uniforms/out-of-bounds-uniform-array-access test has been seen to fail
     // on AMD and Android devices.
-    features->clampArrayAccess.enabled = IsAndroid() || IsAMD(vendor);
+    ANGLE_FEATURE_CONDITION(features, clampArrayAccess, IsAndroid() || isAMD)
+
+    ANGLE_FEATURE_CONDITION(features, resetTexImage2DBaseLevel,
+                            IsApple() && isIntel && GetMacOSVersion() >= OSVersion(10, 12, 4))
+
+    ANGLE_FEATURE_CONDITION(features, clearToZeroOrOneBroken,
+                            IsApple() && isIntel && GetMacOSVersion() < OSVersion(10, 12, 6))
+
+    ANGLE_FEATURE_CONDITION(features, adjustSrcDstRegionBlitFramebuffer,
+                            IsLinux() || (IsAndroid() && isNvidia) || (IsWindows() && isNvidia))
+
+    ANGLE_FEATURE_CONDITION(features, clipSrcRegionBlitFramebuffer, IsApple())
+
+    ANGLE_FEATURE_CONDITION(features, resettingTexturesGeneratesErrors,
+                            IsApple() || (IsWindows() && isAMD))
+
+    ANGLE_FEATURE_CONDITION(features, rgbDXT1TexturesSampleZeroAlpha, IsApple())
+
+    ANGLE_FEATURE_CONDITION(features, unfoldShortCircuits, IsApple())
 }
 
 void InitializeFrontendFeatures(const FunctionsGL *functions, angle::FrontendFeatures *features)
 {
     VendorID vendor = GetVendorID(functions);
+    bool isIntel    = IsIntel(vendor);
+    bool isQualcomm = IsQualcomm(vendor);
 
-    features->disableProgramCachingForTransformFeedback.enabled = IsAndroid() && IsQualcomm(vendor);
-    features->syncFramebufferBindingsOnTexImage.enabled         = IsWindows() && IsIntel(vendor);
+    ANGLE_FEATURE_CONDITION(features, disableProgramCachingForTransformFeedback,
+                            IsAndroid() && isQualcomm)
+    ANGLE_FEATURE_CONDITION(features, syncFramebufferBindingsOnTexImage, IsWindows() && isIntel)
 }
 
 }  // namespace nativegl_gl
 
 namespace nativegl
 {
+bool SupportsCompute(const FunctionsGL *functions)
+{
+    // OpenGL 4.2 is required for GL_ARB_compute_shader, some platform drivers have the extension,
+    // but their maximum supported GL versions are less than 4.2. Explicitly limit the minimum
+    // GL version to 4.2.
+    return (functions->isAtLeastGL(gl::Version(4, 3)) ||
+            functions->isAtLeastGLES(gl::Version(3, 1)) ||
+            (functions->isAtLeastGL(gl::Version(4, 2)) &&
+             functions->hasGLExtension("GL_ARB_compute_shader") &&
+             functions->hasGLExtension("GL_ARB_shader_storage_buffer_object")));
+}
+
 bool SupportsFenceSync(const FunctionsGL *functions)
 {
     return functions->isAtLeastGL(gl::Version(3, 2)) || functions->hasGLExtension("GL_ARB_sync") ||
@@ -1625,6 +1690,47 @@ GLenum GetTextureBindingQuery(gl::TextureType textureType)
     }
 }
 
+GLenum GetBufferBindingQuery(gl::BufferBinding bufferBinding)
+{
+    switch (bufferBinding)
+    {
+        case gl::BufferBinding::Array:
+            return GL_ARRAY_BUFFER_BINDING;
+        case gl::BufferBinding::AtomicCounter:
+            return GL_ATOMIC_COUNTER_BUFFER_BINDING;
+        case gl::BufferBinding::CopyRead:
+            return GL_COPY_READ_BUFFER_BINDING;
+        case gl::BufferBinding::CopyWrite:
+            return GL_COPY_WRITE_BUFFER_BINDING;
+        case gl::BufferBinding::DispatchIndirect:
+            return GL_DISPATCH_INDIRECT_BUFFER_BINDING;
+        case gl::BufferBinding::DrawIndirect:
+            return GL_DRAW_INDIRECT_BUFFER_BINDING;
+        case gl::BufferBinding::ElementArray:
+            return GL_ELEMENT_ARRAY_BUFFER_BINDING;
+        case gl::BufferBinding::PixelPack:
+            return GL_PIXEL_PACK_BUFFER_BINDING;
+        case gl::BufferBinding::PixelUnpack:
+            return GL_PIXEL_UNPACK_BUFFER_BINDING;
+        case gl::BufferBinding::ShaderStorage:
+            return GL_SHADER_STORAGE_BUFFER_BINDING;
+        case gl::BufferBinding::TransformFeedback:
+            return GL_TRANSFORM_FEEDBACK_BUFFER_BINDING;
+        case gl::BufferBinding::Uniform:
+            return GL_UNIFORM_BUFFER_BINDING;
+        default:
+            UNREACHABLE();
+            return 0;
+    }
+}
+
+std::string GetBufferBindingString(gl::BufferBinding bufferBinding)
+{
+    std::ostringstream os;
+    os << bufferBinding << "_BINDING";
+    return os.str();
+}
+
 }  // namespace nativegl
 
 const FunctionsGL *GetFunctionsGL(const gl::Context *context)
@@ -1650,6 +1756,52 @@ ClearMultiviewGL *GetMultiviewClearer(const gl::Context *context)
 const angle::FeaturesGL &GetFeaturesGL(const gl::Context *context)
 {
     return GetImplAs<ContextGL>(context)->getFeaturesGL();
+}
+
+void ClearErrors(const gl::Context *context,
+                 const char *file,
+                 const char *function,
+                 unsigned int line)
+{
+    const FunctionsGL *functions = GetFunctionsGL(context);
+
+    GLenum error = functions->getError();
+    while (error != GL_NO_ERROR)
+    {
+        ERR() << "Preexisting GL error " << gl::FmtHex(error) << " as of " << file << ", "
+              << function << ":" << line << ". ";
+        error = functions->getError();
+    }
+}
+
+angle::Result CheckError(const gl::Context *context,
+                         const char *call,
+                         const char *file,
+                         const char *function,
+                         unsigned int line)
+{
+    const FunctionsGL *functions = GetFunctionsGL(context);
+
+    GLenum error = functions->getError();
+    if (ANGLE_UNLIKELY(error != GL_NO_ERROR))
+    {
+        ContextGL *contextGL = GetImplAs<ContextGL>(context);
+        contextGL->handleError(error, "Unexpected driver error.", file, function, line);
+        ERR() << "GL call " << call << " generated error " << gl::FmtHex(error) << " in " << file
+              << ", " << function << ":" << line << ". ";
+
+        // Check that only one GL error was generated, ClearErrors should have been called first
+        GLenum nextError = functions->getError();
+        while (nextError != GL_NO_ERROR)
+        {
+            ERR() << "Additional GL error " << gl::FmtHex(nextError) << " generated.";
+            nextError = functions->getError();
+        }
+
+        return angle::Result::Stop;
+    }
+
+    return angle::Result::Continue;
 }
 
 bool CanMapBufferForRead(const FunctionsGL *functions)

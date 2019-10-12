@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2015 The ANGLE Project Authors. All rights reserved.
+// Copyright 2015 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -86,7 +86,7 @@ TEST_P(EGLQueryContextTest, GetClientVersion)
     EGLint clientVersion;
     EXPECT_TRUE(eglQueryContext(mDisplay, mContext, EGL_CONTEXT_CLIENT_VERSION, &clientVersion) !=
                 EGL_FALSE);
-    EXPECT_TRUE(clientVersion == GetParam().majorVersion);
+    EXPECT_GE(clientVersion, GetParam().majorVersion);
 }
 
 TEST_P(EGLQueryContextTest, GetRenderBufferNoSurface)

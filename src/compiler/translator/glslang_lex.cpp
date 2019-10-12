@@ -1,6 +1,6 @@
 #line 17 "./glslang.l"
 //
-// Copyright (c) 2012-2013 The ANGLE Project Authors. All rights reserved.
+// Copyright 2012 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
@@ -24,9 +24,15 @@
 #pragma warning(disable: 4702)
 #endif
 #if defined(__clang__)
-#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+#pragma clang diagnostic ignored "-Wimplicit-fallthrough"
+#if defined(__APPLE__)
+// Older clang versions don't have -Wextra-semi-stmt, and detecting Apple clang versions is
+// difficult because they use different yet overlapping version numbers vs. regular clang.
+#pragma clang diagnostic ignored "-Wunknown-warning-option"
+#endif
 // Flex isn't semi-colon clean.
 #pragma clang diagnostic ignored "-Wextra-semi-stmt"
+#pragma clang diagnostic ignored "-Wunreachable-code"
 #endif
 
 
@@ -1172,7 +1178,7 @@ static const flex_int32_t yy_rule_can_match_eol[248] =
 #define YY_RESTORE_YY_MORE_OFFSET
 /*
 //
-// Copyright (c) 2002-2013 The ANGLE Project Authors. All rights reserved.
+// Copyright 2002 The ANGLE Project Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //

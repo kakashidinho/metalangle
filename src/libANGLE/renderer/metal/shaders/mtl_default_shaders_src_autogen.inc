@@ -1,4 +1,4 @@
-// GENERATED FILE on 2019-10-08 15:06:44.744138 - DO NOT EDIT.
+// GENERATED FILE on 2019-10-08 16:10:33.558799 - DO NOT EDIT.
 
 
 static const char default_metallib_src[] = R"(
@@ -29,27 +29,14 @@ static const char default_metallib_src[] = R"(
 using namespace metal;
 
 
-constant float2 gCorners[6] =
-{
-    float2(-1.0f, 1.0f),
-    float2( 1.0f, -1.0f),
-    float2(-1.0f, -1.0f),
-    float2(-1.0f, 1.0f),
-    float2( 1.0f, 1.0f),
-    float2( 1.0f, -1.0f),
+constant float2 gCorners[6] = {
+    float2(-1.0f, 1.0f), float2(1.0f, -1.0f), float2(-1.0f, -1.0f),
+    float2(-1.0f, 1.0f), float2(1.0f, 1.0f), float2(1.0f, -1.0f),
 };
 
 
 
-constant int gTexcoordsIndices[6] =
-{
-    2,
-    1,
-    0,
-    2,
-    3,
-    1
-};
+constant int gTexcoordsIndices[6] = {2, 1, 0, 2, 3, 1};
 
 fragment float4 dummyFS()
 {
