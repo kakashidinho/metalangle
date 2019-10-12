@@ -3,11 +3,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
+// mtl_utils.h:
+//    Declares utilities functions that create Metal shaders, convert from angle enums
+//    to Metal enums and so on.
+//
 
 #ifndef LIBANGLE_RENDERER_METAL_MTL_UTILS_H_
 #define LIBANGLE_RENDERER_METAL_MTL_UTILS_H_
 
-#include "libANGLE/renderer/metal/Metal_platform.h"
+#import <Metal/Metal.h>
 
 #include "angle_gl.h"
 #include "common/PackedEnums.h"
@@ -93,13 +97,6 @@ MTLIndexType GetIndexType(gl::DrawElementsType type);
 // Useful to set clear color for texture originally having no alpha in GL, but backend's format
 // has alpha channel.
 MTLClearColor EmulatedAlphaClearColor(MTLClearColor color, MTLColorWriteMask colorMask);
-
-// Work-around ARC limitations.
-// This will be no-op if the input pointer (value of *poolInOut) is already non-null.
-typedef void *AutoReleasePoolRef;
-AutoReleasePoolRef InitAutoreleasePool(AutoReleasePoolRef *poolInOut);
-// This will be no-op if the input pointer (value of *poolInOut) is null.
-void ReleaseAutoreleasePool(AutoReleasePoolRef *poolInOut);
 
 NS_ASSUME_NONNULL_END
 }  // namespace mtl

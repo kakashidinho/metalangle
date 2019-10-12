@@ -3,6 +3,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
+// CompilerMtl.mm:
+//    Implements the class methods for CompilerMtl.
+//
 
 #include "libANGLE/renderer/metal/CompilerMtl.h"
 

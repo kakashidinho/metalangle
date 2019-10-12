@@ -1,8 +1,9 @@
 //
-// Copyright (c) 2019 The ANGLE Project. All rights reserved.
+// Copyright 2019 The ANGLE Project. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
+// blit.metal: Implements blitting texture content to current frame buffer.
 
 #include "common.h"
 
@@ -13,7 +14,7 @@ struct BlitParams
     float2 srcTexCoords[4];
     int srcLevel;
     bool srcLuminance; // source texture is luminance texture
-    bool dstFlipY;
+    bool dstFlipViewportY;
     bool dstLuminance; // destination texture is luminance;
 };
 
@@ -30,9 +31,11 @@ vertex BlitVSOut blitVS(unsigned int vid [[ vertex_id ]],
     output.position = float4(gCorners[vid], 0.0, 1.0);
     output.texCoords = options.srcTexCoords[gTexcoordsIndices[vid]];
 
-    if (options.dstFlipY)
+    if (!options.dstFlipViewportY)
     {
-        output.position = -output.position;
+        // If viewport is not flipped, we have to flip Y in normalized device coordinates.
+        // Since NDC has Y is opposite direction of viewport coodrinates.
+        output.position.y = -output.position.y;
     }
 
     return output;

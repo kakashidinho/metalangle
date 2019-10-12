@@ -3,6 +3,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
+// mtl_utils.mm:
+//    Implements utilities functions that create Metal shaders, convert from angle enums
+//    to Metal enums and so on.
+//
 
 #include "libANGLE/renderer/metal/mtl_utils.h"
 
@@ -496,31 +500,6 @@ MTLClearColor EmulatedAlphaClearColor(MTLClearColor color, MTLColorWriteMask col
 
     return re;
 }
-
-#if !__has_feature(objc_arc)
-AutoReleasePoolRef InitAutoreleasePool(AutoReleasePoolRef *poolInOut)
-{
-    if (*poolInOut)
-    {
-        return *poolInOut;
-    }
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-
-    return *poolInOut = (__bridge void *)pool;
-}
-void ReleaseAutoreleasePool(AutoReleasePoolRef *poolInOut)
-{
-    auto &pool = *poolInOut;
-    if (!pool)
-    {
-        return;
-    }
-    NSAutoreleasePool *arpool = (__bridge NSAutoreleasePool *)pool;
-
-    [arpool release];
-    pool = nullptr;
-}
-#endif  // #if !__has_feature(objc_arc)
 
 }  // namespace mtl
 }  // namespace rx

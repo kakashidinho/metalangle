@@ -3,6 +3,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
+// mtl_command_buffer.mm:
+//      Implementations of Metal framework's MTLCommandBuffer, MTLCommandQueue,
+//      MTLCommandEncoder's wrappers.
+//
 
 #include "libANGLE/renderer/metal/mtl_command_buffer.h"
 
@@ -11,7 +15,7 @@
 #include "common/debug.h"
 #include "libANGLE/renderer/metal/mtl_resources.h"
 
-#if 0 && !defined(NDEBUG)
+#if defined(ANGLE_MTL_ENABLE_TRACE)
 #    define ANGLE_MTL_CMD_LOG(...) NSLog(@__VA_ARGS__)
 #else
 #    define ANGLE_MTL_CMD_LOG(...) (void)0
@@ -538,7 +542,7 @@ RenderCommandEncoder &RenderCommandEncoder::setRenderPipelineState(id<MTLRenderP
 {
     [get() setRenderPipelineState:state];
 
-    mStateCache.renderPipelineState = state;
+    mStateCache.renderPipelineState.retainAssign(state);
 
     return *this;
 }
@@ -571,7 +575,7 @@ RenderCommandEncoder &RenderCommandEncoder::setDepthStencilState(id<MTLDepthSten
 {
     [get() setDepthStencilState:state];
 
-    mStateCache.depthStencilState = state;
+    mStateCache.depthStencilState.retainAssign(state);
 
     return *this;
 }
@@ -687,7 +691,7 @@ RenderCommandEncoder &RenderCommandEncoder::setVertexSamplerState(id<MTLSamplerS
 
     mStateCache.vertexSamplers[index].lodMinClamp = lodMinClamp;
     mStateCache.vertexSamplers[index].lodMaxClamp = lodMaxClamp;
-    mStateCache.vertexSamplers[index].stateObject = state;
+    mStateCache.vertexSamplers[index].stateObject.retainAssign(state);
 
     return *this;
 }
@@ -759,7 +763,7 @@ RenderCommandEncoder &RenderCommandEncoder::setFragmentSamplerState(id<MTLSample
 
     mStateCache.fragmentSamplers[index].lodMinClamp = lodMinClamp;
     mStateCache.fragmentSamplers[index].lodMaxClamp = lodMaxClamp;
-    mStateCache.fragmentSamplers[index].stateObject = state;
+    mStateCache.fragmentSamplers[index].stateObject.retainAssign(state);
 
     return *this;
 }

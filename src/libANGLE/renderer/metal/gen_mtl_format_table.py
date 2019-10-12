@@ -5,7 +5,7 @@
 #
 # gen_mtl_format_table.py:
 #  Code generation for Metal format map.
-#  TODO(hqle): don't run this script directly. Run scripts/run_code_generation.py.
+#  NOTE: don't run this script directly. Run scripts/run_code_generation.py.
 #
 
 from datetime import date
@@ -28,10 +28,11 @@ template_autogen_inl = """// GENERATED FILE - DO NOT EDIT.
 // Metal Format table:
 //   Conversion from ANGLE format to Metal format.
 
-#include "libANGLE/renderer/metal/Metal_platform.h"
+#import <Metal/Metal.h>
 #include <TargetConditionals.h>
 
 #include "libANGLE/renderer/Format.h"
+#include "libANGLE/renderer/metal/RendererMtl.h"
 #include "libANGLE/renderer/metal/mtl_format_utils.h"
 
 namespace rx
@@ -39,47 +40,25 @@ namespace rx
 namespace mtl
 {{
 
-void Format::init(angle::FormatID intendedFormatId_)
+void Format::init(const RendererMtl *renderer, angle::FormatID intendedFormatId_)
 {{
     this->intendedFormatId = intendedFormatId_;
 
-    // Override the unsupported format
-    switch (this->intendedFormatId)
-    {{
-{angle_image_format_override_switch}
-    }}
+    id<MTLDevice> metalDevice = renderer->getMetalDevice();
 
     // Actual conversion
-    switch (this->actualFormatId)
+    switch (this->intendedFormatId)
     {{
 {angle_image_format_switch}
     }}
 }}
 
-void VertexFormat::init(angle::FormatID angleFormatId, bool forStreaming)
+void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
 {{
     this->intendedFormatId = angleFormatId;
 
-    // Override the unsupported format
-    switch (this->intendedFormatId)
-    {{
-{angle_vertex_format_override_switch}
-    }}
-
-    if (!forStreaming)
-    {{
-        goto conversion;
-    }}
-
-    // Override the unsupported format for streaming
-    switch (this->intendedFormatId)
-    {{
-{angle_vertex_format_streaming_override_switch}
-    }}
-
-conversion:
     // Actual conversion
-    switch (this->actualFormatId)
+    switch (this->intendedFormatId)
     {{
 {angle_vertex_format_switch}
     }}
@@ -89,30 +68,47 @@ conversion:
 }}  // namespace rx
 """
 
-case_image_format_override_template = """        case angle::FormatID::{angle_format}:
-            this->actualFormatId = angle::FormatID::{override_format};
+case_image_format_template1 = """        case angle::FormatID::{angle_format}:
+            this->metalFormat = {mtl_format};
+            this->actualFormatId = angle::FormatID::{actual_angle_format};
             break;
 
 """
 
-case_image_format_template = """        case angle::FormatID::{angle_format}:
-            this->metalFormat = {mtl_format};
-            break;
-
-"""
-
-case_vertex_format_override_template = """        case angle::FormatID::{angle_format}:
-            this->actualFormatId = angle::FormatID::{override_format};
-            this->vertexLoadFunction = {vertex_copy_function};
-            // Skip streaming format override step
-            goto conversion;
-
-"""
-
-case_vertex_format_template = """        case angle::FormatID::{angle_format}:
-            this->metalFormat = {mtl_format};
-            if (!this->vertexLoadFunction)
+case_image_format_template2 = """        case angle::FormatID::{angle_format}:
+            if (metalDevice.depth24Stencil8PixelFormatSupported)
             {{
+                this->metalFormat = {mtl_format};
+                this->actualFormatId = angle::FormatID::{actual_angle_format};
+            }}
+            else
+            {{
+                this->metalFormat = {mtl_format_fallback};
+                this->actualFormatId = angle::FormatID::{actual_angle_format_fallback};
+            }}
+            break;
+
+"""
+
+case_vertex_format_template1 = """        case angle::FormatID::{angle_format}:
+            this->metalFormat = {mtl_format};
+            this->actualFormatId = angle::FormatID::{actual_angle_format};
+            this->vertexLoadFunction = {vertex_copy_function};
+            break;
+
+"""
+
+case_vertex_format_template2 = """        case angle::FormatID::{angle_format}:
+            if (tightlyPacked)
+            {{
+                this->metalFormat = {mtl_format_packed};
+                this->actualFormatId = angle::FormatID::{actual_angle_format_packed};
+                this->vertexLoadFunction = {vertex_copy_function_packed};
+            }}
+            else
+            {{
+                this->metalFormat = {mtl_format};
+                this->actualFormatId = angle::FormatID::{actual_angle_format};
                 this->vertexLoadFunction = {vertex_copy_function};
             }}
             break;
@@ -120,45 +116,98 @@ case_vertex_format_template = """        case angle::FormatID::{angle_format}:
 """
 
 
-def gen_image_override_switch_string(angle_override, mac_override, non_mac_override):
+def gen_image_map_switch_simple_case(angle_format, actual_angle_format, angle_to_mtl_map):
+    mtl_format = angle_to_mtl_map[actual_angle_format]
+    return case_image_format_template1.format(
+        angle_format=angle_format, actual_angle_format=actual_angle_format, mtl_format=mtl_format)
+
+
+def gen_image_map_switch_mac_case(angle_format, actual_angle_format, angle_to_mtl_map,
+                                  mac_specific_map, mac_fallbacks):
+    if actual_angle_format in mac_specific_map:
+        # look for the metal format in mac specific table
+        mtl_format = mac_specific_map[actual_angle_format]
+    else:
+        # look for the metal format in common table
+        mtl_format = angle_to_mtl_map[actual_angle_format]
+
+    if actual_angle_format in mac_fallbacks:
+        # This format requires fallback when depth24Stencil8PixelFormatSupported flag is false.
+        # Fallback format:
+        actual_angle_format_fallback = mac_fallbacks[actual_angle_format]
+        if actual_angle_format_fallback in mac_specific_map:
+            # look for the metal format in mac specific table
+            mtl_format_fallback = mac_specific_map[actual_angle_format_fallback]
+        else:
+            # look for the metal format in common table
+            mtl_format_fallback = angle_to_mtl_map[actual_angle_format_fallback]
+        # return if else block:
+        return case_image_format_template2.format(
+            angle_format=angle_format,
+            actual_angle_format=actual_angle_format,
+            mtl_format=mtl_format,
+            actual_angle_format_fallback=actual_angle_format_fallback,
+            mtl_format_fallback=mtl_format_fallback)
+    else:
+        # return ordinary block:
+        return case_image_format_template1.format(
+            angle_format=angle_format,
+            actual_angle_format=actual_angle_format,
+            mtl_format=mtl_format)
+
+
+def gen_image_map_switch_string(image_table):
+    angle_override = image_table["override"]
+    mac_override = image_table["override_mac"]
+    ios_override = image_table["override_ios"]
+    mac_fallbacks = image_table["fallbacks_mac"]
+    angle_to_mtl = image_table["map"]
+    mac_specific_map = image_table["map_mac"]
+    ios_specific_map = image_table["map_ios"]
+
     switch_data = ''
-    for angle_format in sorted(angle_override.keys()):
-        override_format = angle_override[angle_format]
-        switch_data += case_image_format_override_template.format(
-            angle_format=angle_format, override_format=override_format)
-    switch_data += "#if TARGET_OS_OSX\n"
-    for angle_format in sorted(mac_override.keys()):
-        override_format = mac_override[angle_format]
-        switch_data += case_image_format_override_template.format(
-            angle_format=angle_format, override_format=override_format)
 
-    switch_data += "#else  // TARGET_OS_OSX\n"
-    for angle_format in sorted(non_mac_override.keys()):
-        override_format = non_mac_override[angle_format]
-        switch_data += case_image_format_override_template.format(
-            angle_format=angle_format, override_format=override_format)
-    switch_data += "#endif\n"
-    switch_data += "        default:\n"
-    switch_data += "            this->actualFormatId = this->intendedFormatId;\n"
-    return switch_data
+    def gen_image_map_switch_common_case(angle_format, actual_angle_format):
+        mac_case = gen_image_map_switch_mac_case(angle_format, actual_angle_format, angle_to_mtl,
+                                                 mac_specific_map, mac_fallbacks)
+        non_mac_case = gen_image_map_switch_simple_case(angle_format, actual_angle_format,
+                                                        angle_to_mtl)
+        if mac_case == non_mac_case:
+            return mac_case
 
+        re = ''
+        re += "#if TARGET_OS_OSX\n"
+        re += mac_case
+        re += "#else  // TARGET_OS_OSX\n"
+        re += non_mac_case
+        re += "#endif  // TARGET_OS_OSX\n"
+        return re
 
-def gen_image_map_switch_string(angle_to_mtl, mac_specific_formats, ios_specific_formats):
-    switch_data = ''
+    # Common case
     for angle_format in sorted(angle_to_mtl.keys()):
-        mtl_format = angle_to_mtl[angle_format]
-        switch_data += case_image_format_template.format(
-            angle_format=angle_format, mtl_format=mtl_format)
+        switch_data += gen_image_map_switch_common_case(angle_format, angle_format)
+    for angle_format in sorted(angle_override.keys()):
+        switch_data += gen_image_map_switch_common_case(angle_format, angle_override[angle_format])
+
+    # Mac specific
     switch_data += "#if TARGET_OS_OSX\n"
-    for angle_format in sorted(mac_specific_formats.keys()):
-        mtl_format = mac_specific_formats[angle_format]
-        switch_data += case_image_format_template.format(
-            angle_format=angle_format, mtl_format=mtl_format)
-    switch_data += "#else  // TARGET_OS_OSX\n"
-    for angle_format in sorted(ios_specific_formats.keys()):
-        mtl_format = ios_specific_formats[angle_format]
-        switch_data += case_image_format_template.format(
-            angle_format=angle_format, mtl_format=mtl_format)
+    for angle_format in sorted(mac_specific_map.keys()):
+        switch_data += gen_image_map_switch_mac_case(angle_format, angle_format, angle_to_mtl,
+                                                     mac_specific_map, mac_fallbacks)
+    for angle_format in sorted(mac_override.keys()):
+        # overide case will always map to a format in common table, i.e. angle_to_mtl
+        switch_data += gen_image_map_switch_mac_case(angle_format, mac_override[angle_format],
+                                                     angle_to_mtl, mac_specific_map, mac_fallbacks)
+
+    # iOS specific
+    switch_data += "#elif TARGET_OS_IOS  // TARGET_OS_OSX\n"
+    for angle_format in sorted(ios_specific_map.keys()):
+        switch_data += gen_image_map_switch_simple_case(angle_format, angle_format,
+                                                        ios_specific_map)
+    for angle_format in sorted(ios_override.keys()):
+        # overide case will always map to a format in common table, i.e. angle_to_mtl
+        switch_data += gen_image_map_switch_simple_case(angle_format, ios_override[angle_format],
+                                                        angle_to_mtl)
     switch_data += "#endif  // TARGET_OS_OSX\n"
     switch_data += "        default:\n"
     switch_data += "            this->metalFormat = MTLPixelFormatInvalid;\n"
@@ -166,28 +215,46 @@ def gen_image_map_switch_string(angle_to_mtl, mac_specific_formats, ios_specific
     return switch_data
 
 
-def gen_vertex_override_switch_string(angle_override):
-    switch_data = ''
-    for angle_fmt in sorted(angle_override.keys()):
-        override_format = angle_override[angle_fmt]
-        copy_function = angle_format.get_vertex_copy_function(angle_fmt, override_format)
-        switch_data += case_vertex_format_override_template.format(
+def gen_vertex_map_switch_case(angle_fmt, actual_angle_fmt, angle_to_mtl_map, override_packed_map):
+    mtl_format = angle_to_mtl_map[actual_angle_fmt]
+    copy_function = angle_format.get_vertex_copy_function(angle_fmt, actual_angle_fmt)
+    if actual_angle_fmt in override_packed_map:
+        # This format has an override when used in tightly packed buffer,
+        # Return if else block
+        angle_fmt_packed = override_packed_map[actual_angle_fmt]
+        mtl_format_packed = angle_to_mtl_map[angle_fmt_packed]
+        copy_function_packed = angle_format.get_vertex_copy_function(angle_fmt, angle_fmt_packed)
+        return case_vertex_format_template2.format(
             angle_format=angle_fmt,
-            override_format=override_format,
+            mtl_format_packed=mtl_format_packed,
+            actual_angle_format_packed=angle_fmt_packed,
+            vertex_copy_function_packed=copy_function_packed,
+            mtl_format=mtl_format,
+            actual_angle_format=actual_angle_fmt,
             vertex_copy_function=copy_function)
-    switch_data += "        default:\n"
-    switch_data += "            this->actualFormatId = this->intendedFormatId;\n"
-    switch_data += "            this->vertexLoadFunction = nullptr;"
-    return switch_data
+    else:
+        # This format has no packed buffer's override, return ordinary block.
+        return case_vertex_format_template1.format(
+            angle_format=angle_fmt,
+            mtl_format=mtl_format,
+            actual_angle_format=actual_angle_fmt,
+            vertex_copy_function=copy_function)
 
 
-def gen_vertex_map_switch_string(angle_to_mtl):
+def gen_vertex_map_switch_string(vertex_table):
+    angle_to_mtl = vertex_table["map"]
+    angle_override = vertex_table["override"]
+    override_packed = vertex_table["override_tightly_packed"]
+
     switch_data = ''
     for angle_fmt in sorted(angle_to_mtl.keys()):
-        mtl_format = angle_to_mtl[angle_fmt]
-        copy_function = angle_format.get_vertex_copy_function(angle_fmt, angle_fmt)
-        switch_data += case_vertex_format_template.format(
-            angle_format=angle_fmt, mtl_format=mtl_format, vertex_copy_function=copy_function)
+        switch_data += gen_vertex_map_switch_case(angle_fmt, angle_fmt, angle_to_mtl,
+                                                  override_packed)
+
+    for angle_fmt in sorted(angle_override.keys()):
+        switch_data += gen_vertex_map_switch_case(angle_fmt, angle_override[angle_fmt],
+                                                  angle_to_mtl, override_packed)
+
     switch_data += "        default:\n"
     switch_data += "            this->metalFormat = MTLVertexFormatInvalid;\n"
     switch_data += "            this->actualFormatId = angle::FormatID::NONE;\n"
@@ -215,35 +282,15 @@ def main():
     map_image = map_json["image"]
     map_vertex = map_json["vertex"]
 
-    image_angle_override = map_image["override"]
-    image_mac_override = map_image["mac_override"]
-    image_non_mac_override = map_image["non_mac_override"]
-    image_angle_to_mtl = map_image["map"]
-    image_mac_specific_formats = map_image["mac_specific"]
-    image_ios_specific_formats = map_image["ios_specific"]
+    image_switch_data = gen_image_map_switch_string(map_image)
 
-    vertex_angle_override = map_vertex["override"]
-    vertex_angle_streaming_override = map_vertex["streaming_override"]
-    vertex_angle_to_mtl = map_vertex["map"]
-
-    image_override_data = gen_image_override_switch_string(
-        image_angle_override, image_mac_override, image_non_mac_override)
-    image_switch_data = gen_image_map_switch_string(image_angle_to_mtl, image_mac_specific_formats,
-                                                    image_ios_specific_formats)
-
-    vertex_override_data = gen_vertex_override_switch_string(vertex_angle_override)
-    vertex_streaming_override_switch = gen_vertex_override_switch_string(
-        vertex_angle_streaming_override)
-    vertex_switch_data = gen_vertex_map_switch_string(vertex_angle_to_mtl)
+    vertex_switch_data = gen_vertex_map_switch_string(map_vertex)
 
     output_cpp = template_autogen_inl.format(
         script_name=sys.argv[0],
         copyright_year=date.today().year,
         data_source_name=data_source_name,
-        angle_image_format_override_switch=image_override_data,
         angle_image_format_switch=image_switch_data,
-        angle_vertex_format_override_switch=vertex_override_data,
-        angle_vertex_format_streaming_override_switch=vertex_streaming_override_switch,
         angle_vertex_format_switch=vertex_switch_data)
     with open('mtl_format_table_autogen.mm', 'wt') as out_file:
         out_file.write(output_cpp)

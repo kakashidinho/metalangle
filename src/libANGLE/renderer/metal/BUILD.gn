@@ -21,7 +21,6 @@ _metal_backend_sources = [
   "FrameBufferMtl.mm",
   "GlslangWrapper.h",
   "GlslangWrapper.mm",
-  "Metal_platform.h",
   "ProgramMtl.h",
   "ProgramMtl.mm",
   "RenderBufferMtl.h",
@@ -57,7 +56,13 @@ _metal_backend_sources = [
   "mtl_utils.mm",
 ]
 
+config("angle_metal_backend_config") {
+  defines = [ "ANGLE_ENABLE_METAL" ]
+}
+
 angle_source_set("angle_metal_backend") {
+  public_configs = [ ":angle_metal_backend_config" ]
+
   sources = _metal_backend_sources
 
   cflags = []
@@ -77,31 +82,17 @@ angle_source_set("angle_metal_backend") {
     "${angle_spirv_cross_dir}:spirv_cross_sources",
   ]
 
-  # Due to autoreleasepool unpredictable problems, we disable ARC for now.
-  cflags_objc += [
-    "-fno-objc-arc",
+  objc_flags = [
     "-Wno-nullability-completeness",
-  ]
-  cflags_objcc += [
+    "-Wno-unguarded-availability",
     "-fno-objc-arc",
-    "-Wno-nullability-completeness",
   ]
+  cflags_objc += objc_flags
+  cflags_objcc += objc_flags
 
   libs += [ "Metal.framework" ]
 
   if (is_mac) {
-    additional_cflags = [
-      # This should be set by setting "mac_deployment_target" argument
-      # "-mmacosx-version-min=10.13"
-    ]
-
-    cflags += additional_cflags
-    cflags_cc += additional_cflags
-    cflags_objc += additional_cflags
-    cflags_objcc += additional_cflags
-
-    ldflags += additional_cflags
-
     libs += [
       "Cocoa.framework",
       "IOSurface.framework",

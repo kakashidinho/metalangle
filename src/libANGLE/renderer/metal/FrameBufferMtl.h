@@ -3,11 +3,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
+// FrameBufferMtl.h:
+//    Defines the class interface for FrameBufferMtl, implementing FrameBufferImpl.
+//
 
 #ifndef LIBANGLE_RENDERER_METAL_FRAMEBUFFERMTL_H_
 #define LIBANGLE_RENDERER_METAL_FRAMEBUFFERMTL_H_
 
-#include "libANGLE/renderer/metal/Metal_platform.h"
+#import <Metal/Metal.h>
 
 #include "libANGLE/renderer/FramebufferImpl.h"
 #include "libANGLE/renderer/metal/RenderTargetMtl.h"
@@ -22,7 +25,6 @@ class FramebufferMtl : public FramebufferImpl
 {
   public:
     explicit FramebufferMtl(const gl::FramebufferState &state,
-                            SurfaceMtl *backBuffer         = nullptr,
                             bool flipY                     = false,
                             bool alwaysDiscardDepthStencil = false);
     ~FramebufferMtl() override;
@@ -136,7 +138,6 @@ class FramebufferMtl : public FramebufferImpl
     RenderTargetMtl *mStencilRenderTarget = nullptr;
     bool mDiscardStencil                  = false;
     mtl::RenderPassDesc mRenderPassDesc;
-    __attribute__((unused)) SurfaceMtl *mBackBuffer;
     const bool mAlwaysDiscardDepthStencil;
     const bool mFlipY = false;
 };

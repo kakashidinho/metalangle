@@ -1,3 +1,12 @@
+//
+// Copyright 2019 The ANGLE Project Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+//
+// BufferMtl.mm:
+//    Implements the class methods for BufferMtl.
+//
+
 #include "libANGLE/renderer/metal/BufferMtl.h"
 
 #include "common/debug.h"
@@ -65,13 +74,17 @@ BufferMtl::IndexConversionBuffer::IndexConversionBuffer(const gl::Context *conte
 {}
 
 // BufferMtl implementation
-BufferMtl::BufferMtl(const gl::BufferState &state) : BufferImpl(state), mBuffer(true) {}
+BufferMtl::BufferMtl(const gl::BufferState &state)
+    : BufferImpl(state), mBufferPool(/** alwaysAllocNewBuffer */ true)
+{}
 
 BufferMtl::~BufferMtl() {}
 
 void BufferMtl::destroy(const gl::Context *context)
 {
-    mBuffer.destroy();
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+    mShadowCopy.resize(0);
+    mBufferPool.destroy(contextMtl);
 }
 
 angle::Result BufferMtl::setData(const gl::Context *context,
@@ -82,7 +95,7 @@ angle::Result BufferMtl::setData(const gl::Context *context,
 {
     ContextMtl *contextMtl = mtl::GetImpl(context);
 
-    if (!mBuffer.valid() || size > static_cast<size_t>(mState.getSize()) ||
+    if (!mShadowCopy.size() || size > static_cast<size_t>(mState.getSize()) ||
         usage != mState.getUsage())
     {
         if (size == 0)
@@ -90,24 +103,33 @@ angle::Result BufferMtl::setData(const gl::Context *context,
             size = 1;
         }
         // Re-create the buffer
-        uint32_t streamBufferQueueSize;
+        markConversionBuffersDirty();
+
+        ANGLE_MTL_CHECK(contextMtl, mShadowCopy.resize(size), GL_OUT_OF_MEMORY);
+        if (data)
+        {
+            auto ptr = static_cast<const uint8_t *>(data);
+            std::copy(ptr, ptr + size, mShadowCopy.data());
+        }
+
+        size_t maxBuffers;
         switch (usage)
         {
             case gl::BufferUsage::StaticCopy:
             case gl::BufferUsage::StaticDraw:
             case gl::BufferUsage::StaticRead:
-                streamBufferQueueSize = 1;  // static buffer doesn't need high speed data update
+                maxBuffers = 1;  // static buffer doesn't need high speed data update
                 break;
             default:
-                // dynamic buffer
-                streamBufferQueueSize = 2;
+                // dynamic buffer, allow up to 2 update per frame/encoding without
+                // waiting for GPU.
+                maxBuffers = 2;
                 break;
         }
 
-        markConversionBuffersDirty();
+        mBufferPool.initialize(contextMtl, size, 1, maxBuffers);
 
-        return mBuffer.initialize(contextMtl, size, streamBufferQueueSize,
-                                  reinterpret_cast<const uint8_t *>(data));
+        return commitShadowCopy(context);
     }
     else
     {
@@ -136,17 +158,18 @@ angle::Result BufferMtl::copySubData(const gl::Context *context,
         return angle::Result::Continue;
     }
 
-    ASSERT(mBuffer.valid());
+    ASSERT(mShadowCopy.size());
 
     auto srcMtl = GetAs<BufferMtl>(source);
 
-    // TODO(hqle): use blit command?
-    return setSubDataImpl(context, srcMtl->mBuffer.data() + sourceOffset, size, destOffset);
+    // TODO(hqle): use blit command.
+    return setSubDataImpl(context, srcMtl->getClientShadowCopyData(context) + sourceOffset, size,
+                          destOffset);
 }
 
 angle::Result BufferMtl::map(const gl::Context *context, GLenum access, void **mapPtr)
 {
-    ASSERT(mBuffer.valid());
+    ASSERT(mShadowCopy.size());
     return mapRange(context, 0, mState.getSize(), 0, mapPtr);
 }
 
@@ -156,12 +179,12 @@ angle::Result BufferMtl::mapRange(const gl::Context *context,
                                   GLbitfield access,
                                   void **mapPtr)
 {
-    ASSERT(mBuffer.valid());
+    ASSERT(mShadowCopy.size());
 
     // TODO(hqle): use access flags
     if (mapPtr)
     {
-        *mapPtr = mBuffer.data() + offset;
+        *mapPtr = mShadowCopy.data() + offset;
     }
 
     return angle::Result::Continue;
@@ -169,13 +192,11 @@ angle::Result BufferMtl::mapRange(const gl::Context *context,
 
 angle::Result BufferMtl::unmap(const gl::Context *context, GLboolean *result)
 {
-    ASSERT(mBuffer.valid());
-
-    ContextMtl *contextMtl = mtl::GetImpl(context);
-
-    mBuffer.commit(contextMtl);
+    ASSERT(mShadowCopy.size());
 
     markConversionBuffersDirty();
+
+    ANGLE_TRY(commitShadowCopy(context));
 
     return angle::Result::Continue;
 }
@@ -187,9 +208,9 @@ angle::Result BufferMtl::getIndexRange(const gl::Context *context,
                                        bool primitiveRestartEnabled,
                                        gl::IndexRange *outRange)
 {
-    ASSERT(mBuffer.valid());
+    ASSERT(mShadowCopy.size());
 
-    const uint8_t *indices = mBuffer.data() + offset;
+    const uint8_t *indices = mShadowCopy.data() + offset;
 
     *outRange = gl::ComputeIndexRange(type, indices, count, primitiveRestartEnabled);
 
@@ -202,9 +223,9 @@ angle::Result BufferMtl::getFirstLastIndices(const gl::Context *context,
                                              size_t count,
                                              std::pair<uint32_t, uint32_t> *outIndices) const
 {
-    ASSERT(mBuffer.valid());
+    ASSERT(mShadowCopy.size());
 
-    const uint8_t *indices = mBuffer.data() + offset;
+    const uint8_t *indices = mShadowCopy.data() + offset;
 
     switch (type)
     {
@@ -226,15 +247,16 @@ angle::Result BufferMtl::getFirstLastIndices(const gl::Context *context,
 
 mtl::BufferRef BufferMtl::getCurrentBuffer(const gl::Context *context)
 {
-    ContextMtl *contextMtl = mtl::GetImpl(context);
-    return mBuffer.getCurrentBuffer(contextMtl);
+    (void)context;
+    return mBuffer;
 }
 
 const uint8_t *BufferMtl::getClientShadowCopyData(const gl::Context *context)
 {
     // TODO(hqle): Support buffer update from GPU.
-    // Which mean we have to stall the GPU by calling finish.
-    return mBuffer.data();
+    // Which mean we have to stall the GPU by calling finish and copy
+    // data back to shadow copy.
+    return mShadowCopy.data();
 }
 
 ConversionBufferMtl *BufferMtl::getVertexConversionBuffer(const gl::Context *context,
@@ -292,17 +314,34 @@ angle::Result BufferMtl::setSubDataImpl(const gl::Context *context,
     {
         return angle::Result::Continue;
     }
-
-    ASSERT(mBuffer.valid());
-
     ContextMtl *contextMtl = mtl::GetImpl(context);
 
-    auto ptr = mBuffer.data() + offset;
-    memcpy(ptr, data, std::min<size_t>(size, mBuffer.size()));
+    ASSERT(mShadowCopy.size());
 
-    mBuffer.commit(contextMtl);
+    ANGLE_MTL_TRY(contextMtl, offset <= this->size());
+
+    auto srcPtr     = static_cast<const uint8_t *>(data);
+    auto sizeToCopy = std::min<size_t>(size, this->size() - offset);
+    std::copy(srcPtr, srcPtr + sizeToCopy, mShadowCopy.data() + offset);
 
     markConversionBuffersDirty();
+
+    ANGLE_TRY(commitShadowCopy(context));
+
+    return angle::Result::Continue;
+}
+
+angle::Result BufferMtl::commitShadowCopy(const gl::Context *context)
+{
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+
+    uint8_t *ptr = nullptr;
+    ANGLE_TRY(
+        mBufferPool.allocate(contextMtl, mShadowCopy.size(), &ptr, &mBuffer, nullptr, nullptr));
+
+    std::copy(mShadowCopy.data(), mShadowCopy.data() + mShadowCopy.size(), ptr);
+
+    ANGLE_TRY(mBufferPool.commit(contextMtl));
 
     return angle::Result::Continue;
 }

@@ -10,7 +10,7 @@
 #ifndef LIBANGLE_RENDERER_METAL_BUFFERMTL_H_
 #define LIBANGLE_RENDERER_METAL_BUFFERMTL_H_
 
-#include "libANGLE/renderer/metal/Metal_platform.h"
+#import <Metal/Metal.h>
 
 #include <utility>
 
@@ -89,20 +89,14 @@ class BufferMtl : public BufferImpl, public BufferHolderMtl
                                 bool primitiveRestartEnabled,
                                 gl::IndexRange *outRange) override;
 
+    // Override BufferHolderMtl
+    mtl::BufferRef getCurrentBuffer(const gl::Context *context) override;
+
     angle::Result getFirstLastIndices(const gl::Context *context,
                                       gl::DrawElementsType type,
                                       size_t offset,
                                       size_t count,
                                       std::pair<uint32_t, uint32_t> *outIndices) const;
-
-    // BufferMtl actually manages a queue of mtl::Buffer internally to avoid
-    // stalling the rendering GPU whenever the CPU wants to modify this buffer's content.
-    // So in order to submit the modified content to GPU. One needs to call this method
-    // to retrieve the most recent up-to-date mtl::Buffer. So it's important to only
-    // call this method right before the draw call. Because if you get a mtl::Buffer too early,
-    // and the application calls map() and unmap() to modify the content of BufferMtl right after
-    // that, the earlier mtl::Buffer may not contain that modified data.
-    mtl::BufferRef getCurrentBuffer(const gl::Context *context) override;
 
     const uint8_t *getClientShadowCopyData(const gl::Context *context);
 
@@ -115,7 +109,7 @@ class BufferMtl : public BufferImpl, public BufferHolderMtl
                                                   gl::DrawElementsType type,
                                                   size_t offset);
 
-    size_t size() const { return mBuffer.size(); }
+    size_t size() const { return mState.getSize(); }
 
   private:
     angle::Result setSubDataImpl(const gl::Context *context,
@@ -123,9 +117,18 @@ class BufferMtl : public BufferImpl, public BufferHolderMtl
                                  size_t size,
                                  size_t offset);
 
+    angle::Result commitShadowCopy(const gl::Context *context);
+
     void markConversionBuffersDirty();
 
-    mtl::StreamBuffer mBuffer;
+    // Client side shadow buffer
+    angle::MemoryBuffer mShadowCopy;
+
+    // Most recent updated GPU buffer
+    mtl::BufferRef mBuffer;
+
+    // GPU side buffers pool
+    mtl::BufferPool mBufferPool;
 
     struct VertexConversionBuffer : public ConversionBufferMtl
     {

@@ -3,11 +3,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
+// mtl_common.h:
+//      Declares common constants, template classes, and mtl::Context - the MTLDevice container &
+//      error handler base class.
+//
 
 #ifndef LIBANGLE_RENDERER_METAL_MTL_COMMON_H_
 #define LIBANGLE_RENDERER_METAL_MTL_COMMON_H_
 
-#include "libANGLE/renderer/metal/Metal_platform.h"
+#import <Metal/Metal.h>
 
 #include <TargetConditionals.h>
 
@@ -20,19 +24,24 @@
 #include "libANGLE/Version.h"
 #include "libANGLE/angletypes.h"
 
-#define ANGLE_GL_OBJECTS_X(PROC) \
-    PROC(Buffer)                 \
-    PROC(Context)                \
-    PROC(Framebuffer)            \
-    PROC(MemoryObject)           \
-    PROC(Query)                  \
-    PROC(Program)                \
-    PROC(Semaphore)              \
-    PROC(Texture)                \
-    PROC(TransformFeedback)      \
-    PROC(VertexArray)
+#if TARGET_OS_IPHONE
+#    if !defined(ANGLE_IOS_DEPLOY_TARGET)
+#        define ANGLE_IOS_DEPLOY_TARGET __IPHONE_11_0
+#    endif
+#endif
 
-#define ANGLE_PRE_DECLARE_OBJECT(OBJ) class OBJ;
+// Don't allow separated depth stencil buffers
+#define ANGLE_MTL_ALLOW_SEPARATED_DEPTH_STENCIL 0
+
+#define ANGLE_MTL_OBJC_SCOPE @autoreleasepool
+
+#if !__has_feature(objc_arc)
+#    define ANGLE_MTL_AUTORELEASE autorelease
+#else
+#    define ANGLE_MTL_AUTORELEASE self
+#endif
+
+#define ANGLE_MTL_UNUSED __attribute__((unused))
 
 // TODO(hqle): support variable max number of vertex attributes
 constexpr uint32_t kMaxVertexAttribs = gl::MAX_VERTEX_ATTRIBS;
@@ -49,6 +58,7 @@ constexpr uint32_t kMaxViewports         = 1;
 
 constexpr uint32_t kVertexAttribBufferOffsetAlignment = 4;
 constexpr uint32_t kVertexAttribBufferStrideAlignment = 4;
+// Alignment requirement for offset passed to setVertex|FragmentBuffer
 #if TARGET_OS_OSX
 constexpr uint32_t kBufferSettingOffsetAlignment = 256;
 #else
@@ -83,6 +93,20 @@ class Display;
 class Image;
 }  // namespace egl
 
+#define ANGLE_GL_OBJECTS_X(PROC) \
+    PROC(Buffer)                 \
+    PROC(Context)                \
+    PROC(Framebuffer)            \
+    PROC(MemoryObject)           \
+    PROC(Query)                  \
+    PROC(Program)                \
+    PROC(Semaphore)              \
+    PROC(Texture)                \
+    PROC(TransformFeedback)      \
+    PROC(VertexArray)
+
+#define ANGLE_PRE_DECLARE_OBJECT(OBJ) class OBJ;
+
 namespace gl
 {
 struct Rectangle;
@@ -107,7 +131,36 @@ ANGLE_GL_OBJECTS_X(ANGLE_PRE_DECLARE_MTL_OBJECT)
 namespace mtl
 {
 
-// This class wraps Objective-C pointer side, it will manage the lifetime of
+template <typename T>
+struct ImplTypeHelper;
+
+// clang-format off
+#define ANGLE_IMPL_TYPE_HELPER_GL(OBJ) \
+template<>                             \
+struct ImplTypeHelper<gl::OBJ>         \
+{                                      \
+    using ImplType = OBJ##Mtl;         \
+};
+// clang-format on
+
+ANGLE_GL_OBJECTS_X(ANGLE_IMPL_TYPE_HELPER_GL)
+
+template <>
+struct ImplTypeHelper<egl::Display>
+{
+    using ImplType = DisplayMtl;
+};
+
+template <typename T>
+using GetImplType = typename ImplTypeHelper<T>::ImplType;
+
+template <typename T>
+GetImplType<T> *GetImpl(const T *_Nonnull glObject)
+{
+    return GetImplAs<GetImplType<T>>(glObject);
+}
+
+// This class wraps Objective-C pointer inside, it will manage the lifetime of
 // the Objective-C pointer. Changing pointer is not supported outside subclass.
 template <typename T>
 class WrappedObject
@@ -222,35 +275,6 @@ class AutoObjCPtr : public WrappedObject<T>
 template <typename T>
 using AutoObjCObj = AutoObjCPtr<T *>;
 
-template <typename T>
-struct ImplTypeHelper;
-
-// clang-format off
-#define ANGLE_IMPL_TYPE_HELPER_GL(OBJ) \
-template<>                             \
-struct ImplTypeHelper<gl::OBJ>         \
-{                                      \
-    using ImplType = OBJ##Mtl;          \
-};
-// clang-format on
-
-ANGLE_GL_OBJECTS_X(ANGLE_IMPL_TYPE_HELPER_GL)
-
-template <>
-struct ImplTypeHelper<egl::Display>
-{
-    using ImplType = DisplayMtl;
-};
-
-template <typename T>
-using GetImplType = typename ImplTypeHelper<T>::ImplType;
-
-template <typename T>
-GetImplType<T> *GetImpl(const T *_Nonnull glObject)
-{
-    return GetImplAs<GetImplType<T>>(glObject);
-}
-
 struct ClearOptions
 {
     Optional<MTLClearColor> clearColor;
@@ -288,17 +312,17 @@ class Context : public ErrorHandler
     RendererMtl *mRendererMtl;
 };
 
-#define ANGLE_MTL_CHECK_WITH_ERR(context, test, error)                       \
+#define ANGLE_MTL_CHECK(context, test, error)                                \
     do                                                                       \
     {                                                                        \
-        if (ANGLE_UNLIKELY(!test))                                           \
+        if (ANGLE_UNLIKELY(!(test)))                                         \
         {                                                                    \
             context->handleError(error, __FILE__, ANGLE_FUNCTION, __LINE__); \
             return angle::Result::Stop;                                      \
         }                                                                    \
     } while (0)
 
-#define ANGLE_MTL_CHECK(context, test) ANGLE_MTL_CHECK_WITH_ERR(context, test, GL_INVALID_OPERATION)
+#define ANGLE_MTL_TRY(context, test) ANGLE_MTL_CHECK(context, test, GL_INVALID_OPERATION)
 
 }  // namespace mtl
 }  // namespace rx

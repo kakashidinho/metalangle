@@ -75,11 +75,6 @@ bool CompressedSubTextureFormatRequiresExactSize(GLenum internalFormat)
            IsETC2EACFormat(internalFormat);
 }
 
-bool CompressedTextureFormatRequiresWholeMipSize(GLenum internalFormat)
-{
-    return CompressedFormatRequiresWholeImage(internalFormat);
-}
-
 bool DifferenceCanOverflow(GLint a, GLint b)
 {
     CheckedNumeric<GLint> checkedA(a);
@@ -903,7 +898,7 @@ bool ValidCompressedSubImageSize(const Context *context,
         xoffset == 0 && yoffset == 0 && static_cast<size_t>(width) == textureWidth &&
         static_cast<size_t>(height) == textureHeight && static_cast<size_t>(depth) == textureDepth;
 
-    if (CompressedTextureFormatRequiresWholeMipSize(internalFormat))
+    if (CompressedFormatRequiresWholeImage(internalFormat))
     {
         return fillsEntireMip;
     }

@@ -8,10 +8,11 @@
 // Metal Format table:
 //   Conversion from ANGLE format to Metal format.
 
+#import <Metal/Metal.h>
 #include <TargetConditionals.h>
-#include "libANGLE/renderer/metal/Metal_platform.h"
 
 #include "libANGLE/renderer/Format.h"
+#include "libANGLE/renderer/metal/RendererMtl.h"
 #include "libANGLE/renderer/metal/mtl_format_utils.h"
 
 namespace rx
@@ -19,291 +20,587 @@ namespace rx
 namespace mtl
 {
 
-void Format::init(angle::FormatID intendedFormatId_)
+void Format::init(const RendererMtl *renderer, angle::FormatID intendedFormatId_)
 {
     this->intendedFormatId = intendedFormatId_;
 
-    // Override the unsupported format
+    id<MTLDevice> metalDevice = renderer->getMetalDevice();
+
+    // Actual conversion
     switch (this->intendedFormatId)
     {
-        case angle::FormatID::A16_FLOAT:
-            this->actualFormatId = angle::FormatID::R16G16B16A16_FLOAT;
+        case angle::FormatID::A8_UNORM:
+            this->metalFormat    = MTLPixelFormatA8Unorm;
+            this->actualFormatId = angle::FormatID::A8_UNORM;
             break;
 
-        case angle::FormatID::A32_FLOAT:
-            this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
+#if TARGET_OS_OSX
+        case angle::FormatID::B8G8R8A8_UNORM:
+            if (metalDevice.depth24Stencil8PixelFormatSupported)
+            {
+                this->metalFormat    = MTLPixelFormatBGRA8Unorm;
+                this->actualFormatId = angle::FormatID::B8G8R8A8_UNORM;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatRGBA8Unorm;
+                this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM;
+            }
             break;
 
-        case angle::FormatID::D24_UNORM_X8_UINT:
+#else  // TARGET_OS_OSX
+        case angle::FormatID::B8G8R8A8_UNORM:
+            this->metalFormat    = MTLPixelFormatBGRA8Unorm;
+            this->actualFormatId = angle::FormatID::B8G8R8A8_UNORM;
+            break;
+
+#endif  // TARGET_OS_OSX
+        case angle::FormatID::B8G8R8A8_UNORM_SRGB:
+            this->metalFormat    = MTLPixelFormatBGRA8Unorm_sRGB;
+            this->actualFormatId = angle::FormatID::B8G8R8A8_UNORM_SRGB;
+            break;
+
+        case angle::FormatID::D32_FLOAT:
+            this->metalFormat    = MTLPixelFormatDepth32Float;
             this->actualFormatId = angle::FormatID::D32_FLOAT;
             break;
 
+        case angle::FormatID::D32_FLOAT_S8X24_UINT:
+            this->metalFormat    = MTLPixelFormatDepth32Float_Stencil8;
+            this->actualFormatId = angle::FormatID::D32_FLOAT_S8X24_UINT;
+            break;
+
+        case angle::FormatID::NONE:
+            this->metalFormat    = MTLPixelFormatInvalid;
+            this->actualFormatId = angle::FormatID::NONE;
+            break;
+
+#if TARGET_OS_OSX
+        case angle::FormatID::R16G16B16A16_FLOAT:
+            if (metalDevice.depth24Stencil8PixelFormatSupported)
+            {
+                this->metalFormat    = MTLPixelFormatRGBA16Float;
+                this->actualFormatId = angle::FormatID::R16G16B16A16_FLOAT;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+            }
+            break;
+
+#else  // TARGET_OS_OSX
+        case angle::FormatID::R16G16B16A16_FLOAT:
+            this->metalFormat    = MTLPixelFormatRGBA16Float;
+            this->actualFormatId = angle::FormatID::R16G16B16A16_FLOAT;
+            break;
+
+#endif  // TARGET_OS_OSX
+        case angle::FormatID::R16G16_FLOAT:
+            this->metalFormat    = MTLPixelFormatRG16Float;
+            this->actualFormatId = angle::FormatID::R16G16_FLOAT;
+            break;
+
+#if TARGET_OS_OSX
+        case angle::FormatID::R16_FLOAT:
+            if (metalDevice.depth24Stencil8PixelFormatSupported)
+            {
+                this->metalFormat    = MTLPixelFormatR16Float;
+                this->actualFormatId = angle::FormatID::R16_FLOAT;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+            }
+            break;
+
+#else  // TARGET_OS_OSX
+        case angle::FormatID::R16_FLOAT:
+            this->metalFormat    = MTLPixelFormatR16Float;
+            this->actualFormatId = angle::FormatID::R16_FLOAT;
+            break;
+
+#endif  // TARGET_OS_OSX
+        case angle::FormatID::R16_UNORM:
+            this->metalFormat    = MTLPixelFormatR16Unorm;
+            this->actualFormatId = angle::FormatID::R16_UNORM;
+            break;
+
+#if TARGET_OS_OSX
+        case angle::FormatID::R32G32B32A32_FLOAT:
+            if (metalDevice.depth24Stencil8PixelFormatSupported)
+            {
+                this->metalFormat    = MTLPixelFormatRGBA32Float;
+                this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+            }
+            break;
+
+#else  // TARGET_OS_OSX
+        case angle::FormatID::R32G32B32A32_FLOAT:
+            this->metalFormat    = MTLPixelFormatRGBA32Float;
+            this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
+            break;
+
+#endif  // TARGET_OS_OSX
+        case angle::FormatID::R32G32_FLOAT:
+            this->metalFormat    = MTLPixelFormatRG32Float;
+            this->actualFormatId = angle::FormatID::R32G32_FLOAT;
+            break;
+
+#if TARGET_OS_OSX
+        case angle::FormatID::R32_FLOAT:
+            if (metalDevice.depth24Stencil8PixelFormatSupported)
+            {
+                this->metalFormat    = MTLPixelFormatR32Float;
+                this->actualFormatId = angle::FormatID::R32_FLOAT;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+            }
+            break;
+
+#else  // TARGET_OS_OSX
+        case angle::FormatID::R32_FLOAT:
+            this->metalFormat    = MTLPixelFormatR32Float;
+            this->actualFormatId = angle::FormatID::R32_FLOAT;
+            break;
+
+#endif  // TARGET_OS_OSX
+        case angle::FormatID::R8G8B8A8_UNORM:
+            this->metalFormat    = MTLPixelFormatRGBA8Unorm;
+            this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM;
+            break;
+
+        case angle::FormatID::R8G8B8A8_UNORM_SRGB:
+            this->metalFormat    = MTLPixelFormatRGBA8Unorm_sRGB;
+            this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM_SRGB;
+            break;
+
+        case angle::FormatID::R8G8_UNORM:
+            this->metalFormat    = MTLPixelFormatRG8Unorm;
+            this->actualFormatId = angle::FormatID::R8G8_UNORM;
+            break;
+
+#if TARGET_OS_OSX
+        case angle::FormatID::R8_UNORM:
+            if (metalDevice.depth24Stencil8PixelFormatSupported)
+            {
+                this->metalFormat    = MTLPixelFormatR8Unorm;
+                this->actualFormatId = angle::FormatID::R8_UNORM;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+            }
+            break;
+
+#else  // TARGET_OS_OSX
+        case angle::FormatID::R8_UNORM:
+            this->metalFormat    = MTLPixelFormatR8Unorm;
+            this->actualFormatId = angle::FormatID::R8_UNORM;
+            break;
+
+#endif  // TARGET_OS_OSX
+        case angle::FormatID::S8_UINT:
+            this->metalFormat    = MTLPixelFormatStencil8;
+            this->actualFormatId = angle::FormatID::S8_UINT;
+            break;
+
+#if TARGET_OS_OSX
+        case angle::FormatID::A16_FLOAT:
+            if (metalDevice.depth24Stencil8PixelFormatSupported)
+            {
+                this->metalFormat    = MTLPixelFormatRGBA16Float;
+                this->actualFormatId = angle::FormatID::R16G16B16A16_FLOAT;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+            }
+            break;
+
+#else  // TARGET_OS_OSX
+        case angle::FormatID::A16_FLOAT:
+            this->metalFormat    = MTLPixelFormatRGBA16Float;
+            this->actualFormatId = angle::FormatID::R16G16B16A16_FLOAT;
+            break;
+
+#endif  // TARGET_OS_OSX
+#if TARGET_OS_OSX
+        case angle::FormatID::A32_FLOAT:
+            if (metalDevice.depth24Stencil8PixelFormatSupported)
+            {
+                this->metalFormat    = MTLPixelFormatRGBA32Float;
+                this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+            }
+            break;
+
+#else  // TARGET_OS_OSX
+        case angle::FormatID::A32_FLOAT:
+            this->metalFormat    = MTLPixelFormatRGBA32Float;
+            this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
+            break;
+
+#endif  // TARGET_OS_OSX
+        case angle::FormatID::D24_UNORM_X8_UINT:
+            this->metalFormat    = MTLPixelFormatDepth32Float;
+            this->actualFormatId = angle::FormatID::D32_FLOAT;
+            break;
+
+#if TARGET_OS_OSX
         case angle::FormatID::L16A16_FLOAT:
+            if (metalDevice.depth24Stencil8PixelFormatSupported)
+            {
+                this->metalFormat    = MTLPixelFormatRGBA16Float;
+                this->actualFormatId = angle::FormatID::R16G16B16A16_FLOAT;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+            }
+            break;
+
+#else  // TARGET_OS_OSX
+        case angle::FormatID::L16A16_FLOAT:
+            this->metalFormat    = MTLPixelFormatRGBA16Float;
             this->actualFormatId = angle::FormatID::R16G16B16A16_FLOAT;
             break;
 
+#endif  // TARGET_OS_OSX
+#if TARGET_OS_OSX
         case angle::FormatID::L16_FLOAT:
+            if (metalDevice.depth24Stencil8PixelFormatSupported)
+            {
+                this->metalFormat    = MTLPixelFormatRGBA16Float;
+                this->actualFormatId = angle::FormatID::R16G16B16A16_FLOAT;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+            }
+            break;
+
+#else  // TARGET_OS_OSX
+        case angle::FormatID::L16_FLOAT:
+            this->metalFormat    = MTLPixelFormatRGBA16Float;
             this->actualFormatId = angle::FormatID::R16G16B16A16_FLOAT;
             break;
 
+#endif  // TARGET_OS_OSX
+#if TARGET_OS_OSX
         case angle::FormatID::L32A32_FLOAT:
+            if (metalDevice.depth24Stencil8PixelFormatSupported)
+            {
+                this->metalFormat    = MTLPixelFormatRGBA32Float;
+                this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+            }
+            break;
+
+#else  // TARGET_OS_OSX
+        case angle::FormatID::L32A32_FLOAT:
+            this->metalFormat    = MTLPixelFormatRGBA32Float;
             this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
             break;
 
+#endif  // TARGET_OS_OSX
+#if TARGET_OS_OSX
         case angle::FormatID::L32_FLOAT:
+            if (metalDevice.depth24Stencil8PixelFormatSupported)
+            {
+                this->metalFormat    = MTLPixelFormatRGBA32Float;
+                this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+            }
+            break;
+
+#else  // TARGET_OS_OSX
+        case angle::FormatID::L32_FLOAT:
+            this->metalFormat    = MTLPixelFormatRGBA32Float;
             this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
             break;
 
+#endif  // TARGET_OS_OSX
         case angle::FormatID::L8A8_UNORM:
+            this->metalFormat    = MTLPixelFormatRGBA8Unorm;
             this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM;
             break;
 
         case angle::FormatID::L8_UNORM:
+            this->metalFormat    = MTLPixelFormatRGBA8Unorm;
             this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM;
             break;
 
+#if TARGET_OS_OSX
         case angle::FormatID::R16G16B16_FLOAT:
+            if (metalDevice.depth24Stencil8PixelFormatSupported)
+            {
+                this->metalFormat    = MTLPixelFormatRGBA16Float;
+                this->actualFormatId = angle::FormatID::R16G16B16A16_FLOAT;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+            }
+            break;
+
+#else  // TARGET_OS_OSX
+        case angle::FormatID::R16G16B16_FLOAT:
+            this->metalFormat    = MTLPixelFormatRGBA16Float;
             this->actualFormatId = angle::FormatID::R16G16B16A16_FLOAT;
             break;
 
+#endif  // TARGET_OS_OSX
+#if TARGET_OS_OSX
         case angle::FormatID::R32G32B32_FLOAT:
+            if (metalDevice.depth24Stencil8PixelFormatSupported)
+            {
+                this->metalFormat    = MTLPixelFormatRGBA32Float;
+                this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+            }
+            break;
+
+#else  // TARGET_OS_OSX
+        case angle::FormatID::R32G32B32_FLOAT:
+            this->metalFormat    = MTLPixelFormatRGBA32Float;
             this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
             break;
 
+#endif  // TARGET_OS_OSX
         case angle::FormatID::R8G8B8_UNORM:
+            this->metalFormat    = MTLPixelFormatRGBA8Unorm;
             this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM;
             break;
 
         case angle::FormatID::R8G8B8_UNORM_SRGB:
+            this->metalFormat    = MTLPixelFormatRGBA8Unorm_sRGB;
             this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM_SRGB;
             break;
 
 #if TARGET_OS_OSX
+        case angle::FormatID::BC1_RGBA_UNORM_BLOCK:
+            this->metalFormat    = MTLPixelFormatBC1_RGBA;
+            this->actualFormatId = angle::FormatID::BC1_RGBA_UNORM_BLOCK;
+            break;
+
+        case angle::FormatID::BC1_RGBA_UNORM_SRGB_BLOCK:
+            this->metalFormat    = MTLPixelFormatBC1_RGBA_sRGB;
+            this->actualFormatId = angle::FormatID::BC1_RGBA_UNORM_SRGB_BLOCK;
+            break;
+
+        case angle::FormatID::BC1_RGB_UNORM_BLOCK:
+            this->metalFormat    = MTLPixelFormatBC1_RGBA;
+            this->actualFormatId = angle::FormatID::BC1_RGB_UNORM_BLOCK;
+            break;
+
+        case angle::FormatID::BC1_RGB_UNORM_SRGB_BLOCK:
+            this->metalFormat    = MTLPixelFormatBC1_RGBA_sRGB;
+            this->actualFormatId = angle::FormatID::BC1_RGB_UNORM_SRGB_BLOCK;
+            break;
+
+        case angle::FormatID::BC2_RGBA_UNORM_BLOCK:
+            this->metalFormat    = MTLPixelFormatBC2_RGBA;
+            this->actualFormatId = angle::FormatID::BC2_RGBA_UNORM_BLOCK;
+            break;
+
+        case angle::FormatID::BC2_RGBA_UNORM_SRGB_BLOCK:
+            this->metalFormat    = MTLPixelFormatBC2_RGBA_sRGB;
+            this->actualFormatId = angle::FormatID::BC2_RGBA_UNORM_SRGB_BLOCK;
+            break;
+
+        case angle::FormatID::BC3_RGBA_UNORM_BLOCK:
+            this->metalFormat    = MTLPixelFormatBC3_RGBA;
+            this->actualFormatId = angle::FormatID::BC3_RGBA_UNORM_BLOCK;
+            break;
+
+        case angle::FormatID::BC3_RGBA_UNORM_SRGB_BLOCK:
+            this->metalFormat    = MTLPixelFormatBC3_RGBA_sRGB;
+            this->actualFormatId = angle::FormatID::BC3_RGBA_UNORM_SRGB_BLOCK;
+            break;
+
+        case angle::FormatID::D16_UNORM:
+            this->metalFormat    = MTLPixelFormatDepth16Unorm;
+            this->actualFormatId = angle::FormatID::D16_UNORM;
+            break;
+
+        case angle::FormatID::D24_UNORM_S8_UINT:
+            if (metalDevice.depth24Stencil8PixelFormatSupported)
+            {
+                this->metalFormat    = MTLPixelFormatDepth24Unorm_Stencil8;
+                this->actualFormatId = angle::FormatID::D24_UNORM_S8_UINT;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatDepth32Float_Stencil8;
+                this->actualFormatId = angle::FormatID::D32_FLOAT_S8X24_UINT;
+            }
+            break;
+
         case angle::FormatID::R4G4B4A4_UNORM:
+            this->metalFormat    = MTLPixelFormatRGBA8Unorm;
             this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM;
             break;
 
         case angle::FormatID::R5G5B5A1_UNORM:
+            this->metalFormat    = MTLPixelFormatRGBA8Unorm;
             this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM;
             break;
 
         case angle::FormatID::R5G6B5_UNORM:
+            this->metalFormat    = MTLPixelFormatRGBA8Unorm;
             this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM;
             break;
 
-#else  // TARGET_OS_OSX
+#elif TARGET_OS_IOS  // TARGET_OS_OSX
+        case angle::FormatID::EAC_R11G11_SNORM_BLOCK:
+            this->metalFormat    = MTLPixelFormatEAC_RG11Snorm;
+            this->actualFormatId = angle::FormatID::EAC_R11G11_SNORM_BLOCK;
+            break;
+
+        case angle::FormatID::EAC_R11G11_UNORM_BLOCK:
+            this->metalFormat    = MTLPixelFormatEAC_R11Unorm;
+            this->actualFormatId = angle::FormatID::EAC_R11G11_UNORM_BLOCK;
+            break;
+
+        case angle::FormatID::EAC_R11_SNORM_BLOCK:
+            this->metalFormat    = MTLPixelFormatEAC_R11Snorm;
+            this->actualFormatId = angle::FormatID::EAC_R11_SNORM_BLOCK;
+            break;
+
+        case angle::FormatID::EAC_R11_UNORM_BLOCK:
+            this->metalFormat    = MTLPixelFormatEAC_R11Unorm;
+            this->actualFormatId = angle::FormatID::EAC_R11_UNORM_BLOCK;
+            break;
+
+        case angle::FormatID::ETC1_R8G8B8_UNORM_BLOCK:
+            this->metalFormat    = MTLPixelFormatETC2_RGB8;
+            this->actualFormatId = angle::FormatID::ETC1_R8G8B8_UNORM_BLOCK;
+            break;
+
+        case angle::FormatID::ETC2_R8G8B8A1_SRGB_BLOCK:
+            this->metalFormat    = MTLPixelFormatETC2_RGB8A1_sRGB;
+            this->actualFormatId = angle::FormatID::ETC2_R8G8B8A1_SRGB_BLOCK;
+            break;
+
+        case angle::FormatID::ETC2_R8G8B8A1_UNORM_BLOCK:
+            this->metalFormat    = MTLPixelFormatETC2_RGB8A1;
+            this->actualFormatId = angle::FormatID::ETC2_R8G8B8A1_UNORM_BLOCK;
+            break;
+
+        case angle::FormatID::ETC2_R8G8B8A8_SRGB_BLOCK:
+            this->metalFormat    = MTLPixelFormatEAC_RGBA8_sRGB;
+            this->actualFormatId = angle::FormatID::ETC2_R8G8B8A8_SRGB_BLOCK;
+            break;
+
+        case angle::FormatID::ETC2_R8G8B8A8_UNORM_BLOCK:
+            this->metalFormat    = MTLPixelFormatEAC_RGBA8;
+            this->actualFormatId = angle::FormatID::ETC2_R8G8B8A8_UNORM_BLOCK;
+            break;
+
+        case angle::FormatID::ETC2_R8G8B8_SRGB_BLOCK:
+            this->metalFormat    = MTLPixelFormatETC2_RGB8_sRGB;
+            this->actualFormatId = angle::FormatID::ETC2_R8G8B8_SRGB_BLOCK;
+            break;
+
+        case angle::FormatID::ETC2_R8G8B8_UNORM_BLOCK:
+            this->metalFormat    = MTLPixelFormatETC2_RGB8;
+            this->actualFormatId = angle::FormatID::ETC2_R8G8B8_UNORM_BLOCK;
+            break;
+
+        case angle::FormatID::PVRTC1_RGBA_2BPP_UNORM_BLOCK:
+            this->metalFormat    = MTLPixelFormatPVRTC_RGBA_2BPP;
+            this->actualFormatId = angle::FormatID::PVRTC1_RGBA_2BPP_UNORM_BLOCK;
+            break;
+
+        case angle::FormatID::PVRTC1_RGBA_2BPP_UNORM_SRGB_BLOCK:
+            this->metalFormat    = MTLPixelFormatPVRTC_RGBA_2BPP_sRGB;
+            this->actualFormatId = angle::FormatID::PVRTC1_RGBA_2BPP_UNORM_SRGB_BLOCK;
+            break;
+
+        case angle::FormatID::PVRTC1_RGBA_4BPP_UNORM_BLOCK:
+            this->metalFormat    = MTLPixelFormatPVRTC_RGBA_4BPP;
+            this->actualFormatId = angle::FormatID::PVRTC1_RGBA_4BPP_UNORM_BLOCK;
+            break;
+
+        case angle::FormatID::PVRTC1_RGBA_4BPP_UNORM_SRGB_BLOCK:
+            this->metalFormat    = MTLPixelFormatPVRTC_RGBA_4BPP_sRGB;
+            this->actualFormatId = angle::FormatID::PVRTC1_RGBA_4BPP_UNORM_SRGB_BLOCK;
+            break;
+
+        case angle::FormatID::PVRTC1_RGB_2BPP_UNORM_BLOCK:
+            this->metalFormat    = MTLPixelFormatPVRTC_RGB_2BPP;
+            this->actualFormatId = angle::FormatID::PVRTC1_RGB_2BPP_UNORM_BLOCK;
+            break;
+
+        case angle::FormatID::PVRTC1_RGB_2BPP_UNORM_SRGB_BLOCK:
+            this->metalFormat    = MTLPixelFormatPVRTC_RGB_2BPP_sRGB;
+            this->actualFormatId = angle::FormatID::PVRTC1_RGB_2BPP_UNORM_SRGB_BLOCK;
+            break;
+
+        case angle::FormatID::PVRTC1_RGB_4BPP_UNORM_BLOCK:
+            this->metalFormat    = MTLPixelFormatPVRTC_RGB_4BPP;
+            this->actualFormatId = angle::FormatID::PVRTC1_RGB_4BPP_UNORM_BLOCK;
+            break;
+
+        case angle::FormatID::PVRTC1_RGB_4BPP_UNORM_SRGB_BLOCK:
+            this->metalFormat    = MTLPixelFormatPVRTC_RGB_4BPP_sRGB;
+            this->actualFormatId = angle::FormatID::PVRTC1_RGB_4BPP_UNORM_SRGB_BLOCK;
+            break;
+
+        case angle::FormatID::R4G4B4A4_UNORM:
+            this->metalFormat    = MTLPixelFormatABGR4Unorm;
+            this->actualFormatId = angle::FormatID::R4G4B4A4_UNORM;
+            break;
+
+        case angle::FormatID::R5G5B5A1_UNORM:
+            this->metalFormat    = MTLPixelFormatBGR5A1Unorm;
+            this->actualFormatId = angle::FormatID::R5G5B5A1_UNORM;
+            break;
+
+        case angle::FormatID::R5G6B5_UNORM:
+            this->metalFormat    = MTLPixelFormatB5G6R5Unorm;
+            this->actualFormatId = angle::FormatID::R5G6B5_UNORM;
+            break;
+
         case angle::FormatID::D16_UNORM:
+            this->metalFormat    = MTLPixelFormatDepth32Float;
             this->actualFormatId = angle::FormatID::D32_FLOAT;
             break;
 
         case angle::FormatID::D24_UNORM_S8_UINT:
+            this->metalFormat    = MTLPixelFormatDepth32Float_Stencil8;
             this->actualFormatId = angle::FormatID::D32_FLOAT_S8X24_UINT;
-            break;
-
-#endif
-        default:
-            this->actualFormatId = this->intendedFormatId;
-    }
-
-    // Actual conversion
-    switch (this->actualFormatId)
-    {
-        case angle::FormatID::A8_UNORM:
-            this->metalFormat = MTLPixelFormatA8Unorm;
-            break;
-
-        case angle::FormatID::B8G8R8A8_UNORM:
-            this->metalFormat = MTLPixelFormatBGRA8Unorm;
-            break;
-
-        case angle::FormatID::B8G8R8A8_UNORM_SRGB:
-            this->metalFormat = MTLPixelFormatBGRA8Unorm_sRGB;
-            break;
-
-        case angle::FormatID::D32_FLOAT:
-            this->metalFormat = MTLPixelFormatDepth32Float;
-            break;
-
-        case angle::FormatID::D32_FLOAT_S8X24_UINT:
-            this->metalFormat = MTLPixelFormatDepth32Float_Stencil8;
-            break;
-
-        case angle::FormatID::NONE:
-            this->metalFormat = MTLPixelFormatInvalid;
-            break;
-
-        case angle::FormatID::R16G16B16A16_FLOAT:
-            this->metalFormat = MTLPixelFormatRGBA16Float;
-            break;
-
-        case angle::FormatID::R16G16_FLOAT:
-            this->metalFormat = MTLPixelFormatRG16Float;
-            break;
-
-        case angle::FormatID::R16_FLOAT:
-            this->metalFormat = MTLPixelFormatR16Float;
-            break;
-
-        case angle::FormatID::R32G32B32A32_FLOAT:
-            this->metalFormat = MTLPixelFormatRGBA32Float;
-            break;
-
-        case angle::FormatID::R32G32_FLOAT:
-            this->metalFormat = MTLPixelFormatRG32Float;
-            break;
-
-        case angle::FormatID::R32_FLOAT:
-            this->metalFormat = MTLPixelFormatR32Float;
-            break;
-
-        case angle::FormatID::R8G8B8A8_UNORM:
-            this->metalFormat = MTLPixelFormatRGBA8Unorm;
-            break;
-
-        case angle::FormatID::R8G8B8A8_UNORM_SRGB:
-            this->metalFormat = MTLPixelFormatRGBA8Unorm_sRGB;
-            break;
-
-        case angle::FormatID::R8G8_UNORM:
-            this->metalFormat = MTLPixelFormatRG8Unorm;
-            break;
-
-        case angle::FormatID::R8_UNORM:
-            this->metalFormat = MTLPixelFormatR8Unorm;
-            break;
-
-        case angle::FormatID::S8_UINT:
-            this->metalFormat = MTLPixelFormatStencil8;
-            break;
-
-#if TARGET_OS_OSX
-        case angle::FormatID::BC1_RGBA_UNORM_BLOCK:
-            this->metalFormat = MTLPixelFormatBC1_RGBA;
-            break;
-
-        case angle::FormatID::BC1_RGBA_UNORM_SRGB_BLOCK:
-            this->metalFormat = MTLPixelFormatBC1_RGBA_sRGB;
-            break;
-
-        case angle::FormatID::BC1_RGB_UNORM_BLOCK:
-            this->metalFormat = MTLPixelFormatBC1_RGBA;
-            break;
-
-        case angle::FormatID::BC1_RGB_UNORM_SRGB_BLOCK:
-            this->metalFormat = MTLPixelFormatBC1_RGBA_sRGB;
-            break;
-
-        case angle::FormatID::BC2_RGBA_UNORM_BLOCK:
-            this->metalFormat = MTLPixelFormatBC2_RGBA;
-            break;
-
-        case angle::FormatID::BC2_RGBA_UNORM_SRGB_BLOCK:
-            this->metalFormat = MTLPixelFormatBC2_RGBA_sRGB;
-            break;
-
-        case angle::FormatID::BC3_RGBA_UNORM_BLOCK:
-            this->metalFormat = MTLPixelFormatBC3_RGBA;
-            break;
-
-        case angle::FormatID::BC3_RGBA_UNORM_SRGB_BLOCK:
-            this->metalFormat = MTLPixelFormatBC3_RGBA_sRGB;
-            break;
-
-        case angle::FormatID::D16_UNORM:
-            this->metalFormat = MTLPixelFormatDepth16Unorm;
-            break;
-
-        case angle::FormatID::D24_UNORM_S8_UINT:
-            this->metalFormat = MTLPixelFormatDepth24Unorm_Stencil8;
-            break;
-
-#else  // TARGET_OS_OSX
-        case angle::FormatID::EAC_R11G11_SNORM_BLOCK:
-            this->metalFormat = MTLPixelFormatEAC_RG11Snorm;
-            break;
-
-        case angle::FormatID::EAC_R11G11_UNORM_BLOCK:
-            this->metalFormat = MTLPixelFormatEAC_R11Unorm;
-            break;
-
-        case angle::FormatID::EAC_R11_SNORM_BLOCK:
-            this->metalFormat = MTLPixelFormatEAC_R11Snorm;
-            break;
-
-        case angle::FormatID::EAC_R11_UNORM_BLOCK:
-            this->metalFormat = MTLPixelFormatEAC_R11Unorm;
-            break;
-
-        case angle::FormatID::ETC1_R8G8B8_UNORM_BLOCK:
-            this->metalFormat = MTLPixelFormatETC2_RGB8;
-            break;
-
-        case angle::FormatID::ETC2_R8G8B8A1_SRGB_BLOCK:
-            this->metalFormat = MTLPixelFormatETC2_RGB8A1_sRGB;
-            break;
-
-        case angle::FormatID::ETC2_R8G8B8A1_UNORM_BLOCK:
-            this->metalFormat = MTLPixelFormatETC2_RGB8A1;
-            break;
-
-        case angle::FormatID::ETC2_R8G8B8A8_SRGB_BLOCK:
-            this->metalFormat = MTLPixelFormatEAC_RGBA8_sRGB;
-            break;
-
-        case angle::FormatID::ETC2_R8G8B8A8_UNORM_BLOCK:
-            this->metalFormat = MTLPixelFormatEAC_RGBA8;
-            break;
-
-        case angle::FormatID::ETC2_R8G8B8_SRGB_BLOCK:
-            this->metalFormat = MTLPixelFormatETC2_RGB8_sRGB;
-            break;
-
-        case angle::FormatID::ETC2_R8G8B8_UNORM_BLOCK:
-            this->metalFormat = MTLPixelFormatETC2_RGB8;
-            break;
-
-        case angle::FormatID::PVRTC1_RGBA_2BPP_UNORM_BLOCK:
-            this->metalFormat = MTLPixelFormatPVRTC_RGBA_2BPP;
-            break;
-
-        case angle::FormatID::PVRTC1_RGBA_2BPP_UNORM_SRGB_BLOCK:
-            this->metalFormat = MTLPixelFormatPVRTC_RGBA_2BPP_sRGB;
-            break;
-
-        case angle::FormatID::PVRTC1_RGBA_4BPP_UNORM_BLOCK:
-            this->metalFormat = MTLPixelFormatPVRTC_RGBA_4BPP;
-            break;
-
-        case angle::FormatID::PVRTC1_RGBA_4BPP_UNORM_SRGB_BLOCK:
-            this->metalFormat = MTLPixelFormatPVRTC_RGBA_4BPP_sRGB;
-            break;
-
-        case angle::FormatID::PVRTC1_RGB_2BPP_UNORM_BLOCK:
-            this->metalFormat = MTLPixelFormatPVRTC_RGB_2BPP;
-            break;
-
-        case angle::FormatID::PVRTC1_RGB_2BPP_UNORM_SRGB_BLOCK:
-            this->metalFormat = MTLPixelFormatPVRTC_RGB_2BPP_sRGB;
-            break;
-
-        case angle::FormatID::PVRTC1_RGB_4BPP_UNORM_BLOCK:
-            this->metalFormat = MTLPixelFormatPVRTC_RGB_4BPP;
-            break;
-
-        case angle::FormatID::PVRTC1_RGB_4BPP_UNORM_SRGB_BLOCK:
-            this->metalFormat = MTLPixelFormatPVRTC_RGB_4BPP_sRGB;
-            break;
-
-        case angle::FormatID::R4G4B4A4_UNORM:
-            this->metalFormat = MTLPixelFormatABGR4Unorm;
-            break;
-
-        case angle::FormatID::R5G5B5A1_UNORM:
-            this->metalFormat = MTLPixelFormatBGR5A1Unorm;
-            break;
-
-        case angle::FormatID::R5G6B5_UNORM:
-            this->metalFormat = MTLPixelFormatB5G6R5Unorm;
             break;
 
 #endif  // TARGET_OS_OSX
@@ -313,697 +610,623 @@ void Format::init(angle::FormatID intendedFormatId_)
     }
 }
 
-void VertexFormat::init(angle::FormatID angleFormatId, bool forStreaming)
+void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
 {
     this->intendedFormatId = angleFormatId;
 
-    // Override the unsupported format
-    switch (this->intendedFormatId)
-    {
-        case angle::FormatID::R32G32B32A32_FIXED:
-            this->actualFormatId     = angle::FormatID::R32G32B32A32_FLOAT;
-            this->vertexLoadFunction = Copy32FixedTo32FVertexData<4, 4>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R32G32B32_FIXED:
-            this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
-            this->vertexLoadFunction = Copy32FixedTo32FVertexData<3, 3>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R32G32_FIXED:
-            this->actualFormatId     = angle::FormatID::R32G32_FLOAT;
-            this->vertexLoadFunction = Copy32FixedTo32FVertexData<2, 2>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R32_FIXED:
-            this->actualFormatId     = angle::FormatID::R32_FLOAT;
-            this->vertexLoadFunction = Copy32FixedTo32FVertexData<1, 1>;
-            // Skip streaming format override step
-            goto conversion;
-
-        default:
-            this->actualFormatId     = this->intendedFormatId;
-            this->vertexLoadFunction = nullptr;
-    }
-
-    if (!forStreaming)
-    {
-        goto conversion;
-    }
-
-    // Override the unsupported format for streaming
-    switch (this->intendedFormatId)
-    {
-        case angle::FormatID::R16G16B16A16_SSCALED:
-            this->actualFormatId     = angle::FormatID::R32G32B32A32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLshort, 4, 4, false>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R16G16B16A16_USCALED:
-            this->actualFormatId     = angle::FormatID::R32G32B32A32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLushort, 4, 4, false>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R16G16B16_SINT:
-            this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLshort, 3, 3, false>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R16G16B16_SNORM:
-            this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLshort, 3, 3, true>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R16G16B16_SSCALED:
-            this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLshort, 3, 3, false>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R16G16B16_UINT:
-            this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLushort, 3, 3, false>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R16G16B16_UNORM:
-            this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLushort, 3, 3, true>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R16G16B16_USCALED:
-            this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLushort, 3, 3, false>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R16G16_SSCALED:
-            this->actualFormatId     = angle::FormatID::R32G32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLshort, 2, 2, false>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R16G16_USCALED:
-            this->actualFormatId     = angle::FormatID::R32G32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLushort, 2, 2, false>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R16_SINT:
-            this->actualFormatId     = angle::FormatID::R32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLshort, 1, 1, false>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R16_SNORM:
-            this->actualFormatId     = angle::FormatID::R32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLshort, 1, 1, true>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R16_SSCALED:
-            this->actualFormatId     = angle::FormatID::R32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLshort, 1, 1, false>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R16_UINT:
-            this->actualFormatId     = angle::FormatID::R32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLushort, 1, 1, false>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R16_UNORM:
-            this->actualFormatId     = angle::FormatID::R32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLushort, 1, 1, true>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R16_USCALED:
-            this->actualFormatId     = angle::FormatID::R32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLushort, 1, 1, false>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R8G8B8A8_SSCALED:
-            this->actualFormatId     = angle::FormatID::R32G32B32A32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLbyte, 4, 4, false>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R8G8B8A8_USCALED:
-            this->actualFormatId     = angle::FormatID::R32G32B32A32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLubyte, 4, 4, false>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R8G8B8_SINT:
-            this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLbyte, 3, 3, false>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R8G8B8_SNORM:
-            this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLbyte, 3, 3, true>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R8G8B8_SSCALED:
-            this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLbyte, 3, 3, false>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R8G8B8_UINT:
-            this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLubyte, 3, 3, false>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R8G8B8_UNORM:
-            this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLubyte, 3, 3, true>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R8G8B8_USCALED:
-            this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLubyte, 3, 3, false>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R8G8_SINT:
-            this->actualFormatId     = angle::FormatID::R32G32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLbyte, 2, 2, false>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R8G8_SNORM:
-            this->actualFormatId     = angle::FormatID::R32G32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLbyte, 2, 2, true>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R8G8_SSCALED:
-            this->actualFormatId     = angle::FormatID::R32G32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLbyte, 2, 2, false>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R8G8_UINT:
-            this->actualFormatId     = angle::FormatID::R32G32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLubyte, 2, 2, false>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R8G8_UNORM:
-            this->actualFormatId     = angle::FormatID::R32G32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLubyte, 2, 2, true>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R8G8_USCALED:
-            this->actualFormatId     = angle::FormatID::R32G32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLubyte, 2, 2, false>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R8_SINT:
-            this->actualFormatId     = angle::FormatID::R32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLbyte, 1, 1, false>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R8_SNORM:
-            this->actualFormatId     = angle::FormatID::R32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLbyte, 1, 1, true>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R8_SSCALED:
-            this->actualFormatId     = angle::FormatID::R32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLbyte, 1, 1, false>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R8_UINT:
-            this->actualFormatId     = angle::FormatID::R32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLubyte, 1, 1, false>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R8_UNORM:
-            this->actualFormatId     = angle::FormatID::R32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLubyte, 1, 1, true>;
-            // Skip streaming format override step
-            goto conversion;
-
-        case angle::FormatID::R8_USCALED:
-            this->actualFormatId     = angle::FormatID::R32_FLOAT;
-            this->vertexLoadFunction = CopyTo32FVertexData<GLubyte, 1, 1, false>;
-            // Skip streaming format override step
-            goto conversion;
-
-        default:
-            this->actualFormatId     = this->intendedFormatId;
-            this->vertexLoadFunction = nullptr;
-    }
-
-conversion:
     // Actual conversion
-    switch (this->actualFormatId)
+    switch (this->intendedFormatId)
     {
         case angle::FormatID::NONE:
-            this->metalFormat = MTLVertexFormatInvalid;
-            if (!this->vertexLoadFunction)
-            {
-                this->vertexLoadFunction = nullptr;
-            }
+            this->metalFormat        = MTLVertexFormatInvalid;
+            this->actualFormatId     = angle::FormatID::NONE;
+            this->vertexLoadFunction = nullptr;
             break;
 
         case angle::FormatID::R16G16B16A16_SINT:
-            this->metalFormat = MTLVertexFormatShort4;
-            if (!this->vertexLoadFunction)
-            {
-                this->vertexLoadFunction = CopyNativeVertexData<GLshort, 4, 4, 0>;
-            }
+            this->metalFormat        = MTLVertexFormatShort4;
+            this->actualFormatId     = angle::FormatID::R16G16B16A16_SINT;
+            this->vertexLoadFunction = CopyNativeVertexData<GLshort, 4, 4, 0>;
             break;
 
         case angle::FormatID::R16G16B16A16_SNORM:
-            this->metalFormat = MTLVertexFormatShort4Normalized;
-            if (!this->vertexLoadFunction)
-            {
-                this->vertexLoadFunction = CopyNativeVertexData<GLshort, 4, 4, 0>;
-            }
+            this->metalFormat        = MTLVertexFormatShort4Normalized;
+            this->actualFormatId     = angle::FormatID::R16G16B16A16_SNORM;
+            this->vertexLoadFunction = CopyNativeVertexData<GLshort, 4, 4, 0>;
             break;
 
         case angle::FormatID::R16G16B16A16_SSCALED:
-            this->metalFormat = MTLVertexFormatShort4;
-            if (!this->vertexLoadFunction)
-            {
-                this->vertexLoadFunction = CopyNativeVertexData<GLshort, 4, 4, 0>;
-            }
+            this->metalFormat        = MTLVertexFormatShort4;
+            this->actualFormatId     = angle::FormatID::R16G16B16A16_SSCALED;
+            this->vertexLoadFunction = CopyNativeVertexData<GLshort, 4, 4, 0>;
             break;
 
         case angle::FormatID::R16G16B16A16_UINT:
-            this->metalFormat = MTLVertexFormatUShort4;
-            if (!this->vertexLoadFunction)
-            {
-                this->vertexLoadFunction = CopyNativeVertexData<GLushort, 4, 4, 0>;
-            }
+            this->metalFormat        = MTLVertexFormatUShort4;
+            this->actualFormatId     = angle::FormatID::R16G16B16A16_UINT;
+            this->vertexLoadFunction = CopyNativeVertexData<GLushort, 4, 4, 0>;
             break;
 
         case angle::FormatID::R16G16B16A16_UNORM:
-            this->metalFormat = MTLVertexFormatUShort4Normalized;
-            if (!this->vertexLoadFunction)
-            {
-                this->vertexLoadFunction = CopyNativeVertexData<GLushort, 4, 4, 0>;
-            }
+            this->metalFormat        = MTLVertexFormatUShort4Normalized;
+            this->actualFormatId     = angle::FormatID::R16G16B16A16_UNORM;
+            this->vertexLoadFunction = CopyNativeVertexData<GLushort, 4, 4, 0>;
             break;
 
         case angle::FormatID::R16G16B16A16_USCALED:
-            this->metalFormat = MTLVertexFormatUShort4;
-            if (!this->vertexLoadFunction)
-            {
-                this->vertexLoadFunction = CopyNativeVertexData<GLushort, 4, 4, 0>;
-            }
+            this->metalFormat        = MTLVertexFormatUShort4;
+            this->actualFormatId     = angle::FormatID::R16G16B16A16_USCALED;
+            this->vertexLoadFunction = CopyNativeVertexData<GLushort, 4, 4, 0>;
             break;
 
         case angle::FormatID::R16G16B16_SINT:
-            this->metalFormat = MTLVertexFormatShort3;
-            if (!this->vertexLoadFunction)
+            if (tightlyPacked)
             {
+                this->metalFormat        = MTLVertexFormatFloat3;
+                this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
+                this->vertexLoadFunction = CopyTo32FVertexData<GLshort, 3, 3, false>;
+            }
+            else
+            {
+                this->metalFormat        = MTLVertexFormatShort3;
+                this->actualFormatId     = angle::FormatID::R16G16B16_SINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLshort, 3, 3, 0>;
             }
             break;
 
         case angle::FormatID::R16G16B16_SNORM:
-            this->metalFormat = MTLVertexFormatShort3Normalized;
-            if (!this->vertexLoadFunction)
+            if (tightlyPacked)
             {
+                this->metalFormat        = MTLVertexFormatFloat3;
+                this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
+                this->vertexLoadFunction = CopyTo32FVertexData<GLshort, 3, 3, true>;
+            }
+            else
+            {
+                this->metalFormat        = MTLVertexFormatShort3Normalized;
+                this->actualFormatId     = angle::FormatID::R16G16B16_SNORM;
                 this->vertexLoadFunction = CopyNativeVertexData<GLshort, 3, 3, 0>;
             }
             break;
 
         case angle::FormatID::R16G16B16_SSCALED:
-            this->metalFormat = MTLVertexFormatShort3;
-            if (!this->vertexLoadFunction)
+            if (tightlyPacked)
             {
+                this->metalFormat        = MTLVertexFormatFloat3;
+                this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
+                this->vertexLoadFunction = CopyTo32FVertexData<GLshort, 3, 3, false>;
+            }
+            else
+            {
+                this->metalFormat        = MTLVertexFormatShort3;
+                this->actualFormatId     = angle::FormatID::R16G16B16_SSCALED;
                 this->vertexLoadFunction = CopyNativeVertexData<GLshort, 3, 3, 0>;
             }
             break;
 
         case angle::FormatID::R16G16B16_UINT:
-            this->metalFormat = MTLVertexFormatUShort3;
-            if (!this->vertexLoadFunction)
+            if (tightlyPacked)
             {
+                this->metalFormat        = MTLVertexFormatFloat3;
+                this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
+                this->vertexLoadFunction = CopyTo32FVertexData<GLushort, 3, 3, false>;
+            }
+            else
+            {
+                this->metalFormat        = MTLVertexFormatUShort3;
+                this->actualFormatId     = angle::FormatID::R16G16B16_UINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLushort, 3, 3, 0>;
             }
             break;
 
         case angle::FormatID::R16G16B16_UNORM:
-            this->metalFormat = MTLVertexFormatUShort3Normalized;
-            if (!this->vertexLoadFunction)
+            if (tightlyPacked)
             {
+                this->metalFormat        = MTLVertexFormatFloat3;
+                this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
+                this->vertexLoadFunction = CopyTo32FVertexData<GLushort, 3, 3, true>;
+            }
+            else
+            {
+                this->metalFormat        = MTLVertexFormatUShort3Normalized;
+                this->actualFormatId     = angle::FormatID::R16G16B16_UNORM;
                 this->vertexLoadFunction = CopyNativeVertexData<GLushort, 3, 3, 0>;
             }
             break;
 
         case angle::FormatID::R16G16B16_USCALED:
-            this->metalFormat = MTLVertexFormatUShort3;
-            if (!this->vertexLoadFunction)
+            if (tightlyPacked)
             {
+                this->metalFormat        = MTLVertexFormatFloat3;
+                this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
+                this->vertexLoadFunction = CopyTo32FVertexData<GLushort, 3, 3, false>;
+            }
+            else
+            {
+                this->metalFormat        = MTLVertexFormatUShort3;
+                this->actualFormatId     = angle::FormatID::R16G16B16_USCALED;
                 this->vertexLoadFunction = CopyNativeVertexData<GLushort, 3, 3, 0>;
             }
             break;
 
         case angle::FormatID::R16G16_SINT:
-            this->metalFormat = MTLVertexFormatShort2;
-            if (!this->vertexLoadFunction)
-            {
-                this->vertexLoadFunction = CopyNativeVertexData<GLshort, 2, 2, 0>;
-            }
+            this->metalFormat        = MTLVertexFormatShort2;
+            this->actualFormatId     = angle::FormatID::R16G16_SINT;
+            this->vertexLoadFunction = CopyNativeVertexData<GLshort, 2, 2, 0>;
             break;
 
         case angle::FormatID::R16G16_SNORM:
-            this->metalFormat = MTLVertexFormatShort2Normalized;
-            if (!this->vertexLoadFunction)
-            {
-                this->vertexLoadFunction = CopyNativeVertexData<GLshort, 2, 2, 0>;
-            }
+            this->metalFormat        = MTLVertexFormatShort2Normalized;
+            this->actualFormatId     = angle::FormatID::R16G16_SNORM;
+            this->vertexLoadFunction = CopyNativeVertexData<GLshort, 2, 2, 0>;
             break;
 
         case angle::FormatID::R16G16_SSCALED:
-            this->metalFormat = MTLVertexFormatShort2;
-            if (!this->vertexLoadFunction)
-            {
-                this->vertexLoadFunction = CopyNativeVertexData<GLshort, 2, 2, 0>;
-            }
+            this->metalFormat        = MTLVertexFormatShort2;
+            this->actualFormatId     = angle::FormatID::R16G16_SSCALED;
+            this->vertexLoadFunction = CopyNativeVertexData<GLshort, 2, 2, 0>;
             break;
 
         case angle::FormatID::R16G16_UINT:
-            this->metalFormat = MTLVertexFormatUShort2;
-            if (!this->vertexLoadFunction)
-            {
-                this->vertexLoadFunction = CopyNativeVertexData<GLushort, 2, 2, 0>;
-            }
+            this->metalFormat        = MTLVertexFormatUShort2;
+            this->actualFormatId     = angle::FormatID::R16G16_UINT;
+            this->vertexLoadFunction = CopyNativeVertexData<GLushort, 2, 2, 0>;
             break;
 
         case angle::FormatID::R16G16_UNORM:
-            this->metalFormat = MTLVertexFormatUShort2Normalized;
-            if (!this->vertexLoadFunction)
-            {
-                this->vertexLoadFunction = CopyNativeVertexData<GLushort, 2, 2, 0>;
-            }
+            this->metalFormat        = MTLVertexFormatUShort2Normalized;
+            this->actualFormatId     = angle::FormatID::R16G16_UNORM;
+            this->vertexLoadFunction = CopyNativeVertexData<GLushort, 2, 2, 0>;
             break;
 
         case angle::FormatID::R16G16_USCALED:
-            this->metalFormat = MTLVertexFormatUShort2;
-            if (!this->vertexLoadFunction)
-            {
-                this->vertexLoadFunction = CopyNativeVertexData<GLushort, 2, 2, 0>;
-            }
+            this->metalFormat        = MTLVertexFormatUShort2;
+            this->actualFormatId     = angle::FormatID::R16G16_USCALED;
+            this->vertexLoadFunction = CopyNativeVertexData<GLushort, 2, 2, 0>;
             break;
 
         case angle::FormatID::R16_SINT:
-            this->metalFormat = MTLVertexFormatShort;
-            if (!this->vertexLoadFunction)
+            if (tightlyPacked)
             {
+                this->metalFormat        = MTLVertexFormatFloat;
+                this->actualFormatId     = angle::FormatID::R32_FLOAT;
+                this->vertexLoadFunction = CopyTo32FVertexData<GLshort, 1, 1, false>;
+            }
+            else
+            {
+                this->metalFormat        = MTLVertexFormatShort;
+                this->actualFormatId     = angle::FormatID::R16_SINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLshort, 1, 1, 0>;
             }
             break;
 
         case angle::FormatID::R16_SNORM:
-            this->metalFormat = MTLVertexFormatShortNormalized;
-            if (!this->vertexLoadFunction)
+            if (tightlyPacked)
             {
+                this->metalFormat        = MTLVertexFormatFloat;
+                this->actualFormatId     = angle::FormatID::R32_FLOAT;
+                this->vertexLoadFunction = CopyTo32FVertexData<GLshort, 1, 1, true>;
+            }
+            else
+            {
+                this->metalFormat        = MTLVertexFormatShortNormalized;
+                this->actualFormatId     = angle::FormatID::R16_SNORM;
                 this->vertexLoadFunction = CopyNativeVertexData<GLshort, 1, 1, 0>;
             }
             break;
 
         case angle::FormatID::R16_SSCALED:
-            this->metalFormat = MTLVertexFormatShort;
-            if (!this->vertexLoadFunction)
+            if (tightlyPacked)
             {
+                this->metalFormat        = MTLVertexFormatFloat;
+                this->actualFormatId     = angle::FormatID::R32_FLOAT;
+                this->vertexLoadFunction = CopyTo32FVertexData<GLshort, 1, 1, false>;
+            }
+            else
+            {
+                this->metalFormat        = MTLVertexFormatShort;
+                this->actualFormatId     = angle::FormatID::R16_SSCALED;
                 this->vertexLoadFunction = CopyNativeVertexData<GLshort, 1, 1, 0>;
             }
             break;
 
         case angle::FormatID::R16_UINT:
-            this->metalFormat = MTLVertexFormatUShort;
-            if (!this->vertexLoadFunction)
+            if (tightlyPacked)
             {
+                this->metalFormat        = MTLVertexFormatFloat;
+                this->actualFormatId     = angle::FormatID::R32_FLOAT;
+                this->vertexLoadFunction = CopyTo32FVertexData<GLushort, 1, 1, false>;
+            }
+            else
+            {
+                this->metalFormat        = MTLVertexFormatUShort;
+                this->actualFormatId     = angle::FormatID::R16_UINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLushort, 1, 1, 0>;
             }
             break;
 
         case angle::FormatID::R16_UNORM:
-            this->metalFormat = MTLVertexFormatUShortNormalized;
-            if (!this->vertexLoadFunction)
+            if (tightlyPacked)
             {
+                this->metalFormat        = MTLVertexFormatFloat;
+                this->actualFormatId     = angle::FormatID::R32_FLOAT;
+                this->vertexLoadFunction = CopyTo32FVertexData<GLushort, 1, 1, true>;
+            }
+            else
+            {
+                this->metalFormat        = MTLVertexFormatUShortNormalized;
+                this->actualFormatId     = angle::FormatID::R16_UNORM;
                 this->vertexLoadFunction = CopyNativeVertexData<GLushort, 1, 1, 0>;
             }
             break;
 
         case angle::FormatID::R16_USCALED:
-            this->metalFormat = MTLVertexFormatUShort;
-            if (!this->vertexLoadFunction)
+            if (tightlyPacked)
             {
+                this->metalFormat        = MTLVertexFormatFloat;
+                this->actualFormatId     = angle::FormatID::R32_FLOAT;
+                this->vertexLoadFunction = CopyTo32FVertexData<GLushort, 1, 1, false>;
+            }
+            else
+            {
+                this->metalFormat        = MTLVertexFormatUShort;
+                this->actualFormatId     = angle::FormatID::R16_USCALED;
                 this->vertexLoadFunction = CopyNativeVertexData<GLushort, 1, 1, 0>;
             }
             break;
 
         case angle::FormatID::R32G32B32A32_FLOAT:
-            this->metalFormat = MTLVertexFormatFloat4;
-            if (!this->vertexLoadFunction)
-            {
-                this->vertexLoadFunction = CopyNativeVertexData<GLfloat, 4, 4, 0>;
-            }
+            this->metalFormat        = MTLVertexFormatFloat4;
+            this->actualFormatId     = angle::FormatID::R32G32B32A32_FLOAT;
+            this->vertexLoadFunction = CopyNativeVertexData<GLfloat, 4, 4, 0>;
             break;
 
         case angle::FormatID::R32G32B32_FLOAT:
-            this->metalFormat = MTLVertexFormatFloat3;
-            if (!this->vertexLoadFunction)
-            {
-                this->vertexLoadFunction = CopyNativeVertexData<GLfloat, 3, 3, 0>;
-            }
+            this->metalFormat        = MTLVertexFormatFloat3;
+            this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
+            this->vertexLoadFunction = CopyNativeVertexData<GLfloat, 3, 3, 0>;
             break;
 
         case angle::FormatID::R32G32_FLOAT:
-            this->metalFormat = MTLVertexFormatFloat2;
-            if (!this->vertexLoadFunction)
-            {
-                this->vertexLoadFunction = CopyNativeVertexData<GLfloat, 2, 2, 0>;
-            }
+            this->metalFormat        = MTLVertexFormatFloat2;
+            this->actualFormatId     = angle::FormatID::R32G32_FLOAT;
+            this->vertexLoadFunction = CopyNativeVertexData<GLfloat, 2, 2, 0>;
             break;
 
         case angle::FormatID::R32_FLOAT:
-            this->metalFormat = MTLVertexFormatFloat;
-            if (!this->vertexLoadFunction)
-            {
-                this->vertexLoadFunction = CopyNativeVertexData<GLfloat, 1, 1, 0>;
-            }
+            this->metalFormat        = MTLVertexFormatFloat;
+            this->actualFormatId     = angle::FormatID::R32_FLOAT;
+            this->vertexLoadFunction = CopyNativeVertexData<GLfloat, 1, 1, 0>;
             break;
 
         case angle::FormatID::R8G8B8A8_SINT:
-            this->metalFormat = MTLVertexFormatChar4;
-            if (!this->vertexLoadFunction)
-            {
-                this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 4, 4, 0>;
-            }
+            this->metalFormat        = MTLVertexFormatChar4;
+            this->actualFormatId     = angle::FormatID::R8G8B8A8_SINT;
+            this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 4, 4, 0>;
             break;
 
         case angle::FormatID::R8G8B8A8_SNORM:
-            this->metalFormat = MTLVertexFormatChar4Normalized;
-            if (!this->vertexLoadFunction)
-            {
-                this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 4, 4, 0>;
-            }
+            this->metalFormat        = MTLVertexFormatChar4Normalized;
+            this->actualFormatId     = angle::FormatID::R8G8B8A8_SNORM;
+            this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 4, 4, 0>;
             break;
 
         case angle::FormatID::R8G8B8A8_SSCALED:
-            this->metalFormat = MTLVertexFormatChar4;
-            if (!this->vertexLoadFunction)
-            {
-                this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 4, 4, 0>;
-            }
+            this->metalFormat        = MTLVertexFormatChar4;
+            this->actualFormatId     = angle::FormatID::R8G8B8A8_SSCALED;
+            this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 4, 4, 0>;
             break;
 
         case angle::FormatID::R8G8B8A8_UINT:
-            this->metalFormat = MTLVertexFormatUChar4;
-            if (!this->vertexLoadFunction)
-            {
-                this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 4, 4, 0>;
-            }
+            this->metalFormat        = MTLVertexFormatUChar4;
+            this->actualFormatId     = angle::FormatID::R8G8B8A8_UINT;
+            this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 4, 4, 0>;
             break;
 
         case angle::FormatID::R8G8B8A8_UNORM:
-            this->metalFormat = MTLVertexFormatUChar4Normalized;
-            if (!this->vertexLoadFunction)
-            {
-                this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 4, 4, 0>;
-            }
+            this->metalFormat        = MTLVertexFormatUChar4Normalized;
+            this->actualFormatId     = angle::FormatID::R8G8B8A8_UNORM;
+            this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 4, 4, 0>;
             break;
 
         case angle::FormatID::R8G8B8A8_USCALED:
-            this->metalFormat = MTLVertexFormatUChar4;
-            if (!this->vertexLoadFunction)
-            {
-                this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 4, 4, 0>;
-            }
+            this->metalFormat        = MTLVertexFormatUChar4;
+            this->actualFormatId     = angle::FormatID::R8G8B8A8_USCALED;
+            this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 4, 4, 0>;
             break;
 
         case angle::FormatID::R8G8B8_SINT:
-            this->metalFormat = MTLVertexFormatChar3;
-            if (!this->vertexLoadFunction)
+            if (tightlyPacked)
             {
+                this->metalFormat        = MTLVertexFormatFloat3;
+                this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
+                this->vertexLoadFunction = CopyTo32FVertexData<GLbyte, 3, 3, false>;
+            }
+            else
+            {
+                this->metalFormat        = MTLVertexFormatChar3;
+                this->actualFormatId     = angle::FormatID::R8G8B8_SINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 3, 3, 0>;
             }
             break;
 
         case angle::FormatID::R8G8B8_SNORM:
-            this->metalFormat = MTLVertexFormatChar3Normalized;
-            if (!this->vertexLoadFunction)
+            if (tightlyPacked)
             {
+                this->metalFormat        = MTLVertexFormatFloat3;
+                this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
+                this->vertexLoadFunction = CopyTo32FVertexData<GLbyte, 3, 3, true>;
+            }
+            else
+            {
+                this->metalFormat        = MTLVertexFormatChar3Normalized;
+                this->actualFormatId     = angle::FormatID::R8G8B8_SNORM;
                 this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 3, 3, 0>;
             }
             break;
 
         case angle::FormatID::R8G8B8_SSCALED:
-            this->metalFormat = MTLVertexFormatChar3;
-            if (!this->vertexLoadFunction)
+            if (tightlyPacked)
             {
+                this->metalFormat        = MTLVertexFormatFloat3;
+                this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
+                this->vertexLoadFunction = CopyTo32FVertexData<GLbyte, 3, 3, false>;
+            }
+            else
+            {
+                this->metalFormat        = MTLVertexFormatChar3;
+                this->actualFormatId     = angle::FormatID::R8G8B8_SSCALED;
                 this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 3, 3, 0>;
             }
             break;
 
         case angle::FormatID::R8G8B8_UINT:
-            this->metalFormat = MTLVertexFormatUChar3;
-            if (!this->vertexLoadFunction)
+            if (tightlyPacked)
             {
+                this->metalFormat        = MTLVertexFormatFloat3;
+                this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
+                this->vertexLoadFunction = CopyTo32FVertexData<GLubyte, 3, 3, false>;
+            }
+            else
+            {
+                this->metalFormat        = MTLVertexFormatUChar3;
+                this->actualFormatId     = angle::FormatID::R8G8B8_UINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 3, 3, 0>;
             }
             break;
 
         case angle::FormatID::R8G8B8_UNORM:
-            this->metalFormat = MTLVertexFormatUChar3Normalized;
-            if (!this->vertexLoadFunction)
+            if (tightlyPacked)
             {
+                this->metalFormat        = MTLVertexFormatFloat3;
+                this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
+                this->vertexLoadFunction = CopyTo32FVertexData<GLubyte, 3, 3, true>;
+            }
+            else
+            {
+                this->metalFormat        = MTLVertexFormatUChar3Normalized;
+                this->actualFormatId     = angle::FormatID::R8G8B8_UNORM;
                 this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 3, 3, 0>;
             }
             break;
 
         case angle::FormatID::R8G8B8_USCALED:
-            this->metalFormat = MTLVertexFormatUChar3;
-            if (!this->vertexLoadFunction)
+            if (tightlyPacked)
             {
+                this->metalFormat        = MTLVertexFormatFloat3;
+                this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
+                this->vertexLoadFunction = CopyTo32FVertexData<GLubyte, 3, 3, false>;
+            }
+            else
+            {
+                this->metalFormat        = MTLVertexFormatUChar3;
+                this->actualFormatId     = angle::FormatID::R8G8B8_USCALED;
                 this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 3, 3, 0>;
             }
             break;
 
         case angle::FormatID::R8G8_SINT:
-            this->metalFormat = MTLVertexFormatChar2;
-            if (!this->vertexLoadFunction)
+            if (tightlyPacked)
             {
+                this->metalFormat        = MTLVertexFormatFloat2;
+                this->actualFormatId     = angle::FormatID::R32G32_FLOAT;
+                this->vertexLoadFunction = CopyTo32FVertexData<GLbyte, 2, 2, false>;
+            }
+            else
+            {
+                this->metalFormat        = MTLVertexFormatChar2;
+                this->actualFormatId     = angle::FormatID::R8G8_SINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 2, 2, 0>;
             }
             break;
 
         case angle::FormatID::R8G8_SNORM:
-            this->metalFormat = MTLVertexFormatChar2Normalized;
-            if (!this->vertexLoadFunction)
+            if (tightlyPacked)
             {
+                this->metalFormat        = MTLVertexFormatFloat2;
+                this->actualFormatId     = angle::FormatID::R32G32_FLOAT;
+                this->vertexLoadFunction = CopyTo32FVertexData<GLbyte, 2, 2, true>;
+            }
+            else
+            {
+                this->metalFormat        = MTLVertexFormatChar2Normalized;
+                this->actualFormatId     = angle::FormatID::R8G8_SNORM;
                 this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 2, 2, 0>;
             }
             break;
 
         case angle::FormatID::R8G8_SSCALED:
-            this->metalFormat = MTLVertexFormatChar2;
-            if (!this->vertexLoadFunction)
+            if (tightlyPacked)
             {
+                this->metalFormat        = MTLVertexFormatFloat2;
+                this->actualFormatId     = angle::FormatID::R32G32_FLOAT;
+                this->vertexLoadFunction = CopyTo32FVertexData<GLbyte, 2, 2, false>;
+            }
+            else
+            {
+                this->metalFormat        = MTLVertexFormatChar2;
+                this->actualFormatId     = angle::FormatID::R8G8_SSCALED;
                 this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 2, 2, 0>;
             }
             break;
 
         case angle::FormatID::R8G8_UINT:
-            this->metalFormat = MTLVertexFormatUChar2;
-            if (!this->vertexLoadFunction)
+            if (tightlyPacked)
             {
+                this->metalFormat        = MTLVertexFormatFloat2;
+                this->actualFormatId     = angle::FormatID::R32G32_FLOAT;
+                this->vertexLoadFunction = CopyTo32FVertexData<GLubyte, 2, 2, false>;
+            }
+            else
+            {
+                this->metalFormat        = MTLVertexFormatUChar2;
+                this->actualFormatId     = angle::FormatID::R8G8_UINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 2, 2, 0>;
             }
             break;
 
         case angle::FormatID::R8G8_UNORM:
-            this->metalFormat = MTLVertexFormatUChar2Normalized;
-            if (!this->vertexLoadFunction)
+            if (tightlyPacked)
             {
+                this->metalFormat        = MTLVertexFormatFloat2;
+                this->actualFormatId     = angle::FormatID::R32G32_FLOAT;
+                this->vertexLoadFunction = CopyTo32FVertexData<GLubyte, 2, 2, true>;
+            }
+            else
+            {
+                this->metalFormat        = MTLVertexFormatUChar2Normalized;
+                this->actualFormatId     = angle::FormatID::R8G8_UNORM;
                 this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 2, 2, 0>;
             }
             break;
 
         case angle::FormatID::R8G8_USCALED:
-            this->metalFormat = MTLVertexFormatUChar2;
-            if (!this->vertexLoadFunction)
+            if (tightlyPacked)
             {
+                this->metalFormat        = MTLVertexFormatFloat2;
+                this->actualFormatId     = angle::FormatID::R32G32_FLOAT;
+                this->vertexLoadFunction = CopyTo32FVertexData<GLubyte, 2, 2, false>;
+            }
+            else
+            {
+                this->metalFormat        = MTLVertexFormatUChar2;
+                this->actualFormatId     = angle::FormatID::R8G8_USCALED;
                 this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 2, 2, 0>;
             }
             break;
 
         case angle::FormatID::R8_SINT:
-            this->metalFormat = MTLVertexFormatChar;
-            if (!this->vertexLoadFunction)
+            if (tightlyPacked)
             {
+                this->metalFormat        = MTLVertexFormatFloat;
+                this->actualFormatId     = angle::FormatID::R32_FLOAT;
+                this->vertexLoadFunction = CopyTo32FVertexData<GLbyte, 1, 1, false>;
+            }
+            else
+            {
+                this->metalFormat        = MTLVertexFormatChar;
+                this->actualFormatId     = angle::FormatID::R8_SINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 1, 1, 0>;
             }
             break;
 
         case angle::FormatID::R8_SNORM:
-            this->metalFormat = MTLVertexFormatCharNormalized;
-            if (!this->vertexLoadFunction)
+            if (tightlyPacked)
             {
+                this->metalFormat        = MTLVertexFormatFloat;
+                this->actualFormatId     = angle::FormatID::R32_FLOAT;
+                this->vertexLoadFunction = CopyTo32FVertexData<GLbyte, 1, 1, true>;
+            }
+            else
+            {
+                this->metalFormat        = MTLVertexFormatCharNormalized;
+                this->actualFormatId     = angle::FormatID::R8_SNORM;
                 this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 1, 1, 0>;
             }
             break;
 
         case angle::FormatID::R8_SSCALED:
-            this->metalFormat = MTLVertexFormatChar;
-            if (!this->vertexLoadFunction)
+            if (tightlyPacked)
             {
+                this->metalFormat        = MTLVertexFormatFloat;
+                this->actualFormatId     = angle::FormatID::R32_FLOAT;
+                this->vertexLoadFunction = CopyTo32FVertexData<GLbyte, 1, 1, false>;
+            }
+            else
+            {
+                this->metalFormat        = MTLVertexFormatChar;
+                this->actualFormatId     = angle::FormatID::R8_SSCALED;
                 this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 1, 1, 0>;
             }
             break;
 
         case angle::FormatID::R8_UINT:
-            this->metalFormat = MTLVertexFormatUChar;
-            if (!this->vertexLoadFunction)
+            if (tightlyPacked)
             {
+                this->metalFormat        = MTLVertexFormatFloat;
+                this->actualFormatId     = angle::FormatID::R32_FLOAT;
+                this->vertexLoadFunction = CopyTo32FVertexData<GLubyte, 1, 1, false>;
+            }
+            else
+            {
+                this->metalFormat        = MTLVertexFormatUChar;
+                this->actualFormatId     = angle::FormatID::R8_UINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 1, 1, 0>;
             }
             break;
 
         case angle::FormatID::R8_UNORM:
-            this->metalFormat = MTLVertexFormatUCharNormalized;
-            if (!this->vertexLoadFunction)
+            if (tightlyPacked)
             {
+                this->metalFormat        = MTLVertexFormatFloat;
+                this->actualFormatId     = angle::FormatID::R32_FLOAT;
+                this->vertexLoadFunction = CopyTo32FVertexData<GLubyte, 1, 1, true>;
+            }
+            else
+            {
+                this->metalFormat        = MTLVertexFormatUCharNormalized;
+                this->actualFormatId     = angle::FormatID::R8_UNORM;
                 this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 1, 1, 0>;
             }
             break;
 
         case angle::FormatID::R8_USCALED:
-            this->metalFormat = MTLVertexFormatUChar;
-            if (!this->vertexLoadFunction)
+            if (tightlyPacked)
             {
+                this->metalFormat        = MTLVertexFormatFloat;
+                this->actualFormatId     = angle::FormatID::R32_FLOAT;
+                this->vertexLoadFunction = CopyTo32FVertexData<GLubyte, 1, 1, false>;
+            }
+            else
+            {
+                this->metalFormat        = MTLVertexFormatUChar;
+                this->actualFormatId     = angle::FormatID::R8_USCALED;
                 this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 1, 1, 0>;
             }
+            break;
+
+        case angle::FormatID::R32G32B32A32_FIXED:
+            this->metalFormat        = MTLVertexFormatFloat4;
+            this->actualFormatId     = angle::FormatID::R32G32B32A32_FLOAT;
+            this->vertexLoadFunction = Copy32FixedTo32FVertexData<4, 4>;
+            break;
+
+        case angle::FormatID::R32G32B32_FIXED:
+            this->metalFormat        = MTLVertexFormatFloat3;
+            this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
+            this->vertexLoadFunction = Copy32FixedTo32FVertexData<3, 3>;
+            break;
+
+        case angle::FormatID::R32G32_FIXED:
+            this->metalFormat        = MTLVertexFormatFloat2;
+            this->actualFormatId     = angle::FormatID::R32G32_FLOAT;
+            this->vertexLoadFunction = Copy32FixedTo32FVertexData<2, 2>;
+            break;
+
+        case angle::FormatID::R32_FIXED:
+            this->metalFormat        = MTLVertexFormatFloat;
+            this->actualFormatId     = angle::FormatID::R32_FLOAT;
+            this->vertexLoadFunction = Copy32FixedTo32FVertexData<1, 1>;
             break;
 
         default:

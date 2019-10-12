@@ -57,10 +57,14 @@ class SampleApplication
     void exit();
 
   private:
+    int prepareToRun();
+    int runIteration();
+
     std::string mName;
     uint32_t mWidth;
     uint32_t mHeight;
     bool mRunning;
+    double mPrevTime;
 
     Timer mTimer;
     EGLWindow *mEGLWindow;

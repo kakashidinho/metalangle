@@ -4,7 +4,7 @@
 // found in the LICENSE file.
 //
 // TextureMtl.h:
-//    Defines the class interface for TextureVk, implementing TextureImpl.
+//    Defines the class interface for TextureMtl, implementing TextureImpl.
 //
 
 #ifndef LIBANGLE_RENDERER_METAL_TEXTUREMTL_H_

@@ -3,11 +3,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
+// ContextMtl.h:
+//    Defines the class interface for ContextMtl, implementing ContextImpl.
+//
 
 #ifndef LIBANGLE_RENDERER_METAL_CONTEXTMTL_H_
 #define LIBANGLE_RENDERER_METAL_CONTEXTMTL_H_
 
-#include "libANGLE/renderer/metal/Metal_platform.h"
+#import <Metal/Metal.h>
 
 #include "common/Optional.h"
 #include "libANGLE/Context.h"
@@ -210,6 +213,11 @@ class ContextMtl : public ContextImpl, public mtl::Context
     uint32_t getStencilMask() const;
     bool isDepthWriteEnabled() const;
 
+    const mtl::Format &getPixelFormat(angle::FormatID angleFormatId) const;
+    // See mtl::FormatTable::getVertexFormat()
+    const mtl::VertexFormat &getVertexFormat(angle::FormatID angleFormatId,
+                                             bool tightlyPacked) const;
+
     // Recommended to call these methods to end encoding instead of invoking the encoder's
     // endEncoding() directly.
     void endEncoding(mtl::RenderCommandEncoder *encoder);
@@ -253,9 +261,6 @@ class ContextMtl : public ContextImpl, public mtl::Context
     mtl::ComputeCommandEncoder *getComputeCommandEncoder();
 
   private:
-    void initializeCaps() const;
-    void initializeExtensions() const;
-    void initializeTextureCaps() const;
     void ensureCommandBufferValid();
     angle::Result setupDraw(const gl::Context *context,
                             gl::PrimitiveMode mode,
@@ -331,11 +336,6 @@ class ContextMtl : public ContextImpl, public mtl::Context
     MTLWinding mWinding;
     MTLCullMode mCullMode;
     bool mCullAllPolygons = false;
-
-    mutable gl::TextureCapsMap mNativeTextureCaps;
-    mutable gl::Extensions mNativeExtensions;
-    mutable gl::Caps mNativeCaps;
-    mutable bool mCapsInitialized = false;
 
     // See compiler/translator/TranslatorVulkan.cpp: AddDriverUniformsToShader()
     struct DriverUniforms

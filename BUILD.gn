@@ -529,11 +529,12 @@ config("angle_backend_config") {
       defines += [ "ANGLE_ENABLE_OPENGL_NULL" ]
     }
   }
-  if (angle_enable_metal) {
-    defines += [ "ANGLE_ENABLE_METAL" ]
-  }
   if (angle_enable_null) {
     defines += [ "ANGLE_ENABLE_NULL" ]
+  }
+
+  if (angle_enable_metal) {
+    configs = [ "src/libANGLE/renderer/metal:angle_metal_backend_config" ]
   }
 
   if (angle_enable_vulkan) {

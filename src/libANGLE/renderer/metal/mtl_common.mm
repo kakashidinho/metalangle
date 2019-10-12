@@ -3,6 +3,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
+// mtl_common.mm:
+//      Implementation of mtl::Context, the MTLDevice container & error handler class.
+//
 
 #include "libANGLE/renderer/metal/mtl_common.h"
 

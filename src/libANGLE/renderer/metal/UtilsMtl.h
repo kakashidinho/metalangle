@@ -3,11 +3,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
+// UtilsMtl.h:
+//    Defines the class interface for UtilsMtl.
+//
 
 #ifndef LIBANGLE_RENDERER_METAL_UTILSMTL_H_
 #define LIBANGLE_RENDERER_METAL_UTILSMTL_H_
 
-#include "libANGLE/renderer/metal/Metal_platform.h"
+#import <Metal/Metal.h>
 
 #include "libANGLE/angletypes.h"
 #include "libANGLE/renderer/metal/StateCacheMtl.h"
@@ -35,6 +38,10 @@ class UtilsMtl : public mtl::Context, angle::NonCopyable
     struct BlitParams
     {
         gl::Offset dstOffset;
+        // Destination texture needs to have viewport Y flipped?
+        // The difference between this param and unpackFlipY is that unpackFlipY is from
+        // glCopyImageCHROMIUM(), and dstFlipY controls whether the final viewport needs to be
+        // flipped when drawing to destination texture.
         bool dstFlipY = false;
 
         MTLColorWriteMask dstColorMask = MTLColorWriteMaskAll;

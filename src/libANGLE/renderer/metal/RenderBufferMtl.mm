@@ -3,6 +3,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
+// RenderBufferMtl.mm:
+//    Implements the class methods for RenderBufferMtl.
+//
 
 #include "libANGLE/renderer/metal/RenderBufferMtl.h"
 
@@ -33,8 +36,7 @@ angle::Result RenderbufferMtl::setStorageImpl(const gl::Context *context,
                                               size_t width,
                                               size_t height)
 {
-    ContextMtl *contextMtl    = mtl::GetImpl(context);
-    id<MTLDevice> metalDevice = contextMtl->getMetalDevice();
+    ContextMtl *contextMtl = mtl::GetImpl(context);
 
     // TODO(hqle): Support MSAA
     ANGLE_CHECK(contextMtl, samples == 1, "Multisample is not supported atm.", GL_INVALID_VALUE);
@@ -50,7 +52,9 @@ angle::Result RenderbufferMtl::setStorageImpl(const gl::Context *context,
         }
     }
 
-    mFormat.initAndConvertToCompatibleFormatIfNotSupported(metalDevice, internalformat);
+    const auto &internalFormat = gl::GetSizedInternalFormatInfo(internalformat);
+    auto angleFormatId = angle::Format::InternalFormatToID(internalFormat.sizedInternalFormat);
+    mFormat            = contextMtl->getPixelFormat(angleFormatId);
 
     if ((mTexture == nullptr || !mTexture->valid()) && (width != 0 && height != 0))
     {

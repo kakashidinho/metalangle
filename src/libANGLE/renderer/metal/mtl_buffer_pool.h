@@ -3,6 +3,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
+// mtl_buffer_pool.h:
+//    Defines class interface for BufferPool, managing a pool of mtl::Buffer
+//
 
 #ifndef LIBANGLE_RENDERER_METAL_MTL_BUFFER_POOL_H_
 #define LIBANGLE_RENDERER_METAL_MTL_BUFFER_POOL_H_
@@ -31,7 +34,9 @@ namespace mtl
 class BufferPool
 {
   public:
-    BufferPool();
+    // alwaysAllocNewBuffer=true will always allocate new buffer or reuse free buffer on allocate(),
+    // regardless of whether current buffer still has unused portion or not.
+    BufferPool(bool alwaysAllocNewBuffer = false);
     ~BufferPool();
 
     // Init is called after the buffer creation so that the alignment can be specified later.
@@ -84,9 +89,9 @@ class BufferPool
     std::vector<BufferRef> mInFlightBuffers;
     std::vector<BufferRef> mBufferFreeList;
 
-    size_t mBuffersAllocated      = 0;
-    size_t mMaxBuffers            = 0;
-    bool mAlwaysAllocateNewBuffer = false;
+    size_t mBuffersAllocated;
+    size_t mMaxBuffers;
+    bool mAlwaysAllocateNewBuffer;
 };
 
 }  // namespace mtl

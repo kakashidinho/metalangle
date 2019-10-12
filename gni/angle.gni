@@ -94,9 +94,8 @@ declare_args() {
   angle_enable_essl = true
   angle_enable_glsl = true
 
-  if (is_mac || is_ios) {
-    angle_enable_metal = false
-  }
+  # http://anglebug.com/2634
+  angle_enable_metal = is_mac
 }
 
 declare_args() {

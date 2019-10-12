@@ -3,6 +3,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
+// FramebufferMtl.mm:
+//    Implements the class methods for FramebufferMtl.
+//
 
 #include "libANGLE/renderer/metal/ContextMtl.h"
 
@@ -41,14 +44,8 @@ const gl::InternalFormat &GetReadAttachmentInfo(const gl::Context *context,
 }
 
 // FramebufferMtl implementation
-FramebufferMtl::FramebufferMtl(const gl::FramebufferState &state,
-                               SurfaceMtl *backBuffer,
-                               bool flipY,
-                               bool alwaysDiscard)
-    : FramebufferImpl(state),
-      mBackBuffer(backBuffer),
-      mAlwaysDiscardDepthStencil(alwaysDiscard),
-      mFlipY(flipY)
+FramebufferMtl::FramebufferMtl(const gl::FramebufferState &state, bool flipY, bool alwaysDiscard)
+    : FramebufferImpl(state), mAlwaysDiscardDepthStencil(alwaysDiscard), mFlipY(flipY)
 {
     reset();
 }
@@ -247,8 +244,6 @@ bool FramebufferMtl::checkStatus(const gl::Context *context) const
     }
 
 #if !ANGLE_MTL_ALLOW_SEPARATED_DEPTH_STENCIL
-    // On macos, packed depth stencil is required if both depth and stencil attachment
-    // are being used.
     if (mState.hasSeparateDepthAndStencilAttachments())
     {
         return false;
@@ -429,19 +424,19 @@ angle::Result FramebufferMtl::prepareRenderPass(const gl::Context *context,
 
         mtl::RenderPassColorAttachmentDesc &colorAttachment =
             desc.colorAttachments[attachmentIdx++];
-        colorAttachment.set();
+        colorAttachment.reset();
         colorRenderTarget->toRenderPassAttachmentDesc(&colorAttachment);
     }
 
     if (mDepthRenderTarget)
     {
-        desc.depthAttachment.set();
+        desc.depthAttachment.reset();
         mDepthRenderTarget->toRenderPassAttachmentDesc(&desc.depthAttachment);
     }
 
     if (mStencilRenderTarget)
     {
-        desc.stencilAttachment.set();
+        desc.stencilAttachment.reset();
         mStencilRenderTarget->toRenderPassAttachmentDesc(&desc.stencilAttachment);
     }
 
@@ -688,7 +683,7 @@ angle::Result FramebufferMtl::readPixelsImpl(const gl::Context *context,
     if (packPixelsParams.packBuffer)
     {
         // TODO(hqle): PBO is not supported atm
-        ANGLE_MTL_CHECK_WITH_ERR(contextMtl, false, GL_INVALID_OPERATION);
+        ANGLE_MTL_CHECK(contextMtl, false, GL_INVALID_OPERATION);
     }
     if (!renderTarget)
     {

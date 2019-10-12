@@ -4,16 +4,15 @@
 // found in the LICENSE file.
 //
 // mtl_command_buffer.h:
-//    Defines the wrapper classes for MTLCommandEncoder and MTLCommandBuffer.
-// TODO: define the wrapper class such that it can be changed to proxy class
-// so that in future the command encoder can be reordered in a similar way
-// to what Vulkan backend's Command Graph mechanism does
+//    Defines the wrapper classes for Metal's MTLCommandEncoder, MTLCommandQueue and
+//    MTLCommandBuffer.
 //
 
 #ifndef LIBANGLE_RENDERER_METAL_COMMANDENBUFFERMTL_H_
 #define LIBANGLE_RENDERER_METAL_COMMANDENBUFFERMTL_H_
 
-#include "libANGLE/renderer/metal/Metal_platform.h"
+#import <Metal/Metal.h>
+#import <QuartzCore/CAMetalLayer.h>
 
 #include <deque>
 #include <memory>
@@ -161,11 +160,11 @@ class RenderCommandEncoder final : public CommandEncoder
   public:
     struct StateCache
     {
-        id<MTLRenderPipelineState> renderPipelineState                 = nil;
+        AutoObjCPtr<id<MTLRenderPipelineState>> renderPipelineState    = nil;
         MTLTriangleFillMode triangleFillMode                           = MTLTriangleFillModeFill;
         MTLWinding frontFace                                           = MTLWindingClockwise;
         MTLCullMode cullMode                                           = MTLCullModeNone;
-        id<MTLDepthStencilState> depthStencilState                     = nil;
+        AutoObjCPtr<id<MTLDepthStencilState>> depthStencilState        = nil;
         float depthBias                                                = 0;
         float slopeScale                                               = 0;
         float clamp                                                    = 0;
@@ -189,7 +188,7 @@ class RenderCommandEncoder final : public CommandEncoder
 
         struct SamplerState
         {
-            id<MTLSamplerState> stateObject;
+            AutoObjCPtr<id<MTLSamplerState>> stateObject;
             float lodMinClamp = 0;
             float lodMaxClamp = FLT_MAX;
         };

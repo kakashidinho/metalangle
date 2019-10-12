@@ -3,8 +3,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
-// This is a special version Vulkan GLSL output that will make some special
-// considerations for Metal backend limitations.
+// TOutputVulkanGLSLForMetal:
+//    This is a special version Vulkan GLSL output that will make some special
+//    considerations for Metal backend limitations.
 //
 
 #include "compiler/translator/OutputVulkanGLSL.h"

@@ -3,11 +3,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
+// RenderTargetMtl.h:
+//    Defines the class interface for RenderTargetMtl.
+//
 
 #ifndef LIBANGLE_RENDERER_METAL_RENDERTARGETMTL_H_
 #define LIBANGLE_RENDERER_METAL_RENDERTARGETMTL_H_
 
-#include "libANGLE/renderer/metal/Metal_platform.h"
+#import <Metal/Metal.h>
 
 #include "libANGLE/FramebufferAttachment.h"
 #include "libANGLE/renderer/metal/StateCacheMtl.h"

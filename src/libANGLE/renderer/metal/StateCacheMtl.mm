@@ -3,6 +3,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
+// StateCacheMtl.mm:
+//    Implements StateCacheMtl, RenderPipelineCacheMtl and various
+//    C struct versions of Metal sampler, depth stencil, render pass, render pipeline descriptors.
+//
 
 #include "libANGLE/renderer/metal/StateCacheMtl.h"
 
@@ -55,7 +59,7 @@ MTLDepthStencilDescriptor *ToObjC(const DepthStencilDesc &desc)
     ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, depthCompareFunction);
     ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, depthWriteEnabled);
 
-    return objCDesc;
+    return [objCDesc ANGLE_MTL_AUTORELEASE];
 }
 
 MTLSamplerDescriptor *ToObjC(const SamplerDesc &desc)
@@ -227,7 +231,7 @@ bool StencilDesc::operator==(const StencilDesc &rhs) const
            ANGLE_PROP_EQ(*this, rhs, readMask) && ANGLE_PROP_EQ(*this, rhs, writeMask);
 }
 
-void StencilDesc::set()
+void StencilDesc::reset()
 {
     stencilFailureOperation = depthFailureOperation = depthStencilPassOperation =
         MTLStencilOperationKeep;
@@ -247,10 +251,10 @@ bool DepthStencilDesc::operator==(const DepthStencilDesc &rhs) const
            ANGLE_PROP_EQ(*this, rhs, depthWriteEnabled);
 }
 
-void DepthStencilDesc::set()
+void DepthStencilDesc::reset()
 {
-    frontFaceStencil.set();
-    backFaceStencil.set();
+    frontFaceStencil.reset();
+    backFaceStencil.reset();
 
     depthCompareFunction = MTLCompareFunctionAlways;
     depthWriteEnabled    = true;
@@ -386,7 +390,7 @@ SamplerDesc::SamplerDesc(const gl::SamplerState &glState) : SamplerDesc()
     maxAnisotropy = static_cast<uint32_t>(glState.getMaxAnisotropy());
 }
 
-void SamplerDesc::set()
+void SamplerDesc::reset()
 {
     rAddressMode = MTLSamplerAddressModeClampToEdge;
     sAddressMode = MTLSamplerAddressModeClampToEdge;
@@ -431,12 +435,12 @@ bool BlendDesc::operator==(const BlendDesc &rhs) const
            ANGLE_PROP_EQ(*this, rhs, blendingEnabled);
 }
 
-void BlendDesc::set()
+void BlendDesc::reset()
 {
-    set(MTLColorWriteMaskAll);
+    reset(MTLColorWriteMaskAll);
 }
 
-void BlendDesc::set(MTLColorWriteMask writeMask)
+void BlendDesc::reset(MTLColorWriteMask writeMask)
 {
     this->writeMask = writeMask;
 
@@ -498,24 +502,24 @@ bool RenderPipelineColorAttachmentDesc::operator==(
     return ANGLE_PROP_EQ(*this, rhs, pixelFormat);
 }
 
-void RenderPipelineColorAttachmentDesc::set()
+void RenderPipelineColorAttachmentDesc::reset()
 {
-    set(MTLPixelFormatInvalid);
+    reset(MTLPixelFormatInvalid);
 }
 
-void RenderPipelineColorAttachmentDesc::set(MTLPixelFormat format)
+void RenderPipelineColorAttachmentDesc::reset(MTLPixelFormat format)
 {
-    set(format, MTLColorWriteMaskAll);
+    reset(format, MTLColorWriteMaskAll);
 }
 
-void RenderPipelineColorAttachmentDesc::set(MTLPixelFormat format, MTLColorWriteMask writeMask)
+void RenderPipelineColorAttachmentDesc::reset(MTLPixelFormat format, MTLColorWriteMask writeMask)
 {
     this->pixelFormat = format;
 
-    BlendDesc::set(writeMask);
+    BlendDesc::reset(writeMask);
 }
 
-void RenderPipelineColorAttachmentDesc::set(MTLPixelFormat format, const BlendDesc &blendState)
+void RenderPipelineColorAttachmentDesc::reset(MTLPixelFormat format, const BlendDesc &blendState)
 {
     this->pixelFormat = format;
 
@@ -562,7 +566,7 @@ size_t RenderPipelineDesc::hash() const
 }
 
 // RenderPassDesc implementation
-void RenderPassAttachmentDesc::set()
+void RenderPassAttachmentDesc::reset()
 {
     texture.reset();
     level              = 0;
@@ -599,7 +603,7 @@ void RenderPassDesc::populateRenderPipelineOutputDesc(MTLColorWriteMask colorWri
 {
     // Default blend state.
     BlendDesc blendState;
-    blendState.set(colorWriteMask);
+    blendState.reset(colorWriteMask);
 
     populateRenderPipelineOutputDesc(blendState, outDesc);
 }
@@ -861,7 +865,7 @@ mtl::AutoObjCPtr<id<MTLDepthStencilState>> StateCacheMtl::getNullDepthStencilSta
     if (!mNullDepthStencilState)
     {
         mtl::DepthStencilDesc desc;
-        desc.set();
+        desc.reset();
         ASSERT(desc.frontFaceStencil.stencilCompareFunction == MTLCompareFunctionAlways);
         desc.depthWriteEnabled = false;
         mNullDepthStencilState = getDepthStencilState(device, desc);
@@ -926,7 +930,7 @@ mtl::AutoObjCPtr<id<MTLSamplerState>> StateCacheMtl::getNullSamplerState(mtl::Co
 mtl::AutoObjCPtr<id<MTLSamplerState>> StateCacheMtl::getNullSamplerState(id<MTLDevice> device)
 {
     mtl::SamplerDesc desc;
-    desc.set();
+    desc.reset();
 
     return getSamplerState(device, desc);
 }

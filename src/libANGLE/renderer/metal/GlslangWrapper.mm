@@ -3,12 +3,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
-// GlslangWrapperMtl: Wrapper for Vulkan's glslang compiler.
-//
-
-//
-// TODO(hqle): This file is just a modified copy of Vulkan renderer's GlslangWrapper.cpp
-// In the future, should move their common code to a separate file.
+// GlslangWrapper: Wrapper for Khronos's glslang compiler.
 //
 
 #include "libANGLE/renderer/metal/GlslangWrapper.h"
@@ -801,10 +796,10 @@ angle::Result GlslangWrapperMtl::GetShaderCode(mtl::ErrorHandler *context,
         std::string patchedFragmentSource = fragmentSource;
 
         // #defines must come after the #version directive.
-        ANGLE_MTL_CHECK(context, angle::ReplaceSubstring(&patchedVertexSource, kVersionDefine,
-                                                         kLineRasterDefine));
-        ANGLE_MTL_CHECK(context, angle::ReplaceSubstring(&patchedFragmentSource, kVersionDefine,
-                                                         kLineRasterDefine));
+        ANGLE_MTL_TRY(context, angle::ReplaceSubstring(&patchedVertexSource, kVersionDefine,
+                                                       kLineRasterDefine));
+        ANGLE_MTL_TRY(context, angle::ReplaceSubstring(&patchedFragmentSource, kVersionDefine,
+                                                       kLineRasterDefine));
 
         return GetShaderCodeImpl(context, glCaps, patchedVertexSource, patchedFragmentSource,
                                  vertexCodeOut, fragmentCodeOut);
@@ -845,7 +840,7 @@ angle::Result GlslangWrapperMtl::GetShaderCodeImpl(mtl::ErrorHandler *context,
         ERR() << "Internal error parsing Vulkan vertex shader:\n"
               << vertexShader.getInfoLog() << "\n"
               << vertexShader.getInfoDebugLog() << "\n";
-        ANGLE_MTL_CHECK(context, false);
+        ANGLE_MTL_TRY(context, false);
     }
 
     glslang::TShader fragmentShader(EShLangFragment);
@@ -858,7 +853,7 @@ angle::Result GlslangWrapperMtl::GetShaderCodeImpl(mtl::ErrorHandler *context,
         ERR() << "Internal error parsing Vulkan fragment shader:\n"
               << fragmentShader.getInfoLog() << "\n"
               << fragmentShader.getInfoDebugLog() << "\n";
-        ANGLE_MTL_CHECK(context, false);
+        ANGLE_MTL_TRY(context, false);
     }
 
     glslang::TProgram program;
@@ -868,7 +863,7 @@ angle::Result GlslangWrapperMtl::GetShaderCodeImpl(mtl::ErrorHandler *context,
     if (!linkResult)
     {
         ERR() << "Internal error linking Vulkan shaders:\n" << program.getInfoLog() << "\n";
-        ANGLE_MTL_CHECK(context, false);
+        ANGLE_MTL_TRY(context, false);
     }
 
     glslang::TIntermediate *vertexStage   = program.getIntermediate(EShLangVertex);

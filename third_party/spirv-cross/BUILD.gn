@@ -43,10 +43,10 @@ source_set("spirv_cross_sources") {
       "-Wno-ignored-qualifiers",
       "-Wno-implicit-fallthrough",
       "-Wno-inconsistent-missing-override",
-      "-Wno-sign-compare",
-      "-Wno-unused-variable",
       "-Wno-missing-field-initializers",
       "-Wno-newline-eof",
+      "-Wno-sign-compare",
+      "-Wno-unused-variable",
     ]
   }
 }

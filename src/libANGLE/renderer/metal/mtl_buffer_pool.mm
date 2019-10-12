@@ -3,6 +3,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
+// mtl_buffer_pool.mm:
+//    Implements the class methods for BufferPool.
+//
 
 #include "libANGLE/renderer/metal/mtl_buffer_pool.h"
 
@@ -15,13 +18,17 @@ namespace mtl
 {
 
 // BufferPool implementation.
-BufferPool::BufferPool()
+BufferPool::BufferPool(bool alwaysAllocNewBuffer)
     : mInitialSize(0),
       mBuffer(nullptr),
       mNextAllocationOffset(0),
       mLastFlushOrInvalidateOffset(0),
       mSize(0),
-      mAlignment(1)
+      mAlignment(1),
+      mBuffersAllocated(0),
+      mMaxBuffers(0),
+      mAlwaysAllocateNewBuffer(alwaysAllocNewBuffer)
+
 {}
 
 void BufferPool::initialize(ContextMtl *contextMtl,
@@ -46,19 +53,24 @@ angle::Result BufferPool::allocateNewBuffer(ContextMtl *contextMtl)
     if (mMaxBuffers > 0 && mBuffersAllocated >= mMaxBuffers)
     {
         // We reach the max number of buffers allowed.
-        // Flush the rendering command buffer, hopefully the previously allocated buffers will
-        // be available for use.
-        contextMtl->flushCommandBufer();
+        // Try to deallocate old and smaller size inflight buffers.
         releaseInFlightBuffers(contextMtl);
     }
 
     if (mMaxBuffers > 0 && mBuffersAllocated >= mMaxBuffers)
     {
+        // If we reach this point, it means there was no buffer deallocated inside
+        // releaseInFlightBuffers() thus, the number of buffers allocated still exceeds number
+        // allowed.
         ASSERT(!mBufferFreeList.empty());
-        // If releaseInFlightBuffers() didn't really deallocate any buffer, then we
-        // need to force the GPU to finish its rendering and make the old buffer available.
 
-        contextMtl->cmdQueue().ensureResourceReadyForCPU(mBufferFreeList.front());
+        // Reuse the buffer in free list:
+        if (mBufferFreeList.front()->isBeingUsedByGPU(contextMtl))
+        {
+            contextMtl->flushCommandBufer();
+            // Force the GPU to finish its rendering and make the old buffer available.
+            contextMtl->cmdQueue().ensureResourceReadyForCPU(mBufferFreeList.front());
+        }
 
         mBuffer = mBufferFreeList.front();
         mBufferFreeList.erase(mBufferFreeList.begin());
@@ -143,7 +155,10 @@ angle::Result BufferPool::allocate(ContextMtl *contextMtl,
         *ptrOut = mBuffer->map(contextMtl) + mNextAllocationOffset;
     }
 
-    *offsetOut = static_cast<size_t>(mNextAllocationOffset);
+    if (offsetOut)
+    {
+        *offsetOut = static_cast<size_t>(mNextAllocationOffset);
+    }
     mNextAllocationOffset += static_cast<uint32_t>(sizeToAllocate);
     return angle::Result::Continue;
 }

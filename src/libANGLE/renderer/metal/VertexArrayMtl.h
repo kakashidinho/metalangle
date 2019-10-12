@@ -3,6 +3,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
+// VertexArrayMtl.h:
+//    Defines the class interface for VertexArrayMtl, implementing VertexArrayImpl.
+//
 
 #ifndef LIBANGLE_RENDERER_METAL_VERTEXARRAYMTL_H_
 #define LIBANGLE_RENDERER_METAL_VERTEXARRAYMTL_H_
@@ -90,15 +93,17 @@ class VertexArrayMtl : public VertexArrayImpl
                                          const mtl::VertexFormat &vertexFormat,
                                          ConversionBufferMtl *conversion);
 
+    // These can point to real BufferMtl or converted buffer in mConvertedArrayBufferHolders
     gl::AttribArray<BufferHolderMtl *> mCurrentArrayBuffers;
-    gl::AttribArray<SimpleWeakBufferHolderMtl> mDynamicArrayBufferHolders;
+    gl::AttribArray<SimpleWeakBufferHolderMtl> mConvertedArrayBufferHolders;
     gl::AttribArray<size_t> mCurrentArrayBufferOffsets;
     gl::AttribArray<GLuint> mCurrentArrayBufferStrides;
     gl::AttribArray<MTLVertexFormat> mCurrentArrayBufferFormats;
 
+    // This can point to real BufferMtl or mConvertedElementArrayBufferHolder
     BufferHolderMtl *mCurrentElementArrayBuffer;
     size_t mCurrentElementArrayBufferOffset = 0;
-    SimpleWeakBufferHolderMtl mDynamicElementArrayBufferHolder;
+    SimpleWeakBufferHolderMtl mConvertedElementArrayBufferHolder;
 
     mtl::BufferPool mDynamicVertexData;
     mtl::BufferPool mDynamicIndexData;

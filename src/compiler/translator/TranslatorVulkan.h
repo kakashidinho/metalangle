@@ -17,6 +17,8 @@
 namespace sh
 {
 
+class TOutputVulkanGLSL;
+
 class TranslatorVulkan : public TCompiler
 {
   public:
@@ -27,6 +29,13 @@ class TranslatorVulkan : public TCompiler
                                     ShCompileOptions compileOptions,
                                     PerformanceDiagnostics *perfDiagnostics) override;
     bool shouldFlattenPragmaStdglInvariantAll() override;
+
+    TIntermBinary *getDriverUniformNegViewportYScaleRef(const TVariable *driverUniforms) const;
+    ANGLE_NO_DISCARD bool preWriting(TIntermBlock *root,
+                                     ShCompileOptions compileOptions,
+                                     PerformanceDiagnostics *perfDiagnostics,
+                                     const TVariable **driverUniformsOut,
+                                     TOutputVulkanGLSL *outputGLSL);
 };
 
 }  // namespace sh

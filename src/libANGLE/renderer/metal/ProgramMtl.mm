@@ -3,6 +3,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
+// ProgramMtl.mm:
+//    Implements the class methods for ProgramMtl.
+//
 
 #include "libANGLE/renderer/metal/ProgramMtl.h"
 
@@ -384,7 +387,7 @@ angle::Result ProgramMtl::initDefaultUniformBlocks(const gl::Context *glContext)
             if (!mDefaultUniformBlocks[shaderType].uniformData.resize(
                     requiredBufferSize[shaderType]))
             {
-                ANGLE_MTL_CHECK_WITH_ERR(contextMtl, false, GL_OUT_OF_MEMORY);
+                ANGLE_MTL_CHECK(contextMtl, false, GL_OUT_OF_MEMORY);
             }
 
             // Initialize uniform buffer memory to zero by default.
@@ -434,14 +437,14 @@ angle::Result ProgramMtl::convertToMsl(const gl::Context *glContext,
     auto bindingErr = BindResources2<&spirv_cross::MSLResourceBinding::msl_sampler,
                                      &spirv_cross::MSLResourceBinding::msl_texture>(
         &compilerMsl, mslRes.sampled_images, shaderType);
-    ANGLE_MTL_CHECK(contextMtl, !IsError(bindingErr));
+    ANGLE_MTL_TRY(contextMtl, !IsError(bindingErr));
 
     // TODO(hqle): spirv-cross uses exceptions to report error, what should we do here
     // in case of error?
     std::string translatedMsl = compilerMsl.compile();
     if (translatedMsl.size() == 0)
     {
-        ANGLE_MTL_CHECK_WITH_ERR(contextMtl, false, GL_INVALID_OPERATION);
+        ANGLE_MTL_CHECK(contextMtl, false, GL_INVALID_OPERATION);
     }
 
     // Create actual Metal shader
@@ -475,7 +478,7 @@ angle::Result ProgramMtl::createMslShader(const gl::Context *glContext,
 
             infoLog << ss.str();
 
-            ANGLE_MTL_CHECK_WITH_ERR(contextMtl, false, GL_INVALID_OPERATION);
+            ANGLE_MTL_CHECK(contextMtl, false, GL_INVALID_OPERATION);
         }
 
         auto mtlShader = [mtlShaderLib.get() newFunctionWithName:SHADER_ENTRY_NAME];
@@ -507,7 +510,8 @@ void ProgramMtl::setUniformImpl(GLint location, GLsizei count, const T *v, GLenu
 
     if (linkedUniform.isSampler())
     {
-        // We already handle this in super class
+        // Sampler binding has changed.
+        mSamplerBindingsDirty.set();
         return;
     }
 

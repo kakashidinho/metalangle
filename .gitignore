@@ -33,7 +33,6 @@
 /third_party/gles1_conform
 /third_party/glmark2/src
 /third_party/glslang/src
-/third_party/spirv-cross/src
 /third_party/googletest
 /third_party/jsoncpp
 /third_party/libjpeg_turbo
@@ -43,6 +42,7 @@
 /third_party/qemu-linux-x64
 /third_party/qemu-mac-x64
 /third_party/rapidjson/src
+/third_party/spirv-cross/src
 /third_party/spirv-headers/src
 /third_party/spirv-tools/src
 /third_party/SwiftShader
@@ -76,3 +76,4 @@ Release_Win32/
 Release_x64/
 TestResults.qpa
 .idea/
+DerivedData/

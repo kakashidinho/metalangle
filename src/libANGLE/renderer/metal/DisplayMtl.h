@@ -3,6 +3,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
+// DisplayMtl.h:
+//    Defines the class interface for DisplayMtl, implementing DisplayImpl.
+//
 
 #ifndef LIBANGLE_RENDERER_METAL_DISPLAYMTL_H_
 #define LIBANGLE_RENDERER_METAL_DISPLAYMTL_H_
@@ -22,6 +25,9 @@ class RendererMtl;
 class DisplayMtl : public DisplayImpl
 {
   public:
+    // Check whether minimum required Metal version is available on the host platform.
+    static bool IsMetalAvailable();
+
     DisplayMtl(const egl::DisplayState &state);
     ~DisplayMtl() override;
 
@@ -87,8 +93,6 @@ class DisplayMtl : public DisplayImpl
     void generateCaps(egl::Caps *outCaps) const override;
 
   private:
-    virtual egl::Error makeCurrentSurfaceless(gl::Context *context);
-
     std::unique_ptr<RendererMtl> mRenderer;
 };
 

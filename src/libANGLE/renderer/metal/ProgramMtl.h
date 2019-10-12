@@ -10,7 +10,7 @@
 #ifndef LIBANGLE_RENDERER_METAL_PROGRAMMTL_H_
 #define LIBANGLE_RENDERER_METAL_PROGRAMMTL_H_
 
-#include "libANGLE/renderer/metal/Metal_platform.h"
+#import <Metal/Metal.h>
 
 #include <array>
 
@@ -20,12 +20,6 @@
 #include "libANGLE/renderer/metal/StateCacheMtl.h"
 #include "libANGLE/renderer/metal/mtl_command_buffer.h"
 #include "libANGLE/renderer/metal/mtl_resources.h"
-
-namespace spirv_cross
-{
-class CompilerMSL;
-struct ShaderResources;
-}  // namespace spirv_cross
 
 namespace rx
 {

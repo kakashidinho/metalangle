@@ -3,6 +3,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
+// SurfaceMtl.mm:
+//    Implements the class methods for SurfaceMtl.
+//
 
 #include "libANGLE/renderer/metal/SurfaceMtl.h"
 
@@ -20,12 +23,16 @@ namespace rx
 
 namespace
 {
-constexpr angle::FormatID kDefaultFrameBufferColorFormatId   = angle::FormatID::B8G8R8A8_UNORM;
-constexpr angle::FormatID kDefaultFrameBufferDepthFormatId   = angle::FormatID::D32_FLOAT;
+constexpr angle::FormatID kDefaultFrameBufferColorFormatId = angle::FormatID::B8G8R8A8_UNORM;
+ANGLE_MTL_UNUSED
+constexpr angle::FormatID kDefaultFrameBufferDepthFormatId = angle::FormatID::D32_FLOAT;
+ANGLE_MTL_UNUSED
 constexpr angle::FormatID kDefaultFrameBufferStencilFormatId = angle::FormatID::S8_UINT;
+ANGLE_MTL_UNUSED
 constexpr angle::FormatID kDefaultFrameBufferDepthStencilFormatId =
     angle::FormatID::D24_UNORM_S8_UINT;
 
+ANGLE_MTL_UNUSED
 bool IsFrameCaptureEnabled()
 {
 #if defined(NDEBUG)
@@ -38,6 +45,7 @@ bool IsFrameCaptureEnabled()
 #endif
 }
 
+ANGLE_MTL_UNUSED
 size_t MaxAllowedFrameCapture()
 {
 #if defined(NDEBUG)
@@ -50,6 +58,7 @@ size_t MaxAllowedFrameCapture()
 #endif
 }
 
+ANGLE_MTL_UNUSED
 size_t MinAllowedFrameCapture()
 {
 #if defined(NDEBUG)
@@ -62,6 +71,7 @@ size_t MinAllowedFrameCapture()
 #endif
 }
 
+ANGLE_MTL_UNUSED
 bool FrameCaptureDeviceScope()
 {
 #if defined(NDEBUG)
@@ -74,8 +84,10 @@ bool FrameCaptureDeviceScope()
 #endif
 }
 
+ANGLE_MTL_UNUSED
 std::atomic<size_t> gFrameCaptured(0);
 
+ANGLE_MTL_UNUSED
 void StartFrameCapture(id<MTLDevice> metalDevice, id<MTLCommandQueue> metalCmdQueue)
 {
 #if !defined(NDEBUG)
@@ -114,6 +126,7 @@ void StartFrameCapture(id<MTLDevice> metalDevice, id<MTLCommandQueue> metalCmdQu
             NSLog(@"Failed to start capture, error %@", error);
         }
     }
+    else
 #    endif  // __MAC_10_15
     {
         if (FrameCaptureDeviceScope())
@@ -153,22 +166,13 @@ SurfaceMtl::SurfaceMtl(const egl::SurfaceState &state,
                        EGLNativeWindowType window,
                        EGLint width,
                        EGLint height)
-    : SurfaceImpl(state),
-      mLayer((__bridge CALayer *)(window)),
-      mColorFormat(kDefaultFrameBufferColorFormatId),
-      mDepthFormat(kDefaultFrameBufferDepthFormatId),
-      mStencilFormat(kDefaultFrameBufferStencilFormatId)
+    : SurfaceImpl(state), mLayer((__bridge CALayer *)(window))
 {}
 
 SurfaceMtl::~SurfaceMtl() {}
 
 void SurfaceMtl::destroy(const egl::Display *display)
 {
-    if (!mMetalLayer)
-    {
-        return;
-    }
-
     mDrawableTexture = nullptr;
     mDepthTexture    = nullptr;
     mStencilTexture  = nullptr;
@@ -182,24 +186,19 @@ egl::Error SurfaceMtl::initialize(const egl::Display *display)
     RendererMtl *renderer     = displayMtl->getRenderer();
     id<MTLDevice> metalDevice = renderer->getMetalDevice();
 
-    StartFrameCapture(metalDevice, renderer->cmdQueue().get());
-#if !ANGLE_MTL_ALLOW_SEPARATED_DEPTH_STENCIL
-    // We must use packed depth stencil on macos
+    mColorFormat = renderer->getPixelFormat(kDefaultFrameBufferColorFormatId);
+
+#if ANGLE_MTL_ALLOW_SEPARATED_DEPTH_STENCIL
+    mDepthFormat   = renderer->getPixelFormat(kDefaultFrameBufferDepthFormatId);
+    mStencilFormat = renderer->getPixelFormat(kDefaultFrameBufferStencilFormatId);
+#else
+    // We must use packed depth stencil
     mUsePackedDepthStencil = true;
-    mDepthFormat.initAndConvertToCompatibleFormatIfNotSupported(
-        metalDevice, kDefaultFrameBufferDepthStencilFormatId);
-    mStencilFormat = mDepthFormat;
+    mDepthFormat           = renderer->getPixelFormat(kDefaultFrameBufferDepthStencilFormatId);
+    mStencilFormat         = mDepthFormat;
 #endif
 
-#if TARGET_OS_OSX
-    if (!metalDevice.depth24Stencil8PixelFormatSupported)
-    {
-        // Acording to https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
-        // B8G8R8A8 is only supported if depth24Stencil8PixelFormatSupported is YES.
-        // Fallback to SRGB version
-        mColorFormat.init(angle::FormatID::B8G8R8A8_UNORM_SRGB);
-    }
-#endif
+    StartFrameCapture(metalDevice, renderer->cmdQueue().get());
 
     ANGLE_MTL_OBJC_SCOPE
     {
@@ -220,7 +219,7 @@ egl::Error SurfaceMtl::initialize(const egl::Display *display)
 FramebufferImpl *SurfaceMtl::createDefaultFramebuffer(const gl::Context *context,
                                                       const gl::FramebufferState &state)
 {
-    auto fbo = new FramebufferMtl(state, this, /* flipY */ true, /* alwaysDiscard */ true);
+    auto fbo = new FramebufferMtl(state, /* flipY */ true, /* alwaysDiscard */ true);
 
     return fbo;
 }
@@ -403,7 +402,7 @@ angle::Result SurfaceMtl::obtainNextDrawable(const gl::Context *context)
 
         StartFrameCapture(contextMtl);
 
-        ANGLE_MTL_CHECK(contextMtl, mMetalLayer);
+        ANGLE_MTL_TRY(contextMtl, mMetalLayer);
 
         if (mDrawableTexture)
         {
@@ -414,11 +413,12 @@ angle::Result SurfaceMtl::obtainNextDrawable(const gl::Context *context)
         mCurrentDrawable.retainAssign([mMetalLayer nextDrawable]);
         if (!mCurrentDrawable)
         {
-            // try again
+            // The GPU might be taking too long finishing its rendering to the previous frame.
+            // Try again, indefinitely wait until the previous frame render finishes.
             // TODO: this may wait forever here
-            mMetalLayer.get().allowsNextDrawableTimeout = YES;
-            mCurrentDrawable.retainAssign([mMetalLayer nextDrawable]);
             mMetalLayer.get().allowsNextDrawableTimeout = NO;
+            mCurrentDrawable.retainAssign([mMetalLayer nextDrawable]);
+            mMetalLayer.get().allowsNextDrawableTimeout = YES;
         }
 
         if (!mDrawableTexture)
@@ -431,10 +431,9 @@ angle::Result SurfaceMtl::obtainNextDrawable(const gl::Context *context)
             mDrawableTexture->set(mCurrentDrawable.get().texture);
         }
 
-#if 0 && !defined(NDEBUG)
-        [mCurrentDrawable.get() addPresentedHandler: ^(id<MTLDrawable> drawable)
-        {
-            NSLog(@"Drawable %@ has been presented", drawable);
+#if defined(ANGLE_MTL_ENABLE_TRACE)
+        [mCurrentDrawable.get() addPresentedHandler:^(id<MTLDrawable> drawable) {
+          NSLog(@"Drawable %@ has been presented", drawable);
         }];
 #endif
 

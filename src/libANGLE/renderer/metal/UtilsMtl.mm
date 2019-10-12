@@ -3,6 +3,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
+// UtilsMtl.mm:
+//    Implements the class methods for UtilsMtl.
+//
 
 #include "libANGLE/renderer/metal/UtilsMtl.h"
 
@@ -137,7 +140,7 @@ angle::Result UtilsMtl::initShaderLibrary()
 
     if (err && !mDefaultShaders)
     {
-        ANGLE_MTL_CHECK_WITH_ERR(this, false, err.get());
+        ANGLE_MTL_CHECK(this, false, err.get());
         return angle::Result::Stop;
     }
 
@@ -343,7 +346,7 @@ id<MTLDepthStencilState> UtilsMtl::getClearDepthStencilState(const gl::Context *
     ContextMtl *contextMtl = mtl::GetImpl(context);
 
     mtl::DepthStencilDesc desc;
-    desc.set();
+    desc.reset();
 
     if (params.clearDepth.valid())
     {
@@ -433,14 +436,17 @@ void UtilsMtl::setupBlitWithDrawUniformData(mtl::RenderCommandEncoder *cmdEncode
     auto srcWidth  = params.src->width(params.srcLevel);
     auto srcHeight = params.src->height(params.srcLevel);
 
-    int x0 = params.srcRect.x0();
-    int x1 = params.srcRect.x1();
-    int y0 = params.srcRect.y0();
-    int y1 = params.srcRect.y1();
+    int x0 = params.srcRect.x0();  // left
+    int x1 = params.srcRect.x1();  // right
+    int y0 = params.srcRect.y0();  // lower
+    int y1 = params.srcRect.y1();  // upper
     if (params.srcYFlipped)
     {
+        // If source's Y has been flipped, such as default framebuffer, then adjust the real source
+        // rectangle.
         y0 = srcHeight - y1;
         y1 = y0 + params.srcRect.height;
+        std::swap(y0, y1);
     }
 
     if (params.unpackFlipY)

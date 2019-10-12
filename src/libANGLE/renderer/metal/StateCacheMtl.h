@@ -3,11 +3,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
+// StateCacheMtl.h:
+//    Defines the class interface for StateCacheMtl, RenderPipelineCacheMtl and various
+//    C struct versions of Metal sampler, depth stencil, render pass, render pipeline descriptors.
+//
 
 #ifndef LIBANGLE_RENDERER_METAL_STATECACHEMTL_H_
 #define LIBANGLE_RENDERER_METAL_STATECACHEMTL_H_
 
-#include "libANGLE/renderer/metal/Metal_platform.h"
+#import <Metal/Metal.h>
 
 #include <unordered_map>
 
@@ -27,7 +31,7 @@ struct StencilDesc
     bool operator==(const StencilDesc &rhs) const;
 
     // Set default values
-    void set();
+    void reset();
 
     MTLStencilOperation stencilFailureOperation;
     MTLStencilOperation depthFailureOperation;
@@ -47,7 +51,7 @@ struct DepthStencilDesc
 
     // Set default values.
     // Default is depth/stencil test disabled. Depth/stencil write enabled.
-    void set();
+    void reset();
 
     size_t hash() const;
 
@@ -76,7 +80,7 @@ struct SamplerDesc
     explicit SamplerDesc(const gl::SamplerState &glState);
 
     // Set default values. All filters are nearest, and addresModes are clamp to edge.
-    void set();
+    void reset();
 
     bool operator==(const SamplerDesc &rhs) const;
 
@@ -133,8 +137,8 @@ struct BlendDesc
     BlendDesc &operator=(const BlendDesc &src) = default;
 
     // Set default values
-    void set();
-    void set(MTLColorWriteMask writeMask);
+    void reset();
+    void reset(MTLColorWriteMask writeMask);
 
     void updateWriteMask(const gl::BlendState &blendState);
     void updateBlendFactors(const gl::BlendState &blendState);
@@ -163,10 +167,10 @@ struct RenderPipelineColorAttachmentDesc : public BlendDesc
     }
 
     // Set default values
-    void set();
-    void set(MTLPixelFormat format);
-    void set(MTLPixelFormat format, MTLColorWriteMask writeMask);
-    void set(MTLPixelFormat format, const BlendDesc &blendState);
+    void reset();
+    void reset(MTLPixelFormat format);
+    void reset(MTLPixelFormat format, MTLColorWriteMask writeMask);
+    void reset(MTLPixelFormat format, const BlendDesc &blendState);
 
     void update(const BlendDesc &blendState);
 
@@ -220,9 +224,9 @@ struct RenderPipelineDesc
 
 struct RenderPassAttachmentDesc
 {
-    RenderPassAttachmentDesc() { set(); }
+    RenderPassAttachmentDesc() { reset(); }
     // Set default values
-    void set();
+    void reset();
 
     bool equalIgnoreLoadStoreOptions(const RenderPassAttachmentDesc &other) const;
     bool operator==(const RenderPassAttachmentDesc &other) const;

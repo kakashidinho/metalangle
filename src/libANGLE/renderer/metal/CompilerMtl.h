@@ -3,6 +3,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
+// CompilerMtl.h:
+//    Defines the class interface for CompilerMtl, implementing CompilerImpl.
+//
 
 #ifndef LIBANGLE_RENDERER_METAL_COMPILERMTL_H_
 #define LIBANGLE_RENDERER_METAL_COMPILERMTL_H_
@@ -18,7 +21,6 @@ class CompilerMtl : public CompilerImpl
     CompilerMtl();
     ~CompilerMtl() override;
 
-    // TODO(jmadill): Expose translator built-in resources init method.
     ShShaderOutput getTranslatorOutputType() const override;
 };
 

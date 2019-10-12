@@ -10,9 +10,9 @@ angle_has_build = true
 
 # Overrides for ANGLE's dependencies
 angle_glslang_dir = "//third_party/glslang/src"
-angle_spirv_cross_dir = "//third_party/spirv-cross"
 angle_googletest_dir = "//third_party/googletest/src"
 angle_libjpeg_turbo_dir = "//third_party/libjpeg_turbo"
 angle_jsoncpp_dir = "//third_party/jsoncpp"
 angle_libpng_dir = "//third_party/libpng"
+angle_spirv_cross_dir = "//third_party/spirv-cross"
 angle_spirv_tools_dir = "//third_party/spirv-tools/src"

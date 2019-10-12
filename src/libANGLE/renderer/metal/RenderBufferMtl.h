@@ -3,6 +3,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
+// RenderBufferMtl.h:
+//    Defines the class interface for RenderBufferMtl, implementing RenderBufferImpl.
+//
 
 #ifndef LIBANGLE_RENDERER_METAL_RENDERBUFFERMTL_H_
 #define LIBANGLE_RENDERER_METAL_RENDERBUFFERMTL_H_

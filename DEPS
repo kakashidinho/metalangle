@@ -92,11 +92,6 @@ deps = {
     'condition': 'not build_with_chromium',
   },
 
-  '{angle_root}/third_party/spirv-cross/src': {
-    'url': '{chromium_git}/external/github.com/KhronosGroup/SPIRV-Cross@{spirv_cross_revision}',
-    'condition': 'not build_with_chromium',
-  },
-
   '{angle_root}/third_party/googletest': {
     'url': '{chromium_git}/chromium/src/third_party/googletest@c721b68ddecc18bbc6b763b2fe8ab802c22f228a',
     'condition': 'not build_with_chromium',
@@ -157,6 +152,11 @@ deps = {
 
   '{angle_root}/third_party/rapidjson/src': {
     'url': '{chromium_git}/external/github.com/Tencent/rapidjson@7484e06c589873e1ed80382d262087e4fa80fb63',
+  },
+
+  '{angle_root}/third_party/spirv-cross/src': {
+    'url': '{chromium_git}/external/github.com/KhronosGroup/SPIRV-Cross@{spirv_cross_revision}',
+    'condition': 'not build_with_chromium',
   },
 
   '{angle_root}/third_party/spirv-headers/src': {

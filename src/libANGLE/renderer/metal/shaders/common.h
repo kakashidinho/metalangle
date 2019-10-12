@@ -1,8 +1,9 @@
 //
-// Copyright (c) 2019 The ANGLE Project. All rights reserved.
+// Copyright 2019 The ANGLE Project. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
+// common.h: Common header for other metal source code.
 
 #ifndef LIBANGLE_RENDERER_METAL_SHADERS_COMMON_H_
 #define LIBANGLE_RENDERER_METAL_SHADERS_COMMON_H_

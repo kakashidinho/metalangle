@@ -4,11 +4,10 @@
 // found in the LICENSE file.
 //
 
-// DisplayMtl.h: Metal implementation of egl::Display
+// DisplayMtl.mm: Metal implementation of DisplayImpl
 
 #include "libANGLE/renderer/metal/DisplayMtl.h"
 
-#include "libANGLE/AttributeMap.h"
 #include "libANGLE/Context.h"
 #include "libANGLE/Display.h"
 #include "libANGLE/Surface.h"
@@ -21,6 +20,16 @@
 namespace rx
 {
 
+bool DisplayMtl::IsMetalAvailable()
+{
+    // We only support macos 10.13+ and iOS 11 for now. Since they are requirements for Metal 2.0.
+    if (@available(macOS 10.13, iOS 11, *))
+    {
+        return true;
+    }
+    return false;
+}
+
 DisplayMtl::DisplayMtl(const egl::DisplayState &state)
     : DisplayImpl(state), mRenderer(new RendererMtl())
 {}
@@ -29,16 +38,7 @@ DisplayMtl::~DisplayMtl() {}
 
 egl::Error DisplayMtl::initialize(egl::Display *display)
 {
-    const egl::AttributeMap &attribs = display->getAttributeMap();
-
-    gl::Version esVersion(static_cast<EGLint>(attribs.get(EGL_CONTEXT_CLIENT_VERSION, 2)),
-                          static_cast<EGLint>(attribs.get(EGL_CONTEXT_MINOR_VERSION, 0)));
-
-    // TODO(hqle): Support ES 3.0
-    if (esVersion > gl::ES_2_0)
-    {
-        return egl::EglBadAttribute() << "Unssuported client version";
-    }
+    ASSERT(IsMetalAvailable());
 
     angle::Result result = mRenderer->initialize(display);
     if (result != angle::Result::Continue)
@@ -180,11 +180,6 @@ egl::Error DisplayMtl::makeCurrent(egl::Surface *drawSurface,
 
     // TODO(hqle)
 
-    if (drawSurface == nullptr)
-    {
-        ANGLE_TRY(makeCurrentSurfaceless(context));
-    }
-
     return egl::NoError();
 }
 
@@ -200,15 +195,9 @@ void DisplayMtl::populateFeatureList(angle::FeatureList *features)
     // TODO(hqle)
 }
 
-egl::Error DisplayMtl::makeCurrentSurfaceless(gl::Context *context)
-{
-    UNIMPLEMENTED();
-    return egl::NoError();
-}
-
 egl::ConfigSet DisplayMtl::generateConfigs()
 {
-    // TODO(cwallez): generate more config permutations
+    // TODO(hqle): generate more config permutations
     egl::ConfigSet configs;
 
     const gl::Version &maxVersion = getMaxSupportedESVersion();

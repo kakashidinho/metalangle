@@ -3,14 +3,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
-
 // SurfaceMtl.h: Defines the class interface for Metal Surface.
 
 #ifndef LIBANGLE_RENDERER_METAL_SURFACEMTL_H_
 #define LIBANGLE_RENDERER_METAL_SURFACEMTL_H_
 
+#import <Metal/Metal.h>
 #import <QuartzCore/CALayer.h>
-#include "libANGLE/renderer/metal/Metal_platform.h"
+#import <QuartzCore/CAMetalLayer.h>
 
 #include "libANGLE/renderer/SurfaceImpl.h"
 #include "libANGLE/renderer/metal/RenderTargetMtl.h"

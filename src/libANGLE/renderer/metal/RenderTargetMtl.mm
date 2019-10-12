@@ -3,6 +3,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
+// RenderTargetMtl.mm:
+//    Implements the class methods for RenderTargetMtl.
+//
 
 #include "libANGLE/renderer/metal/RenderTargetMtl.h"
 
