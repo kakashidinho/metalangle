@@ -131,7 +131,7 @@ float4 blitOutput(float4 color, constant BlitParams &options)
 
     if (options.dstLuminance)
     {
-        ret.r = ret.g = ret.b = (color.r * 0.3) + (color.g * 0.59) + (color.b * 0.11);
+        ret.r = ret.g = ret.b = color.r;
     }
 
     return ret;
