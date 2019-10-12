@@ -420,7 +420,7 @@ angle::Result TextureMtl::redefineImage(const gl::Context *context,
             // Calculate the expected size for the index we are defining. If the size is different
             // from the given size, or the format is different, we are redefining the image so we
             // must release it.
-            if (mTexture->pixelFormat() != mtlFormat.metalFormat || size != mTexture->size(index) ||
+            if (mFormat != mtlFormat || size != mTexture->size(index) ||
                 mTexture->textureType() != mtl::GetTextureType(index.getType()))
             {
                 releaseTexture();
@@ -726,7 +726,6 @@ angle::Result TextureMtl::copySubImageWithDraw(const gl::Context *context,
         return angle::Result::Continue;
     }
 
-    const gl::InternalFormat &intendedInternalFormat = *mState.getImageDesc(index).format.info;
     mtl::RenderCommandEncoder *cmdEncoder = contextMtl->getRenderCommandEncoder(mTexture, index);
     UtilsMtl::BlitParams blitParams;
 
@@ -736,7 +735,7 @@ angle::Result TextureMtl::copySubImageWithDraw(const gl::Context *context,
     blitParams.src          = colorReadRT->getTexture();
     blitParams.srcRect      = clippedSourceArea;
     blitParams.srcYFlipped  = framebufferMtl->flipY();
-    blitParams.dstLuminance = intendedInternalFormat.isLUMA();
+    blitParams.dstLuminance = internalFormat.isLUMA();
 
     rendererMtl->getUtils().blitWithDraw(context, cmdEncoder, blitParams);
 

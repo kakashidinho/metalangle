@@ -27,6 +27,13 @@ namespace mtl
 
 struct FormatBase
 {
+    inline bool operator==(const FormatBase &rhs) const
+    {
+        return intendedFormatId == rhs.intendedFormatId && actualFormatId == rhs.actualFormatId;
+    }
+
+    inline bool operator!=(const FormatBase &rhs) const { return !((*this) == rhs); }
+
     const angle::Format &actualAngleFormat() const;
     const angle::Format &intendedAngleFormat() const;
 
