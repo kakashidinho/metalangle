@@ -75,8 +75,10 @@ constexpr uint32_t kDefaultAttribsBindingIndex = kVboBindingIndexStart + kMaxVer
 constexpr uint32_t kDefaultUniformsBindingIndex = kDefaultAttribsBindingIndex + 1;
 // Binding index for driver uniforms:
 constexpr uint32_t kDriverUniformsBindingIndex = kDefaultAttribsBindingIndex + 2;
+// Binding index for unused uniforms, they will be groupped into an argument buffer
+constexpr uint32_t kUnusedUniformsArgumentBufferBindingIndex = kDefaultAttribsBindingIndex + 3;
 // Binding index start for transform feedback buffers:
-constexpr uint32_t kXfbBindingIndexStart = kDefaultAttribsBindingIndex + 3;
+constexpr uint32_t kXfbBindingIndexStart = kDefaultAttribsBindingIndex + 4;
 
 constexpr uint32_t kStencilMaskAll = 0xff;  // Only 8 bits stencil is supported
 

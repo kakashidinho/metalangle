@@ -389,7 +389,7 @@ uint32_t CountExplicitOutputs(OutputIter outputsBegin,
     return std::accumulate(outputsBegin, outputsEnd, 0, reduce);
 }
 
-__attribute__((unused)) std::string GenerateTransformFeedbackVaryingOutput(
+ANGLE_MTL_UNUSED std::string GenerateTransformFeedbackVaryingOutput(
     const gl::TransformFeedbackVarying &varying,
     const gl::UniformTypeInfo &info,
     size_t strideBytes,
@@ -661,7 +661,6 @@ void AssignTextureLocations(const gl::ProgramState &programState,
 uint32_t CleanupUnusedEntities(const gl::ProgramState &programState,
                                const gl::ProgramLinkedResources &resources,
                                gl::Shader *glVertexShader,
-                               uint32_t bindingStart,
                                IntermediateShaderSource *vertexSource,
                                IntermediateShaderSource *fragmentSource)
 {
@@ -692,10 +691,7 @@ uint32_t CleanupUnusedEntities(const gl::ProgramState &programState,
         fragmentSource->eraseLayoutAndQualifierSpecifiers(unusedInterfaceBlock, "struct");
     }
 
-    // Place the unused uniforms in the driver uniforms descriptor set, which has a fixed number of
-    // bindings.  This avoids any possible index collision between uniform bindings set in the
-    // shader and the ones assigned here to the unused ones.
-    int unusedSamplerBinding = bindingStart;
+    int unusedSamplerBinding = 0;
 
     for (const gl::UnusedUniform &unusedUniform : resources.unusedUniforms)
     {
@@ -706,7 +702,8 @@ uint32_t CleanupUnusedEntities(const gl::ProgramState &programState,
 
             std::stringstream layoutStringStream;
 
-            layoutStringStream << "binding = " << unusedSamplerBinding++;
+            layoutStringStream << "set = " << kUnusedUniformsArgumentBufferBindingIndex
+                               << ", binding = " << unusedSamplerBinding++;
 
             std::string layoutString = layoutStringStream.str();
 
@@ -773,9 +770,7 @@ void GlslangWrapperMtl::GetShaderSource(const gl::ProgramState &programState,
         lastLayoutBoundIndex = GenerateTransformFeedbackOutputs(programState, &vertexSource);
     }
 
-    lastLayoutBoundIndex =
-        CleanupUnusedEntities(programState, resources, glVertexShader, lastLayoutBoundIndex,
-                              &vertexSource, &fragmentSource);
+    CleanupUnusedEntities(programState, resources, glVertexShader, &vertexSource, &fragmentSource);
 
     *vertexSourceOut   = vertexSource.getShaderSource();
     *fragmentSourceOut = fragmentSource.getShaderSource();
@@ -850,7 +845,7 @@ angle::Result GlslangWrapperMtl::GetShaderCodeImpl(mtl::ErrorHandler *context,
         fragmentShader.parse(&builtInResources, 450, ECoreProfile, false, false, messages);
     if (!fragmentResult)
     {
-        ERR() << "Internal error parsing Vulkan fragment shader:\n"
+        ERR() << "Internal error parsing GLSL fragment shader:\n"
               << fragmentShader.getInfoLog() << "\n"
               << fragmentShader.getInfoDebugLog() << "\n";
         ANGLE_MTL_TRY(context, false);
@@ -862,7 +857,7 @@ angle::Result GlslangWrapperMtl::GetShaderCodeImpl(mtl::ErrorHandler *context,
     bool linkResult = program.link(messages);
     if (!linkResult)
     {
-        ERR() << "Internal error linking Vulkan shaders:\n" << program.getInfoLog() << "\n";
+        ERR() << "Internal error linking GLSL shaders:\n" << program.getInfoLog() << "\n";
         ANGLE_MTL_TRY(context, false);
     }
 
