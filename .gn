@@ -37,4 +37,5 @@ default_args = {
   clang_use_chrome_plugins = true
   build_angle_deqp_tests = true
   use_sysroot = true
+  strip_absolute_paths_from_debug_symbols = false
 }
