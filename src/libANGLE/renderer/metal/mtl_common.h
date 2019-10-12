@@ -71,20 +71,16 @@ constexpr uint32_t kVboBindingIndexStart = 0;
 
 // Binding index for default attribute buffer:
 constexpr uint32_t kDefaultAttribsBindingIndex = kVboBindingIndexStart + kMaxVertexAttribs;
-// Binding index for default uniforms:
-constexpr uint32_t kDefaultUniformsBindingIndex = kDefaultAttribsBindingIndex + 1;
 // Binding index for driver uniforms:
-constexpr uint32_t kDriverUniformsBindingIndex = kDefaultAttribsBindingIndex + 2;
+constexpr uint32_t kDriverUniformsBindingIndex = kDefaultAttribsBindingIndex + 1;
 // Binding index for unused uniforms, they will be groupped into an argument buffer
-constexpr uint32_t kUnusedUniformsArgumentBufferBindingIndex = kDefaultAttribsBindingIndex + 3;
-// Binding index start for transform feedback buffers:
-constexpr uint32_t kXfbBindingIndexStart = kDefaultAttribsBindingIndex + 4;
+constexpr uint32_t kUnusedUniformsArgumentBufferBindingIndex = kDefaultAttribsBindingIndex + 2;
+// Binding index for default uniforms:
+constexpr uint32_t kDefaultUniformsBindingIndex = kDefaultAttribsBindingIndex + 3;
 
 constexpr uint32_t kStencilMaskAll = 0xff;  // Only 8 bits stencil is supported
 
 constexpr float kEmulatedAlphaValue = 1.0f;
-
-static_assert(kXfbBindingIndexStart < kMaxShaderBuffers, "Unexpected Xfb binding index");
 
 // TODO(hqle): Support ES 3.0.
 static constexpr gl::Version kMaxSupportedGLVersion = gl::Version(2, 0);

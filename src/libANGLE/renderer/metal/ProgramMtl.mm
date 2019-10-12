@@ -66,17 +66,38 @@ angle::Result BindResources2(spirv_cross::CompilerMSL *compiler,
                 compilerMsl.get_decoration(resource.id, spv::DecorationDescriptorSet);
         }
 
-        if (resBinding.desc_set != 0 ||
-            !compilerMsl.has_decoration(resource.id, spv::DecorationBinding))
+        if (!compilerMsl.has_decoration(resource.id, spv::DecorationBinding))
         {
             continue;
         }
 
-        resBinding.binding        = compilerMsl.get_decoration(resource.id, spv::DecorationBinding);
-        resBinding.*bindingField1 = resBinding.binding;
+        resBinding.binding = compilerMsl.get_decoration(resource.id, spv::DecorationBinding);
+
+        uint32_t bindingPoint;
+        // TODO(hqle): We use separate discrete binding point for now, in future, we should use
+        // one argument buffer for each descriptor set.
+        switch (resBinding.desc_set)
+        {
+            case 0:
+                // Use resBinding.binding as binding point.
+                bindingPoint = resBinding.binding;
+                break;
+            case kDriverUniformsBindingIndex:
+                bindingPoint = kDriverUniformsBindingIndex;
+                break;
+            case kDefaultUniformsBindingIndex:
+                // TODO(hqle): Properly handle transform feedbacks and UBO binding once ES 3.0 is
+                // implemented.
+                bindingPoint = kDefaultUniformsBindingIndex;
+                break;
+        }
+
+        // bindingField can be buffer or texture, which will be translated to [[buffer(d)]] or
+        // [[texture(d)]]
+        resBinding.*bindingField1 = bindingPoint;
         if (bindingField1 != bindingField2)
         {
-            resBinding.*bindingField2 = resBinding.binding;
+            resBinding.*bindingField2 = bindingPoint;
         }
 
         compilerMsl.add_msl_resource_binding(resBinding);
@@ -278,8 +299,7 @@ std::unique_ptr<LinkEvent> ProgramMtl::link(const gl::Context *context,
     // assignment done in that function.
     linkResources(resources);
 
-    GlslangWrapperMtl::GetShaderSource(mState, resources, &mShaderSource[gl::ShaderType::Vertex],
-                                       &mShaderSource[gl::ShaderType::Fragment]);
+    GlslangWrapperMtl::GetShaderSource(mState, resources, &mShaderSource);
 
     // TODO(hqle): Parallelize linking.
     return std::make_unique<LinkEventDone>(linkImpl(context, infoLog));
@@ -295,15 +315,15 @@ angle::Result ProgramMtl::linkImpl(const gl::Context *glContext, gl::InfoLog &in
     ANGLE_TRY(initDefaultUniformBlocks(glContext));
 
     // Convert GLSL to spirv code
-    std::vector<uint32_t> vertexCode;
-    std::vector<uint32_t> fragmentCode;
-    ANGLE_TRY(GlslangWrapperMtl::GetShaderCode(
-        contextMtl, contextMtl->getCaps(), false, mShaderSource[gl::ShaderType::Vertex],
-        mShaderSource[gl::ShaderType::Fragment], &vertexCode, &fragmentCode));
+    gl::ShaderMap<std::vector<uint32_t>> shaderCodes;
+    ANGLE_TRY(GlslangWrapperMtl::GetShaderCode(contextMtl, contextMtl->getCaps(), false,
+                                               mShaderSource, &shaderCodes));
 
     // Convert spirv code to MSL
-    ANGLE_TRY(convertToMsl(glContext, gl::ShaderType::Vertex, infoLog, &vertexCode));
-    ANGLE_TRY(convertToMsl(glContext, gl::ShaderType::Fragment, infoLog, &fragmentCode));
+    ANGLE_TRY(convertToMsl(glContext, gl::ShaderType::Vertex, infoLog,
+                           &shaderCodes[gl::ShaderType::Vertex]));
+    ANGLE_TRY(convertToMsl(glContext, gl::ShaderType::Fragment, infoLog,
+                           &shaderCodes[gl::ShaderType::Fragment]));
 
     return angle::Result::Continue;
 }

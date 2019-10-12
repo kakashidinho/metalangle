@@ -691,6 +691,14 @@ angle_source_set("libANGLE_base") {
     sources += libangle_mac_sources
   }
 
+  if (angle_enable_vulkan || angle_enable_metal) {
+    deps += [
+      "${angle_glslang_dir}:glslang_default_resource_limits_sources",
+      "${angle_glslang_dir}:glslang_sources",
+    ]
+    sources += libangle_glslang_wrapper_sources
+  }
+
   if (is_debug) {
     defines += [ "ANGLE_GENERATE_SHADER_DEBUG_INFO" ]
   }

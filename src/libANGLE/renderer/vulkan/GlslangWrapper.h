@@ -32,12 +32,6 @@ class GlslangWrapper
                                        bool enableLineRasterEmulation,
                                        const gl::ShaderMap<std::string> &shaderSources,
                                        gl::ShaderMap<std::vector<uint32_t>> *shaderCodesOut);
-
-  private:
-    static angle::Result GetShaderCodeImpl(vk::Context *context,
-                                           const gl::Caps &glCaps,
-                                           const gl::ShaderMap<std::string> &shaderSources,
-                                           gl::ShaderMap<std::vector<uint32_t>> *shaderCodesOut);
 };
 }  // namespace rx
 

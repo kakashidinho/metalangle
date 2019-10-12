@@ -24,24 +24,13 @@ class GlslangWrapperMtl
 
     static void GetShaderSource(const gl::ProgramState &programState,
                                 const gl::ProgramLinkedResources &resources,
-                                std::string *vertexSourceOut,
-                                std::string *fragmentSourceOut);
+                                gl::ShaderMap<std::string> *shaderSourcesOut);
 
     static angle::Result GetShaderCode(mtl::ErrorHandler *context,
                                        const gl::Caps &glCaps,
                                        bool enableLineRasterEmulation,
-                                       const std::string &vertexSource,
-                                       const std::string &fragmentSource,
-                                       std::vector<uint32_t> *vertexCodeOut,
-                                       std::vector<uint32_t> *fragmentCodeOut);
-
-  private:
-    static angle::Result GetShaderCodeImpl(mtl::ErrorHandler *context,
-                                           const gl::Caps &glCaps,
-                                           const std::string &vertexSource,
-                                           const std::string &fragmentSource,
-                                           std::vector<uint32_t> *vertexCodeOut,
-                                           std::vector<uint32_t> *fragmentCodeOut);
+                                       const gl::ShaderMap<std::string> &shaderSources,
+                                       gl::ShaderMap<std::vector<uint32_t>> *shaderCodeOut);
 };
 
 }  // namespace rx
