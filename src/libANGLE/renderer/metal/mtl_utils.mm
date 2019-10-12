@@ -421,27 +421,8 @@ bool IsPolygonPrimitiveType(gl::PrimitiveMode mode)
 #if ANGLE_MTL_PRIMITIVE_TOPOLOGY_CLASS_AVAILABLE
 PrimitiveTopologyClass GetPrimitiveTopologyClass(gl::PrimitiveMode mode)
 {
-    switch (mode)
-    {
-        case gl::PrimitiveMode::Points:
-            return MTLPrimitiveTopologyClassPoint;
-        case gl::PrimitiveMode::Lines:
-        case gl::PrimitiveMode::LineStrip:
-        case gl::PrimitiveMode::LineLoop:
-        case gl::PrimitiveMode::LinesAdjacency:
-        case gl::PrimitiveMode::LineStripAdjacency:
-            return MTLPrimitiveTopologyClassLine;
-        case gl::PrimitiveMode::TriangleStrip:
-        case gl::PrimitiveMode::TriangleFan:
-        case gl::PrimitiveMode::Triangles:
-        case gl::PrimitiveMode::TrianglesAdjacency:
-        case gl::PrimitiveMode::TriangleStripAdjacency:
-            return MTLPrimitiveTopologyClassTriangle;
-        default:
-            break;
-    }
-
-    UNREACHABLE();
+    // TODO(hqle): Support layered renderring in future.
+    // In non-layered rendering mode, unspecified is enough.
     return MTLPrimitiveTopologyClassUnspecified;
 }
 #else  // ANGLE_MTL_PRIMITIVE_TOPOLOGY_CLASS_AVAILABLE
