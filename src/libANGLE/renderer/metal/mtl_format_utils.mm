@@ -83,6 +83,8 @@ void GenerateTextureCapsMap(const FormatTable &formatTable,
 
     tmpTextureExtensions.textureCompressionDXT3 = true;
     tmpTextureExtensions.textureCompressionDXT5 = true;
+
+#    if defined(__MAC_10_15)
     if (@available(macOS 10.15, *))
     {
         // We can only fully support DXT1 without alpha with texture swizzle support from
@@ -91,6 +93,7 @@ void GenerateTextureCapsMap(const FormatTable &formatTable,
             [renderer->getMetalDevice() supportsFamily:MTLGPUFamilyMac2];
     }
     else
+#    endif
     {
         tmpTextureExtensions.textureCompressionDXT1 = false;
     }

@@ -30,7 +30,7 @@ void SetTextureSwizzle(ContextMtl *context,
                        const Format &format,
                        MTLTextureDescriptor *textureDescOut)
 {
-#if TARGET_OS_OSX
+#if TARGET_OS_OSX && defined(__MAC_10_15)
     if (@available(macOS 10.15, *))
     {
         if ([context->getMetalDevice() supportsFamily:MTLGPUFamilyMac2])
