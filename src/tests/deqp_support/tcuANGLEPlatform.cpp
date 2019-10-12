@@ -81,10 +81,9 @@ ANGLEPlatform::ANGLEPlatform(angle::LogErrorFunc logErrorFunc)
 
 #if (DE_OS == DE_OS_OSX) || (DE_OS == DE_OS_IOS)
     {
-        // TODO(hqle): Metal doesn't have platform enum yet, so use default platform enum here
-        std::vector<eglw::EGLAttrib> glAttribs = initAttribs(EGL_PLATFORM_ANGLE_TYPE_DEFAULT_ANGLE);
+        std::vector<eglw::EGLAttrib> glAttribs = initAttribs(EGL_PLATFORM_ANGLE_TYPE_METAL_ANGLE);
 
-        auto *glFactory = new ANGLENativeDisplayFactory("angle-metal", "ANGLE Default Display",
+        auto *glFactory = new ANGLENativeDisplayFactory("angle-metal", "ANGLE Metal Display",
                                                         glAttribs, &mEvents);
         m_nativeDisplayFactoryRegistry.registerFactory(glFactory);
     }

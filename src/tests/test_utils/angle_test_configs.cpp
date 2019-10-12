@@ -87,6 +87,9 @@ std::ostream &operator<<(std::ostream &stream, const PlatformParameters &pp)
                 case EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE:
                     stream << "D3D11";
                     break;
+                case EGL_PLATFORM_ANGLE_TYPE_METAL_ANGLE:
+                    stream << "Metal";
+                    break;
                 case EGL_PLATFORM_ANGLE_TYPE_NULL_ANGLE:
                     stream << "Null";
                     break;
@@ -409,14 +412,13 @@ EGLPlatformParameters VULKAN_SWIFTSHADER()
 }
 EGLPlatformParameters METAL()
 {
-    // TODO(hqle): Metal platform doesn't have enum value yet, so use default enum.
-    return EGLPlatformParameters(EGL_PLATFORM_ANGLE_TYPE_DEFAULT_ANGLE);
+    return EGLPlatformParameters(EGL_PLATFORM_ANGLE_TYPE_METAL_ANGLE);
 }
 
 EGLPlatformParameters METAL_NULL()
 {
-    return EGLPlatformParameters(EGL_PLATFORM_ANGLE_TYPE_DEFAULT_ANGLE, EGL_DONT_CARE,
-                                 EGL_DONT_CARE, EGL_PLATFORM_ANGLE_DEVICE_TYPE_NULL_ANGLE);
+    return EGLPlatformParameters(EGL_PLATFORM_ANGLE_TYPE_METAL_ANGLE, EGL_DONT_CARE, EGL_DONT_CARE,
+                                 EGL_PLATFORM_ANGLE_DEVICE_TYPE_NULL_ANGLE);
 }
 
 }  // namespace egl_platform
