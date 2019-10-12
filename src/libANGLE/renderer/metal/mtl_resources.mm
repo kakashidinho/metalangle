@@ -24,7 +24,34 @@ namespace rx
 {
 namespace mtl
 {
-
+namespace
+{
+void SetTextureSwizzle(ContextMtl *context,
+                       const Format &format,
+                       MTLTextureDescriptor *textureDescOut)
+{
+#if TARGET_OS_OSX
+    if (@available(macOS 10.15, *))
+    {
+        if ([context->getMetalDevice() supportsFamily:MTLGPUFamilyMac2])
+        {
+            // Work around Metal doesn't have native support for DXT1 without alpha.
+            switch (format.intendedFormatId)
+            {
+                case angle::FormatID::BC1_RGB_UNORM_BLOCK:
+                case angle::FormatID::BC1_RGB_UNORM_SRGB_BLOCK:
+                    textureDescOut.swizzle =
+                        MTLTextureSwizzleChannelsMake(MTLTextureSwizzleRed, MTLTextureSwizzleGreen,
+                                                      MTLTextureSwizzleBlue, MTLTextureSwizzleOne);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+#endif
+}
+}  // namespace
 // Resource implementation
 Resource::Resource() : mRef(std::make_shared<Ref>()) {}
 
@@ -62,7 +89,7 @@ void Resource::setUsedByCommandBufferWithQueueSerial(uint64_t serial, bool writi
 // Texture implemenetation
 /** static */
 angle::Result Texture::Make2DTexture(ContextMtl *context,
-                                     MTLPixelFormat format,
+                                     const Format &format,
                                      uint32_t width,
                                      uint32_t height,
                                      uint32_t mips,
@@ -72,11 +99,12 @@ angle::Result Texture::Make2DTexture(ContextMtl *context,
     ANGLE_MTL_OBJC_SCOPE
     {
         MTLTextureDescriptor *desc =
-            [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:format
+            [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:format.metalFormat
                                                                width:width
                                                               height:height
                                                            mipmapped:mips == 0 || mips > 1];
 
+        SetTextureSwizzle(context, format, desc);
         refOut->reset(new Texture(context, desc, mips, renderTargetOnly, false));
     }  // ANGLE_MTL_OBJC_SCOPE
 
@@ -90,7 +118,7 @@ angle::Result Texture::Make2DTexture(ContextMtl *context,
 
 /** static */
 angle::Result Texture::MakeCubeTexture(ContextMtl *context,
-                                       MTLPixelFormat format,
+                                       const Format &format,
                                        uint32_t size,
                                        uint32_t mips,
                                        bool renderTargetOnly,
@@ -99,10 +127,10 @@ angle::Result Texture::MakeCubeTexture(ContextMtl *context,
     ANGLE_MTL_OBJC_SCOPE
     {
         MTLTextureDescriptor *desc =
-            [MTLTextureDescriptor textureCubeDescriptorWithPixelFormat:format
+            [MTLTextureDescriptor textureCubeDescriptorWithPixelFormat:format.metalFormat
                                                                   size:size
                                                              mipmapped:mips == 0 || mips > 1];
-
+        SetTextureSwizzle(context, format, desc);
         refOut->reset(new Texture(context, desc, mips, renderTargetOnly, true));
     }  // ANGLE_MTL_OBJC_SCOPE
 

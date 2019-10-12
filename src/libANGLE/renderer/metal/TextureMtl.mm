@@ -469,15 +469,15 @@ angle::Result TextureMtl::setStorageImpl(const gl::Context *context,
     switch (mtlType)
     {
         case MTLTextureType2D:
-            ANGLE_TRY(mtl::Texture::Make2DTexture(contextMtl, mtlFormat.metalFormat, size.width,
-                                                  size.height, static_cast<uint32_t>(mipmaps),
-                                                  false, &mTexture));
+            ANGLE_TRY(mtl::Texture::Make2DTexture(contextMtl, mtlFormat, size.width, size.height,
+                                                  static_cast<uint32_t>(mipmaps), false,
+                                                  &mTexture));
 
             mLayeredRenderTargets.resize(1);
             mLayeredRenderTargets[0].set(mTexture, 0, 0, mFormat);
             break;
         case MTLTextureTypeCube:
-            ANGLE_TRY(mtl::Texture::MakeCubeTexture(contextMtl, mtlFormat.metalFormat, size.width,
+            ANGLE_TRY(mtl::Texture::MakeCubeTexture(contextMtl, mtlFormat, size.width,
                                                     static_cast<uint32_t>(mipmaps), false,
                                                     &mTexture));
 

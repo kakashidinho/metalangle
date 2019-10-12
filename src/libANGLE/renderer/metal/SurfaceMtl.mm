@@ -369,8 +369,8 @@ angle::Result SurfaceMtl::ensureRenderTargetsCreated(const gl::Context *context)
 
     if (!mDepthTexture || mDepthTexture->size() != size)
     {
-        ANGLE_TRY(mtl::Texture::Make2DTexture(contextMtl, mDepthFormat.metalFormat, size.width,
-                                              size.height, 1, true, &mDepthTexture));
+        ANGLE_TRY(mtl::Texture::Make2DTexture(contextMtl, mDepthFormat, size.width, size.height, 1,
+                                              true, &mDepthTexture));
 
         mDepthRenderTarget.set(mDepthTexture, 0, 0, mDepthFormat);
     }
@@ -383,9 +383,8 @@ angle::Result SurfaceMtl::ensureRenderTargetsCreated(const gl::Context *context)
         }
         else
         {
-            ANGLE_TRY(mtl::Texture::Make2DTexture(contextMtl, mStencilFormat.metalFormat,
-                                                  size.width, size.height, 1, true,
-                                                  &mStencilTexture));
+            ANGLE_TRY(mtl::Texture::Make2DTexture(contextMtl, mStencilFormat, size.width,
+                                                  size.height, 1, true, &mStencilTexture));
         }
 
         mStencilRenderTarget.set(mStencilTexture, 0, 0, mStencilFormat);

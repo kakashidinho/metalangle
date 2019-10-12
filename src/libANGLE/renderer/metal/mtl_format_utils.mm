@@ -69,21 +69,32 @@ void GenerateTextureCapsMap(const FormatTable &formatTable,
     // Requires depth24Stencil8PixelFormatSupported=YES for these extensions
     bool packedDepthStencil24Support =
         renderer->getMetalDevice().depth24Stencil8PixelFormatSupported;
-    tmpTextureExtensions.packedDepthStencil         = true;  // We support this reguardless
-    tmpTextureExtensions.colorBufferHalfFloat       = packedDepthStencil24Support;
-    tmpTextureExtensions.colorBufferFloat           = packedDepthStencil24Support;
-    tmpTextureExtensions.colorBufferFloatRGB        = packedDepthStencil24Support;
-    tmpTextureExtensions.colorBufferFloatRGBA       = packedDepthStencil24Support;
-    tmpTextureExtensions.textureHalfFloat           = packedDepthStencil24Support;
-    tmpTextureExtensions.textureFloat               = packedDepthStencil24Support;
-    tmpTextureExtensions.textureHalfFloatLinear     = packedDepthStencil24Support;
-    tmpTextureExtensions.textureFloatLinear         = packedDepthStencil24Support;
-    tmpTextureExtensions.textureRG                  = packedDepthStencil24Support;
-    tmpTextureExtensions.textureFormatBGRA8888      = packedDepthStencil24Support;
-    tmpTextureExtensions.textureCompressionDXT1     = true;
-    tmpTextureExtensions.textureCompressionDXT3     = true;
-    tmpTextureExtensions.textureCompressionDXT5     = true;
-    tmpTextureExtensions.textureCompressionS3TCsRGB = true;
+    tmpTextureExtensions.packedDepthStencil     = true;  // We support this reguardless
+    tmpTextureExtensions.colorBufferHalfFloat   = packedDepthStencil24Support;
+    tmpTextureExtensions.colorBufferFloat       = packedDepthStencil24Support;
+    tmpTextureExtensions.colorBufferFloatRGB    = packedDepthStencil24Support;
+    tmpTextureExtensions.colorBufferFloatRGBA   = packedDepthStencil24Support;
+    tmpTextureExtensions.textureHalfFloat       = packedDepthStencil24Support;
+    tmpTextureExtensions.textureFloat           = packedDepthStencil24Support;
+    tmpTextureExtensions.textureHalfFloatLinear = packedDepthStencil24Support;
+    tmpTextureExtensions.textureFloatLinear     = packedDepthStencil24Support;
+    tmpTextureExtensions.textureRG              = packedDepthStencil24Support;
+    tmpTextureExtensions.textureFormatBGRA8888  = packedDepthStencil24Support;
+
+    tmpTextureExtensions.textureCompressionDXT3 = true;
+    tmpTextureExtensions.textureCompressionDXT5 = true;
+    if (@available(macOS 10.15, *))
+    {
+        // We can only fully support DXT1 without alpha with texture swizzle support from
+        // MacOs 10.15
+        tmpTextureExtensions.textureCompressionDXT1 =
+            [renderer->getMetalDevice() supportsFamily:MTLGPUFamilyMac2];
+    }
+    else
+    {
+        tmpTextureExtensions.textureCompressionDXT1 = false;
+    }
+    tmpTextureExtensions.textureCompressionS3TCsRGB = tmpTextureExtensions.textureCompressionDXT1;
 #else
     tmpTextureExtensions.packedDepthStencil     = true;  // override to D32_FLOAT_S8X24_UINT
     tmpTextureExtensions.colorBufferHalfFloat   = true;

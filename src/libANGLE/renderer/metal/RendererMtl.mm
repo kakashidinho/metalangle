@@ -111,17 +111,19 @@ mtl::TextureRef RendererMtl::getNullTexture(const gl::Context *context, gl::Text
         MTLRegion region           = MTLRegionMake2D(0, 0, 1, 1);
         const uint8_t zeroPixel[4] = {0, 0, 0, 255};
 
+        const auto &rgbaFormat = getPixelFormat(angle::FormatID::R8G8B8A8_UNORM);
+
         switch (typeEnum)
         {
             case gl::TextureType::_2D:
-                (void)(mtl::Texture::Make2DTexture(contextMtl, MTLPixelFormatRGBA8Unorm, 1, 1, 1,
-                                                   false, &mNullTextures[type]));
+                (void)(mtl::Texture::Make2DTexture(contextMtl, rgbaFormat, 1, 1, 1, false,
+                                                   &mNullTextures[type]));
                 mNullTextures[type]->replaceRegion(contextMtl, region, 0, 0, zeroPixel,
                                                    sizeof(zeroPixel));
                 break;
             case gl::TextureType::CubeMap:
-                (void)(mtl::Texture::MakeCubeTexture(contextMtl, MTLPixelFormatRGBA8Unorm, 1, 1,
-                                                     false, &mNullTextures[type]));
+                (void)(mtl::Texture::MakeCubeTexture(contextMtl, rgbaFormat, 1, 1, false,
+                                                     &mNullTextures[type]));
                 for (int f = 0; f < 6; ++f)
                 {
                     mNullTextures[type]->replaceRegion(contextMtl, region, 0, f, zeroPixel,

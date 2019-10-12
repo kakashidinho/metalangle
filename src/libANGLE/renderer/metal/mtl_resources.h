@@ -22,6 +22,7 @@
 #include "libANGLE/ImageIndex.h"
 #include "libANGLE/angletypes.h"
 #include "libANGLE/renderer/metal/mtl_common.h"
+#include "libANGLE/renderer/metal/mtl_format_utils.h"
 
 namespace rx
 {
@@ -85,7 +86,7 @@ class Texture final : public Resource,
 {
   public:
     static angle::Result Make2DTexture(ContextMtl *context,
-                                       MTLPixelFormat format,
+                                       const Format &format,
                                        uint32_t width,
                                        uint32_t height,
                                        uint32_t mips /** use zero to create full mipmaps chain */,
@@ -93,7 +94,7 @@ class Texture final : public Resource,
                                        TextureRef *refOut);
 
     static angle::Result MakeCubeTexture(ContextMtl *context,
-                                         MTLPixelFormat format,
+                                         const Format &format,
                                          uint32_t size,
                                          uint32_t mips /** use zero to create full mipmaps chain */,
                                          bool renderTargetOnly,
