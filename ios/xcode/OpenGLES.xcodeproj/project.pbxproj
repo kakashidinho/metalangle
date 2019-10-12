@@ -669,6 +669,10 @@
 		0A9B845D234CD97B008BF16F /* FramebufferAttachment.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A605A94234667C2005CEA98 /* FramebufferAttachment.h */; };
 		0A9B845E234CDC2A008BF16F /* FrameCapture.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9B8425234CD68D008BF16F /* FrameCapture.cpp */; };
 		0A9B845F234CDC33008BF16F /* FrameCapture.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9B8425234CD68D008BF16F /* FrameCapture.cpp */; };
+		0A9D1320235261C400ED98F9 /* glslang_wrapper_utils.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A9D131E235261C400ED98F9 /* glslang_wrapper_utils.h */; };
+		0A9D1321235261C400ED98F9 /* glslang_wrapper_utils.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A9D131E235261C400ED98F9 /* glslang_wrapper_utils.h */; };
+		0A9D1322235261C400ED98F9 /* glslang_wrapper_utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9D131F235261C400ED98F9 /* glslang_wrapper_utils.cpp */; };
+		0A9D1323235261C400ED98F9 /* glslang_wrapper_utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9D131F235261C400ED98F9 /* glslang_wrapper_utils.cpp */; };
 		0A9D1D9023467034008D63F7 /* entry_points_gles_3_1_autogen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9D1D8F23467034008D63F7 /* entry_points_gles_3_1_autogen.cpp */; };
 		0A9DB586234A4FA500A35262 /* OutputVulkanGLSLForMetal.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A9DB584234A4FA400A35262 /* OutputVulkanGLSLForMetal.mm */; };
 		0A9DB587234A4FA500A35262 /* OutputVulkanGLSLForMetal.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A9DB584234A4FA400A35262 /* OutputVulkanGLSLForMetal.mm */; };
@@ -1918,7 +1922,6 @@
 		0A6055DB234655FC005CEA98 /* mtl_resources.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = mtl_resources.mm; path = ../../src/libANGLE/renderer/metal/mtl_resources.mm; sourceTree = "<group>"; };
 		0A6055DC234655FC005CEA98 /* VertexArrayMtl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VertexArrayMtl.h; path = ../../src/libANGLE/renderer/metal/VertexArrayMtl.h; sourceTree = "<group>"; };
 		0A6055DD234655FC005CEA98 /* SurfaceMtl.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = SurfaceMtl.mm; path = ../../src/libANGLE/renderer/metal/SurfaceMtl.mm; sourceTree = "<group>"; };
-		0A6055DE234655FC005CEA98 /* Metal_platform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Metal_platform.h; path = ../../src/libANGLE/renderer/metal/Metal_platform.h; sourceTree = "<group>"; };
 		0A6055DF234655FC005CEA98 /* RenderTargetMtl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RenderTargetMtl.h; path = ../../src/libANGLE/renderer/metal/RenderTargetMtl.h; sourceTree = "<group>"; };
 		0A6055E0234655FC005CEA98 /* mtl_utils.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = mtl_utils.mm; path = ../../src/libANGLE/renderer/metal/mtl_utils.mm; sourceTree = "<group>"; };
 		0A6055E1234655FC005CEA98 /* mtl_format_table_autogen.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = mtl_format_table_autogen.mm; path = ../../src/libANGLE/renderer/metal/mtl_format_table_autogen.mm; sourceTree = "<group>"; };
@@ -2280,6 +2283,8 @@
 		0A9B844D234CD844008BF16F /* entry_points_enum_autogen.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = entry_points_enum_autogen.cpp; sourceTree = "<group>"; };
 		0A9B8450234CD88E008BF16F /* NameNamelessUniformBuffers.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = NameNamelessUniformBuffers.cpp; sourceTree = "<group>"; };
 		0A9B8451234CD88E008BF16F /* NameNamelessUniformBuffers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NameNamelessUniformBuffers.h; sourceTree = "<group>"; };
+		0A9D131E235261C400ED98F9 /* glslang_wrapper_utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = glslang_wrapper_utils.h; sourceTree = "<group>"; };
+		0A9D131F235261C400ED98F9 /* glslang_wrapper_utils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = glslang_wrapper_utils.cpp; sourceTree = "<group>"; };
 		0A9D1D8F23467034008D63F7 /* entry_points_gles_3_1_autogen.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = entry_points_gles_3_1_autogen.cpp; sourceTree = "<group>"; };
 		0A9DB584234A4FA400A35262 /* OutputVulkanGLSLForMetal.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = OutputVulkanGLSLForMetal.mm; sourceTree = "<group>"; };
 		0A9DB585234A4FA400A35262 /* OutputVulkanGLSLForMetal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OutputVulkanGLSLForMetal.h; sourceTree = "<group>"; };
@@ -3149,7 +3154,6 @@
 				0A605603234655FE005CEA98 /* FrameBufferMtl.mm */,
 				0A605601234655FE005CEA98 /* GlslangWrapper.h */,
 				0A6055D5234655FC005CEA98 /* GlslangWrapper.mm */,
-				0A6055DE234655FC005CEA98 /* Metal_platform.h */,
 				0A6055D0234655FC005CEA98 /* mtl_buffer_pool.h */,
 				0A6055FE234655FE005CEA98 /* mtl_buffer_pool.mm */,
 				0A6055D7234655FC005CEA98 /* mtl_command_buffer.h */,
@@ -3500,6 +3504,8 @@
 		0A6056D1234667BF005CEA98 /* renderer */ = {
 			isa = PBXGroup;
 			children = (
+				0A9D131F235261C400ED98F9 /* glslang_wrapper_utils.cpp */,
+				0A9D131E235261C400ED98F9 /* glslang_wrapper_utils.h */,
 				0A6056D5234667BF005CEA98 /* BufferImpl_mock.h */,
 				0A605761234667C0005CEA98 /* BufferImpl.h */,
 				0A6056DC234667BF005CEA98 /* CompilerImpl.h */,
@@ -4519,6 +4525,7 @@
 				0A606023234667CE005CEA98 /* ArrayBoundsClamper.h in Headers */,
 				0A605F7E234667CD005CEA98 /* HandleAllocator.h in Headers */,
 				0A605BEB234667C5005CEA98 /* PathImpl.h in Headers */,
+				0A9D1320235261C400ED98F9 /* glslang_wrapper_utils.h in Headers */,
 				0A605F4D234667CC005CEA98 /* validationGL15_autogen.h in Headers */,
 				0A9B841A234CD587008BF16F /* RewriteCubeMapSamplersAs2DArray.h in Headers */,
 				0A605547234651CC005CEA98 /* DeclareAndInitBuiltinsForInstancedMultiview.h in Headers */,
@@ -4839,6 +4846,7 @@
 				0AA2FE802347260000E0B98C /* ArrayBoundsClamper.h in Headers */,
 				0AA2FE812347260000E0B98C /* HandleAllocator.h in Headers */,
 				0AA2FE822347260000E0B98C /* PathImpl.h in Headers */,
+				0A9D1321235261C400ED98F9 /* glslang_wrapper_utils.h in Headers */,
 				0AA2FE842347260000E0B98C /* validationGL15_autogen.h in Headers */,
 				0A9B841B234CD587008BF16F /* RewriteCubeMapSamplersAs2DArray.h in Headers */,
 				0AA2FE852347260000E0B98C /* DeclareAndInitBuiltinsForInstancedMultiview.h in Headers */,
@@ -5629,6 +5637,7 @@
 				0A605D9B234667C9005CEA98 /* ShaderImpl.cpp in Sources */,
 				0A605561234651CC005CEA98 /* ValidateMaxParameters.cpp in Sources */,
 				0A605546234651CC005CEA98 /* SeparateArrayConstructorStatements.cpp in Sources */,
+				0A9D1322235261C400ED98F9 /* glslang_wrapper_utils.cpp in Sources */,
 				0A60559D234651CC005CEA98 /* Macro.cpp in Sources */,
 				0A605FD8234667CE005CEA98 /* EGLSync.cpp in Sources */,
 				0A60528E2346502A005CEA98 /* entry_points_egl_ext.cpp in Sources */,
@@ -6095,6 +6104,7 @@
 				0AA2FF582347260000E0B98C /* ShaderImpl.cpp in Sources */,
 				0AA2FF592347260000E0B98C /* ValidateMaxParameters.cpp in Sources */,
 				0AA2FF5A2347260000E0B98C /* SeparateArrayConstructorStatements.cpp in Sources */,
+				0A9D1323235261C400ED98F9 /* glslang_wrapper_utils.cpp in Sources */,
 				0AA2FF5B2347260000E0B98C /* Macro.cpp in Sources */,
 				0AA2FF5C2347260000E0B98C /* EGLSync.cpp in Sources */,
 				0AA2FF5E2347260000E0B98C /* entry_points_egl_ext.cpp in Sources */,
