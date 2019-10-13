@@ -270,6 +270,13 @@ class ContextMtl : public ContextImpl, public mtl::Context
                             GLsizei instanceCount,
                             gl::DrawElementsType indexTypeOrNone,
                             const void *indices);
+    angle::Result genLineLoopLastSegment(const gl::Context *context,
+                                         GLint firstVertex,
+                                         GLsizei vertexOrIndexCount,
+                                         GLsizei instanceCount,
+                                         gl::DrawElementsType indexTypeOrNone,
+                                         const void *indices,
+                                         mtl::BufferRef *lastSegmentIndexBufferOut);
 
     angle::Result drawTriFanArrays(const gl::Context *context, GLint first, GLsizei count);
     angle::Result drawTriFanElements(const gl::Context *context,
@@ -344,6 +351,8 @@ class ContextMtl : public ContextImpl, public mtl::Context
     MTLCullMode mCullMode;
     bool mCullAllPolygons = false;
 
+    // Lineloop and TriFan index buffer
+    mtl::BufferPool mLineLoopIndexBuffer;
     mtl::BufferPool mTriFanIndexBuffer;
 
     // See compiler/translator/TranslatorVulkan.cpp: AddDriverUniformsToShader()

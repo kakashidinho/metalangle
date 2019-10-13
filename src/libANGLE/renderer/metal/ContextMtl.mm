@@ -65,6 +65,7 @@ angle::Result AllocateTriangleFanBuffer(ContextMtl *context,
                 GL_OUT_OF_MEMORY);
 
     size_t offset;
+    pool->releaseInFlightBuffers(context);
     ANGLE_TRY(pool->allocate(context, numIndices * sizeof(uint32_t), nullptr, bufferOut, &offset,
                              nullptr));
 
@@ -93,6 +94,9 @@ angle::Result ContextMtl::initialize()
 
     mTriFanIndexBuffer.initialize(this, 0, kBufferSettingOffsetAlignment,
                                   kMaxTriFanLineLoopBuffersPerFrame);
+    mLineLoopIndexBuffer.initialize(this, 0, 2 * sizeof(uint32_t),
+                                    kMaxTriFanLineLoopBuffersPerFrame);
+    mLineLoopIndexBuffer.setAlwaysAllocateNewBuffer(true);
 
     return angle::Result::Continue;
 }
@@ -100,6 +104,7 @@ angle::Result ContextMtl::initialize()
 void ContextMtl::onDestroy(const gl::Context *context)
 {
     mTriFanIndexBuffer.destroy(this);
+    mLineLoopIndexBuffer.destroy(this);
 }
 
 // Flush and finish.
@@ -198,23 +203,8 @@ angle::Result ContextMtl::drawTriFanElements(const gl::Context *context,
         ANGLE_TRY(AllocateTriangleFanBuffer(this, count, &mTriFanIndexBuffer, &genIdxBuffer,
                                             &genIdxBufferOffset, &genIndicesCount));
 
-        const gl::Buffer *glElementArrayBuffer = mVertexArray->getState().getElementArrayBuffer();
-        if (glElementArrayBuffer)
-        {
-            size_t srcOffset = reinterpret_cast<size_t>(indices);
-            ANGLE_CHECK(this, srcOffset <= std::numeric_limits<uint32_t>::max(),
-                        "Index offset is too large", GL_INVALID_VALUE);
-            mtl::BufferRef srcBuffer =
-                mtl::GetImpl(glElementArrayBuffer)->getCurrentBuffer(context);
-            ANGLE_TRY(getRenderer()->getUtils().generateTriFanBufferFromElementsArray(
-                context, {type, count, srcBuffer, static_cast<uint32_t>(srcOffset), genIdxBuffer,
-                          genIdxBufferOffset}));
-        }
-        else
-        {
-            ANGLE_TRY(getRenderer()->getUtils().generateTriFanBufferFromClientElementsArray(
-                context, {type, count, indices, genIdxBuffer, genIdxBufferOffset}));
-        }
+        ANGLE_TRY(getRenderer()->getUtils().generateTriFanBufferFromElementsArray(
+            context, {type, count, indices, genIdxBuffer, genIdxBufferOffset}));
 
         ANGLE_TRY(mTriFanIndexBuffer.commit(this));
 
@@ -1256,6 +1246,15 @@ angle::Result ContextMtl::setupDraw(const gl::Context *context,
         return angle::Result::Continue;
     }
 
+    mtl::BufferRef lineLoopLastSegmentIndexBuffer;
+    if (mode == gl::PrimitiveMode::LineLoop)
+    {
+        // Generate line loop last segment before render command encoder is created
+        ANGLE_TRY(genLineLoopLastSegment(context, firstVertex, vertexOrIndexCount, instanceCount,
+                                         indexTypeOrNone, indices,
+                                         &lineLoopLastSegmentIndexBuffer));
+    }
+
     // Must be called before the command buffer is started.
     if (context->getStateCache().hasAnyActiveClientAttrib())
     {
@@ -1329,6 +1328,50 @@ angle::Result ContextMtl::setupDraw(const gl::Context *context,
     }
 
     ANGLE_TRY(mProgram->setupDraw(context, &mRenderEncoder, changedPipelineDesc, textureChanged));
+
+    if (mode == gl::PrimitiveMode::LineLoop)
+    {
+        // Draw last segment of line loop here
+        mRenderEncoder.drawIndexed(MTLPrimitiveTypeLine, 2, MTLIndexTypeUInt32,
+                                   lineLoopLastSegmentIndexBuffer, 0);
+    }
+
+    return angle::Result::Continue;
+}
+
+angle::Result ContextMtl::genLineLoopLastSegment(const gl::Context *context,
+                                                 GLint firstVertex,
+                                                 GLsizei vertexOrIndexCount,
+                                                 GLsizei instanceCount,
+                                                 gl::DrawElementsType indexTypeOrNone,
+                                                 const void *indices,
+                                                 mtl::BufferRef *lastSegmentIndexBufferOut)
+{
+    ASSERT(instanceCount == 1);
+
+    mLineLoopIndexBuffer.releaseInFlightBuffers(this);
+
+    mtl::BufferRef newBuffer;
+    ANGLE_TRY(mLineLoopIndexBuffer.allocate(this, 2 * sizeof(uint32_t), nullptr, &newBuffer,
+                                            nullptr, nullptr));
+
+    if (indexTypeOrNone == gl::DrawElementsType::InvalidEnum)
+    {
+        ANGLE_TRY(getRenderer()->getUtils().generateLineLoopLastSegment(
+            context, firstVertex, firstVertex + vertexOrIndexCount - 1, newBuffer, 0));
+    }
+    else
+    {
+        // TODO(hqle): Support drawRangeElements & instanced draw, which means firstVertex has to be
+        // taken into account
+        ASSERT(firstVertex == 0);
+        ANGLE_TRY(getRenderer()->getUtils().generateLineLoopLastSegmentFromElementsArray(
+            context, {indexTypeOrNone, vertexOrIndexCount, indices, newBuffer, 0}));
+    }
+
+    ANGLE_TRY(mLineLoopIndexBuffer.commit(this));
+
+    *lastSegmentIndexBufferOut = newBuffer;
 
     return angle::Result::Continue;
 }

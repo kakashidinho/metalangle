@@ -443,13 +443,12 @@ MTLPrimitiveType GetPrimitiveType(gl::PrimitiveMode mode)
         case gl::PrimitiveMode::Lines:
             return MTLPrimitiveTypeLine;
         case gl::PrimitiveMode::LineStrip:
+        case gl::PrimitiveMode::LineLoop:
             return MTLPrimitiveTypeLineStrip;
         case gl::PrimitiveMode::TriangleStrip:
             return MTLPrimitiveTypeTriangleStrip;
         case gl::PrimitiveMode::TriangleFan:
             // TODO(hqle): Emulate triangle fan.
-        case gl::PrimitiveMode::LineLoop:
-            // TODO(hqle): Emulate line loop.
         default:
             return MTLPrimitiveTypeInvalid;
     }

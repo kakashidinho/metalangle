@@ -19,6 +19,7 @@
 namespace rx
 {
 
+class BufferMtl;
 class ContextMtl;
 class RendererMtl;
 
@@ -65,18 +66,7 @@ class UtilsMtl : public mtl::Context, angle::NonCopyable
         uint32_t dstOffset;
     };
 
-    struct TriFanFromElementArrayParams
-    {
-        gl::DrawElementsType srcType;
-        uint32_t indexCount;
-        mtl::BufferRef srcBuffer;
-        uint32_t srcOffset;
-        mtl::BufferRef dstBuffer;
-        // Must be multiples of kBufferSettingOffsetAlignment
-        uint32_t dstOffset;
-    };
-
-    struct TriFanFromClientElementArrayParams
+    struct IndexConversionParams
     {
         gl::DrawElementsType srcType;
         GLsizei indexCount;
@@ -108,10 +98,15 @@ class UtilsMtl : public mtl::Context, angle::NonCopyable
     angle::Result generateTriFanBufferFromArrays(const gl::Context *context,
                                                  const TriFanFromArrayParams &params);
     angle::Result generateTriFanBufferFromElementsArray(const gl::Context *context,
-                                                        const TriFanFromElementArrayParams &params);
-    angle::Result generateTriFanBufferFromClientElementsArray(
-        const gl::Context *context,
-        const TriFanFromClientElementArrayParams &params);
+                                                        const IndexConversionParams &params);
+
+    angle::Result generateLineLoopLastSegment(const gl::Context *context,
+                                              uint32_t firstVertex,
+                                              uint32_t lastVertex,
+                                              mtl::BufferRef dstBuffer,
+                                              uint32_t dstOffset);
+    angle::Result generateLineLoopLastSegmentFromElementsArray(const gl::Context *context,
+                                                               const IndexConversionParams &params);
 
     angle::Result dispatchCompute(const gl::Context *context,
                                   mtl::ComputeCommandEncoder *encoder,
@@ -161,6 +156,20 @@ class UtilsMtl : public mtl::Context, angle::NonCopyable
         gl::DrawElementsType srcType,
         uint32_t srcOffset);
     angle::Result ensureTriFanFromArrayGeneratorInitialized(ContextMtl *context);
+    angle::Result generateTriFanBufferFromElementsArrayGPU(
+        const gl::Context *context,
+        gl::DrawElementsType srcType,
+        uint32_t indexCount,
+        mtl::BufferRef srcBuffer,
+        uint32_t srcOffset,
+        mtl::BufferRef dstBuffer,
+        // Must be multiples of kBufferSettingOffsetAlignment
+        uint32_t dstOffset);
+    angle::Result generateTriFanBufferFromElementsArrayCPU(const gl::Context *context,
+                                                           const IndexConversionParams &params);
+    angle::Result generateLineLoopLastSegmentFromElementsArrayCPU(
+        const gl::Context *context,
+        const IndexConversionParams &params);
 
     mtl::AutoObjCPtr<id<MTLLibrary>> mDefaultShaders = nil;
     RenderPipelineCacheMtl mClearRenderPipelineCache;
