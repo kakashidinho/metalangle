@@ -23,13 +23,13 @@ angle::Result RendererMtl::initialize(egl::Display *display)
 {
     ANGLE_MTL_OBJC_SCOPE
     {
-        mMetalDevice = MTLCreateSystemDefaultDevice();
+        mMetalDevice = [MTLCreateSystemDefaultDevice() ANGLE_MTL_AUTORELEASE];
         if (!mMetalDevice)
         {
             return angle::Result::Stop;
         }
 
-        mCmdQueue.set([mMetalDevice.get() newCommandQueue]);
+        mCmdQueue.set([[mMetalDevice.get() newCommandQueue] ANGLE_MTL_AUTORELEASE]);
 
         mCapsInitialized = false;
 

@@ -164,7 +164,7 @@ AutoObjCPtr<id<MTLLibrary>> CreateShaderLibrary(id<MTLDevice> metalDevice,
 
         *errorOut = std::move(nsError);
 
-        return library;
+        return [library ANGLE_MTL_AUTORELEASE];
     }
 }
 
@@ -187,7 +187,7 @@ AutoObjCPtr<id<MTLLibrary>> CreateShaderLibraryFromBinary(id<MTLDevice> metalDev
 
         *errorOut = std::move(nsError);
 
-        return library;
+        return [library ANGLE_MTL_AUTORELEASE];
     }
 }
 

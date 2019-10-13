@@ -821,7 +821,7 @@ mtl::AutoObjCPtr<id<MTLRenderPipelineState>> RenderPipelineCacheMtl::createRende
             return nil;
         }
 
-        return newState;
+        return [newState ANGLE_MTL_AUTORELEASE];
     }
 }
 
@@ -884,7 +884,7 @@ mtl::AutoObjCPtr<id<MTLDepthStencilState>> StateCacheMtl::getDepthStencilState(
         {
             mtl::AutoObjCObj<MTLDepthStencilDescriptor> objCDesc = mtl::ToObjC(desc);
             mtl::AutoObjCPtr<id<MTLDepthStencilState>> newState =
-                [metalDevice newDepthStencilStateWithDescriptor:objCDesc];
+                [[metalDevice newDepthStencilStateWithDescriptor:objCDesc] ANGLE_MTL_AUTORELEASE];
 
             auto re = mDepthStencilStates.insert(std::make_pair(desc, newState));
             if (!re.second)
@@ -909,7 +909,7 @@ mtl::AutoObjCPtr<id<MTLSamplerState>> StateCacheMtl::getSamplerState(id<MTLDevic
         {
             mtl::AutoObjCObj<MTLSamplerDescriptor> objCDesc = mtl::ToObjC(desc);
             mtl::AutoObjCPtr<id<MTLSamplerState>> newState =
-                [metalDevice newSamplerStateWithDescriptor:objCDesc];
+                [[metalDevice newSamplerStateWithDescriptor:objCDesc] ANGLE_MTL_AUTORELEASE];
 
             auto re = mSamplerStates.insert(std::make_pair(desc, newState));
             if (!re.second)

@@ -670,6 +670,10 @@ TEST_P(MipmapTest, DefineValidExtraLevelAndUseItLater)
     // needs some triage: http://anglebug.com/3950
     ANGLE_SKIP_TEST_IF(IsVulkan());
 
+    // Disable this test until metal backend implements mipmap chain with respect to
+    // OpenGL spec.
+    ANGLE_SKIP_TEST_IF(IsMetal());
+
     glBindTexture(GL_TEXTURE_2D, mTexture2D);
 
     GLubyte *levels[] = {mLevelZeroBlueInitData.data(), mLevelOneGreenInitData.data(),

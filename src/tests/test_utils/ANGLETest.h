@@ -576,6 +576,7 @@ bool IsOpenGLES();
 bool IsOpenGL();
 bool IsNULL();
 bool IsVulkan();
+bool IsMetal();
 
 // Debug/Release
 bool IsDebug();
