@@ -1313,6 +1313,10 @@
 		0AA2FFC9234727A400E0B98C /* BufferMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A6055F4234655FD005CEA98 /* BufferMtl.mm */; };
 		0AA2FFCB234727A400E0B98C /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A60566023465AEE005CEA98 /* Metal.framework */; };
 		0AA2FFD3234727EF00E0B98C /* libangle_metal_backend_ios_13.0.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AA2FFD0234727A400E0B98C /* libangle_metal_backend_ios_13.0.a */; };
+		0ABF4074235340FE0051488C /* sample_util.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A97E493234867E9007CA616 /* sample_util.framework */; };
+		0ABF4077235340FE0051488C /* MetalANGLE.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0A60525323464F51005CEA98 /* MetalANGLE.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		0ABF4078235340FE0051488C /* sample_util.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0A97E493234867E9007CA616 /* sample_util.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		0ABF4080235341360051488C /* TriFanMicroBench.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0ABF407F235341360051488C /* TriFanMicroBench.cpp */; };
 		0AC2A5222346714A0045B949 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AC2A5202346714A0045B949 /* Foundation.framework */; };
 		0AC2A5232346714A0045B949 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AC2A5212346714A0045B949 /* CoreFoundation.framework */; };
 		0AC2A524234671670045B949 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A60566023465AEE005CEA98 /* Metal.framework */; };
@@ -1627,6 +1631,17 @@
 			dstPath = "include/$(PRODUCT_NAME)";
 			dstSubfolderSpec = 16;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0ABF4076235340FE0051488C /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				0ABF4077235340FE0051488C /* MetalANGLE.framework in CopyFiles */,
+				0ABF4078235340FE0051488C /* sample_util.framework in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2537,6 +2552,8 @@
 		0AA2FFFD234734F400E0B98C /* keyboard.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = keyboard.h; path = ../../util/keyboard.h; sourceTree = "<group>"; };
 		0AA2FFFE234734F400E0B98C /* EGLWindow.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = EGLWindow.cpp; path = ../../util/EGLWindow.cpp; sourceTree = "<group>"; };
 		0AA2FFFF234734F400E0B98C /* random_utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = random_utils.h; path = ../../util/random_utils.h; sourceTree = "<group>"; };
+		0ABF407C235340FE0051488C /* tri_fan_microbench.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = tri_fan_microbench.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0ABF407F235341360051488C /* TriFanMicroBench.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TriFanMicroBench.cpp; sourceTree = "<group>"; };
 		0AC2A5202346714A0045B949 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		0AC2A5212346714A0045B949 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
@@ -2726,6 +2743,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		0ABF4073235340FE0051488C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0ABF4074235340FE0051488C /* sample_util.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -2770,6 +2795,7 @@
 				0A97E541234872BA007CA616 /* texture_wrap.app */,
 				0A97E5682348749C007CA616 /* mip_map_2d.app */,
 				0A97E589234874E2007CA616 /* stencil_operations.app */,
+				0ABF407C235340FE0051488C /* tri_fan_microbench.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -3875,6 +3901,7 @@
 				0AA20105234745E800E0B98C /* simple_texture_cubemap */,
 				0AA2010D234745E800E0B98C /* simple_vertex_shader */,
 				0AA2010F234745E900E0B98C /* texture_wrap */,
+				0ABF407E235341360051488C /* tri_fan_microbench */,
 			);
 			name = samples;
 			sourceTree = "<group>";
@@ -4231,6 +4258,15 @@
 				0AA20009234734F500E0B98C /* util_gl.h */,
 			);
 			name = angle_util;
+			sourceTree = "<group>";
+		};
+		0ABF407E235341360051488C /* tri_fan_microbench */ = {
+			isa = PBXGroup;
+			children = (
+				0ABF407F235341360051488C /* TriFanMicroBench.cpp */,
+			);
+			name = tri_fan_microbench;
+			path = ../../samples/tri_fan_microbench;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -5245,6 +5281,24 @@
 			productReference = 0AA2FFF0234734AD00E0B98C /* libangle_util.a */;
 			productType = "com.apple.product-type.library.static";
 		};
+		0ABF4070235340FE0051488C /* tri_fan_microbench */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0ABF4079235340FE0051488C /* Build configuration list for PBXNativeTarget "tri_fan_microbench" */;
+			buildPhases = (
+				0ABF4071235340FE0051488C /* Sources */,
+				0ABF4073235340FE0051488C /* Frameworks */,
+				0ABF4075235340FE0051488C /* Resources */,
+				0ABF4076235340FE0051488C /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = tri_fan_microbench;
+			productName = stencil_operations;
+			productReference = 0ABF407C235340FE0051488C /* tri_fan_microbench.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -5347,6 +5401,7 @@
 				0A97E5672348749C007CA616 /* mip_map_2d */,
 				0A97E588234874E2007CA616 /* stencil_operations */,
 				0A97E5AB234879AD007CA616 /* angle_commit_id */,
+				0ABF4070235340FE0051488C /* tri_fan_microbench */,
 			);
 		};
 /* End PBXProject section */
@@ -5433,6 +5488,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		0AA2FFA62347260000E0B98C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0ABF4075235340FE0051488C /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -6216,6 +6278,14 @@
 				0AA200312347351C00E0B98C /* OSXPixmap.mm in Sources */,
 				0AA2001C234734F600E0B98C /* OSWindow.cpp in Sources */,
 				0AA20021234734F600E0B98C /* IOSWindow.mm in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0ABF4071235340FE0051488C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0ABF4080235341360051488C /* TriFanMicroBench.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -7396,6 +7466,52 @@
 			};
 			name = Release;
 		};
+		0ABF407A235340FE0051488C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					ANGLE_USE_UTIL_LOADER,
+					"GL_GLES_PROTOTYPES=0",
+					"EGL_EGL_PROTOTYPES=0",
+					"${inherited}",
+				);
+				INFOPLIST_FILE = samples/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.hqgame.angle.samples.tri-fan-microbench";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		0ABF407B235340FE0051488C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					ANGLE_USE_UTIL_LOADER,
+					"GL_GLES_PROTOTYPES=0",
+					"EGL_EGL_PROTOTYPES=0",
+					"${inherited}",
+				);
+				INFOPLIST_FILE = samples/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.hqgame.angle.samples.tri-fan-microbench";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -7593,6 +7709,15 @@
 			buildConfigurations = (
 				0AA2FFF7234734AD00E0B98C /* Debug */,
 				0AA2FFF8234734AD00E0B98C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		0ABF4079235340FE0051488C /* Build configuration list for PBXNativeTarget "tri_fan_microbench" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0ABF407A235340FE0051488C /* Debug */,
+				0ABF407B235340FE0051488C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
