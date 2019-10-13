@@ -258,6 +258,12 @@ class RenderCommandEncoder final : public CommandEncoder
                                       MTLIndexType indexType,
                                       BufferRef indexBuffer,
                                       size_t bufferOffset);
+    RenderCommandEncoder &drawIndexedBaseVertex(MTLPrimitiveType primitiveType,
+                                                uint32_t indexCount,
+                                                MTLIndexType indexType,
+                                                BufferRef indexBuffer,
+                                                size_t bufferOffset,
+                                                uint32_t baseVertex);
 
     RenderCommandEncoder &setColorStoreAction(MTLStoreAction action, uint32_t colorAttachmentIndex);
     // Set store action for every color attachment.

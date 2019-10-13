@@ -354,6 +354,8 @@ class ContextMtl : public ContextImpl, public mtl::Context
     // Lineloop and TriFan index buffer
     mtl::BufferPool mLineLoopIndexBuffer;
     mtl::BufferPool mTriFanIndexBuffer;
+    // one buffer can be reused for any starting vertex in DrawArrays()
+    mtl::BufferRef mTriFanArraysIndexBuffer;
 
     // See compiler/translator/TranslatorVulkan.cpp: AddDriverUniformsToShader()
     struct DriverUniforms

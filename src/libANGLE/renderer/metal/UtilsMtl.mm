@@ -91,7 +91,7 @@ void GetFirstLastIndicesFromClientElements(GLsizei count,
                                            uint32_t *lastOut)
 {
     *firstOut = 0;
-    *lastOut = 0;
+    *lastOut  = 0;
     memcpy(firstOut, indices, sizeof(indices[0]));
     memcpy(lastOut, indices + count - 1, sizeof(indices[0]));
 }

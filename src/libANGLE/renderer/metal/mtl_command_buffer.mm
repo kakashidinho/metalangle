@@ -811,6 +811,31 @@ RenderCommandEncoder &RenderCommandEncoder::drawIndexed(MTLPrimitiveType primiti
     return *this;
 }
 
+RenderCommandEncoder &RenderCommandEncoder::drawIndexedBaseVertex(MTLPrimitiveType primitiveType,
+                                                                  uint32_t indexCount,
+                                                                  MTLIndexType indexType,
+                                                                  BufferRef indexBuffer,
+                                                                  size_t bufferOffset,
+                                                                  uint32_t baseVertex)
+{
+    if (!indexBuffer)
+    {
+        return *this;
+    }
+
+    cmdBuffer().setReadDependency(indexBuffer);
+    [get() drawIndexedPrimitives:primitiveType
+                      indexCount:indexCount
+                       indexType:indexType
+                     indexBuffer:indexBuffer->get()
+               indexBufferOffset:bufferOffset
+                   instanceCount:1
+                      baseVertex:baseVertex
+                    baseInstance:0];
+
+    return *this;
+}
+
 RenderCommandEncoder &RenderCommandEncoder::setColorStoreAction(MTLStoreAction action,
                                                                 uint32_t colorAttachmentIndex)
 {
