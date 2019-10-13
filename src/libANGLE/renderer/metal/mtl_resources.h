@@ -130,6 +130,9 @@ class Texture final : public Resource,
     gl::Extents size(uint32_t level = 0) const;
     gl::Extents size(const gl::ImageIndex &index) const;
 
+    // Synchronize content between CPU and GPU
+    void forceSyncCPUContent(ContextMtl *context);
+
     // For render target
     MTLColorWriteMask getColorWritableMask() const { return mColorWritableMask; }
     void setColorWritableMask(MTLColorWriteMask mask) { mColorWritableMask = mask; }
@@ -150,7 +153,7 @@ class Texture final : public Resource,
     // Create a texture view
     Texture(Texture *original, MTLTextureType type, NSRange mipmapLevelRange, uint32_t slice);
 
-    void syncContent(ContextMtl *context);
+    void syncCPUContent(ContextMtl *context);
 
     MTLColorWriteMask mColorWritableMask = MTLColorWriteMaskAll;
 };

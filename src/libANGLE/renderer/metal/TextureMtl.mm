@@ -618,6 +618,10 @@ angle::Result TextureMtl::setSubImageImpl(const gl::Context *context,
                             index.hasLayer() ? index.cubeMapFaceIndex() : 0, pixels,
                             sourceRowPitch);
 
+    // Metal documents are unclear whether we should sync the CPU <-> GPU content when application
+    // change texture's data via replaceRegion(), just to be safe, we do the sync here:
+    mTexture->forceSyncCPUContent(contextMtl);
+
     return angle::Result::Continue;
 }
 
@@ -661,6 +665,10 @@ angle::Result TextureMtl::convertAndSetSubImage(const gl::Context *context,
                                 index.hasLayer() ? index.cubeMapFaceIndex() : 0, conversionRow,
                                 dstRowPitch);
     }
+
+    // Metal documents are unclear whether we should sync the CPU <-> GPU content when application
+    // change texture's data via replaceRegion(), just to be safe, we do the sync here:
+    mTexture->forceSyncCPUContent(contextMtl);
 
     delete[] conversionRow;
 
@@ -777,6 +785,10 @@ angle::Result TextureMtl::copySubImageCPU(const gl::Context *context,
                                 index.hasLayer() ? index.cubeMapFaceIndex() : 0,
                                 conversionRow.get(), dstRowPitch);
     }
+
+    // Metal documents are unclear whether we should sync the CPU <-> GPU content when application
+    // change texture's data via replaceRegion(), just to be safe, we do the sync here:
+    mTexture->forceSyncCPUContent(contextMtl);
 
     return angle::Result::Continue;
 }
