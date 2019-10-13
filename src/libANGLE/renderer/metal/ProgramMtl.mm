@@ -90,6 +90,9 @@ angle::Result BindResources2(spirv_cross::CompilerMSL *compiler,
                 // implemented.
                 bindingPoint = kDefaultUniformsBindingIndex;
                 break;
+            default:
+                // We don't support this descriptor set.
+                continue;
         }
 
         // bindingField can be buffer or texture, which will be translated to [[buffer(d)]] or
