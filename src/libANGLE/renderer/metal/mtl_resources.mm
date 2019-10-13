@@ -203,25 +203,18 @@ Texture::Texture(Texture *original, MTLTextureType type, NSRange mipmapLevelRang
     set(view);
 }
 
-void Texture::forceSyncCPUContent(ContextMtl *context)
-{
-#if TARGET_OS_OSX
-    mtl::BlitCommandEncoder *blitEncoder = context->getBlitCommandEncoder();
-    if (blitEncoder)
-    {
-        blitEncoder->synchronizeResource(shared_from_this());
-    }
-    this->resetCPUReadMemDirty();
-#endif
-}
-
-void Texture::syncCPUContent(ContextMtl *context)
+void Texture::syncContent(ContextMtl *context)
 {
 #if TARGET_OS_OSX
     // Make sure GPU & CPU contents are synchronized
     if (this->isCPUReadMemDirty())
     {
-        forceSyncCPUContent(context);
+        mtl::BlitCommandEncoder *blitEncoder = context->getBlitCommandEncoder();
+        if (blitEncoder)
+        {
+            blitEncoder->synchronizeResource(shared_from_this());
+        }
+        this->resetCPUReadMemDirty();
     }
 #endif
 }
@@ -235,7 +228,7 @@ void Texture::replaceRegion(ContextMtl *context,
 {
     CommandQueue &cmdQueue = context->cmdQueue();
 
-    syncCPUContent(context);
+    syncContent(context);
 
     // TODO(hqle): what if multiple contexts on multiple threads are using this texture?
     if (this->isBeingUsedByGPU(context))
@@ -261,7 +254,7 @@ void Texture::getBytes(ContextMtl *context,
 {
     CommandQueue &cmdQueue = context->cmdQueue();
 
-    syncCPUContent(context);
+    syncContent(context);
 
     // TODO(hqle): what if multiple contexts on multiple threads are using this texture?
     if (this->isBeingUsedByGPU(context))
