@@ -24,6 +24,11 @@ namespace rx
 namespace
 {
 
+#define SOURCE_BUFFER_ALIGNED_CONSTANT_NAME @"kSourceBufferAligned"
+#define SOURCE_IDX_IS_U8_CONSTANT_NAME @"kSourceIndexIsU8"
+#define SOURCE_IDX_IS_U16_CONSTANT_NAME @"kSourceIndexIsU16"
+#define SOURCE_IDX_IS_U32_CONSTANT_NAME @"kSourceIndexIsU32"
+
 struct ClearParamsUniform
 {
     float clearColor[4];
@@ -49,6 +54,36 @@ struct IndexConversionUniform
     uint32_t indexCount;
     uint32_t padding[2];
 };
+
+template <typename T>
+angle::Result GenTriFanFromClientElements(const gl::Context *context,
+                                          GLsizei count,
+                                          const T *indices,
+                                          mtl::BufferRef dstBuffer,
+                                          uint32_t dstOffset)
+{
+    ASSERT(count > 2);
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+    uint32_t *dstPtr       = reinterpret_cast<uint32_t *>(dstBuffer->map(contextMtl) + dstOffset);
+    T firstIdx;
+    memcpy(&firstIdx, indices, sizeof(firstIdx));
+    for (GLsizei i = 2; i < count; ++i)
+    {
+        T srcPrevIdx, srcIdx;
+        memcpy(&srcPrevIdx, indices + i - 1, sizeof(srcPrevIdx));
+        memcpy(&srcIdx, indices + i, sizeof(srcIdx));
+
+        uint32_t triIndices[3];
+        triIndices[0] = firstIdx;
+        triIndices[1] = srcPrevIdx;
+        triIndices[2] = srcIdx;
+
+        memcpy(dstPtr + 3 * (i - 2), triIndices, sizeof(triIndices));
+    }
+    dstBuffer->unmap(contextMtl);
+
+    return angle::Result::Continue;
+}
 
 }  // namespace
 
@@ -99,6 +134,9 @@ void UtilsMtl::onDestroy()
     mBlitUnmultiplyAlphaRenderPipelineCache.clear();
 
     mIndexConversionPipelineCaches.clear();
+    mTriFanFromElemArrayGeneratorPipelineCaches.clear();
+
+    mTriFanFromArraysGeneratorPipeline = nil;
 }
 
 // override mtl::ErrorHandler
@@ -498,50 +536,147 @@ mtl::AutoObjCPtr<id<MTLComputePipelineState>> UtilsMtl::getIndexConversionPipeli
         {
             auto shaderLib         = mDefaultShaders.get();
             id<MTLFunction> shader = nil;
+            auto funcConstants = [[[MTLFunctionConstantValues alloc] init] ANGLE_MTL_AUTORELEASE];
+            NSError *err       = nil;
+
+            [funcConstants setConstantValue:&aligned
+                                       type:MTLDataTypeBool
+                                   withName:SOURCE_BUFFER_ALIGNED_CONSTANT_NAME];
+
             switch (srcType)
             {
                 case gl::DrawElementsType::UnsignedByte:
                     shader = [shaderLib newFunctionWithName:@"convertIndexU8ToU16"];
                     break;
                 case gl::DrawElementsType::UnsignedShort:
-                    if (aligned)
-                    {
-                        shader = [shaderLib newFunctionWithName:@"convertIndexU16Aligned"];
-                    }
-                    else
-                    {
-                        shader = [shaderLib newFunctionWithName:@"convertIndexU16Unaligned"];
-                    }
+                    shader = [shaderLib newFunctionWithName:@"convertIndexU16"
+                                             constantValues:funcConstants
+                                                      error:&err];
                     break;
                 case gl::DrawElementsType::UnsignedInt:
-                    if (aligned)
-                    {
-                        shader = [shaderLib newFunctionWithName:@"convertIndexU32Aligned"];
-                    }
-                    else
-                    {
-                        shader = [shaderLib newFunctionWithName:@"convertIndexU32Unaligned"];
-                    }
+                    shader = [shaderLib newFunctionWithName:@"convertIndexU32"
+                                             constantValues:funcConstants
+                                                      error:&err];
                     break;
                 default:
                     UNREACHABLE();
             }
 
+            if (err && !shader)
+            {
+                ERR() << "Internal error: " << err.localizedDescription.UTF8String << "\n";
+            }
             ASSERT(shader);
 
-            NSError *err = nil;
-            cache        = [metalDevice newComputePipelineStateWithFunction:shader error:&err];
-
+            cache = [metalDevice newComputePipelineStateWithFunction:shader error:&err];
             if (err && !cache)
             {
                 ERR() << "Internal error: " << err.localizedDescription.UTF8String << "\n";
             }
-
             ASSERT(cache);
         }
     }
 
     return cache;
+}
+
+mtl::AutoObjCPtr<id<MTLComputePipelineState>> UtilsMtl::getTriFanFromElemArrayGeneratorPipeline(
+    ContextMtl *context,
+    gl::DrawElementsType srcType,
+    uint32_t srcOffset)
+{
+    id<MTLDevice> metalDevice = context->getMetalDevice();
+    size_t elementSize        = gl::GetDrawElementsTypeSize(srcType);
+    bool aligned              = (srcOffset % elementSize) == 0;
+
+    IndexConvesionPipelineCacheKey key = {srcType, aligned};
+
+    auto &cache = mIndexConversionPipelineCaches[key];
+
+    if (!cache)
+    {
+        ANGLE_MTL_OBJC_SCOPE
+        {
+            auto shaderLib         = mDefaultShaders.get();
+            id<MTLFunction> shader = nil;
+            auto funcConstants = [[[MTLFunctionConstantValues alloc] init] ANGLE_MTL_AUTORELEASE];
+            NSError *err       = nil;
+
+            bool isU8  = false;
+            bool isU16 = false;
+            bool isU32 = false;
+
+            switch (srcType)
+            {
+                case gl::DrawElementsType::UnsignedByte:
+                    isU8 = true;
+                    break;
+                case gl::DrawElementsType::UnsignedShort:
+                    isU16 = true;
+                    break;
+                case gl::DrawElementsType::UnsignedInt:
+                    isU32 = true;
+                    break;
+                default:
+                    UNREACHABLE();
+            }
+
+            [funcConstants setConstantValue:&aligned
+                                       type:MTLDataTypeBool
+                                   withName:SOURCE_BUFFER_ALIGNED_CONSTANT_NAME];
+            [funcConstants setConstantValue:&isU8
+                                       type:MTLDataTypeBool
+                                   withName:SOURCE_IDX_IS_U8_CONSTANT_NAME];
+            [funcConstants setConstantValue:&isU16
+                                       type:MTLDataTypeBool
+                                   withName:SOURCE_IDX_IS_U16_CONSTANT_NAME];
+            [funcConstants setConstantValue:&isU32
+                                       type:MTLDataTypeBool
+                                   withName:SOURCE_IDX_IS_U32_CONSTANT_NAME];
+
+            shader = [shaderLib newFunctionWithName:@"genTriFanIndicesFromElements"
+                                     constantValues:funcConstants
+                                              error:&err];
+            if (err && !shader)
+            {
+                ERR() << "Internal error: " << err.localizedDescription.UTF8String << "\n";
+            }
+            ASSERT(shader);
+
+            cache = [metalDevice newComputePipelineStateWithFunction:shader error:&err];
+            if (err && !cache)
+            {
+                ERR() << "Internal error: " << err.localizedDescription.UTF8String << "\n";
+            }
+            ASSERT(cache);
+        }
+    }
+
+    return cache;
+}
+
+angle::Result UtilsMtl::ensureTriFanFromArrayGeneratorInitialized(ContextMtl *context)
+{
+    if (!mTriFanFromArraysGeneratorPipeline)
+    {
+        ANGLE_MTL_OBJC_SCOPE
+        {
+            id<MTLDevice> metalDevice = context->getMetalDevice();
+            auto shaderLib            = mDefaultShaders.get();
+            NSError *err              = nil;
+            id<MTLFunction> shader = [shaderLib newFunctionWithName:@"genTriFanIndicesFromArray"];
+
+            mTriFanFromArraysGeneratorPipeline =
+                [metalDevice newComputePipelineStateWithFunction:shader error:&err];
+            if (err && !mTriFanFromArraysGeneratorPipeline)
+            {
+                ERR() << "Internal error: " << err.localizedDescription.UTF8String << "\n";
+            }
+
+            ASSERT(mTriFanFromArraysGeneratorPipeline);
+        }
+    }
+    return angle::Result::Continue;
 }
 
 angle::Result UtilsMtl::convertIndexBuffer(const gl::Context *context,
@@ -573,7 +708,106 @@ angle::Result UtilsMtl::convertIndexBuffer(const gl::Context *context,
     cmdEncoder->setBuffer(srcBuffer, 0, 1);
     cmdEncoder->setBuffer(dstBuffer, dstOffset, 2);
 
-    NSUInteger w                  = pipelineState.get().threadExecutionWidth;
+    ANGLE_TRY(dispatchCompute(context, cmdEncoder, pipelineState, indexCount));
+
+    return angle::Result::Continue;
+}
+
+angle::Result UtilsMtl::generateTriFanBufferFromArrays(const gl::Context *context,
+                                                       const TriFanFromArrayParams &params)
+{
+    ContextMtl *contextMtl                 = mtl::GetImpl(context);
+    mtl::ComputeCommandEncoder *cmdEncoder = contextMtl->getComputeCommandEncoder();
+    ASSERT(cmdEncoder);
+    ANGLE_TRY(ensureTriFanFromArrayGeneratorInitialized(contextMtl));
+
+    ASSERT(params.vertexCount > 2);
+
+    cmdEncoder->setComputePipelineState(mTriFanFromArraysGeneratorPipeline);
+
+    ASSERT((params.dstOffset % kBufferSettingOffsetAlignment) == 0);
+
+    struct TriFanArrayParams
+    {
+        uint firstVertex;
+        uint vertexCountFrom3rd;
+        uint padding[2];
+    } uniform;
+
+    uniform.firstVertex        = params.firstVertex;
+    uniform.vertexCountFrom3rd = params.vertexCount - 2;
+
+    cmdEncoder->setData(uniform, 0);
+    cmdEncoder->setBuffer(params.dstBuffer, params.dstOffset, 2);
+
+    ANGLE_TRY(dispatchCompute(context, cmdEncoder, mTriFanFromArraysGeneratorPipeline,
+                              uniform.vertexCountFrom3rd));
+
+    return angle::Result::Continue;
+}
+
+angle::Result UtilsMtl::generateTriFanBufferFromElementsArray(
+    const gl::Context *context,
+    const TriFanFromElementArrayParams &params)
+{
+    ContextMtl *contextMtl                 = mtl::GetImpl(context);
+    mtl::ComputeCommandEncoder *cmdEncoder = contextMtl->getComputeCommandEncoder();
+    ASSERT(cmdEncoder);
+
+    mtl::AutoObjCPtr<id<MTLComputePipelineState>> pipelineState =
+        getTriFanFromElemArrayGeneratorPipeline(contextMtl, params.srcType, params.srcOffset);
+
+    ASSERT(pipelineState);
+
+    cmdEncoder->setComputePipelineState(pipelineState);
+
+    ASSERT((params.dstOffset % kBufferSettingOffsetAlignment) == 0);
+    ASSERT(params.indexCount > 2);
+
+    IndexConversionUniform uniform;
+    uniform.srcOffset  = params.srcOffset;
+    uniform.indexCount = params.indexCount - 2;  // Only start from the 3rd element.
+
+    cmdEncoder->setData(uniform, 0);
+    cmdEncoder->setBuffer(params.srcBuffer, 0, 1);
+    cmdEncoder->setBuffer(params.dstBuffer, params.dstOffset, 2);
+
+    ANGLE_TRY(dispatchCompute(context, cmdEncoder, pipelineState, uniform.indexCount));
+
+    return angle::Result::Continue;
+}
+
+angle::Result UtilsMtl::generateTriFanBufferFromClientElementsArray(
+    const gl::Context *context,
+    const TriFanFromClientElementArrayParams &params)
+{
+    switch (params.srcType)
+    {
+        case gl::DrawElementsType::UnsignedByte:
+            return GenTriFanFromClientElements(context, params.indexCount,
+                                               static_cast<const uint8_t *>(params.indices),
+                                               params.dstBuffer, params.dstOffset);
+        case gl::DrawElementsType::UnsignedShort:
+            return GenTriFanFromClientElements(context, params.indexCount,
+                                               static_cast<const uint16_t *>(params.indices),
+                                               params.dstBuffer, params.dstOffset);
+        case gl::DrawElementsType::UnsignedInt:
+            return GenTriFanFromClientElements(context, params.indexCount,
+                                               static_cast<const uint32_t *>(params.indices),
+                                               params.dstBuffer, params.dstOffset);
+        default:
+            UNREACHABLE();
+    }
+
+    return angle::Result::Stop;
+}
+
+angle::Result UtilsMtl::dispatchCompute(const gl::Context *context,
+                                        mtl::ComputeCommandEncoder *cmdEncoder,
+                                        id<MTLComputePipelineState> pipelineState,
+                                        size_t numThreads)
+{
+    NSUInteger w                  = pipelineState.threadExecutionWidth;
     MTLSize threadsPerThreadgroup = MTLSizeMake(w, 1, 1);
 
 #if TARGET_OS_OSX
@@ -582,16 +816,14 @@ angle::Result UtilsMtl::convertIndexBuffer(const gl::Context *context,
     if ([getMetalDevice() supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily4_v1])
 #endif
     {
-        MTLSize threads = MTLSizeMake(indexCount, 1, 1);
+        MTLSize threads = MTLSizeMake(numThreads, 1, 1);
         cmdEncoder->dispatchNonUniform(threads, threadsPerThreadgroup);
     }
     else
     {
-        MTLSize groups = MTLSizeMake((indexCount + w - 1) / w, 1, 1);
+        MTLSize groups = MTLSizeMake((numThreads + w - 1) / w, 1, 1);
         cmdEncoder->dispatch(groups, threadsPerThreadgroup);
     }
-
-    contextMtl->invalidateState(context);
 
     return angle::Result::Continue;
 }

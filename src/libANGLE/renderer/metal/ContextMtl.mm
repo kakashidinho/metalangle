@@ -28,6 +28,53 @@
 namespace rx
 {
 
+namespace
+{
+#if TARGET_OS_OSX
+// Unlimited triangle fan buffers
+constexpr uint32_t kMaxTriFanLineLoopBuffersPerFrame = 0;
+#else
+// Allow up to 10 buffers for trifan/line loop generation without stalling the GPU.
+constexpr uint32_t kMaxTriFanLineLoopBuffersPerFrame = 10;
+#endif
+
+angle::Result TriangleFanBoundCheck(ContextMtl *context, size_t numTris)
+{
+    bool indexCheck =
+        (numTris > std::numeric_limits<unsigned int>::max() / (sizeof(unsigned int) * 3));
+    ANGLE_CHECK(context, !indexCheck,
+                "Failed to create a scratch index buffer for GL_TRIANGLE_FAN, "
+                "too many indices required.",
+                GL_OUT_OF_MEMORY);
+    return angle::Result::Continue;
+}
+
+angle::Result AllocateTriangleFanBuffer(ContextMtl *context,
+                                        GLsizei vetexCount,
+                                        mtl::BufferPool *pool,
+                                        mtl::BufferRef *bufferOut,
+                                        uint32_t *offsetOut,
+                                        uint32_t *numElemsOut)
+{
+    size_t numTris = vetexCount - 2;
+    ANGLE_TRY(TriangleFanBoundCheck(context, numTris));
+    size_t numIndices = numTris * 3;
+    ANGLE_CHECK(context, numIndices <= std::numeric_limits<uint32_t>::max(),
+                "Failed to create a scratch index buffer for GL_TRIANGLE_FAN, "
+                "too many indices required.",
+                GL_OUT_OF_MEMORY);
+
+    size_t offset;
+    ANGLE_TRY(pool->allocate(context, numIndices * sizeof(uint32_t), nullptr, bufferOut, &offset,
+                             nullptr));
+
+    *offsetOut   = static_cast<uint32_t>(offset);
+    *numElemsOut = static_cast<uint32_t>(numIndices);
+
+    return angle::Result::Continue;
+}
+}  // namespace
+
 ContextMtl::ContextMtl(const gl::State &state, gl::ErrorSet *errorSet, RendererMtl *renderer)
     : ContextImpl(state, errorSet),
       mtl::Context(renderer),
@@ -44,10 +91,16 @@ angle::Result ContextMtl::initialize()
     mBlendDesc.reset();
     mDepthStencilDesc.reset();
 
+    mTriFanIndexBuffer.initialize(this, 0, kBufferSettingOffsetAlignment,
+                                  kMaxTriFanLineLoopBuffersPerFrame);
+
     return angle::Result::Continue;
 }
 
-void ContextMtl::onDestroy(const gl::Context *context) {}
+void ContextMtl::onDestroy(const gl::Context *context)
+{
+    mTriFanIndexBuffer.destroy(this);
+}
 
 // Flush and finish.
 angle::Result ContextMtl::flush(const gl::Context *context)
@@ -62,6 +115,29 @@ angle::Result ContextMtl::finish(const gl::Context *context)
 }
 
 // Drawing methods.
+angle::Result ContextMtl::drawTriFanArrays(const gl::Context *context, GLint first, GLsizei count)
+{
+    if (count > 3)
+    {
+        mtl::BufferRef genIdxBuffer;
+        uint32_t genIdxBufferOffset;
+        uint32_t genIndicesCount;
+        ANGLE_TRY(AllocateTriangleFanBuffer(this, count, &mTriFanIndexBuffer, &genIdxBuffer,
+                                            &genIdxBufferOffset, &genIndicesCount));
+        ANGLE_TRY(getRenderer()->getUtils().generateTriFanBufferFromArrays(
+            context, {first, static_cast<uint32_t>(count), genIdxBuffer, genIdxBufferOffset}));
+
+        ANGLE_TRY(setupDraw(context, gl::PrimitiveMode::Triangles, 0, genIndicesCount, 1,
+                            gl::DrawElementsType::UnsignedInt,
+                            reinterpret_cast<const void *>(genIdxBufferOffset)));
+
+        mRenderEncoder.drawIndexed(MTLPrimitiveTypeTriangle, genIndicesCount, MTLIndexTypeUInt32,
+                                   genIdxBuffer, genIdxBufferOffset);
+
+        return angle::Result::Continue;
+    }  // if (count > 3)
+    return drawArrays(context, gl::PrimitiveMode::Triangles, first, count);
+}
 angle::Result ContextMtl::drawArrays(const gl::Context *context,
                                      gl::PrimitiveMode mode,
                                      GLint first,
@@ -70,6 +146,11 @@ angle::Result ContextMtl::drawArrays(const gl::Context *context,
     if (mCullAllPolygons && mtl::IsPolygonPrimitiveType(mode))
     {
         return angle::Result::Continue;
+    }
+
+    if (mode == gl::PrimitiveMode::TriangleFan)
+    {
+        return drawTriFanArrays(context, first, count);
     }
 
     MTLPrimitiveType mtlType = mtl::GetPrimitiveType(mode);
@@ -104,6 +185,50 @@ angle::Result ContextMtl::drawArraysInstancedBaseInstance(const gl::Context *con
     return angle::Result::Stop;
 }
 
+angle::Result ContextMtl::drawTriFanElements(const gl::Context *context,
+                                             GLsizei count,
+                                             gl::DrawElementsType type,
+                                             const void *indices)
+{
+    if (count > 3)
+    {
+        mtl::BufferRef genIdxBuffer;
+        uint32_t genIdxBufferOffset;
+        uint32_t genIndicesCount;
+        ANGLE_TRY(AllocateTriangleFanBuffer(this, count, &mTriFanIndexBuffer, &genIdxBuffer,
+                                            &genIdxBufferOffset, &genIndicesCount));
+
+        const gl::Buffer *glElementArrayBuffer = mVertexArray->getState().getElementArrayBuffer();
+        if (glElementArrayBuffer)
+        {
+            size_t srcOffset = reinterpret_cast<size_t>(indices);
+            ANGLE_CHECK(this, srcOffset <= std::numeric_limits<uint32_t>::max(),
+                        "Index offset is too large", GL_INVALID_VALUE);
+            mtl::BufferRef srcBuffer =
+                mtl::GetImpl(glElementArrayBuffer)->getCurrentBuffer(context);
+            ANGLE_TRY(getRenderer()->getUtils().generateTriFanBufferFromElementsArray(
+                context, {type, count, srcBuffer, static_cast<uint32_t>(srcOffset), genIdxBuffer,
+                          genIdxBufferOffset}));
+        }
+        else
+        {
+            ANGLE_TRY(getRenderer()->getUtils().generateTriFanBufferFromClientElementsArray(
+                context, {type, count, indices, genIdxBuffer, genIdxBufferOffset}));
+        }
+
+        ANGLE_TRY(mTriFanIndexBuffer.commit(this));
+
+        ANGLE_TRY(setupDraw(context, gl::PrimitiveMode::Triangles, 0, genIndicesCount, 1,
+                            gl::DrawElementsType::UnsignedInt,
+                            reinterpret_cast<const void *>(genIdxBufferOffset)));
+
+        mRenderEncoder.drawIndexed(MTLPrimitiveTypeTriangle, genIndicesCount, MTLIndexTypeUInt32,
+                                   genIdxBuffer, genIdxBufferOffset);
+
+        return angle::Result::Continue;
+    }  // if (count > 3)
+    return drawElements(context, gl::PrimitiveMode::Triangles, count, type, indices);
+}
 angle::Result ContextMtl::drawElements(const gl::Context *context,
                                        gl::PrimitiveMode mode,
                                        GLsizei count,
@@ -113,6 +238,11 @@ angle::Result ContextMtl::drawElements(const gl::Context *context,
     if (mCullAllPolygons && mtl::IsPolygonPrimitiveType(mode))
     {
         return angle::Result::Continue;
+    }
+
+    if (mode == gl::PrimitiveMode::TriangleFan)
+    {
+        return drawTriFanElements(context, count, type, indices);
     }
 
     const gl::Buffer *glElementArrayBuffer = mVertexArray->getState().getElementArrayBuffer();

@@ -49,7 +49,7 @@ def main():
 
     print('Compiling ios version of default shaders ...')
     os.system(
-        'xcrun -sdk iphoneos metal master_source.metal -mios-version-min=8.0 -c -o compiled/default.ios.air'
+        'xcrun -sdk iphoneos metal master_source.metal -mios-version-min=11.0 -c -o compiled/default.ios.air'
     )
     os.system(
         'xcrun -sdk iphoneos metallib compiled/default.ios.air -o compiled/default.ios.metallib')
