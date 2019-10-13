@@ -47,6 +47,19 @@ ConversionBufferMtl::ConversionBufferMtl(const gl::Context *context,
 
 ConversionBufferMtl::~ConversionBufferMtl() = default;
 
+// IndexConversionBufferMtl implementation.
+IndexConversionBufferMtl::IndexConversionBufferMtl(const gl::Context *context,
+                                                   gl::DrawElementsType typeIn,
+                                                   size_t offsetIn)
+    : ConversionBufferMtl(context,
+                          kConvertedElementArrayBufferInitialSize,
+                          kBufferSettingOffsetAlignment),
+      type(typeIn),
+      offset(offsetIn),
+      convertedBuffer(nullptr),
+      convertedOffset(0)
+{}
+
 // BufferMtl::VertexConversionBuffer implementation.
 BufferMtl::VertexConversionBuffer::VertexConversionBuffer(const gl::Context *context,
                                                           angle::FormatID formatIDIn,
@@ -61,17 +74,6 @@ BufferMtl::VertexConversionBuffer::VertexConversionBuffer(const gl::Context *con
     // buffer for every conversion.
     data.setAlwaysAllocateNewBuffer(true);
 }
-
-// BufferMtl::IndexConversionBuffer implementation.
-BufferMtl::IndexConversionBuffer::IndexConversionBuffer(const gl::Context *context,
-                                                        gl::DrawElementsType typeIn,
-                                                        size_t offsetIn)
-    : ConversionBufferMtl(context,
-                          kConvertedElementArrayBufferInitialSize,
-                          kBufferSettingOffsetAlignment),
-      type(typeIn),
-      offset(offsetIn)
-{}
 
 // BufferMtl implementation
 BufferMtl::BufferMtl(const gl::BufferState &state)
@@ -276,9 +278,9 @@ ConversionBufferMtl *BufferMtl::getVertexConversionBuffer(const gl::Context *con
     return &mVertexConversionBuffers.back();
 }
 
-ConversionBufferMtl *BufferMtl::getIndexConversionBuffer(const gl::Context *context,
-                                                         gl::DrawElementsType type,
-                                                         size_t offset)
+IndexConversionBufferMtl *BufferMtl::getIndexConversionBuffer(const gl::Context *context,
+                                                              gl::DrawElementsType type,
+                                                              size_t offset)
 {
     for (auto &buffer : mIndexConversionBuffers)
     {
@@ -301,7 +303,9 @@ void BufferMtl::markConversionBuffersDirty()
 
     for (auto &buffer : mIndexConversionBuffers)
     {
-        buffer.dirty = true;
+        buffer.dirty           = true;
+        buffer.convertedBuffer = nullptr;
+        buffer.convertedOffset = 0;
     }
 }
 

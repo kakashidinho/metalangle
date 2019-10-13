@@ -268,9 +268,7 @@ angle::Result ContextMtl::drawElements(const gl::Context *context,
                               (convertedOffset % kIndexBufferOffsetAlignment) != 0;
         if (needConversion)
         {
-            BufferMtl *acualBuffer = mtl::GetImpl(glElementArrayBuffer);
-            ANGLE_TRY(
-                mVertexArray->convertIndexBuffer(context, type, acualBuffer, convertedOffset));
+            ANGLE_TRY(mVertexArray->convertIndexBuffer(context, type, convertedOffset));
             convertedOffset = mVertexArray->getElementArrayBufferOffset();
         }
     }

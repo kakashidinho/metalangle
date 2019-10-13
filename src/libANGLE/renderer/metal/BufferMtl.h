@@ -38,6 +38,20 @@ struct ConversionBufferMtl
     mtl::BufferPool data;
 };
 
+struct IndexConversionBufferMtl : public ConversionBufferMtl
+{
+    IndexConversionBufferMtl(const gl::Context *context,
+                             gl::DrawElementsType type,
+                             size_t offsetIn);
+
+    const gl::DrawElementsType type;
+    const size_t offset;
+
+    // These properties are to be filled by user of this buffer conversion
+    mtl::BufferRef convertedBuffer;
+    size_t convertedOffset;
+};
+
 class BufferHolderMtl
 {
   public:
@@ -105,9 +119,9 @@ class BufferMtl : public BufferImpl, public BufferHolderMtl
                                                    GLuint stride,
                                                    size_t offset);
 
-    ConversionBufferMtl *getIndexConversionBuffer(const gl::Context *context,
-                                                  gl::DrawElementsType type,
-                                                  size_t offset);
+    IndexConversionBufferMtl *getIndexConversionBuffer(const gl::Context *context,
+                                                       gl::DrawElementsType type,
+                                                       size_t offset);
 
     size_t size() const { return mState.getSize(); }
 
@@ -143,19 +157,10 @@ class BufferMtl : public BufferImpl, public BufferHolderMtl
         size_t offset;
     };
 
-    struct IndexConversionBuffer : public ConversionBufferMtl
-    {
-        IndexConversionBuffer(const gl::Context *context,
-                              gl::DrawElementsType type,
-                              size_t offsetIn);
-        gl::DrawElementsType type;
-        size_t offset;
-    };
-
     // A cache of converted vertex data.
     std::vector<VertexConversionBuffer> mVertexConversionBuffers;
 
-    std::vector<IndexConversionBuffer> mIndexConversionBuffers;
+    std::vector<IndexConversionBufferMtl> mIndexConversionBuffers;
 };
 
 class SimpleWeakBufferHolderMtl : public BufferHolderMtl

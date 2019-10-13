@@ -55,7 +55,6 @@ class VertexArrayMtl : public VertexArrayImpl
 
     angle::Result convertIndexBuffer(const gl::Context *glContext,
                                      gl::DrawElementsType indexType,
-                                     BufferMtl *idxBuffer,
                                      size_t offset);
     angle::Result streamIndexBufferFromClient(const gl::Context *glContext,
                                               gl::DrawElementsType indexType,
@@ -72,13 +71,13 @@ class VertexArrayMtl : public VertexArrayImpl
                                         BufferMtl *idxBuffer,
                                         size_t offset,
                                         size_t indexCount,
-                                        ConversionBufferMtl *conversion);
+                                        IndexConversionBufferMtl *conversion);
     angle::Result convertIndexBufferCPU(const gl::Context *glContext,
                                         gl::DrawElementsType indexType,
                                         BufferMtl *idxBuffer,
                                         size_t offset,
                                         size_t indexCount,
-                                        ConversionBufferMtl *conversion);
+                                        IndexConversionBufferMtl *conversion);
 
     angle::Result convertVertexBuffer(const gl::Context *glContext,
                                       BufferMtl *srcBuffer,
