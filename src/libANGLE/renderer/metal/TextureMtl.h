@@ -209,6 +209,8 @@ class TextureMtl : public TextureImpl
                                         size_t pixelsRowPitch,
                                         const uint8_t *pixels);
 
+    angle::Result generateMipmapCPU(const gl::Context *context);
+
     mtl::Format mFormat;
     mtl::TextureRef mTexture;
     id<MTLSamplerState> mMetalSamplerState = nil;

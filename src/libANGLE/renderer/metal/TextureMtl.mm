@@ -286,9 +286,82 @@ angle::Result TextureMtl::generateMipmap(const gl::Context *context)
         return angle::Result::Continue;
     }
 
-    mtl::BlitCommandEncoder *blitEncoder = contextMtl->getBlitCommandEncoder();
+    const gl::TextureCapsMap &textureCapsMap = contextMtl->getNativeTextureCaps();
+    const gl::TextureCaps &textureCaps       = textureCapsMap.get(mFormat.intendedFormatId);
 
-    blitEncoder->generateMipmapsForTexture(mTexture);
+    if (textureCaps.filterable && textureCaps.renderbuffer)
+    {
+        mtl::BlitCommandEncoder *blitEncoder = contextMtl->getBlitCommandEncoder();
+        blitEncoder->generateMipmapsForTexture(mTexture);
+    }
+    else
+    {
+        ANGLE_TRY(generateMipmapCPU(context));
+    }
+
+    return angle::Result::Continue;
+}
+
+angle::Result TextureMtl::generateMipmapCPU(const gl::Context *context)
+{
+    ASSERT(mTexture && mTexture->valid());
+    ASSERT(mLayeredTextureViews.size() <= std::numeric_limits<uint32_t>::max());
+    uint32_t layers = static_cast<uint32_t>(mLayeredTextureViews.size());
+
+    ContextMtl *contextMtl           = mtl::GetImpl(context);
+    const angle::Format &angleFormat = mFormat.actualAngleFormat();
+    // This format must have mip generation function.
+    ANGLE_MTL_TRY(contextMtl, angleFormat.mipGenerationFunction);
+
+    // TODO(hqle): Support base level of ES 3.0.
+    for (uint32_t layer = 0; layer < layers; ++layer)
+    {
+        int maxMipLevel = static_cast<int>(mTexture->mipmapLevels()) - 1;
+        int firstLevel  = 0;
+
+        uint32_t prevLevelWidth  = mTexture->width();
+        uint32_t prevLevelHeight = mTexture->height();
+        size_t prevLevelRowPitch = angleFormat.pixelBytes * prevLevelWidth;
+        std::unique_ptr<uint8_t[]> prevLevelData(new (std::nothrow)
+                                                     uint8_t[prevLevelRowPitch * prevLevelHeight]);
+        ANGLE_CHECK_GL_ALLOC(contextMtl, prevLevelData);
+        std::unique_ptr<uint8_t[]> dstLevelData;
+
+        // Download base level data
+        mLayeredTextureViews[layer]->getBytes(
+            contextMtl, prevLevelRowPitch, MTLRegionMake2D(0, 0, prevLevelWidth, prevLevelHeight),
+            firstLevel, prevLevelData.get());
+
+        for (int mip = firstLevel + 1; mip <= maxMipLevel; ++mip)
+        {
+            uint32_t dstWidth  = mTexture->width(mip);
+            uint32_t dstHeight = mTexture->height(mip);
+
+            size_t dstRowPitch = angleFormat.pixelBytes * dstWidth;
+            size_t dstDataSize = dstRowPitch * dstHeight;
+            if (!dstLevelData)
+            {
+                // Allocate once and reuse the buffer
+                dstLevelData.reset(new (std::nothrow) uint8_t[dstDataSize]);
+                ANGLE_CHECK_GL_ALLOC(contextMtl, dstLevelData);
+            }
+
+            // Generate mip level
+            angleFormat.mipGenerationFunction(prevLevelWidth, prevLevelHeight, 1,
+                                              prevLevelData.get(), prevLevelRowPitch, 0,
+                                              dstLevelData.get(), dstRowPitch, 0);
+
+            // Upload to texture
+            mTexture->replaceRegion(contextMtl, MTLRegionMake2D(0, 0, dstWidth, dstHeight), mip,
+                                    layer, dstLevelData.get(), dstRowPitch);
+
+            prevLevelWidth    = dstWidth;
+            prevLevelHeight   = dstHeight;
+            prevLevelRowPitch = dstRowPitch;
+            std::swap(prevLevelData, dstLevelData);
+        }  // for mip level
+
+    }  // For layers
 
     return angle::Result::Continue;
 }
@@ -475,6 +548,8 @@ angle::Result TextureMtl::setStorageImpl(const gl::Context *context,
 
             mLayeredRenderTargets.resize(1);
             mLayeredRenderTargets[0].set(mTexture, 0, 0, mFormat);
+            mLayeredTextureViews.resize(1);
+            mLayeredTextureViews[0] = mTexture;
             break;
         case MTLTextureTypeCube:
             ANGLE_TRY(mtl::Texture::MakeCubeTexture(contextMtl, mtlFormat, size.width,
