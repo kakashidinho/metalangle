@@ -162,6 +162,11 @@ angle::Result TextureMtl::copyImage(const gl::Context *context,
 
     ANGLE_TRY(redefineImage(context, index, mtlFormat, newImageSize));
 
+    if (context->isWebGL())
+    {
+        ANGLE_TRY(initializeContents(context, index));
+    }
+
     return copySubImageImpl(context, index, gl::Offset(0, 0, 0), sourceArea, internalFormatInfo,
                             source);
 }
