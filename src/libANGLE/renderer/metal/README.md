@@ -12,3 +12,10 @@ Otherwise, a CPU conversion will take place.
 - ~~indices offset passed to glDrawElements() must be multiple of 4 bytes.
 Otherwise, a CPU conversion will take place.~~
 - Only support iOS 11.0+ vs MacOS 10.13+.
+
+# Failed ANGLE end2end tests
+- DifferentStencilMasksTest.DrawWithDifferentMask
+- MipmapTest.DefineValidExtraLevelAndUseItLater
+- PointSpritesTest.PointSizeAboveMaxIsClamped (point outside framebuffer won't get drawn)
+- SimpleStateChangeTest.CopyTexSubImageOnTextureBoundToFrambuffer (GL_ANGLE_framebuffer_blit not implemented)
+- ~~WebGLReadOutsideFramebufferTest.*~~
