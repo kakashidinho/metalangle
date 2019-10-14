@@ -393,7 +393,6 @@ ANGLE_INSTANTIATE_TEST(WebGLReadOutsideFramebufferTest,
 
 ANGLE_INSTANTIATE_TEST(WebGL2ReadOutsideFramebufferTest,
                        ES3_D3D11(),
-                       ES2_METAL(),
                        ES3_OPENGL(),
                        ES2_OPENGLES(),
                        ES3_OPENGLES());
