@@ -19,35 +19,6 @@ namespace rx
 namespace mtl
 {
 
-angle::Result InitializeBlackPixels(const gl::Context *context,
-                                    const Format &pixelFormat,
-                                    size_t numPixels,
-                                    uint8_t *pixels)
-{
-    ContextMtl *contextMtl = mtl::GetImpl(context);
-
-    const gl::InternalFormat &intendedInternalFormat = pixelFormat.intendedInternalFormat();
-
-    // Intialize the content to black
-    const angle::Format &srcFormat =
-        angle::Format::Get(intendedInternalFormat.alphaBits > 0 ? angle::FormatID::R8G8B8A8_UNORM
-                                                                : angle::FormatID::R8G8B8_UNORM);
-    const size_t blackSrcRowPitch = srcFormat.pixelBytes * numPixels;
-    std::unique_ptr<uint8_t[]> blackSrcRow(new (std::nothrow) uint8_t[blackSrcRowPitch]);
-    ANGLE_CHECK_GL_ALLOC(contextMtl, blackSrcRow);
-    memset(blackSrcRow.get(), 0, blackSrcRowPitch);
-
-    const angle::Format &dstFormat = pixelFormat.actualAngleFormat();
-    const size_t dstRowPitch       = dstFormat.pixelBytes * numPixels;
-
-    CopyImageCHROMIUM(blackSrcRow.get(), blackSrcRowPitch, srcFormat.pixelBytes, 0,
-                      srcFormat.pixelReadFunction, pixels, dstRowPitch, dstFormat.pixelBytes, 0,
-                      dstFormat.pixelWriteFunction, intendedInternalFormat.format,
-                      dstFormat.componentType, numPixels, 1, 1, false, false, false);
-
-    return angle::Result::Continue;
-}
-
 angle::Result InitializeTextureContents(const gl::Context *context,
                                         TextureRef texture,
                                         const Format &textureObjFormat,
@@ -69,12 +40,28 @@ angle::Result InitializeTextureContents(const gl::Context *context,
     gl::Extents size = texture->size(index);
 
     // Intialize the content to black
-    const angle::Format &dstFormat = textureObjFormat.actualAngleFormat();
-    const size_t dstRowPitch       = dstFormat.pixelBytes * size.width;
-    std::unique_ptr<uint8_t[]> conversionRow(new (std::nothrow) uint8_t[dstRowPitch]);
-    ANGLE_CHECK_GL_ALLOC(contextMtl, conversionRow);
+    const angle::Format &srcFormat =
+        angle::Format::Get(intendedInternalFormat.alphaBits > 0 ? angle::FormatID::R8G8B8A8_UNORM
+                                                                : angle::FormatID::R8G8B8_UNORM);
+    const size_t srcRowPitch = srcFormat.pixelBytes * size.width;
+    auto srcRow              = new (std::nothrow) uint8_t[srcRowPitch];
+    ANGLE_CHECK_GL_ALLOC(contextMtl, srcRow);
+    memset(srcRow, 0, srcRowPitch);
 
-    ANGLE_TRY(InitializeBlackPixels(context, textureObjFormat, size.width, conversionRow.get()));
+    const angle::Format &dstFormat = angle::Format::Get(textureObjFormat.actualFormatId);
+    const size_t dstRowPitch       = dstFormat.pixelBytes * size.width;
+    auto conversionRow             = new (std::nothrow) uint8_t[dstRowPitch];
+    if (!conversionRow)
+    {
+        contextMtl->handleError(GL_OUT_OF_MEMORY, __FILE__, ANGLE_FUNCTION, __LINE__);
+        delete[] srcRow;
+        return angle::Result::Stop;
+    }
+
+    CopyImageCHROMIUM(srcRow, srcRowPitch, srcFormat.pixelBytes, 0, srcFormat.pixelReadFunction,
+                      conversionRow, dstRowPitch, dstFormat.pixelBytes, 0,
+                      dstFormat.pixelWriteFunction, intendedInternalFormat.format,
+                      dstFormat.componentType, size.width, 1, 1, false, false, false);
 
     auto mtlRowRegion = MTLRegionMake2D(0, 0, size.width, 1);
 
@@ -84,9 +71,12 @@ angle::Result InitializeTextureContents(const gl::Context *context,
 
         // Upload to texture
         texture->replaceRegion(contextMtl, mtlRowRegion, index.getLevelIndex(),
-                               index.hasLayer() ? index.cubeMapFaceIndex() : 0, conversionRow.get(),
+                               index.hasLayer() ? index.cubeMapFaceIndex() : 0, conversionRow,
                                dstRowPitch);
     }
+
+    delete[] srcRow;
+    delete[] conversionRow;
 
     return angle::Result::Continue;
 }
