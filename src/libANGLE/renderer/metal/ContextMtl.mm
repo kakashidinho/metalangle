@@ -131,34 +131,72 @@ angle::Result ContextMtl::finish(const gl::Context *context)
 }
 
 // Drawing methods.
+angle::Result ContextMtl::drawTriFanArraysWithBaseVertex(const gl::Context *context,
+                                                         GLint first,
+                                                         GLsizei count)
+{
+    uint32_t genIndicesCount;
+    ANGLE_TRY(GetTriangleFanIndicesCount(this, count, &genIndicesCount));
+
+    size_t indexBufferSize = genIndicesCount * sizeof(uint32_t);
+    // We can reuse the previously generated index buffer if it has more than enough indices
+    // data already.
+    if (mTriFanArraysIndexBuffer == nullptr || mTriFanArraysIndexBuffer->size() < indexBufferSize)
+    {
+        // Re-generate a new index buffer, which the first index will be zero.
+        ANGLE_TRY(
+            mtl::Buffer::MakeBuffer(this, indexBufferSize, nullptr, &mTriFanArraysIndexBuffer));
+        ANGLE_TRY(getRenderer()->getUtils().generateTriFanBufferFromArrays(
+            context, {0, static_cast<uint32_t>(count), mTriFanArraysIndexBuffer, 0}));
+    }
+
+    ANGLE_TRY(setupDraw(context, gl::PrimitiveMode::Triangles, first, genIndicesCount, 1,
+                        gl::DrawElementsType::UnsignedInt, reinterpret_cast<const void *>(0)));
+
+    // Draw with the zero starting index buffer, shift the vertex index using baseVertex instanced
+    // draw:
+    mRenderEncoder.drawIndexedBaseVertex(MTLPrimitiveTypeTriangle, genIndicesCount,
+                                         MTLIndexTypeUInt32, mTriFanArraysIndexBuffer, 0, first);
+
+    return angle::Result::Continue;
+}
+angle::Result ContextMtl::drawTriFanArraysLegacy(const gl::Context *context,
+                                                 GLint first,
+                                                 GLsizei count)
+{
+    mtl::BufferRef genIdxBuffer;
+    uint32_t genIdxBufferOffset;
+    uint32_t genIndicesCount;
+    ANGLE_TRY(AllocateTriangleFanBufferFromPool(this, count, &mTriFanIndexBuffer, &genIdxBuffer,
+                                                &genIdxBufferOffset, &genIndicesCount));
+    ANGLE_TRY(getRenderer()->getUtils().generateTriFanBufferFromArrays(
+        context, {static_cast<uint32_t>(first), static_cast<uint32_t>(count), genIdxBuffer,
+                  genIdxBufferOffset}));
+
+    ANGLE_TRY(setupDraw(context, gl::PrimitiveMode::Triangles, 0, genIndicesCount, 1,
+                        gl::DrawElementsType::UnsignedInt,
+                        reinterpret_cast<const void *>(genIdxBufferOffset)));
+
+    mRenderEncoder.drawIndexed(MTLPrimitiveTypeTriangle, genIndicesCount, MTLIndexTypeUInt32,
+                               genIdxBuffer, genIdxBufferOffset);
+
+    return angle::Result::Continue;
+}
 angle::Result ContextMtl::drawTriFanArrays(const gl::Context *context, GLint first, GLsizei count)
 {
     if (count > 3)
     {
-        uint32_t genIndicesCount;
-        ANGLE_TRY(GetTriangleFanIndicesCount(this, count, &genIndicesCount));
-
-        size_t indexBufferSize = genIndicesCount * sizeof(uint32_t);
-        // We can reuse the previously generated index buffer if it has more than enough indices
-        // data already.
-        if (mTriFanArraysIndexBuffer == nullptr ||
-            mTriFanArraysIndexBuffer->size() < indexBufferSize)
+#if TARGET_OS_IOS
+        // Base Vertex drawing is only supported since GPU family 3.
+        if (![getMetalDevice() supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily3_v1])
         {
-            // Re-generate a new index buffer, which the first index will be zero.
-            ANGLE_TRY(
-                mtl::Buffer::MakeBuffer(this, indexBufferSize, nullptr, &mTriFanArraysIndexBuffer));
-            ANGLE_TRY(getRenderer()->getUtils().generateTriFanBufferFromArrays(
-                context, {0, static_cast<uint32_t>(count), mTriFanArraysIndexBuffer, 0}));
+            return drawTriFanArraysLegacy(context, first, count);
         }
-
-        ANGLE_TRY(setupDraw(context, gl::PrimitiveMode::Triangles, first, genIndicesCount, 1,
-                            gl::DrawElementsType::UnsignedInt, reinterpret_cast<const void *>(0)));
-
-        mRenderEncoder.drawIndexedBaseVertex(MTLPrimitiveTypeTriangle, genIndicesCount,
-                                             MTLIndexTypeUInt32, mTriFanArraysIndexBuffer, 0,
-                                             first);
-
-        return angle::Result::Continue;
+        else
+#endif
+        {
+            return drawTriFanArraysWithBaseVertex(context, first, count);
+        }
     }  // if (count > 3)
     return drawArrays(context, gl::PrimitiveMode::Triangles, first, count);
 }

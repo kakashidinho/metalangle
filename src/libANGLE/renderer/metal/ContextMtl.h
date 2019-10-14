@@ -279,6 +279,10 @@ class ContextMtl : public ContextImpl, public mtl::Context
                                          mtl::BufferRef *lastSegmentIndexBufferOut);
 
     angle::Result drawTriFanArrays(const gl::Context *context, GLint first, GLsizei count);
+    angle::Result drawTriFanArraysWithBaseVertex(const gl::Context *context,
+                                                 GLint first,
+                                                 GLsizei count);
+    angle::Result drawTriFanArraysLegacy(const gl::Context *context, GLint first, GLsizei count);
     angle::Result drawTriFanElements(const gl::Context *context,
                                      GLsizei count,
                                      gl::DrawElementsType type,
