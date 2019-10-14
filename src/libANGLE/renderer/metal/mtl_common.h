@@ -73,8 +73,6 @@ constexpr uint32_t kVboBindingIndexStart = 0;
 constexpr uint32_t kDefaultAttribsBindingIndex = kVboBindingIndexStart + kMaxVertexAttribs;
 // Binding index for driver uniforms:
 constexpr uint32_t kDriverUniformsBindingIndex = kDefaultAttribsBindingIndex + 1;
-// Binding index for unused uniforms, they will be groupped into an argument buffer
-constexpr uint32_t kUnusedUniformsArgumentBufferBindingIndex = kDefaultAttribsBindingIndex + 2;
 // Binding index for default uniforms:
 constexpr uint32_t kDefaultUniformsBindingIndex = kDefaultAttribsBindingIndex + 3;
 
