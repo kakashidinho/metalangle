@@ -268,8 +268,7 @@ angle::Result VertexArrayMtl::setupDraw(const gl::Context *glContext,
 
     if (dirty)
     {
-        mVertexArrayDirty         = false;
-        uint32_t currentBufferIdx = kVboBindingIndexStart;
+        mVertexArrayDirty = false;
 
         const std::vector<gl::VertexAttribute> &attribs = mState.getVertexAttributes();
 
@@ -308,13 +307,13 @@ angle::Result VertexArrayMtl::setupDraw(const gl::Context *glContext,
 
             if (attribEnabled)
             {
-                auto bufferIdx = currentBufferIdx++;
-
+                uint32_t bufferIdx             = kVboBindingIndexStart + v;
                 desc.attributes[v].bufferIndex = bufferIdx;
 
-                desc.layouts[v].stepFunction = MTLVertexStepFunctionPerVertex;
-                desc.layouts[v].stepRate     = 1;
-                desc.layouts[v].stride       = mCurrentArrayBufferStrides[v];
+                ASSERT(bufferIdx < kMaxVertexAttribs);
+                desc.layouts[bufferIdx].stepFunction = MTLVertexStepFunctionPerVertex;
+                desc.layouts[bufferIdx].stepRate     = 1;
+                desc.layouts[bufferIdx].stride       = mCurrentArrayBufferStrides[v];
 
                 cmdEncoder->setVertexBuffer(mCurrentArrayBuffers[v]->getCurrentBuffer(glContext), 0,
                                             bufferIdx);
