@@ -33,6 +33,11 @@ angle::Result InitializeTextureContents(const gl::Context *context,
                                         const Format &textureObjFormat,
                                         const gl::ImageIndex &index);
 
+angle::Result InitializeBlackPixels(const gl::Context *context,
+                                    const Format &pixelFormat,
+                                    size_t numPixels,
+                                    uint8_t *pixels);
+
 MTLViewport GetViewport(const gl::Rectangle &rect, double znear = 0, double zfar = 1);
 MTLViewport GetViewportFlipY(const gl::Rectangle &rect,
                              NSUInteger screenHeight,

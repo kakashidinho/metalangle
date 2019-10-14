@@ -186,17 +186,20 @@ class TextureMtl : public TextureImpl
                                    const gl::Offset &destOffset,
                                    const gl::Rectangle &sourceArea,
                                    const gl::InternalFormat &internalFormat,
+                                   bool fillOutOfBoundWithBlack,
                                    gl::Framebuffer *source);
     angle::Result copySubImageWithDraw(const gl::Context *context,
                                        const gl::ImageIndex &index,
-                                       const gl::Offset &destOffset,
-                                       const gl::Rectangle &sourceArea,
+                                       const gl::Offset &modifiedDestOffset,
+                                       const gl::Rectangle &modifiedSourceArea,
+                                       const gl::Rectangle &blackIfOutOfBoundDestArea,
                                        const gl::InternalFormat &internalFormat,
                                        gl::Framebuffer *source);
     angle::Result copySubImageCPU(const gl::Context *context,
                                   const gl::ImageIndex &index,
-                                  const gl::Offset &destOffset,
-                                  const gl::Rectangle &sourceArea,
+                                  const gl::Offset &modifiedDestOffset,
+                                  const gl::Rectangle &modifiedSourceArea,
+                                  const gl::Rectangle &blackIfOutOfBoundDestArea,
                                   const gl::InternalFormat &internalFormat,
                                   gl::Framebuffer *source);
 

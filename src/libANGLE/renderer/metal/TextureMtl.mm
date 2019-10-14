@@ -163,7 +163,7 @@ angle::Result TextureMtl::copyImage(const gl::Context *context,
     ANGLE_TRY(redefineImage(context, index, mtlFormat, newImageSize));
 
     return copySubImageImpl(context, index, gl::Offset(0, 0, 0), sourceArea, internalFormatInfo,
-                            source);
+                            context->isWebGL(), source);
 }
 
 angle::Result TextureMtl::copySubImage(const gl::Context *context,
@@ -173,7 +173,7 @@ angle::Result TextureMtl::copySubImage(const gl::Context *context,
                                        gl::Framebuffer *source)
 {
     const gl::InternalFormat &currentFormat = *mState.getImageDesc(index).format.info;
-    return copySubImageImpl(context, index, destOffset, sourceArea, currentFormat, source);
+    return copySubImageImpl(context, index, destOffset, sourceArea, currentFormat, false, source);
 }
 
 angle::Result TextureMtl::copyTexture(const gl::Context *context,
@@ -753,6 +753,7 @@ angle::Result TextureMtl::copySubImageImpl(const gl::Context *context,
                                            const gl::Offset &destOffset,
                                            const gl::Rectangle &sourceArea,
                                            const gl::InternalFormat &internalFormat,
+                                           bool fillOutOfBoundWithBlack,
                                            gl::Framebuffer *source)
 {
     ASSERT(mTexture && mTexture->valid());
@@ -771,21 +772,40 @@ angle::Result TextureMtl::copySubImageImpl(const gl::Context *context,
     const gl::Offset modifiedDestOffset(destOffset.x + clippedSourceArea.x - sourceArea.x,
                                         destOffset.y + clippedSourceArea.y - sourceArea.y, 0);
 
+    gl::Rectangle blackIfOutOfBoundDestArea;
+
+    if (fillOutOfBoundWithBlack)
+    {
+        // The intended fill area will be filled with black pixels if there is no corresponding
+        // pixels from framebuffer.
+        blackIfOutOfBoundDestArea =
+            gl::Rectangle(destOffset.x, destOffset.y, sourceArea.width, sourceArea.height);
+    }
+    else
+    {
+        // If we don't want to fill out of bound area with black pixels, just set the intended black
+        // area to be equals to the area that is going to be fill by framebuffer's content.
+        blackIfOutOfBoundDestArea =
+            gl::Rectangle(modifiedDestOffset.x, modifiedDestOffset.y, clippedSourceArea.width,
+                          clippedSourceArea.height);
+    }
+
     if (!mtl::Format::FormatRenderable(mFormat.metalFormat))
     {
         return copySubImageCPU(context, index, modifiedDestOffset, clippedSourceArea,
-                               internalFormat, source);
+                               blackIfOutOfBoundDestArea, internalFormat, source);
     }
 
     // TODO(hqle): Use compute shader.
     return copySubImageWithDraw(context, index, modifiedDestOffset, clippedSourceArea,
-                                internalFormat, source);
+                                blackIfOutOfBoundDestArea, internalFormat, source);
 }
 
 angle::Result TextureMtl::copySubImageWithDraw(const gl::Context *context,
                                                const gl::ImageIndex &index,
                                                const gl::Offset &modifiedDestOffset,
                                                const gl::Rectangle &clippedSourceArea,
+                                               const gl::Rectangle &blackIfOutOfBoundDestArea,
                                                const gl::InternalFormat &internalFormat,
                                                gl::Framebuffer *source)
 {
@@ -802,6 +822,19 @@ angle::Result TextureMtl::copySubImageWithDraw(const gl::Context *context,
     }
 
     mtl::RenderCommandEncoder *cmdEncoder = contextMtl->getRenderCommandEncoder(mTexture, index);
+
+    const gl::Rectangle modifiedDestArea(modifiedDestOffset.x, modifiedDestOffset.y,
+                                         clippedSourceArea.width, clippedSourceArea.height);
+    if (modifiedDestArea != blackIfOutOfBoundDestArea)
+    {
+        // zeroize the pixels outside the framebuffer
+        UtilsMtl::ClearParams clearParams;
+        clearParams.clearArea  = blackIfOutOfBoundDestArea;
+        clearParams.clearColor = MTLClearColorMake(0, 0, 0, 0);
+
+        rendererMtl->getUtils().clearWithDraw(context, cmdEncoder, clearParams);
+    }
+
     UtilsMtl::BlitParams blitParams;
 
     blitParams.dstOffset    = modifiedDestOffset;
@@ -821,36 +854,64 @@ angle::Result TextureMtl::copySubImageCPU(const gl::Context *context,
                                           const gl::ImageIndex &index,
                                           const gl::Offset &modifiedDestOffset,
                                           const gl::Rectangle &clippedSourceArea,
+                                          const gl::Rectangle &blackIfOutOfBoundDestArea,
                                           const gl::InternalFormat &internalFormat,
                                           gl::Framebuffer *source)
 {
     ContextMtl *contextMtl         = mtl::GetImpl(context);
     FramebufferMtl *framebufferMtl = mtl::GetImpl(source);
 
-    const angle::Format &dstFormat = angle::Format::Get(mFormat.actualFormatId);
-    const int dstRowPitch          = dstFormat.pixelBytes * clippedSourceArea.width;
-    std::unique_ptr<uint8_t[]> conversionRow(new (std::nothrow) uint8_t[dstRowPitch]);
-    ANGLE_CHECK_GL_ALLOC(contextMtl, conversionRow);
+    const angle::Format &dstFormat = mFormat.actualAngleFormat();
+    // The original size that user wants to fill
+    const int dstOriginalRowPitch = dstFormat.pixelBytes * blackIfOutOfBoundDestArea.width;
+    // Offset from the original destination area to the modified destination area
+    const size_t pixelsWriteOffsetBytes =
+        dstFormat.pixelBytes * (blackIfOutOfBoundDestArea.x - modifiedDestOffset.x);
 
-    MTLRegion mtlDstRowArea  = MTLRegionMake2D(clippedSourceArea.x, 0, clippedSourceArea.width, 1);
+    const gl::Rectangle modifiedDestArea(modifiedDestOffset.x, modifiedDestOffset.y,
+                                         clippedSourceArea.width, clippedSourceArea.height);
+    ASSERT(blackIfOutOfBoundDestArea.encloses(modifiedDestArea));
+
+    // This buffer contains the row of pixels data that will be uploaded to destination texture:
+    std::unique_ptr<uint8_t[]> conversionRow(new (std::nothrow) uint8_t[dstOriginalRowPitch]);
+    ANGLE_CHECK_GL_ALLOC(contextMtl, conversionRow);
+    // This pointer points to starting position in the row buffer that will be written by data
+    // read from framebuffer:
+    auto pixelsWritePtr = conversionRow.get() + pixelsWriteOffsetBytes;
+
+    MTLRegion mtlOriginalDstRowArea =
+        MTLRegionMake2D(blackIfOutOfBoundDestArea.x, 0, blackIfOutOfBoundDestArea.width, 1);
     gl::Rectangle srcRowArea = gl::Rectangle(clippedSourceArea.x, 0, clippedSourceArea.width, 1);
 
-    for (int r = 0; r < clippedSourceArea.height; ++r)
+    // Read framebuffer's row by row:
+    for (int destRow = blackIfOutOfBoundDestArea.y0(), sourceRow = clippedSourceArea.y0();
+         destRow < blackIfOutOfBoundDestArea.y1(); ++destRow)
     {
-        mtlDstRowArea.origin.y = modifiedDestOffset.y + r;
-        srcRowArea.y           = clippedSourceArea.y + r;
+        // WebGL requires pixels outside framebuffer to be black.
+        ANGLE_TRY(mtl::InitializeBlackPixels(context, mFormat, blackIfOutOfBoundDestArea.width,
+                                             conversionRow.get()));
 
-        PackPixelsParams packParams(srcRowArea, dstFormat, dstRowPitch, false, nullptr, 0);
+        mtlOriginalDstRowArea.origin.y = destRow;
 
-        // Read pixels from framebuffer to memory:
-        ANGLE_TRY(framebufferMtl->readPixelsImpl(context, srcRowArea, packParams,
-                                                 framebufferMtl->getColorReadRenderTarget(),
-                                                 conversionRow.get()));
+        if (destRow >= modifiedDestArea.y0() && destRow < modifiedDestArea.y1())
+        {
+            // Valid reading area, overwrite the clipped portion of destination row with data
+            // from framebuffer:
+            srcRowArea.y = sourceRow++;
+
+            PackPixelsParams packParams(srcRowArea, dstFormat, dstOriginalRowPitch, false, nullptr,
+                                        0);
+
+            // Read pixels from framebuffer to memory:
+            ANGLE_TRY(framebufferMtl->readPixelsImpl(context, srcRowArea, packParams,
+                                                     framebufferMtl->getColorReadRenderTarget(),
+                                                     pixelsWritePtr));
+        }
 
         // Upload to texture
-        mTexture->replaceRegion(contextMtl, mtlDstRowArea, index.getLevelIndex(),
+        mTexture->replaceRegion(contextMtl, mtlOriginalDstRowArea, index.getLevelIndex(),
                                 index.hasLayer() ? index.cubeMapFaceIndex() : 0,
-                                conversionRow.get(), dstRowPitch);
+                                conversionRow.get(), dstOriginalRowPitch);
     }
 
     return angle::Result::Continue;
