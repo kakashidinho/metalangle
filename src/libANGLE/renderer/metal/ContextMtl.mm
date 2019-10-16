@@ -707,7 +707,7 @@ ProgramImpl *ContextMtl::createProgram(const gl::ProgramState &state)
 // Framebuffer creation
 FramebufferImpl *ContextMtl::createFramebuffer(const gl::FramebufferState &state)
 {
-    return new FramebufferMtl(state);
+    return new FramebufferMtl(state, false, false);
 }
 
 // Texture creation
