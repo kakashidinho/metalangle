@@ -12,6 +12,7 @@
 #include <TargetConditionals.h>
 
 #include "libANGLE/Display.h"
+#include "libANGLE/Surface.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
 #include "libANGLE/renderer/metal/DisplayMtl.h"
 #include "libANGLE/renderer/metal/FrameBufferMtl.h"
@@ -162,12 +163,46 @@ void StopFrameCapture()
 }
 }
 
-SurfaceMtl::SurfaceMtl(const egl::SurfaceState &state,
+SurfaceMtl::SurfaceMtl(DisplayMtl *displayMtl,
+                       const egl::SurfaceState &state,
                        EGLNativeWindowType window,
-                       EGLint width,
-                       EGLint height)
+                       const egl::AttributeMap &attribs)
     : SurfaceImpl(state), mLayer((__bridge CALayer *)(window))
-{}
+{
+    RendererMtl *renderer = displayMtl->getRenderer();
+
+    // TODO(hqle): Width and height attributes is ignored for now.
+    mColorFormat = renderer->getPixelFormat(kDefaultFrameBufferColorFormatId);
+
+    int depthBits   = 0;
+    int stencilBits = 0;
+    if (state.config)
+    {
+        depthBits   = state.config->depthSize;
+        stencilBits = state.config->stencilSize;
+    }
+
+    if (depthBits && stencilBits)
+    {
+#if ANGLE_MTL_ALLOW_SEPARATED_DEPTH_STENCIL
+        mDepthFormat   = renderer->getPixelFormat(kDefaultFrameBufferDepthFormatId);
+        mStencilFormat = renderer->getPixelFormat(kDefaultFrameBufferStencilFormatId);
+#else
+        // We must use packed depth stencil
+        mUsePackedDepthStencil = true;
+        mDepthFormat           = renderer->getPixelFormat(kDefaultFrameBufferDepthStencilFormatId);
+        mStencilFormat         = mDepthFormat;
+#endif
+    }
+    else if (depthBits)
+    {
+        mDepthFormat = renderer->getPixelFormat(kDefaultFrameBufferDepthFormatId);
+    }
+    else if (stencilBits)
+    {
+        mStencilFormat = renderer->getPixelFormat(kDefaultFrameBufferStencilFormatId);
+    }
+}
 
 SurfaceMtl::~SurfaceMtl() {}
 
@@ -186,31 +221,30 @@ egl::Error SurfaceMtl::initialize(const egl::Display *display)
     RendererMtl *renderer     = displayMtl->getRenderer();
     id<MTLDevice> metalDevice = renderer->getMetalDevice();
 
-    mColorFormat = renderer->getPixelFormat(kDefaultFrameBufferColorFormatId);
-
-#if ANGLE_MTL_ALLOW_SEPARATED_DEPTH_STENCIL
-    mDepthFormat   = renderer->getPixelFormat(kDefaultFrameBufferDepthFormatId);
-    mStencilFormat = renderer->getPixelFormat(kDefaultFrameBufferStencilFormatId);
-#else
-    // We must use packed depth stencil
-    mUsePackedDepthStencil = true;
-    mDepthFormat           = renderer->getPixelFormat(kDefaultFrameBufferDepthStencilFormatId);
-    mStencilFormat         = mDepthFormat;
-#endif
-
     StartFrameCapture(metalDevice, renderer->cmdQueue().get());
 
     ANGLE_MTL_OBJC_SCOPE
     {
-        mMetalLayer                       = [[[CAMetalLayer alloc] init] ANGLE_MTL_AUTORELEASE];
+        if ([mLayer isKindOfClass:CAMetalLayer.class])
+        {
+            mMetalLayer.retainAssign(static_cast<CAMetalLayer *>(mLayer));
+        }
+        else
+        {
+            mMetalLayer             = [[[CAMetalLayer alloc] init] ANGLE_MTL_AUTORELEASE];
+            mMetalLayer.get().frame = mLayer.frame;
+        }
+
         mMetalLayer.get().device          = metalDevice;
         mMetalLayer.get().pixelFormat     = mColorFormat.metalFormat;
         mMetalLayer.get().framebufferOnly = NO;  // This to allow readPixels
-        mMetalLayer.get().frame           = mLayer.frame;
 
-        mMetalLayer.get().contentsScale = mLayer.contentsScale;
+        if (mMetalLayer.get() != mLayer)
+        {
+            mMetalLayer.get().contentsScale = mLayer.contentsScale;
 
-        [mLayer addSublayer:mMetalLayer.get()];
+            [mLayer addSublayer:mMetalLayer.get()];
+        }
     }
 
     return egl::NoError();
@@ -300,6 +334,11 @@ void SurfaceMtl::setFixedHeight(EGLint height)
 // width and height can change with client window resizing
 EGLint SurfaceMtl::getWidth() const
 {
+    if (mDrawableTexture)
+    {
+        return static_cast<EGLint>(mDrawableTexture->width());
+    }
+
     if (mMetalLayer)
     {
         return static_cast<EGLint>(mMetalLayer.get().drawableSize.width);
@@ -309,6 +348,11 @@ EGLint SurfaceMtl::getWidth() const
 
 EGLint SurfaceMtl::getHeight() const
 {
+    if (mDrawableTexture)
+    {
+        return static_cast<EGLint>(mDrawableTexture->height());
+    }
+
     if (mMetalLayer)
     {
         return static_cast<EGLint>(mMetalLayer.get().drawableSize.height);
@@ -341,10 +385,10 @@ angle::Result SurfaceMtl::getAttachmentRenderTarget(const gl::Context *context,
             *rtOut = &mColorRenderTarget;
             break;
         case GL_DEPTH:
-            *rtOut = &mDepthRenderTarget;
+            *rtOut = mDepthFormat.valid() ? &mDepthRenderTarget : nullptr;
             break;
         case GL_STENCIL:
-            *rtOut = &mStencilRenderTarget;
+            *rtOut = mStencilFormat.valid() ? &mStencilRenderTarget : nullptr;
             break;
         case GL_DEPTH_STENCIL:
             // TODO(hqle): ES 3.0 feature
@@ -362,20 +406,27 @@ angle::Result SurfaceMtl::ensureRenderTargetsCreated(const gl::Context *context)
         ANGLE_TRY(obtainNextDrawable(context));
     }
 
+    return angle::Result::Continue;
+}
+
+angle::Result SurfaceMtl::ensureDepthStencilSizeCorrect(const gl::Context *context,
+                                                        gl::Framebuffer::DirtyBits *fboDirtyBits)
+{
     ASSERT(mDrawableTexture && mDrawableTexture->get());
 
     ContextMtl *contextMtl = mtl::GetImpl(context);
     auto size              = mDrawableTexture->size();
 
-    if (!mDepthTexture || mDepthTexture->size() != size)
+    if (mDepthFormat.valid() && (!mDepthTexture || mDepthTexture->size() != size))
     {
         ANGLE_TRY(mtl::Texture::Make2DTexture(contextMtl, mDepthFormat, size.width, size.height, 1,
                                               true, &mDepthTexture));
 
         mDepthRenderTarget.set(mDepthTexture, 0, 0, mDepthFormat);
+        fboDirtyBits->set(gl::Framebuffer::DIRTY_BIT_DEPTH_ATTACHMENT);
     }
 
-    if (!mStencilTexture || mStencilTexture->size() != size)
+    if (mStencilFormat.valid() && (!mStencilTexture || mStencilTexture->size() != size))
     {
         if (mUsePackedDepthStencil)
         {
@@ -388,13 +439,31 @@ angle::Result SurfaceMtl::ensureRenderTargetsCreated(const gl::Context *context)
         }
 
         mStencilRenderTarget.set(mStencilTexture, 0, 0, mStencilFormat);
+        fboDirtyBits->set(gl::Framebuffer::DIRTY_BIT_STENCIL_ATTACHMENT);
     }
 
     return angle::Result::Continue;
 }
 
+void SurfaceMtl::checkIfLayerResized()
+{
+    CGSize currentDrawableSize        = mMetalLayer.get().drawableSize;
+    CGSize currentLayerSize           = mMetalLayer.get().bounds.size;
+    CGFloat currentLayerContentsScale = mMetalLayer.get().contentsScale;
+    CGSize expectedDrawableSize = CGSizeMake(currentLayerSize.width * currentLayerContentsScale,
+                                             currentLayerSize.height * currentLayerContentsScale);
+    if (currentDrawableSize.width != expectedDrawableSize.width ||
+        currentDrawableSize.height != expectedDrawableSize.height)
+    {
+        // Resize the internal drawable texture.
+        mMetalLayer.get().drawableSize = expectedDrawableSize;
+    }
+}
+
 angle::Result SurfaceMtl::obtainNextDrawable(const gl::Context *context)
 {
+    checkIfLayerResized();
+
     ANGLE_MTL_OBJC_SCOPE
     {
         ContextMtl *contextMtl = mtl::GetImpl(context);
@@ -430,11 +499,25 @@ angle::Result SurfaceMtl::obtainNextDrawable(const gl::Context *context)
             mDrawableTexture->set(mCurrentDrawable.get().texture);
         }
 
-#if defined(ANGLE_MTL_ENABLE_TRACE)
-        [mCurrentDrawable.get() addPresentedHandler:^(id<MTLDrawable> drawable) {
-          NSLog(@"Drawable %@ has been presented", drawable);
-        }];
-#endif
+        ANGLE_MTL_LOG("Current metal drawable size=%d,%d", mDrawableTexture->width(),
+                      mDrawableTexture->height());
+
+        gl::Framebuffer::DirtyBits fboDirtyBits;
+        fboDirtyBits.set(gl::Framebuffer::DIRTY_BIT_COLOR_ATTACHMENT_0);
+
+        // Now we have to resize depth stencil buffers if necessary.
+        ANGLE_TRY(ensureDepthStencilSizeCorrect(context, &fboDirtyBits));
+
+        // Need to notify default framebuffer to invalidate its render targets.
+        // Since a new drawable texture has been obtained, also, the depth stencil
+        // buffers might have been resized.
+        gl::Framebuffer *defaultFbo =
+            context->getFramebuffer(gl::Framebuffer::kDefaultDrawFramebufferHandle);
+        if (defaultFbo)
+        {
+            FramebufferMtl *framebufferMtl = mtl::GetImpl(defaultFbo);
+            ANGLE_TRY(framebufferMtl->syncState(context, fboDirtyBits));
+        }
 
         return angle::Result::Continue;
     }

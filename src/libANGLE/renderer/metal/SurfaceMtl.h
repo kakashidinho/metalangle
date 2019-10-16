@@ -12,6 +12,7 @@
 #import <QuartzCore/CALayer.h>
 #import <QuartzCore/CAMetalLayer.h>
 
+#include "libANGLE/renderer/FramebufferImpl.h"
 #include "libANGLE/renderer/SurfaceImpl.h"
 #include "libANGLE/renderer/metal/RenderTargetMtl.h"
 #include "libANGLE/renderer/metal/StateCacheMtl.h"
@@ -21,13 +22,15 @@
 namespace rx
 {
 
+class DisplayMtl;
+
 class SurfaceMtl : public SurfaceImpl
 {
   public:
-    SurfaceMtl(const egl::SurfaceState &state,
+    SurfaceMtl(DisplayMtl *display,
+               const egl::SurfaceState &state,
                EGLNativeWindowType window,
-               EGLint width,
-               EGLint height);
+               const egl::AttributeMap &attribs);
     ~SurfaceMtl() override;
 
     void destroy(const egl::Display *display) override;
@@ -72,6 +75,10 @@ class SurfaceMtl : public SurfaceImpl
     angle::Result swapImpl(const gl::Context *context);
     angle::Result ensureRenderTargetsCreated(const gl::Context *context);
     angle::Result obtainNextDrawable(const gl::Context *context);
+    angle::Result ensureDepthStencilSizeCorrect(const gl::Context *context,
+                                                gl::Framebuffer::DirtyBits *fboDirtyBits);
+    // Check if metal layer has been resized.
+    void checkIfLayerResized();
 
     mtl::AutoObjCObj<CAMetalLayer> mMetalLayer = nil;
     CALayer *mLayer;

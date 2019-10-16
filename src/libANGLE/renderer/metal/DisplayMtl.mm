@@ -96,10 +96,7 @@ SurfaceImpl *DisplayMtl::createWindowSurface(const egl::SurfaceState &state,
                                              EGLNativeWindowType window,
                                              const egl::AttributeMap &attribs)
 {
-    EGLint width  = attribs.getAsInt(EGL_WIDTH, 0);
-    EGLint height = attribs.getAsInt(EGL_HEIGHT, 0);
-
-    return new SurfaceMtl(state, window, width, height);
+    return new SurfaceMtl(this, state, window, attribs);
 }
 
 SurfaceImpl *DisplayMtl::createPbufferSurface(const egl::SurfaceState &state,
@@ -185,7 +182,7 @@ egl::Error DisplayMtl::makeCurrent(egl::Surface *drawSurface,
 
 void DisplayMtl::generateExtensions(egl::DisplayExtensions *outExtensions) const
 {
-    // TODO(hqle)
+    outExtensions->flexibleSurfaceCompatibility = true;
 }
 
 void DisplayMtl::generateCaps(egl::Caps *outCaps) const {}
@@ -211,19 +208,9 @@ egl::ConfigSet DisplayMtl::generateConfigs()
     config.nativeVisualType = 0;
     config.nativeRenderable = EGL_TRUE;
 
-    // Buffer sizes
-    config.redSize     = 8;
-    config.greenSize   = 8;
-    config.blueSize    = 8;
-    config.alphaSize   = 8;
-    config.depthSize   = 24;
-    config.stencilSize = 8;
-
     config.colorBufferType = EGL_RGB_BUFFER;
     config.luminanceSize   = 0;
     config.alphaMaskSize   = 0;
-
-    config.bufferSize = config.redSize + config.greenSize + config.blueSize + config.alphaSize;
 
     config.transparentType = EGL_NONE;
 
@@ -257,7 +244,33 @@ egl::ConfigSet DisplayMtl::generateConfigs()
 
     config.colorComponentType = EGL_COLOR_COMPONENT_TYPE_FIXED_EXT;
 
+    // Buffer sizes
+    config.redSize    = 8;
+    config.greenSize  = 8;
+    config.blueSize   = 8;
+    config.alphaSize  = 8;
+    config.bufferSize = config.redSize + config.greenSize + config.blueSize + config.alphaSize;
+
+    // With DS
+    config.depthSize   = 24;
+    config.stencilSize = 8;
     configs.add(config);
+
+    // With D
+    config.depthSize   = 24;
+    config.stencilSize = 0;
+    configs.add(config);
+
+    // With S
+    config.depthSize   = 0;
+    config.stencilSize = 8;
+    configs.add(config);
+
+    // No DS
+    config.depthSize   = 0;
+    config.stencilSize = 0;
+    configs.add(config);
+
     return configs;
 }
 

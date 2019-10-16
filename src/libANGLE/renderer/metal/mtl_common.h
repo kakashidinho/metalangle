@@ -43,6 +43,12 @@
 
 #define ANGLE_MTL_UNUSED __attribute__((unused))
 
+#if defined(ANGLE_MTL_ENABLE_TRACE)
+#    define ANGLE_MTL_LOG(...) NSLog(@__VA_ARGS__)
+#else
+#    define ANGLE_MTL_LOG(...) (void)0
+#endif
+
 // TODO(hqle): support variable max number of vertex attributes
 constexpr uint32_t kMaxVertexAttribs = gl::MAX_VERTEX_ATTRIBS;
 // TODO(hqle): support variable max number of render targets
