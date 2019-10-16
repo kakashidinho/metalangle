@@ -110,4 +110,4 @@ Configure your build environment to have access to the `include` folder to provi
 
  - Link you application against `MetalANGLE.framework`.
 ##### MGLKit
- - `MetalANGLE.framework` also contains MGLKit utilities classes such as `MGLContext`, `MGLLayer`, `MGLKView`, `MGLKViewController`, similar the Apple's provided GLKit classes such as `CAEAGLContext`, `CAEAGLLayer`, `GLKView`, `GLKViewController`. Please see the sample app making use of this MGLKit classes in `MGLKitSamples.xcodeproj`
+ - `MetalANGLE.framework` also contains MGLKit utilities classes such as `MGLContext`, `MGLLayer`, `MGLKView`, `MGLKViewController`, similar to Apple's provided GLKit classes such as `CAEAGLContext`, `CAEAGLLayer`, `GLKView`, `GLKViewController`. Please see the sample app making use of this MGLKit classes in `MGLKitSamples.xcodeproj`
