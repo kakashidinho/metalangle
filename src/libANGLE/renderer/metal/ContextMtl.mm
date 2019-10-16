@@ -1164,6 +1164,9 @@ void ContextMtl::updateScissor(const gl::State &glState)
     FramebufferMtl *framebufferMtl = mtl::GetImpl(glState.getDrawFramebuffer());
     gl::Rectangle renderArea       = framebufferMtl->getCompleteRenderArea();
 
+    ANGLE_MTL_LOG("renderArea = %d,%d,%d,%d", renderArea.x, renderArea.y, renderArea.width,
+                  renderArea.height);
+
     // Clip the render area to the viewport.
     gl::Rectangle viewportClippedRenderArea;
     gl::ClipRectangle(renderArea, glState.getViewport(), &viewportClippedRenderArea);
@@ -1173,6 +1176,9 @@ void ContextMtl::updateScissor(const gl::State &glState)
     {
         scissoredArea.y = renderArea.height - scissoredArea.y - scissoredArea.height;
     }
+
+    ANGLE_MTL_LOG("scissoredArea = %d,%d,%d,%d", scissoredArea.x, scissoredArea.y,
+                  scissoredArea.width, scissoredArea.height);
 
     mScissorRect = mtl::GetScissorRect(scissoredArea);
     mDirtyBits.set(DIRTY_BIT_SCISSOR);

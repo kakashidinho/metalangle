@@ -15,12 +15,6 @@
 #include "common/debug.h"
 #include "libANGLE/renderer/metal/mtl_resources.h"
 
-#if defined(ANGLE_MTL_ENABLE_TRACE)
-#    define ANGLE_MTL_CMD_LOG(...) NSLog(@__VA_ARGS__)
-#else
-#    define ANGLE_MTL_CMD_LOG(...) (void)0
-#endif
-
 namespace rx
 {
 namespace mtl
@@ -81,8 +75,8 @@ void CommandQueue::ensureResourceReadyForCPU(Resource *resource)
         mQueuedMetalCmdBuffers.pop_front();
         mLock.unlock();
 
-        ANGLE_MTL_CMD_LOG("Waiting for MTLCommandBuffer %llu:%p", metalBufferEntry.serial,
-                          metalBufferEntry.buffer.get());
+        ANGLE_MTL_LOG("Waiting for MTLCommandBuffer %llu:%p", metalBufferEntry.serial,
+                      metalBufferEntry.buffer.get());
         [metalBufferEntry.buffer waitUntilCompleted];
 
         mLock.lock();
@@ -118,7 +112,7 @@ AutoObjCPtr<id<MTLCommandBuffer>> CommandQueue::makeMetalCommandBuffer(uint64_t 
 
         mQueuedMetalCmdBuffers.push_back({metalCmdBuffer, serial});
 
-        ANGLE_MTL_CMD_LOG("Created MTLCommandBuffer %llu:%p", serial, metalCmdBuffer.get());
+        ANGLE_MTL_LOG("Created MTLCommandBuffer %llu:%p", serial, metalCmdBuffer.get());
 
         [metalCmdBuffer addCompletedHandler:^(id<MTLCommandBuffer> buf) {
           onCommandBufferCompleted(buf, serial);
@@ -138,7 +132,7 @@ void CommandQueue::onCommandBufferCompleted(id<MTLCommandBuffer> buf, uint64_t s
 {
     std::lock_guard<std::mutex> lg(mLock);
 
-    ANGLE_MTL_CMD_LOG("Completed MTLCommandBuffer %llu:%p", serial, buf);
+    ANGLE_MTL_LOG("Completed MTLCommandBuffer %llu:%p", serial, buf);
 
     if (mCompletedBufferSerial >= serial)
     {
@@ -150,8 +144,8 @@ void CommandQueue::onCommandBufferCompleted(id<MTLCommandBuffer> buf, uint64_t s
     {
         auto metalBufferEntry = mQueuedMetalCmdBuffers.front();
         (void)metalBufferEntry;
-        ANGLE_MTL_CMD_LOG("Popped MTLCommandBuffer %llu:%p", metalBufferEntry.serial,
-                          metalBufferEntry.buffer.get());
+        ANGLE_MTL_LOG("Popped MTLCommandBuffer %llu:%p", metalBufferEntry.serial,
+                      metalBufferEntry.buffer.get());
 
         mQueuedMetalCmdBuffers.pop_front();
     }
@@ -292,7 +286,7 @@ void CommandBuffer::commitImpl()
     // Do the actual commit
     [get() commit];
 
-    ANGLE_MTL_CMD_LOG("Committed MTLCommandBuffer %llu:%p", mQueueSerial, get());
+    ANGLE_MTL_LOG("Committed MTLCommandBuffer %llu:%p", mQueueSerial, get());
 
     mCommitted = true;
 }
@@ -456,7 +450,7 @@ RenderCommandEncoder &RenderCommandEncoder::restart(const RenderPassDesc &desc)
         // Create objective C object
         mtl::AutoObjCObj<MTLRenderPassDescriptor> objCDesc = ToMetalObj(mRenderPassDesc);
 
-        ANGLE_MTL_CMD_LOG("Creating new render command encoder with desc: %@", objCDesc.get());
+        ANGLE_MTL_LOG("Creating new render command encoder with desc: %@", objCDesc.get());
 
         id<MTLRenderCommandEncoder> metalCmdEncoder =
             [cmdBuffer().get() renderCommandEncoderWithDescriptor:objCDesc];
