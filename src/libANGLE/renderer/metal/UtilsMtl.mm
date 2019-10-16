@@ -178,7 +178,7 @@ angle::Result UtilsMtl::initShaderLibrary()
 {
     mtl::AutoObjCObj<NSError> err = nil;
 
-#if !defined(NDEBUG)
+#if defined(ANGLE_MTL_DEBUG_INTERNAL_SHADERS)
     mDefaultShaders = mtl::CreateShaderLibrary(
         getRenderer()->getMetalDevice(), default_metallib_src, sizeof(default_metallib_src), &err);
 #else
@@ -923,19 +923,17 @@ angle::Result UtilsMtl::dispatchCompute(const gl::Context *context,
     NSUInteger w                  = pipelineState.threadExecutionWidth;
     MTLSize threadsPerThreadgroup = MTLSizeMake(w, 1, 1);
 
-#if TARGET_OS_OSX
-    if ([getMetalDevice() supportsFeatureSet:MTLFeatureSet_macOS_GPUFamily1_v1])
-#else
-    if ([getMetalDevice() supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily4_v1])
+#if TARGET_OS_IOS && !TARGET_OS_MACCATALYST
+    if (![getMetalDevice() supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily4_v1])
+    {
+        MTLSize groups = MTLSizeMake((numThreads + w - 1) / w, 1, 1);
+        cmdEncoder->dispatch(groups, threadsPerThreadgroup);
+    }
+    else
 #endif
     {
         MTLSize threads = MTLSizeMake(numThreads, 1, 1);
         cmdEncoder->dispatchNonUniform(threads, threadsPerThreadgroup);
-    }
-    else
-    {
-        MTLSize groups = MTLSizeMake((numThreads + w - 1) / w, 1, 1);
-        cmdEncoder->dispatch(groups, threadsPerThreadgroup);
     }
 
     return angle::Result::Continue;

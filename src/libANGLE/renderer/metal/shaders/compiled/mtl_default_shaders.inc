@@ -12,7 +12,7 @@
 #include <TargetConditionals.h>
 
 
-#if TARGET_OS_OSX
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
 
 constexpr
 unsigned char compiled_default_metallib[] = {
@@ -3547,7 +3547,7 @@ unsigned char compiled_default_metallib[] = {
 };
 unsigned int compiled_default_metallib_len = 42334;
 
-#elif TARGET_OS_SIMULATOR  // TARGET_OS_OSX
+#elif TARGET_OS_SIMULATOR  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
 
 #define compiled_default_metallib     compiled_default_ios_sim_metallib
 #define compiled_default_metallib_len compiled_default_ios_sim_metallib_len
@@ -7503,7 +7503,7 @@ unsigned char compiled_default_ios_sim_metallib[] = {
 };
 unsigned int compiled_default_ios_sim_metallib_len = 47342;
 
-#elif TARGET_OS_IOS  // TARGET_OS_OSX
+#elif TARGET_OS_IOS  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
 
 #define compiled_default_metallib     compiled_default_ios_metallib
 #define compiled_default_metallib_len compiled_default_ios_metallib_len
@@ -11036,5 +11036,5 @@ unsigned char compiled_default_ios_metallib[] = {
   0xb6, 0x2f, 0xf9, 0xc8, 0x6d, 0x03, 0x00, 0x00, 0x00, 0x00
 };
 unsigned int compiled_default_ios_metallib_len = 42286;
-#endif  // TARGET_OS_OSX
+#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
 

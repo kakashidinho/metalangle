@@ -59,7 +59,7 @@ std::string RendererMtl::getVendorString() const
     std::string vendorString = "Google Inc.";
     if (mMetalDevice)
     {
-        vendorString += " ";
+        vendorString += " Metal Renderer: ";
         vendorString += mMetalDevice.get().name.UTF8String;
     }
 
@@ -160,14 +160,10 @@ void RendererMtl::ensureCapsInitialized() const
     // https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
     mNativeCaps.maxElementIndex  = std::numeric_limits<GLuint>::max() - 1;
     mNativeCaps.max3DTextureSize = 2048;
-#if TARGET_OS_OSX
-    if ([getMetalDevice() supportsFeatureSet:MTLFeatureSet_macOS_GPUFamily1_v1])
-    {
-        mNativeCaps.max2DTextureSize          = 16384;
-        mNativeCaps.maxVaryingVectors         = 31;
-        mNativeCaps.maxVertexOutputComponents = 124;
-    }
-    else
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
+    mNativeCaps.max2DTextureSize          = 16384;
+    mNativeCaps.maxVaryingVectors         = 31;
+    mNativeCaps.maxVertexOutputComponents = 124;
 #else
     if ([getMetalDevice() supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily3_v1])
     {
@@ -176,12 +172,12 @@ void RendererMtl::ensureCapsInitialized() const
         mNativeCaps.maxVaryingVectors         = mNativeCaps.maxVertexOutputComponents / 4;
     }
     else
-#endif
     {
         mNativeCaps.max2DTextureSize          = 8192;
         mNativeCaps.maxVertexOutputComponents = 60;
         mNativeCaps.maxVaryingVectors         = mNativeCaps.maxVertexOutputComponents / 4;
     }
+#endif
 
     mNativeCaps.maxArrayTextureLayers = 2048;
     mNativeCaps.maxLODBias            = 0;

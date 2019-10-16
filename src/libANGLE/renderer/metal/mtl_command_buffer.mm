@@ -951,7 +951,7 @@ BlitCommandEncoder &BlitCommandEncoder::synchronizeResource(TextureRef texture)
         return *this;
     }
 
-#if TARGET_OS_OSX
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
     cmdBuffer().setWriteDependency(texture);
     [get() synchronizeResource:texture->get()];
 #endif

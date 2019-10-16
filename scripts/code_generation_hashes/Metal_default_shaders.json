@@ -6,11 +6,11 @@
   "src/libANGLE/renderer/metal/shaders/common.h":
     "d44903e10552301d7ec89c1a0e6e0862",
   "src/libANGLE/renderer/metal/shaders/compiled/mtl_default_shaders.inc":
-    "871646cfe0563ba66613f90b34421571",
+    "ae02216e4b3588d28b0e87a54deddabb",
   "src/libANGLE/renderer/metal/shaders/gen_indices.metal":
     "002511e2b980a7fca7e80cbda6a82712",
   "src/libANGLE/renderer/metal/shaders/gen_mtl_internal_shaders.py":
-    "1dabee68e5e1443aecf1375fe3a79d3a",
+    "46f6fc729d6e56ae6269378d1ea46530",
   "src/libANGLE/renderer/metal/shaders/master_source.metal":
     "fbe6f4bfb49a48ae87791a4cff5fab0a",
   "src/libANGLE/renderer/metal/shaders/mtl_default_shaders_src_autogen.inc":

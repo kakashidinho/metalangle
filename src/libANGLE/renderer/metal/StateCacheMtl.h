@@ -188,7 +188,7 @@ struct RenderPipelineOutputDesc
     uint8_t numColorAttachments;
 };
 
-#if !TARGET_OS_OSX && ANGLE_IOS_DEPLOY_TARGET < __IPHONE_12_0
+#if !(TARGET_OS_OSX || TARGET_OS_MACCATALYST) && ANGLE_IOS_DEPLOY_TARGET < __IPHONE_12_0
 #    define ANGLE_MTL_PRIMITIVE_TOPOLOGY_CLASS_AVAILABLE 0
 typedef uint32_t PrimitiveTopologyClass;
 constexpr PrimitiveTopologyClass kPrimitiveTopologyClassTriangle = 0;

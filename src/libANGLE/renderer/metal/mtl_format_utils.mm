@@ -64,7 +64,7 @@ void GenerateTextureCapsMap(const FormatTable &formatTable,
     // Then using that json file to generate a table in C++ file.
     gl::Extensions tmpTextureExtensions;
 
-#if TARGET_OS_OSX
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
     // https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
     // Requires depth24Stencil8PixelFormatSupported=YES for these extensions
     bool packedDepthStencil24Support =
@@ -85,7 +85,7 @@ void GenerateTextureCapsMap(const FormatTable &formatTable,
     tmpTextureExtensions.textureCompressionDXT5 = true;
 
 #    if defined(__MAC_10_15)
-    if (@available(macOS 10.15, *))
+    if (ANGLE_APPLE_AVAILABLE_XC(10.15, 13.0))
     {
         // We can only fully support DXT1 without alpha with texture swizzle support from
         // MacOs 10.15
@@ -161,7 +161,7 @@ void GenerateTextureCapsMap(const FormatTable &formatTable,
         if (textureCaps.filterable && mtlFormat.actualFormatId == angle::FormatID::D32_FLOAT)
         {
             // Only MacOS support filterable for D32_FLOAT texture
-#if !TARGET_OS_OSX
+#if !TARGET_OS_OSX || TARGET_OS_MACCATALYST
             textureCaps.filterable = false;
 #endif
         }
@@ -224,7 +224,7 @@ bool Format::FormatRenderable(MTLPixelFormat format)
         case MTLPixelFormatDepth32Float:
         case MTLPixelFormatStencil8:
         case MTLPixelFormatDepth32Float_Stencil8:
-#if TARGET_OS_OSX
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case MTLPixelFormatDepth16Unorm:
         case MTLPixelFormatDepth24Unorm_Stencil8:
 #else
@@ -251,7 +251,7 @@ bool Format::FormatCPUReadable(MTLPixelFormat format)
         case MTLPixelFormatDepth32Float:
         case MTLPixelFormatStencil8:
         case MTLPixelFormatDepth32Float_Stencil8:
-#if TARGET_OS_OSX
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case MTLPixelFormatDepth16Unorm:
         case MTLPixelFormatDepth24Unorm_Stencil8:
 #endif

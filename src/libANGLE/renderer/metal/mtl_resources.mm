@@ -30,8 +30,8 @@ void SetTextureSwizzle(ContextMtl *context,
                        const Format &format,
                        MTLTextureDescriptor *textureDescOut)
 {
-#if TARGET_OS_OSX && defined(__MAC_10_15)
-    if (@available(macOS 10.15, *))
+#if (TARGET_OS_OSX || TARGET_OS_MACCATALYST) && defined(__MAC_10_15)
+    if (ANGLE_APPLE_AVAILABLE_XC(10.15, 13.0))
     {
         if ([context->getMetalDevice() supportsFamily:MTLGPUFamilyMac2])
         {
@@ -205,7 +205,7 @@ Texture::Texture(Texture *original, MTLTextureType type, NSRange mipmapLevelRang
 
 void Texture::syncContent(ContextMtl *context)
 {
-#if TARGET_OS_OSX
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
     // Make sure GPU & CPU contents are synchronized
     if (this->isCPUReadMemDirty())
     {

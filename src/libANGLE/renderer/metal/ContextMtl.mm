@@ -186,7 +186,7 @@ angle::Result ContextMtl::drawTriFanArrays(const gl::Context *context, GLint fir
 {
     if (count > 3)
     {
-#if TARGET_OS_IOS
+#if TARGET_OS_IOS && !TARGET_OS_MACCATALYST
         // Base Vertex drawing is only supported since GPU family 3.
         if (![getMetalDevice() supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily3_v1])
         {

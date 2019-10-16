@@ -116,7 +116,7 @@ void StartFrameCapture(id<MTLDevice> metalDevice, id<MTLCommandQueue> metalCmdQu
     }
 
 #    ifdef __MAC_10_15
-    if (@available(iOS 13, macOS 10.15, *))
+    if (ANGLE_APPLE_AVAILABLE_XCI(10.15, 13.0, 13))
     {
         MTLCaptureDescriptor *captureDescriptor = [[MTLCaptureDescriptor alloc] init];
         captureDescriptor.captureObject         = metalDevice;
@@ -238,6 +238,11 @@ egl::Error SurfaceMtl::initialize(const egl::Display *display)
         mMetalLayer.get().device          = metalDevice;
         mMetalLayer.get().pixelFormat     = mColorFormat.metalFormat;
         mMetalLayer.get().framebufferOnly = NO;  // This to allow readPixels
+
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
+        // Autoresize with parent layer.
+        mMetalLayer.get().autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
+#endif
 
         if (mMetalLayer.get() != mLayer)
         {

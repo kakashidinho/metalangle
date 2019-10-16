@@ -176,11 +176,11 @@ def gen_image_map_switch_string(image_table):
             return mac_case
 
         re = ''
-        re += "#if TARGET_OS_OSX\n"
+        re += "#if TARGET_OS_OSX || TARGET_OS_MACCATALYST\n"
         re += mac_case
-        re += "#else  // TARGET_OS_OSX\n"
+        re += "#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST\n"
         re += non_mac_case
-        re += "#endif  // TARGET_OS_OSX\n"
+        re += "#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST\n"
         return re
 
     # Common case
@@ -190,7 +190,7 @@ def gen_image_map_switch_string(image_table):
         switch_data += gen_image_map_switch_common_case(angle_format, angle_override[angle_format])
 
     # Mac specific
-    switch_data += "#if TARGET_OS_OSX\n"
+    switch_data += "#if TARGET_OS_OSX || TARGET_OS_MACCATALYST\n"
     for angle_format in sorted(mac_specific_map.keys()):
         switch_data += gen_image_map_switch_mac_case(angle_format, angle_format, angle_to_mtl,
                                                      mac_specific_map, mac_fallbacks)
@@ -200,7 +200,7 @@ def gen_image_map_switch_string(image_table):
                                                      angle_to_mtl, mac_specific_map, mac_fallbacks)
 
     # iOS specific
-    switch_data += "#elif TARGET_OS_IOS  // TARGET_OS_OSX\n"
+    switch_data += "#elif TARGET_OS_IOS  // TARGET_OS_OSX || TARGET_OS_MACCATALYST\n"
     for angle_format in sorted(ios_specific_map.keys()):
         switch_data += gen_image_map_switch_simple_case(angle_format, angle_format,
                                                         ios_specific_map)
@@ -208,7 +208,7 @@ def gen_image_map_switch_string(image_table):
         # overide case will always map to a format in common table, i.e. angle_to_mtl
         switch_data += gen_image_map_switch_simple_case(angle_format, ios_override[angle_format],
                                                         angle_to_mtl)
-    switch_data += "#endif  // TARGET_OS_OSX\n"
+    switch_data += "#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST\n"
     switch_data += "        default:\n"
     switch_data += "            this->metalFormat = MTLPixelFormatInvalid;\n"
     switch_data += "            this->actualFormatId = angle::FormatID::NONE;"

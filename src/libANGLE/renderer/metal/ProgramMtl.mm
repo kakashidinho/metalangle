@@ -432,13 +432,13 @@ angle::Result ProgramMtl::convertToMsl(const gl::Context *glContext,
     spirv_cross::CompilerMSL compilerMsl(std::move(*sprivCode));
 
     spirv_cross::CompilerMSL::Options compOpt;
-#if TARGET_OS_OSX
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
     compOpt.platform = spirv_cross::CompilerMSL::Options::macOS;
 #else
     compOpt.platform = spirv_cross::CompilerMSL::Options::iOS;
 #endif
 
-    if (@available(macOS 10.14, iOS 12, *))
+    if (ANGLE_APPLE_AVAILABLE_XCI(10.14, 13.0, 12))
     {
         // Use Metal 2.1
         compOpt.set_msl_version(2, 1);

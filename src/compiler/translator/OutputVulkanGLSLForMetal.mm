@@ -10,6 +10,7 @@
 
 #include "compiler/translator/OutputVulkanGLSLForMetal.h"
 
+#include "common/apple_platform_utils.h"
 #include "compiler/translator/BaseTypes.h"
 #include "compiler/translator/Symbol.h"
 #include "compiler/translator/util.h"
@@ -34,7 +35,7 @@ bool ShoudRemoveInvariant(const TType &type)
         return true;
     }
 
-    if (@available(macOS 10.14, iOS 12, *))
+    if (ANGLE_APPLE_AVAILABLE_XCI(10.14, 13.0, 12))
     {
         return false;
     }

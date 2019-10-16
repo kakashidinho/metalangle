@@ -20,6 +20,7 @@
 #include "common/Optional.h"
 #include "common/PackedEnums.h"
 #include "common/angleutils.h"
+#include "common/apple_platform_utils.h"
 #include "libANGLE/Constants.h"
 #include "libANGLE/Version.h"
 #include "libANGLE/angletypes.h"
@@ -65,7 +66,7 @@ constexpr uint32_t kMaxViewports         = 1;
 constexpr uint32_t kVertexAttribBufferOffsetAlignment = 4;
 constexpr uint32_t kVertexAttribBufferStrideAlignment = 4;
 // Alignment requirement for offset passed to setVertex|FragmentBuffer
-#if TARGET_OS_OSX
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
 constexpr uint32_t kBufferSettingOffsetAlignment = 256;
 #else
 constexpr uint32_t kBufferSettingOffsetAlignment = 4;
