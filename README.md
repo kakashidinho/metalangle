@@ -21,7 +21,7 @@ and vertex formats will force MetalANGLE to do software conversions on CPU.
 
 ## How to build Metal ANGLE for MacOS & iOS
 View the [Metal backend's Dev setup instructions](src/libANGLE/renderer/metal/DevSetup.md).
-Currently, for convenience, iOS version can be built using Xcode project provided in `ios/xcode` folder.
+Currently, for convenience, iOS version can be built using Xcode project provided in `ios/xcode` folder. The Xcode project also builds [MGLKit](src/libANGLE/renderer/metal/DevSetup.md#MGLKit) utilities wrapper library which provides `MGLContext`, `MGLLayer`, `MGLKView`, `MGLKViewController`, similar the Apple's provided GLKit classes such as `CAEAGLContext`, `CAEAGLLayer`, `GLKView`, `GLKViewController`. Please open `MGLKitSamples.xcodeproj` for example iOS app using this MGLKit library.
 
 ------
 # Google's ANGLE - Almost Native Graphics Layer Engine

@@ -85,6 +85,7 @@ Ensure `depot_tools` is in your path as it provides ninja.
 - Open `OpenGLES.xcodeproj` in `ios/xcode` folder.
 - The target `MetalANGLE` will build OpenGL ES framework named `MetalANGLE.framework`.
 - Note: in order to test sample apps on real devices. You have to change their Bundle Identifier in XCode to something you like, since only one development team can use one ID at a time. And this is global restriction across the globes. Once one person install the sample apps using his Apple developer profile, the ID configured will be registered for that developer only. And no other developers can use that ID to install to their device anymore.
+- If you want to build the sample app using [MGLKit](#MGLKit) library. Open `MGKitSamples.xcodeproj` instead of `OpenGLES.xcodeproj`, DO NOT open both at the same time. As `MGKitSamples.xcodeproj`will open the `OpenGLES.xcodeproj` inside its workspace.
 
 ## Application Development with ANGLE
 This sections describes how to use ANGLE to build an OpenGL ES application.
@@ -99,12 +100,14 @@ Currently, iOS version cannot choose other renderer other than the default (Meta
 
 Configure your build environment to have access to the `include` folder to provide access to the standard Khronos EGL and GLES2 header files.
 
-On MacOS:
+#### On MacOS
 
  - Configure your build environment to have access to `libEGL.dylib` and `libGLESv2.dylib` found in the build output directory (see [Building ANGLE](#Building-MacOS-version)).
  - Link you application against `libGLESv2.dylib` and `libEGL.dylib`.
  - Code your application to the Khronos [OpenGL ES 2.0](http://www.khronos.org/registry/gles/) and [EGL 1.4](http://www.khronos.org/registry/egl/) APIs.
 
-On iOS:
+#### On iOS
 
  - Link you application against `MetalANGLE.framework`.
+##### MGLKit
+ - `MetalANGLE.framework` also contains MGLKit utilities classes such as `MGLContext`, `MGLLayer`, `MGLKView`, `MGLKViewController`, similar the Apple's provided GLKit classes such as `CAEAGLContext`, `CAEAGLLayer`, `GLKView`, `GLKViewController`. Please see the sample app making use of this MGLKit classes in `MGLKitSamples.xcodeproj`
