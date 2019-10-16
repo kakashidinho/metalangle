@@ -142,12 +142,6 @@ class ProgramMtl : public ProgramImpl
                                   gl::InfoLog &infoLog,
                                   const std::string &translatedSource);
 
-    struct UniformSamplerInfo final : private angle::NonCopyable
-    {
-        int32_t actualTextureBinding      = -1;
-        int32_t actualSamplerStateBinding = -1;
-    };
-
     // State for the default uniform blocks.
     struct DefaultUniformBlock final : private angle::NonCopyable
     {
@@ -161,8 +155,6 @@ class ProgramMtl : public ProgramImpl
         // to a setUniform method. They are arranged in uniform location order.
         std::vector<sh::BlockMemberInfo> uniformLayout;
     };
-
-    typedef std::unordered_map<uint32_t, UniformSamplerInfo> UniformSamplersMap;
 
     gl::ShaderBitSet mDefaultUniformBlocksDirty;
     gl::ShaderBitSet mSamplerBindingsDirty;
