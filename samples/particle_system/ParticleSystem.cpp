@@ -109,7 +109,7 @@ void main()
         mParticleTime = 1.0f;
 
         std::stringstream smokeStr;
-        smokeStr << angle::GetExecutableDirectory() << "/smoke.tga";
+        smokeStr << angle::GetResourceDirectory() << "/smoke.tga";
 
         TGAImage img;
         if (!LoadTGAImageFromFile(smokeStr.str(), &img))

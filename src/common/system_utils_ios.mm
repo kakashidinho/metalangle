@@ -37,6 +37,11 @@ std::string GetExecutableDirectory()
     return (lastPathSepLoc != std::string::npos) ? executablePath.substr(0, lastPathSepLoc) : "";
 }
 
+std::string GetResourceDirectory()
+{
+    return [[NSBundle mainBundle] resourcePath].UTF8String;
+}
+
 const char *GetSharedLibraryExtension()
 {
     return "framework";
@@ -94,8 +99,9 @@ class IOSLibrary : public Library
     IOSLibrary(const char *libraryName)
     {
         char buffer[4096];
-        int ret = snprintf(buffer, 4096, "%s/Frameworks/%s.framework/%s",
-                           GetExecutableDirectory().c_str(), libraryName, libraryName);
+        int ret = snprintf(buffer, 4096, "%s/%s.framework/%s",
+                           [[NSBundle mainBundle] privateFrameworksPath].UTF8String, libraryName,
+                           libraryName);
         if (ret > 0 && ret < 4096)
         {
             mModule = dlopen(buffer, RTLD_NOW);

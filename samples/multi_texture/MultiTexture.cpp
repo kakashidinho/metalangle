@@ -76,10 +76,10 @@ void main()
 
         // Load the textures
         std::stringstream baseStr;
-        baseStr << angle::GetExecutableDirectory() << "/basemap.tga";
+        baseStr << angle::GetResourceDirectory() << "/basemap.tga";
 
         std::stringstream lightStr;
-        lightStr << angle::GetExecutableDirectory() << "/lightmap.tga";
+        lightStr << angle::GetResourceDirectory() << "/lightmap.tga";
 
         mBaseMapTexID  = loadTexture(baseStr.str());
         mLightMapTexID = loadTexture(lightStr.str());

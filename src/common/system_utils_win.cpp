@@ -80,6 +80,11 @@ std::string GetExecutableDirectory()
     return (lastPathSepLoc != std::string::npos) ? executablePath.substr(0, lastPathSepLoc) : "";
 }
 
+std::string GetResourceDirectory()
+{
+    return GetExecutableDirectory();
+}
+
 const char *GetSharedLibraryExtension()
 {
     return "dll";

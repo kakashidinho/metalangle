@@ -16,6 +16,7 @@ namespace angle
 {
 std::string GetExecutablePath();
 std::string GetExecutableDirectory();
+std::string GetResourceDirectory();
 const char *GetSharedLibraryExtension();
 Optional<std::string> GetCWD();
 bool SetCWD(const char *dirName);

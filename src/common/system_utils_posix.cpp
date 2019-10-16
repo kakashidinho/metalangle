@@ -68,6 +68,11 @@ void ReadEntireFile(int fd, std::string *out)
 }
 }  // anonymous namespace
 
+std::string GetResourceDirectory()
+{
+    return GetExecutableDirectory();
+}
+
 Optional<std::string> GetCWD()
 {
     std::array<char, 4096> pathBuf;
