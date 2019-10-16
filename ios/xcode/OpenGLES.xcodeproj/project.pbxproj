@@ -315,22 +315,8 @@
 		0A60565D23465667005CEA98 /* UtilsMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A6055DA234655FC005CEA98 /* UtilsMtl.mm */; };
 		0A60565E23465667005CEA98 /* VertexArrayMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A6055FC234655FE005CEA98 /* VertexArrayMtl.mm */; };
 		0A60566123465AEE005CEA98 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A60566023465AEE005CEA98 /* Metal.framework */; };
-		0A60569223465E62005CEA98 /* gl2ext.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60566B23465E62005CEA98 /* gl2ext.h */; };
-		0A60569323465E62005CEA98 /* gl2.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60566C23465E62005CEA98 /* gl2.h */; };
-		0A60569423465E62005CEA98 /* gl2ext_angle.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60566D23465E62005CEA98 /* gl2ext_angle.h */; };
-		0A60569623465E63005CEA98 /* gl2platform.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60566F23465E62005CEA98 /* gl2platform.h */; };
-		0A60569723465E63005CEA98 /* angle_gl.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60567023465E62005CEA98 /* angle_gl.h */; };
-		0A60569923465E63005CEA98 /* khrplatform.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60567323465E62005CEA98 /* khrplatform.h */; };
-		0A60569A23465E63005CEA98 /* export.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60567423465E62005CEA98 /* export.h */; };
-		0A60569B23465E63005CEA98 /* egl.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60567623465E62005CEA98 /* egl.h */; };
-		0A60569C23465E63005CEA98 /* eglext.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60567723465E62005CEA98 /* eglext.h */; };
-		0A60569D23465E63005CEA98 /* eglext_angle.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60567823465E62005CEA98 /* eglext_angle.h */; };
-		0A60569E23465E63005CEA98 /* eglplatform.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60567923465E62005CEA98 /* eglplatform.h */; };
-		0A6056A923465E63005CEA98 /* egl.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60568723465E62005CEA98 /* egl.h */; };
-		0A6056AB23465E63005CEA98 /* glext_angle.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60568923465E62005CEA98 /* glext_angle.h */; };
-		0A6056AD23465E63005CEA98 /* glext.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60568B23465E62005CEA98 /* glext.h */; };
-		0A6056AF23465E63005CEA98 /* glplatform.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60568D23465E62005CEA98 /* glplatform.h */; };
-		0A6056B023465E63005CEA98 /* gl.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60568E23465E62005CEA98 /* gl.h */; };
+		0A60569723465E63005CEA98 /* angle_gl.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60567023465E62005CEA98 /* angle_gl.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0A60569A23465E63005CEA98 /* export.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60567423465E62005CEA98 /* export.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		0A605B87234667C5005CEA98 /* validationGL14_autogen.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A6056B9234667BF005CEA98 /* validationGL14_autogen.h */; };
 		0A605B88234667C5005CEA98 /* validationES31.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A6056BA234667BF005CEA98 /* validationES31.h */; };
 		0A605B89234667C5005CEA98 /* validationES3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A6056BB234667BF005CEA98 /* validationES3.cpp */; };
@@ -554,6 +540,26 @@
 		0A60604523466F45005CEA98 /* loadimage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A60603E23466F45005CEA98 /* loadimage.cpp */; };
 		0A60604823466FB8005CEA98 /* libangle_image_util.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A60602A23466F1C005CEA98 /* libangle_image_util.a */; };
 		0A60604923466FB8005CEA98 /* libangle_metal_backend.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A6055C123465399005CEA98 /* libangle_metal_backend.a */; };
+		0A9469EE2356B05A0027DFE1 /* MGLContext.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A9469EC2356B05A0027DFE1 /* MGLContext.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0A9469EF2356B05A0027DFE1 /* MGLContext.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A9469EC2356B05A0027DFE1 /* MGLContext.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0A9469F02356B05A0027DFE1 /* MGLContext.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A9469ED2356B05A0027DFE1 /* MGLContext.mm */; settings = {COMPILER_FLAGS = "-fobjc-arc -fexceptions -fvisibility=default"; }; };
+		0A9469F12356B05A0027DFE1 /* MGLContext.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A9469ED2356B05A0027DFE1 /* MGLContext.mm */; settings = {COMPILER_FLAGS = "-fobjc-arc -fexceptions -fvisibility=default"; }; };
+		0A946A162356B5760027DFE1 /* GLES in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0A9469F22356B13E0027DFE1 /* GLES */; };
+		0A946A172356B5760027DFE1 /* GLES2 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0A9469F52356B13E0027DFE1 /* GLES2 */; };
+		0A946A182356B5760027DFE1 /* KHR in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0A9469F32356B13E0027DFE1 /* KHR */; };
+		0A946A1A2356C82E0027DFE1 /* GLES3 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0A946A192356C8150027DFE1 /* GLES3 */; };
+		0A946A1C2356C82E0027DFE1 /* GLES in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0A9469F22356B13E0027DFE1 /* GLES */; };
+		0A946A1D2356C82E0027DFE1 /* GLES2 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0A9469F52356B13E0027DFE1 /* GLES2 */; };
+		0A946A1E2356C82E0027DFE1 /* KHR in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0A9469F32356B13E0027DFE1 /* KHR */; };
+		0A946A1F2356C8380027DFE1 /* GLES3 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0A946A192356C8150027DFE1 /* GLES3 */; };
+		0A946A232356C8B20027DFE1 /* EGL in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0A9469F42356B13E0027DFE1 /* EGL */; };
+		0A946A242356C8BA0027DFE1 /* EGL in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0A9469F42356B13E0027DFE1 /* EGL */; };
+		0A946A33235710D10027DFE1 /* MGLLayer.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A946A31235710D10027DFE1 /* MGLLayer.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0A946A34235710D10027DFE1 /* MGLLayer.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A946A31235710D10027DFE1 /* MGLLayer.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0A946A35235710D10027DFE1 /* MGLLayer.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A946A32235710D10027DFE1 /* MGLLayer.mm */; settings = {COMPILER_FLAGS = "-fobjc-arc -fexceptions -fvisibility=default"; }; };
+		0A946A36235710D10027DFE1 /* MGLLayer.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A946A32235710D10027DFE1 /* MGLLayer.mm */; settings = {COMPILER_FLAGS = "-fobjc-arc -fexceptions -fvisibility=default"; }; };
+		0A946A43235711F70027DFE1 /* MGLDisplay.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A946A42235711F70027DFE1 /* MGLDisplay.mm */; settings = {COMPILER_FLAGS = "-fobjc-arc -fexceptions -fvisibility=default"; }; };
+		0A946A44235711F70027DFE1 /* MGLDisplay.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A946A42235711F70027DFE1 /* MGLDisplay.mm */; settings = {COMPILER_FLAGS = "-fobjc-arc -fexceptions -fvisibility=default"; }; };
 		0A97E47F23485DDF007CA616 /* MultiTexture.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA2010A234745E800E0B98C /* MultiTexture.cpp */; };
 		0A97E48023485DDF007CA616 /* basemap.tga in Resources */ = {isa = PBXBuildFile; fileRef = 0AA2010B234745E800E0B98C /* basemap.tga */; };
 		0A97E48123485DDF007CA616 /* lightmap.tga in Resources */ = {isa = PBXBuildFile; fileRef = 0AA2010C234745E800E0B98C /* lightmap.tga */; };
@@ -787,21 +793,7 @@
 		0AA2FD512347260000E0B98C /* FramebufferImpl.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A6056D7234667BF005CEA98 /* FramebufferImpl.h */; };
 		0AA2FD522347260000E0B98C /* Observer.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A605A7D234667C2005CEA98 /* Observer.h */; };
 		0AA2FD532347260000E0B98C /* InfoSink.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A605448234651CB005CEA98 /* InfoSink.h */; };
-		0AA2FD542347260000E0B98C /* angle_gl.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60567023465E62005CEA98 /* angle_gl.h */; };
-		0AA2FD552347260000E0B98C /* eglplatform.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60567923465E62005CEA98 /* eglplatform.h */; };
-		0AA2FD562347260000E0B98C /* glext.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60568B23465E62005CEA98 /* glext.h */; };
-		0AA2FD572347260000E0B98C /* gl2.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60566C23465E62005CEA98 /* gl2.h */; };
-		0AA2FD582347260000E0B98C /* gl2ext_angle.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60566D23465E62005CEA98 /* gl2ext_angle.h */; };
-		0AA2FD592347260000E0B98C /* egl.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60567623465E62005CEA98 /* egl.h */; };
-		0AA2FD5A2347260000E0B98C /* gl2ext.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60566B23465E62005CEA98 /* gl2ext.h */; };
-		0AA2FD5B2347260000E0B98C /* egl.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60568723465E62005CEA98 /* egl.h */; };
-		0AA2FD5C2347260000E0B98C /* eglext.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60567723465E62005CEA98 /* eglext.h */; };
-		0AA2FD5D2347260000E0B98C /* khrplatform.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60567323465E62005CEA98 /* khrplatform.h */; };
-		0AA2FD5E2347260000E0B98C /* glext_angle.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60568923465E62005CEA98 /* glext_angle.h */; };
-		0AA2FD5F2347260000E0B98C /* gl2platform.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60566F23465E62005CEA98 /* gl2platform.h */; };
-		0AA2FD602347260000E0B98C /* glplatform.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60568D23465E62005CEA98 /* glplatform.h */; };
-		0AA2FD612347260000E0B98C /* gl.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60568E23465E62005CEA98 /* gl.h */; };
-		0AA2FD622347260000E0B98C /* eglext_angle.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60567823465E62005CEA98 /* eglext_angle.h */; };
+		0AA2FD542347260000E0B98C /* angle_gl.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60567023465E62005CEA98 /* angle_gl.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		0AA2FD652347260000E0B98C /* renderer_utils.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A6056DA234667BF005CEA98 /* renderer_utils.h */; };
 		0AA2FD682347260000E0B98C /* RewriteExpressionsWithShaderStorageBlock.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A605423234651CB005CEA98 /* RewriteExpressionsWithShaderStorageBlock.h */; };
 		0AA2FD692347260000E0B98C /* RecordConstantPrecision.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60540B234651CB005CEA98 /* RecordConstantPrecision.h */; };
@@ -907,7 +899,7 @@
 		0AA2FDDD2347260000E0B98C /* ArrayReturnValueToOutParameter.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A6053D2234651CB005CEA98 /* ArrayReturnValueToOutParameter.h */; };
 		0AA2FDDF2347260000E0B98C /* StreamProducerImpl.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60575F234667C0005CEA98 /* StreamProducerImpl.h */; };
 		0AA2FDE02347260000E0B98C /* RewriteStructSamplers.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A6053F3234651CB005CEA98 /* RewriteStructSamplers.h */; };
-		0AA2FDE12347260000E0B98C /* export.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60567423465E62005CEA98 /* export.h */; };
+		0AA2FDE12347260000E0B98C /* export.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60567423465E62005CEA98 /* export.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		0AA2FDE22347260000E0B98C /* Config.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A605A8D234667C2005CEA98 /* Config.h */; };
 		0AA2FDE42347260000E0B98C /* InitializeDll.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A6053AC234651CB005CEA98 /* InitializeDll.h */; };
 		0AA2FDE72347260000E0B98C /* copyvertex.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A605722234667BF005CEA98 /* copyvertex.h */; };
@@ -1313,6 +1305,18 @@
 		0AA2FFC9234727A400E0B98C /* BufferMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A6055F4234655FD005CEA98 /* BufferMtl.mm */; };
 		0AA2FFCB234727A400E0B98C /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A60566023465AEE005CEA98 /* Metal.framework */; };
 		0AA2FFD3234727EF00E0B98C /* libangle_metal_backend_ios_13.0.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AA2FFD0234727A400E0B98C /* libangle_metal_backend_ios_13.0.a */; };
+		0AAF40862354BDFF000E3CC8 /* MGLKView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AAF40852354BDFF000E3CC8 /* MGLKView.mm */; settings = {COMPILER_FLAGS = "-fobjc-arc -fexceptions -fvisibility=default"; }; };
+		0AAF40872354BDFF000E3CC8 /* MGLKView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AAF40852354BDFF000E3CC8 /* MGLKView.mm */; settings = {COMPILER_FLAGS = "-fobjc-arc -fexceptions -fvisibility=default"; }; };
+		0AAF40892354BE35000E3CC8 /* MGLKView.h in Headers */ = {isa = PBXBuildFile; fileRef = 0AAF40882354BE35000E3CC8 /* MGLKView.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0AAF408A2354BE35000E3CC8 /* MGLKView.h in Headers */ = {isa = PBXBuildFile; fileRef = 0AAF40882354BE35000E3CC8 /* MGLKView.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0AAF41102354CE9B000E3CC8 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AA2015023474D9700E0B98C /* UIKit.framework */; };
+		0AAF41112354CEA7000E3CC8 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AA2015023474D9700E0B98C /* UIKit.framework */; };
+		0AAF41132354D7CE000E3CC8 /* MGLKit.h in Headers */ = {isa = PBXBuildFile; fileRef = 0AAF41122354D7CE000E3CC8 /* MGLKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0AAF41142354D7CE000E3CC8 /* MGLKit.h in Headers */ = {isa = PBXBuildFile; fileRef = 0AAF41122354D7CE000E3CC8 /* MGLKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0AAF41172354EC0F000E3CC8 /* MGLKViewController.h in Headers */ = {isa = PBXBuildFile; fileRef = 0AAF41152354EC0F000E3CC8 /* MGLKViewController.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0AAF41182354EC0F000E3CC8 /* MGLKViewController.h in Headers */ = {isa = PBXBuildFile; fileRef = 0AAF41152354EC0F000E3CC8 /* MGLKViewController.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0AAF41192354EC0F000E3CC8 /* MGLKViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AAF41162354EC0F000E3CC8 /* MGLKViewController.mm */; settings = {COMPILER_FLAGS = "-fobjc-arc -fexceptions -fvisibility=default"; }; };
+		0AAF411A2354EC0F000E3CC8 /* MGLKViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AAF41162354EC0F000E3CC8 /* MGLKViewController.mm */; settings = {COMPILER_FLAGS = "-fobjc-arc -fexceptions -fvisibility=default"; }; };
 		0ABF4074235340FE0051488C /* sample_util.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A97E493234867E9007CA616 /* sample_util.framework */; };
 		0ABF4077235340FE0051488C /* MetalANGLE.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0A60525323464F51005CEA98 /* MetalANGLE.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		0ABF4078235340FE0051488C /* sample_util.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0A97E493234867E9007CA616 /* sample_util.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -1468,9 +1472,14 @@
 		0A60602523466B39005CEA98 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 7;
+			dstPath = Headers;
+			dstSubfolderSpec = 1;
 			files = (
+				0A946A232356C8B20027DFE1 /* EGL in CopyFiles */,
+				0A946A162356B5760027DFE1 /* GLES in CopyFiles */,
+				0A946A172356B5760027DFE1 /* GLES2 in CopyFiles */,
+				0A946A1F2356C8380027DFE1 /* GLES3 in CopyFiles */,
+				0A946A182356B5760027DFE1 /* KHR in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1610,9 +1619,14 @@
 		0AA2FFA72347260000E0B98C /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 7;
+			dstPath = Headers;
+			dstSubfolderSpec = 1;
 			files = (
+				0A946A242356C8BA0027DFE1 /* EGL in CopyFiles */,
+				0A946A1A2356C82E0027DFE1 /* GLES3 in CopyFiles */,
+				0A946A1C2356C82E0027DFE1 /* GLES in CopyFiles */,
+				0A946A1D2356C82E0027DFE1 /* GLES2 in CopyFiles */,
+				0A946A1E2356C82E0027DFE1 /* KHR in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1648,6 +1662,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0A28CCD0235717C30081BB84 /* MGLContext+Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MGLContext+Private.h"; sourceTree = "<group>"; };
+		0A28CCD1235719CC0081BB84 /* MGLLayer+Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MGLLayer+Private.h"; sourceTree = "<group>"; };
 		0A60525323464F51005CEA98 /* MetalANGLE.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MetalANGLE.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A60525723464F51005CEA98 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = SOURCE_ROOT; };
 		0A6052602346502A005CEA98 /* libGLESv2_autogen.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = libGLESv2_autogen.cpp; sourceTree = "<group>"; };
@@ -1970,22 +1986,8 @@
 		0A605608234655FF005CEA98 /* mtl_format_utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mtl_format_utils.h; path = ../../src/libANGLE/renderer/metal/mtl_format_utils.h; sourceTree = "<group>"; };
 		0A605609234655FF005CEA98 /* DisplayMtl.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = DisplayMtl.mm; path = ../../src/libANGLE/renderer/metal/DisplayMtl.mm; sourceTree = "<group>"; };
 		0A60566023465AEE005CEA98 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
-		0A60566B23465E62005CEA98 /* gl2ext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gl2ext.h; sourceTree = "<group>"; };
-		0A60566C23465E62005CEA98 /* gl2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gl2.h; sourceTree = "<group>"; };
-		0A60566D23465E62005CEA98 /* gl2ext_angle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gl2ext_angle.h; sourceTree = "<group>"; };
-		0A60566F23465E62005CEA98 /* gl2platform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gl2platform.h; sourceTree = "<group>"; };
 		0A60567023465E62005CEA98 /* angle_gl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = angle_gl.h; path = ../../include/angle_gl.h; sourceTree = "<group>"; };
-		0A60567323465E62005CEA98 /* khrplatform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = khrplatform.h; sourceTree = "<group>"; };
 		0A60567423465E62005CEA98 /* export.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = export.h; path = ../../include/export.h; sourceTree = "<group>"; };
-		0A60567623465E62005CEA98 /* egl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = egl.h; sourceTree = "<group>"; };
-		0A60567723465E62005CEA98 /* eglext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = eglext.h; sourceTree = "<group>"; };
-		0A60567823465E62005CEA98 /* eglext_angle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = eglext_angle.h; sourceTree = "<group>"; };
-		0A60567923465E62005CEA98 /* eglplatform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = eglplatform.h; sourceTree = "<group>"; };
-		0A60568723465E62005CEA98 /* egl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = egl.h; sourceTree = "<group>"; };
-		0A60568923465E62005CEA98 /* glext_angle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = glext_angle.h; sourceTree = "<group>"; };
-		0A60568B23465E62005CEA98 /* glext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = glext.h; sourceTree = "<group>"; };
-		0A60568D23465E62005CEA98 /* glplatform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = glplatform.h; sourceTree = "<group>"; };
-		0A60568E23465E62005CEA98 /* gl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gl.h; sourceTree = "<group>"; };
 		0A6056B9234667BF005CEA98 /* validationGL14_autogen.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = validationGL14_autogen.h; sourceTree = "<group>"; };
 		0A6056BA234667BF005CEA98 /* validationES31.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = validationES31.h; sourceTree = "<group>"; };
 		0A6056BB234667BF005CEA98 /* validationES3.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = validationES3.cpp; sourceTree = "<group>"; };
@@ -2239,6 +2241,18 @@
 		0A60603C23466F45005CEA98 /* loadimage_etc.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = loadimage_etc.cpp; path = ../../src/image_util/loadimage_etc.cpp; sourceTree = "<group>"; };
 		0A60603D23466F45005CEA98 /* copyimage.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = copyimage.cpp; path = ../../src/image_util/copyimage.cpp; sourceTree = "<group>"; };
 		0A60603E23466F45005CEA98 /* loadimage.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = loadimage.cpp; path = ../../src/image_util/loadimage.cpp; sourceTree = "<group>"; };
+		0A9469EC2356B05A0027DFE1 /* MGLContext.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MGLContext.h; sourceTree = "<group>"; };
+		0A9469ED2356B05A0027DFE1 /* MGLContext.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = MGLContext.mm; sourceTree = "<group>"; };
+		0A9469F22356B13E0027DFE1 /* GLES */ = {isa = PBXFileReference; lastKnownFileType = folder; name = GLES; path = ../../include/GLES; sourceTree = "<group>"; };
+		0A9469F32356B13E0027DFE1 /* KHR */ = {isa = PBXFileReference; lastKnownFileType = folder; name = KHR; path = ../../include/KHR; sourceTree = "<group>"; };
+		0A9469F42356B13E0027DFE1 /* EGL */ = {isa = PBXFileReference; lastKnownFileType = folder; name = EGL; path = ../../include/EGL; sourceTree = "<group>"; };
+		0A9469F52356B13E0027DFE1 /* GLES2 */ = {isa = PBXFileReference; lastKnownFileType = folder; name = GLES2; path = ../../include/GLES2; sourceTree = "<group>"; };
+		0A946A192356C8150027DFE1 /* GLES3 */ = {isa = PBXFileReference; lastKnownFileType = folder; name = GLES3; path = ../../include/GLES3; sourceTree = "<group>"; };
+		0A946A262356F0BD0027DFE1 /* samples.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; name = samples.entitlements; path = samples/samples.entitlements; sourceTree = "<group>"; };
+		0A946A31235710D10027DFE1 /* MGLLayer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MGLLayer.h; sourceTree = "<group>"; };
+		0A946A32235710D10027DFE1 /* MGLLayer.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = MGLLayer.mm; sourceTree = "<group>"; };
+		0A946A41235711DA0027DFE1 /* MGLDisplay.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MGLDisplay.h; sourceTree = "<group>"; };
+		0A946A42235711F70027DFE1 /* MGLDisplay.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = MGLDisplay.mm; sourceTree = "<group>"; };
 		0A97E46623485DC7007CA616 /* multi_texture.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = multi_texture.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A97E48C23485F69007CA616 /* ios_samples_env_setup.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = ios_samples_env_setup.mm; path = samples/ios_samples_env_setup.mm; sourceTree = "<group>"; };
 		0A97E493234867E9007CA616 /* sample_util.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = sample_util.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -2552,6 +2566,11 @@
 		0AA2FFFD234734F400E0B98C /* keyboard.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = keyboard.h; path = ../../util/keyboard.h; sourceTree = "<group>"; };
 		0AA2FFFE234734F400E0B98C /* EGLWindow.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = EGLWindow.cpp; path = ../../util/EGLWindow.cpp; sourceTree = "<group>"; };
 		0AA2FFFF234734F400E0B98C /* random_utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = random_utils.h; path = ../../util/random_utils.h; sourceTree = "<group>"; };
+		0AAF40852354BDFF000E3CC8 /* MGLKView.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = MGLKView.mm; sourceTree = "<group>"; };
+		0AAF40882354BE35000E3CC8 /* MGLKView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MGLKView.h; sourceTree = "<group>"; };
+		0AAF41122354D7CE000E3CC8 /* MGLKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MGLKit.h; sourceTree = "<group>"; };
+		0AAF41152354EC0F000E3CC8 /* MGLKViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MGLKViewController.h; sourceTree = "<group>"; };
+		0AAF41162354EC0F000E3CC8 /* MGLKViewController.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = MGLKViewController.mm; sourceTree = "<group>"; };
 		0ABF407C235340FE0051488C /* tri_fan_microbench.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = tri_fan_microbench.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0ABF407F235341360051488C /* TriFanMicroBench.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TriFanMicroBench.cpp; sourceTree = "<group>"; };
 		0AC2A5202346714A0045B949 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -2573,6 +2592,7 @@
 				0AC2A524234671670045B949 /* Metal.framework in Frameworks */,
 				0AC2A5222346714A0045B949 /* Foundation.framework in Frameworks */,
 				0AC2A5232346714A0045B949 /* CoreFoundation.framework in Frameworks */,
+				0AAF41102354CE9B000E3CC8 /* UIKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2725,6 +2745,7 @@
 				0AA2FFA22347260000E0B98C /* Foundation.framework in Frameworks */,
 				0AA2FFA32347260000E0B98C /* CoreFoundation.framework in Frameworks */,
 				0AA2FFAE2347273200E0B98C /* QuartzCore.framework in Frameworks */,
+				0AAF41112354CEA7000E3CC8 /* UIKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2757,6 +2778,7 @@
 		0A60524923464F51005CEA98 = {
 			isa = PBXGroup;
 			children = (
+				0AAF40842354BD80000E3CC8 /* MGLKit */,
 				0A97E5A8234878F0007CA616 /* gen */,
 				0AA201032347456300E0B98C /* third_party */,
 				0AA20104234745A100E0B98C /* samples */,
@@ -3253,60 +3275,15 @@
 		0A60566523465E3D005CEA98 /* include */ = {
 			isa = PBXGroup;
 			children = (
+				0A946A192356C8150027DFE1 /* GLES3 */,
+				0A9469F42356B13E0027DFE1 /* EGL */,
+				0A9469F22356B13E0027DFE1 /* GLES */,
+				0A9469F52356B13E0027DFE1 /* GLES2 */,
+				0A9469F32356B13E0027DFE1 /* KHR */,
 				0A60567023465E62005CEA98 /* angle_gl.h */,
-				0A60567523465E62005CEA98 /* EGL */,
 				0A60567423465E62005CEA98 /* export.h */,
-				0A60568623465E62005CEA98 /* GLES */,
-				0A60566923465E62005CEA98 /* GLES2 */,
-				0A60567123465E62005CEA98 /* KHR */,
 			);
 			name = include;
-			sourceTree = "<group>";
-		};
-		0A60566923465E62005CEA98 /* GLES2 */ = {
-			isa = PBXGroup;
-			children = (
-				0A60566B23465E62005CEA98 /* gl2ext.h */,
-				0A60566C23465E62005CEA98 /* gl2.h */,
-				0A60566D23465E62005CEA98 /* gl2ext_angle.h */,
-				0A60566F23465E62005CEA98 /* gl2platform.h */,
-			);
-			name = GLES2;
-			path = ../../include/GLES2;
-			sourceTree = "<group>";
-		};
-		0A60567123465E62005CEA98 /* KHR */ = {
-			isa = PBXGroup;
-			children = (
-				0A60567323465E62005CEA98 /* khrplatform.h */,
-			);
-			name = KHR;
-			path = ../../include/KHR;
-			sourceTree = "<group>";
-		};
-		0A60567523465E62005CEA98 /* EGL */ = {
-			isa = PBXGroup;
-			children = (
-				0A60567623465E62005CEA98 /* egl.h */,
-				0A60567723465E62005CEA98 /* eglext.h */,
-				0A60567823465E62005CEA98 /* eglext_angle.h */,
-				0A60567923465E62005CEA98 /* eglplatform.h */,
-			);
-			name = EGL;
-			path = ../../include/EGL;
-			sourceTree = "<group>";
-		};
-		0A60568623465E62005CEA98 /* GLES */ = {
-			isa = PBXGroup;
-			children = (
-				0A60568723465E62005CEA98 /* egl.h */,
-				0A60568923465E62005CEA98 /* glext_angle.h */,
-				0A60568B23465E62005CEA98 /* glext.h */,
-				0A60568D23465E62005CEA98 /* glplatform.h */,
-				0A60568E23465E62005CEA98 /* gl.h */,
-			);
-			name = GLES;
-			path = ../../include/GLES;
 			sourceTree = "<group>";
 		};
 		0A6056B6234667BF005CEA98 /* libANGLE */ = {
@@ -3890,6 +3867,7 @@
 		0AA20104234745A100E0B98C /* samples */ = {
 			isa = PBXGroup;
 			children = (
+				0A946A262356F0BD0027DFE1 /* samples.entitlements */,
 				0A97E48C23485F69007CA616 /* ios_samples_env_setup.mm */,
 				0AA2012D2347465200E0B98C /* Info.plist */,
 				0A97E56023487467007CA616 /* mip_map_2d */,
@@ -4260,6 +4238,26 @@
 			name = angle_util;
 			sourceTree = "<group>";
 		};
+		0AAF40842354BD80000E3CC8 /* MGLKit */ = {
+			isa = PBXGroup;
+			children = (
+				0A9469EC2356B05A0027DFE1 /* MGLContext.h */,
+				0A9469ED2356B05A0027DFE1 /* MGLContext.mm */,
+				0A28CCD0235717C30081BB84 /* MGLContext+Private.h */,
+				0A946A41235711DA0027DFE1 /* MGLDisplay.h */,
+				0A946A42235711F70027DFE1 /* MGLDisplay.mm */,
+				0AAF41122354D7CE000E3CC8 /* MGLKit.h */,
+				0AAF40882354BE35000E3CC8 /* MGLKView.h */,
+				0AAF40852354BDFF000E3CC8 /* MGLKView.mm */,
+				0AAF41152354EC0F000E3CC8 /* MGLKViewController.h */,
+				0AAF41162354EC0F000E3CC8 /* MGLKViewController.mm */,
+				0A946A31235710D10027DFE1 /* MGLLayer.h */,
+				0A946A32235710D10027DFE1 /* MGLLayer.mm */,
+				0A28CCD1235719CC0081BB84 /* MGLLayer+Private.h */,
+			);
+			path = MGLKit;
+			sourceTree = "<group>";
+		};
 		0ABF407E235341360051488C /* tri_fan_microbench */ = {
 			isa = PBXGroup;
 			children = (
@@ -4289,20 +4287,6 @@
 				0A605F2B234667CC005CEA98 /* Observer.h in Headers */,
 				0A605572234651CC005CEA98 /* InfoSink.h in Headers */,
 				0A60569723465E63005CEA98 /* angle_gl.h in Headers */,
-				0A60569E23465E63005CEA98 /* eglplatform.h in Headers */,
-				0A6056AD23465E63005CEA98 /* glext.h in Headers */,
-				0A60569323465E62005CEA98 /* gl2.h in Headers */,
-				0A60569423465E62005CEA98 /* gl2ext_angle.h in Headers */,
-				0A60569B23465E63005CEA98 /* egl.h in Headers */,
-				0A60569223465E62005CEA98 /* gl2ext.h in Headers */,
-				0A6056A923465E63005CEA98 /* egl.h in Headers */,
-				0A60569C23465E63005CEA98 /* eglext.h in Headers */,
-				0A60569923465E63005CEA98 /* khrplatform.h in Headers */,
-				0A6056AB23465E63005CEA98 /* glext_angle.h in Headers */,
-				0A60569623465E63005CEA98 /* gl2platform.h in Headers */,
-				0A6056AF23465E63005CEA98 /* glplatform.h in Headers */,
-				0A6056B023465E63005CEA98 /* gl.h in Headers */,
-				0A60569D23465E63005CEA98 /* eglext_angle.h in Headers */,
 				0A605BA7234667C5005CEA98 /* renderer_utils.h in Headers */,
 				0A9B842D234CD690008BF16F /* OverlayWidgets.h in Headers */,
 				0A60554D234651CC005CEA98 /* RewriteExpressionsWithShaderStorageBlock.h in Headers */,
@@ -4321,6 +4305,7 @@
 				0A6054D8234651CC005CEA98 /* VariablePacker.h in Headers */,
 				0A605F26234667CC005CEA98 /* Caps.h in Headers */,
 				0A605598234651CC005CEA98 /* ExpressionParser.h in Headers */,
+				0A946A33235710D10027DFE1 /* MGLLayer.h in Headers */,
 				0A60528F2346502A005CEA98 /* entry_points_gles_3_1_autogen.h in Headers */,
 				0A605F96234667CD005CEA98 /* validationGL2_autogen.h in Headers */,
 				0A605BA0234667C5005CEA98 /* DisplayImpl.h in Headers */,
@@ -4386,11 +4371,13 @@
 				0A605F44234667CC005CEA98 /* Context_gl_1_1_autogen.h in Headers */,
 				0A605F74234667CD005CEA98 /* TransformFeedback.h in Headers */,
 				0A605FD9234667CE005CEA98 /* validationESEXT.h in Headers */,
+				0AAF40892354BE35000E3CC8 /* MGLKView.h in Headers */,
 				0A605590234651CC005CEA98 /* ValidateOutputs.h in Headers */,
 				0A605503234651CC005CEA98 /* RewriteUnaryMinusOperatorInt.h in Headers */,
 				0A605FA0234667CD005CEA98 /* Context_gles_2_0_autogen.h in Headers */,
 				0A6054EC234651CC005CEA98 /* SymbolTable.h in Headers */,
 				0A605BF8234667C5005CEA98 /* DeviceImpl.h in Headers */,
+				0AAF41172354EC0F000E3CC8 /* MGLKViewController.h in Headers */,
 				0A60528D2346502A005CEA98 /* entry_points_egl_ext.h in Headers */,
 				0A605BA2234667C5005CEA98 /* BufferImpl_mock.h in Headers */,
 				0A605588234651CC005CEA98 /* TranslatorMetal.h in Headers */,
@@ -4428,6 +4415,7 @@
 				0A6054E2234651CC005CEA98 /* ShaderStorageBlockFunctionHLSL.h in Headers */,
 				0A60555C234651CC005CEA98 /* ValidateGlobalInitializer.h in Headers */,
 				0A605FAE234667CD005CEA98 /* formatutils.h in Headers */,
+				0A9469EE2356B05A0027DFE1 /* MGLContext.h in Headers */,
 				0A60528C2346502A005CEA98 /* resource.h in Headers */,
 				0A605BFC234667C5005CEA98 /* VertexArrayImpl.h in Headers */,
 				0A60557A234651CC005CEA98 /* Diagnostics.h in Headers */,
@@ -4532,6 +4520,7 @@
 				0A6054A3234651CB005CEA98 /* Visit.h in Headers */,
 				0A6054A9234651CB005CEA98 /* BuiltIn_autogen.h in Headers */,
 				0A605549234651CC005CEA98 /* BreakVariableAliasingInInnerLoops.h in Headers */,
+				0AAF41132354D7CE000E3CC8 /* MGLKit.h in Headers */,
 				0A605507234651CC005CEA98 /* UnfoldShortCircuitAST.h in Headers */,
 				0A605FE5234667CE005CEA98 /* AttributeMap.h in Headers */,
 				0A605B8B234667C5005CEA98 /* Semaphore.h in Headers */,
@@ -4610,20 +4599,6 @@
 				0AA2FD522347260000E0B98C /* Observer.h in Headers */,
 				0AA2FD532347260000E0B98C /* InfoSink.h in Headers */,
 				0AA2FD542347260000E0B98C /* angle_gl.h in Headers */,
-				0AA2FD552347260000E0B98C /* eglplatform.h in Headers */,
-				0AA2FD562347260000E0B98C /* glext.h in Headers */,
-				0AA2FD572347260000E0B98C /* gl2.h in Headers */,
-				0AA2FD582347260000E0B98C /* gl2ext_angle.h in Headers */,
-				0AA2FD592347260000E0B98C /* egl.h in Headers */,
-				0AA2FD5A2347260000E0B98C /* gl2ext.h in Headers */,
-				0AA2FD5B2347260000E0B98C /* egl.h in Headers */,
-				0AA2FD5C2347260000E0B98C /* eglext.h in Headers */,
-				0AA2FD5D2347260000E0B98C /* khrplatform.h in Headers */,
-				0AA2FD5E2347260000E0B98C /* glext_angle.h in Headers */,
-				0AA2FD5F2347260000E0B98C /* gl2platform.h in Headers */,
-				0AA2FD602347260000E0B98C /* glplatform.h in Headers */,
-				0AA2FD612347260000E0B98C /* gl.h in Headers */,
-				0AA2FD622347260000E0B98C /* eglext_angle.h in Headers */,
 				0AA2FD652347260000E0B98C /* renderer_utils.h in Headers */,
 				0A9B842E234CD690008BF16F /* OverlayWidgets.h in Headers */,
 				0AA2FD682347260000E0B98C /* RewriteExpressionsWithShaderStorageBlock.h in Headers */,
@@ -4642,6 +4617,7 @@
 				0AA2FD772347260000E0B98C /* VariablePacker.h in Headers */,
 				0AA2FD792347260000E0B98C /* Caps.h in Headers */,
 				0AA2FD7A2347260000E0B98C /* ExpressionParser.h in Headers */,
+				0A946A34235710D10027DFE1 /* MGLLayer.h in Headers */,
 				0AA2FD7B2347260000E0B98C /* entry_points_gles_3_1_autogen.h in Headers */,
 				0AA2FD7D2347260000E0B98C /* validationGL2_autogen.h in Headers */,
 				0AA2FD7E2347260000E0B98C /* DisplayImpl.h in Headers */,
@@ -4707,11 +4683,13 @@
 				0AA2FDBF2347260000E0B98C /* Context_gl_1_1_autogen.h in Headers */,
 				0AA2FDC02347260000E0B98C /* TransformFeedback.h in Headers */,
 				0AA2FDC12347260000E0B98C /* validationESEXT.h in Headers */,
+				0AAF408A2354BE35000E3CC8 /* MGLKView.h in Headers */,
 				0AA2FDC32347260000E0B98C /* ValidateOutputs.h in Headers */,
 				0AA2FDC52347260000E0B98C /* RewriteUnaryMinusOperatorInt.h in Headers */,
 				0AA2FDC62347260000E0B98C /* Context_gles_2_0_autogen.h in Headers */,
 				0AA2FDC72347260000E0B98C /* SymbolTable.h in Headers */,
 				0AA2FDC82347260000E0B98C /* DeviceImpl.h in Headers */,
+				0AAF41182354EC0F000E3CC8 /* MGLKViewController.h in Headers */,
 				0AA2FDC92347260000E0B98C /* entry_points_egl_ext.h in Headers */,
 				0AA2FDCB2347260000E0B98C /* BufferImpl_mock.h in Headers */,
 				0AA2FDCD2347260000E0B98C /* TranslatorMetal.h in Headers */,
@@ -4749,6 +4727,7 @@
 				0AA2FDEF2347260000E0B98C /* ShaderStorageBlockFunctionHLSL.h in Headers */,
 				0AA2FDF02347260000E0B98C /* ValidateGlobalInitializer.h in Headers */,
 				0AA2FDF12347260000E0B98C /* formatutils.h in Headers */,
+				0A9469EF2356B05A0027DFE1 /* MGLContext.h in Headers */,
 				0AA2FDF32347260000E0B98C /* resource.h in Headers */,
 				0AA2FDF42347260000E0B98C /* VertexArrayImpl.h in Headers */,
 				0AA2FDF52347260000E0B98C /* Diagnostics.h in Headers */,
@@ -4853,6 +4832,7 @@
 				0AA2FE612347260000E0B98C /* Visit.h in Headers */,
 				0AA2FE622347260000E0B98C /* BuiltIn_autogen.h in Headers */,
 				0AA2FE632347260000E0B98C /* BreakVariableAliasingInInnerLoops.h in Headers */,
+				0AAF41142354D7CE000E3CC8 /* MGLKit.h in Headers */,
 				0AA2FE642347260000E0B98C /* UnfoldShortCircuitAST.h in Headers */,
 				0AA2FE652347260000E0B98C /* AttributeMap.h in Headers */,
 				0AA2FE662347260000E0B98C /* Semaphore.h in Headers */,
@@ -5653,9 +5633,11 @@
 				0A605FA7234667CD005CEA98 /* validationGL31.cpp in Sources */,
 				0A60555D234651CC005CEA98 /* OutputVulkanGLSL.cpp in Sources */,
 				0A605530234651CC005CEA98 /* SimplifyLoopConditions.cpp in Sources */,
+				0A946A43235711F70027DFE1 /* MGLDisplay.mm in Sources */,
 				0A605B9E234667C5005CEA98 /* Caps.cpp in Sources */,
 				0A605551234651CC005CEA98 /* AddAndTrueToLoopCondition.cpp in Sources */,
 				0A6055B0234651CC005CEA98 /* ExpressionParser.cpp in Sources */,
+				0AAF41192354EC0F000E3CC8 /* MGLKViewController.mm in Sources */,
 				0A605BF2234667C5005CEA98 /* ContextImpl.cpp in Sources */,
 				0A605F84234667CD005CEA98 /* ProgramLinkedResources.cpp in Sources */,
 				0A605F56234667CD005CEA98 /* VertexArray.cpp in Sources */,
@@ -5664,6 +5646,7 @@
 				0A605F64234667CD005CEA98 /* Observer.cpp in Sources */,
 				0A605F63234667CD005CEA98 /* State.cpp in Sources */,
 				0A605B98234667C5005CEA98 /* Program.cpp in Sources */,
+				0A9469F02356B05A0027DFE1 /* MGLContext.mm in Sources */,
 				0A60553E234651CC005CEA98 /* BreakVariableAliasingInInnerLoops.cpp in Sources */,
 				0A9B845A234CD97B008BF16F /* Framebuffer.cpp in Sources */,
 				0A6054FF234651CC005CEA98 /* ScalarizeVecAndMatConstructorArgs.cpp in Sources */,
@@ -5751,7 +5734,9 @@
 				0A60550A234651CC005CEA98 /* ClampFragDepth.cpp in Sources */,
 				0A6054C8234651CB005CEA98 /* OutputGLSLBase.cpp in Sources */,
 				0A605BAB234667C5005CEA98 /* load_functions_table_autogen.cpp in Sources */,
+				0AAF40862354BDFF000E3CC8 /* MGLKView.mm in Sources */,
 				0A6054A7234651CB005CEA98 /* FindSymbolNode.cpp in Sources */,
+				0A946A35235710D10027DFE1 /* MGLLayer.mm in Sources */,
 				0A605FAF234667CD005CEA98 /* validationES.cpp in Sources */,
 				0A6054DE234651CC005CEA98 /* ValidateSwitch.cpp in Sources */,
 				0A9B8418234CD587008BF16F /* EmulateMultiDrawShaderBuiltins.cpp in Sources */,
@@ -6120,9 +6105,11 @@
 				0AA2FF262347260000E0B98C /* validationGL31.cpp in Sources */,
 				0AA2FF272347260000E0B98C /* OutputVulkanGLSL.cpp in Sources */,
 				0AA2FF282347260000E0B98C /* SimplifyLoopConditions.cpp in Sources */,
+				0A946A44235711F70027DFE1 /* MGLDisplay.mm in Sources */,
 				0AA2FF292347260000E0B98C /* Caps.cpp in Sources */,
 				0AA2FF2C2347260000E0B98C /* AddAndTrueToLoopCondition.cpp in Sources */,
 				0AA2FF2D2347260000E0B98C /* ExpressionParser.cpp in Sources */,
+				0AAF411A2354EC0F000E3CC8 /* MGLKViewController.mm in Sources */,
 				0AA2FF2E2347260000E0B98C /* ContextImpl.cpp in Sources */,
 				0AA2FF2F2347260000E0B98C /* ProgramLinkedResources.cpp in Sources */,
 				0AA2FF302347260000E0B98C /* VertexArray.cpp in Sources */,
@@ -6131,6 +6118,7 @@
 				0AA2FF322347260000E0B98C /* Observer.cpp in Sources */,
 				0AA2FF332347260000E0B98C /* State.cpp in Sources */,
 				0AA2FF342347260000E0B98C /* Program.cpp in Sources */,
+				0A9469F12356B05A0027DFE1 /* MGLContext.mm in Sources */,
 				0AA2FF352347260000E0B98C /* BreakVariableAliasingInInnerLoops.cpp in Sources */,
 				0A9B8456234CD97A008BF16F /* Framebuffer.cpp in Sources */,
 				0AA2FF362347260000E0B98C /* ScalarizeVecAndMatConstructorArgs.cpp in Sources */,
@@ -6218,7 +6206,9 @@
 				0AA2FF922347260000E0B98C /* ClampFragDepth.cpp in Sources */,
 				0AA2FF932347260000E0B98C /* OutputGLSLBase.cpp in Sources */,
 				0AA2FF942347260000E0B98C /* load_functions_table_autogen.cpp in Sources */,
+				0AAF40872354BDFF000E3CC8 /* MGLKView.mm in Sources */,
 				0AA2FF952347260000E0B98C /* FindSymbolNode.cpp in Sources */,
+				0A946A36235710D10027DFE1 /* MGLLayer.mm in Sources */,
 				0AA2FF962347260000E0B98C /* validationES.cpp in Sources */,
 				0AA2FF972347260000E0B98C /* ValidateSwitch.cpp in Sources */,
 				0A9B8419234CD587008BF16F /* EmulateMultiDrawShaderBuiltins.cpp in Sources */,
@@ -6683,7 +6673,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = samples/samples.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					ANGLE_USE_UTIL_LOADER,
 					"GL_GLES_PROTOTYPES=0",
@@ -6698,6 +6690,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.hqgame.angle.samples.multi-texture";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -6706,7 +6699,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = samples/samples.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					ANGLE_USE_UTIL_LOADER,
 					"GL_GLES_PROTOTYPES=0",
@@ -6721,6 +6716,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.hqgame.angle.samples.multi-texture";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
@@ -6791,14 +6787,16 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = samples/samples.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					ANGLE_USE_UTIL_LOADER,
 					"GL_GLES_PROTOTYPES=0",
 					"EGL_EGL_PROTOTYPES=0",
 					"${inherited}",
 				);
-				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_FILE = samples/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -6806,6 +6804,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.hqgame.angle.samples.particle-system";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -6814,14 +6813,16 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = samples/samples.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					ANGLE_USE_UTIL_LOADER,
 					"GL_GLES_PROTOTYPES=0",
 					"EGL_EGL_PROTOTYPES=0",
 					"${inherited}",
 				);
-				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_FILE = samples/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -6829,6 +6830,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.hqgame.angle.samples.particle-system";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
@@ -6837,14 +6839,16 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = samples/samples.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					ANGLE_USE_UTIL_LOADER,
 					"GL_GLES_PROTOTYPES=0",
 					"EGL_EGL_PROTOTYPES=0",
 					"${inherited}",
 				);
-				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_FILE = samples/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -6852,6 +6856,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.hqgame.angle.samples.simple-texture-2d";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -6860,14 +6865,16 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = samples/samples.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					ANGLE_USE_UTIL_LOADER,
 					"GL_GLES_PROTOTYPES=0",
 					"EGL_EGL_PROTOTYPES=0",
 					"${inherited}",
 				);
-				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_FILE = samples/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -6875,6 +6882,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.hqgame.angle.samples.simple-texture-2d";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
@@ -6883,14 +6891,16 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = samples/samples.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					ANGLE_USE_UTIL_LOADER,
 					"GL_GLES_PROTOTYPES=0",
 					"EGL_EGL_PROTOTYPES=0",
 					"${inherited}",
 				);
-				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_FILE = samples/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -6898,6 +6908,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.hqgame.angle.samples.simple-texture-cubemap";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -6906,14 +6917,16 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = samples/samples.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					ANGLE_USE_UTIL_LOADER,
 					"GL_GLES_PROTOTYPES=0",
 					"EGL_EGL_PROTOTYPES=0",
 					"${inherited}",
 				);
-				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_FILE = samples/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -6921,6 +6934,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.hqgame.angle.samples.simple-texture-cubemap";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
@@ -6929,14 +6943,16 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = samples/samples.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					ANGLE_USE_UTIL_LOADER,
 					"GL_GLES_PROTOTYPES=0",
 					"EGL_EGL_PROTOTYPES=0",
 					"${inherited}",
 				);
-				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_FILE = samples/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -6944,6 +6960,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.hqgame.angle.samples.simple-vertex-shader";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -6952,14 +6969,16 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = samples/samples.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					ANGLE_USE_UTIL_LOADER,
 					"GL_GLES_PROTOTYPES=0",
 					"EGL_EGL_PROTOTYPES=0",
 					"${inherited}",
 				);
-				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_FILE = samples/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -6967,6 +6986,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.hqgame.angle.samples.simple-vertex-shader";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
@@ -6975,14 +6995,16 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = samples/samples.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					ANGLE_USE_UTIL_LOADER,
 					"GL_GLES_PROTOTYPES=0",
 					"EGL_EGL_PROTOTYPES=0",
 					"${inherited}",
 				);
-				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_FILE = samples/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -6990,6 +7012,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.hqgame.angle.samples.texture-wrap";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -6998,14 +7021,16 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = samples/samples.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					ANGLE_USE_UTIL_LOADER,
 					"GL_GLES_PROTOTYPES=0",
 					"EGL_EGL_PROTOTYPES=0",
 					"${inherited}",
 				);
-				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_FILE = samples/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -7013,6 +7038,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.hqgame.angle.samples.texture-wrap";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
@@ -7021,14 +7047,16 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = samples/samples.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					ANGLE_USE_UTIL_LOADER,
 					"GL_GLES_PROTOTYPES=0",
 					"EGL_EGL_PROTOTYPES=0",
 					"${inherited}",
 				);
-				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_FILE = samples/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -7036,6 +7064,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.hqgame.angle.samples.mip-map-2d";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -7044,14 +7073,16 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = samples/samples.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					ANGLE_USE_UTIL_LOADER,
 					"GL_GLES_PROTOTYPES=0",
 					"EGL_EGL_PROTOTYPES=0",
 					"${inherited}",
 				);
-				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_FILE = samples/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -7059,6 +7090,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.hqgame.angle.samples.mip-map-2d";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
@@ -7067,14 +7099,16 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = samples/samples.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					ANGLE_USE_UTIL_LOADER,
 					"GL_GLES_PROTOTYPES=0",
 					"EGL_EGL_PROTOTYPES=0",
 					"${inherited}",
 				);
-				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_FILE = samples/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -7082,6 +7116,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.hqgame.angle.samples.stencil-operations";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -7090,14 +7125,16 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = samples/samples.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					ANGLE_USE_UTIL_LOADER,
 					"GL_GLES_PROTOTYPES=0",
 					"EGL_EGL_PROTOTYPES=0",
 					"${inherited}",
 				);
-				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_FILE = samples/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -7105,6 +7142,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.hqgame.angle.samples.stencil-operations";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
@@ -7159,7 +7197,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = samples/samples.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					ANGLE_USE_UTIL_LOADER,
 					"GL_GLES_PROTOTYPES=0",
@@ -7174,6 +7215,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.hqgame.angle.samples.hello-triangle";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -7182,7 +7224,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = samples/samples.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					ANGLE_USE_UTIL_LOADER,
 					"GL_GLES_PROTOTYPES=0",
@@ -7197,6 +7242,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.hqgame.angle.samples.hello-triangle";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
@@ -7470,7 +7516,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = samples/samples.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					ANGLE_USE_UTIL_LOADER,
 					"GL_GLES_PROTOTYPES=0",
@@ -7485,6 +7533,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.hqgame.angle.samples.tri-fan-microbench";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -7493,7 +7542,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = samples/samples.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					ANGLE_USE_UTIL_LOADER,
 					"GL_GLES_PROTOTYPES=0",
@@ -7508,6 +7559,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.hqgame.angle.samples.tri-fan-microbench";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
