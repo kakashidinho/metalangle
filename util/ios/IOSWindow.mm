@@ -311,7 +311,9 @@ void IOSWindow::appDidFinishLaunching()
     [mImpl->window makeKeyAndVisible];
 }
 
-void IOSWindow::viewDidLayoutSubviews()
+void IOSWindow::viewDidLayoutSubviews() {}
+
+void IOSWindow::viewDidAppear()
 {
     NSLog(@"IOSWindow::viewDidLayoutSubviews()");
 
@@ -331,8 +333,6 @@ void IOSWindow::viewDidLayoutSubviews()
     mImpl->displayLink.preferredFramesPerSecond = 60;
     [mImpl->displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSDefaultRunLoopMode];
 }
-
-void IOSWindow::viewDidAppear() {}
 
 void IOSWindow::appWillTerminate()
 {
