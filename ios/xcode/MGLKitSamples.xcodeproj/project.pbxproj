@@ -7,6 +7,36 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0A28CD26235787370081BB84 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 0A28CD25235787370081BB84 /* AppDelegate.m */; };
+		0A28CD2C235787370081BB84 /* PaintingViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 0A28CD2B235787370081BB84 /* PaintingViewController.m */; };
+		0A28CD2F235787370081BB84 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0A28CD2D235787370081BB84 /* Main.storyboard */; };
+		0A28CD312357873A0081BB84 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0A28CD302357873A0081BB84 /* Assets.xcassets */; };
+		0A28CD342357873A0081BB84 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0A28CD322357873A0081BB84 /* LaunchScreen.storyboard */; };
+		0A28CD372357873A0081BB84 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 0A28CD362357873A0081BB84 /* main.m */; };
+		0A28CD58235788D50081BB84 /* fileUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 0A28CD56235788D50081BB84 /* fileUtil.m */; };
+		0A28CD59235788D50081BB84 /* shaderUtil.c in Sources */ = {isa = PBXBuildFile; fileRef = 0A28CD57235788D50081BB84 /* shaderUtil.c */; };
+		0A28CD5A235788EF0081BB84 /* MetalANGLE.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AAF40CA2354CB64000E3CC8 /* MetalANGLE.framework */; };
+		0A28CD5C235788FE0081BB84 /* MetalANGLE.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0AAF40CA2354CB64000E3CC8 /* MetalANGLE.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		0A28CD6D2357896D0081BB84 /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 0A28CD5E2357896D0081BB84 /* Icon.png */; };
+		0A28CD6E2357896D0081BB84 /* iTunesArtwork in Resources */ = {isa = PBXBuildFile; fileRef = 0A28CD5F2357896D0081BB84 /* iTunesArtwork */; };
+		0A28CD6F2357896D0081BB84 /* Icon-Small.png in Resources */ = {isa = PBXBuildFile; fileRef = 0A28CD602357896D0081BB84 /* Icon-Small.png */; };
+		0A28CD702357896D0081BB84 /* Yellow.png in Resources */ = {isa = PBXBuildFile; fileRef = 0A28CD612357896D0081BB84 /* Yellow.png */; };
+		0A28CD712357896D0081BB84 /* Blue.png in Resources */ = {isa = PBXBuildFile; fileRef = 0A28CD622357896D0081BB84 /* Blue.png */; };
+		0A28CD722357896D0081BB84 /* Icon-72.png in Resources */ = {isa = PBXBuildFile; fileRef = 0A28CD632357896D0081BB84 /* Icon-72.png */; };
+		0A28CD732357896D0081BB84 /* Icon@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 0A28CD642357896D0081BB84 /* Icon@2x.png */; };
+		0A28CD742357896D0081BB84 /* Green.png in Resources */ = {isa = PBXBuildFile; fileRef = 0A28CD652357896D0081BB84 /* Green.png */; };
+		0A28CD752357896D0081BB84 /* Icon-Small-50.png in Resources */ = {isa = PBXBuildFile; fileRef = 0A28CD662357896D0081BB84 /* Icon-Small-50.png */; };
+		0A28CD762357896D0081BB84 /* Icon-Small@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 0A28CD672357896D0081BB84 /* Icon-Small@2x.png */; };
+		0A28CD772357896D0081BB84 /* Red.png in Resources */ = {isa = PBXBuildFile; fileRef = 0A28CD682357896D0081BB84 /* Red.png */; };
+		0A28CD782357896D0081BB84 /* Purple.png in Resources */ = {isa = PBXBuildFile; fileRef = 0A28CD692357896D0081BB84 /* Purple.png */; };
+		0A28CD792357896D0081BB84 /* point.vsh in Resources */ = {isa = PBXBuildFile; fileRef = 0A28CD6B2357896D0081BB84 /* point.vsh */; };
+		0A28CD7A2357896D0081BB84 /* point.fsh in Resources */ = {isa = PBXBuildFile; fileRef = 0A28CD6C2357896D0081BB84 /* point.fsh */; };
+		0A28CD80235789B20081BB84 /* Select.caf in Resources */ = {isa = PBXBuildFile; fileRef = 0A28CD7C235789B20081BB84 /* Select.caf */; };
+		0A28CD81235789B20081BB84 /* Erase.caf in Resources */ = {isa = PBXBuildFile; fileRef = 0A28CD7D235789B20081BB84 /* Erase.caf */; };
+		0A28CD82235789B20081BB84 /* Recording.data in Resources */ = {isa = PBXBuildFile; fileRef = 0A28CD7E235789B20081BB84 /* Recording.data */; };
+		0A28CD83235789B20081BB84 /* Particle.png in Resources */ = {isa = PBXBuildFile; fileRef = 0A28CD7F235789B20081BB84 /* Particle.png */; };
+		0A28CD88235789DF0081BB84 /* PaintingView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A28CD86235789DE0081BB84 /* PaintingView.mm */; };
+		0A28CD89235789DF0081BB84 /* SoundEffect.m in Sources */ = {isa = PBXBuildFile; fileRef = 0A28CD87235789DE0081BB84 /* SoundEffect.m */; };
 		0AAF414A2354FAE8000E3CC8 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AAF41492354FAE8000E3CC8 /* AppDelegate.m */; };
 		0AAF41502354FAE8000E3CC8 /* GLViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AAF414F2354FAE8000E3CC8 /* GLViewController.m */; };
 		0AAF41532354FAE8000E3CC8 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0AAF41512354FAE8000E3CC8 /* Main.storyboard */; };
@@ -176,6 +206,16 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		0A28CD5B235788F40081BB84 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				0A28CD5C235788FE0081BB84 /* MetalANGLE.framework in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		0AD9E4A12355F265006F5642 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -189,6 +229,44 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0A28CD22235787370081BB84 /* MGLPaint.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MGLPaint.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0A28CD24235787370081BB84 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		0A28CD25235787370081BB84 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		0A28CD2A235787370081BB84 /* PaintingViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PaintingViewController.h; sourceTree = "<group>"; };
+		0A28CD2B235787370081BB84 /* PaintingViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PaintingViewController.m; sourceTree = "<group>"; };
+		0A28CD2E235787370081BB84 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		0A28CD302357873A0081BB84 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		0A28CD332357873A0081BB84 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		0A28CD352357873A0081BB84 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		0A28CD362357873A0081BB84 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		0A28CD53235788D50081BB84 /* debug.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = debug.h; sourceTree = "<group>"; };
+		0A28CD54235788D50081BB84 /* fileUtil.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fileUtil.h; sourceTree = "<group>"; };
+		0A28CD55235788D50081BB84 /* shaderUtil.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = shaderUtil.h; sourceTree = "<group>"; };
+		0A28CD56235788D50081BB84 /* fileUtil.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = fileUtil.m; sourceTree = "<group>"; };
+		0A28CD57235788D50081BB84 /* shaderUtil.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = shaderUtil.c; sourceTree = "<group>"; };
+		0A28CD5E2357896D0081BB84 /* Icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon.png; sourceTree = "<group>"; };
+		0A28CD5F2357896D0081BB84 /* iTunesArtwork */ = {isa = PBXFileReference; lastKnownFileType = file; path = iTunesArtwork; sourceTree = "<group>"; };
+		0A28CD602357896D0081BB84 /* Icon-Small.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-Small.png"; sourceTree = "<group>"; };
+		0A28CD612357896D0081BB84 /* Yellow.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Yellow.png; sourceTree = "<group>"; };
+		0A28CD622357896D0081BB84 /* Blue.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Blue.png; sourceTree = "<group>"; };
+		0A28CD632357896D0081BB84 /* Icon-72.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-72.png"; sourceTree = "<group>"; };
+		0A28CD642357896D0081BB84 /* Icon@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon@2x.png"; sourceTree = "<group>"; };
+		0A28CD652357896D0081BB84 /* Green.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Green.png; sourceTree = "<group>"; };
+		0A28CD662357896D0081BB84 /* Icon-Small-50.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-Small-50.png"; sourceTree = "<group>"; };
+		0A28CD672357896D0081BB84 /* Icon-Small@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-Small@2x.png"; sourceTree = "<group>"; };
+		0A28CD682357896D0081BB84 /* Red.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Red.png; sourceTree = "<group>"; };
+		0A28CD692357896D0081BB84 /* Purple.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Purple.png; sourceTree = "<group>"; };
+		0A28CD6B2357896D0081BB84 /* point.vsh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = point.vsh; sourceTree = "<group>"; };
+		0A28CD6C2357896D0081BB84 /* point.fsh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = point.fsh; sourceTree = "<group>"; };
+		0A28CD7C235789B20081BB84 /* Select.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Select.caf; sourceTree = "<group>"; };
+		0A28CD7D235789B20081BB84 /* Erase.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Erase.caf; sourceTree = "<group>"; };
+		0A28CD7E235789B20081BB84 /* Recording.data */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = Recording.data; sourceTree = "<group>"; };
+		0A28CD7F235789B20081BB84 /* Particle.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Particle.png; sourceTree = "<group>"; };
+		0A28CD84235789DE0081BB84 /* PaintingView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PaintingView.h; sourceTree = "<group>"; };
+		0A28CD85235789DE0081BB84 /* SoundEffect.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SoundEffect.h; sourceTree = "<group>"; };
+		0A28CD86235789DE0081BB84 /* PaintingView.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = PaintingView.mm; sourceTree = "<group>"; };
+		0A28CD87235789DE0081BB84 /* SoundEffect.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SoundEffect.m; sourceTree = "<group>"; };
+		0A28CD8B235795BF0081BB84 /* MGLPaint.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MGLPaint.entitlements; sourceTree = "<group>"; };
 		0A946A30235700930027DFE1 /* MGLKitSampleApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MGLKitSampleApp.entitlements; sourceTree = "<group>"; };
 		0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = OpenGLES.xcodeproj; sourceTree = "<group>"; };
 		0AAF41462354FAE8000E3CC8 /* MGLKitSampleApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MGLKitSampleApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -218,6 +296,14 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		0A28CD1F235787370081BB84 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0A28CD5A235788EF0081BB84 /* MetalANGLE.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		0AAF41432354FAE8000E3CC8 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -229,10 +315,87 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0A28CD23235787370081BB84 /* MGLPaint */ = {
+			isa = PBXGroup;
+			children = (
+				0A28CD8B235795BF0081BB84 /* MGLPaint.entitlements */,
+				0A28CD24235787370081BB84 /* AppDelegate.h */,
+				0A28CD25235787370081BB84 /* AppDelegate.m */,
+				0A28CD302357873A0081BB84 /* Assets.xcassets */,
+				0A28CD352357873A0081BB84 /* Info.plist */,
+				0A28CD322357873A0081BB84 /* LaunchScreen.storyboard */,
+				0A28CD362357873A0081BB84 /* main.m */,
+				0A28CD2D235787370081BB84 /* Main.storyboard */,
+				0A28CD84235789DE0081BB84 /* PaintingView.h */,
+				0A28CD86235789DE0081BB84 /* PaintingView.mm */,
+				0A28CD2A235787370081BB84 /* PaintingViewController.h */,
+				0A28CD2B235787370081BB84 /* PaintingViewController.m */,
+				0A28CD85235789DE0081BB84 /* SoundEffect.h */,
+				0A28CD87235789DE0081BB84 /* SoundEffect.m */,
+				0A28CD5D2357896D0081BB84 /* Images */,
+				0A28CD7B235789820081BB84 /* Resources */,
+				0A28CD6A2357896D0081BB84 /* Shaders */,
+				0A28CD52235788D50081BB84 /* UtilSrc */,
+			);
+			path = MGLPaint;
+			sourceTree = "<group>";
+		};
+		0A28CD52235788D50081BB84 /* UtilSrc */ = {
+			isa = PBXGroup;
+			children = (
+				0A28CD53235788D50081BB84 /* debug.h */,
+				0A28CD54235788D50081BB84 /* fileUtil.h */,
+				0A28CD55235788D50081BB84 /* shaderUtil.h */,
+				0A28CD56235788D50081BB84 /* fileUtil.m */,
+				0A28CD57235788D50081BB84 /* shaderUtil.c */,
+			);
+			path = UtilSrc;
+			sourceTree = "<group>";
+		};
+		0A28CD5D2357896D0081BB84 /* Images */ = {
+			isa = PBXGroup;
+			children = (
+				0A28CD5E2357896D0081BB84 /* Icon.png */,
+				0A28CD5F2357896D0081BB84 /* iTunesArtwork */,
+				0A28CD602357896D0081BB84 /* Icon-Small.png */,
+				0A28CD612357896D0081BB84 /* Yellow.png */,
+				0A28CD622357896D0081BB84 /* Blue.png */,
+				0A28CD632357896D0081BB84 /* Icon-72.png */,
+				0A28CD642357896D0081BB84 /* Icon@2x.png */,
+				0A28CD652357896D0081BB84 /* Green.png */,
+				0A28CD662357896D0081BB84 /* Icon-Small-50.png */,
+				0A28CD672357896D0081BB84 /* Icon-Small@2x.png */,
+				0A28CD682357896D0081BB84 /* Red.png */,
+				0A28CD692357896D0081BB84 /* Purple.png */,
+			);
+			path = Images;
+			sourceTree = "<group>";
+		};
+		0A28CD6A2357896D0081BB84 /* Shaders */ = {
+			isa = PBXGroup;
+			children = (
+				0A28CD6B2357896D0081BB84 /* point.vsh */,
+				0A28CD6C2357896D0081BB84 /* point.fsh */,
+			);
+			path = Shaders;
+			sourceTree = "<group>";
+		};
+		0A28CD7B235789820081BB84 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				0A28CD7D235789B20081BB84 /* Erase.caf */,
+				0A28CD7F235789B20081BB84 /* Particle.png */,
+				0A28CD7E235789B20081BB84 /* Recording.data */,
+				0A28CD7C235789B20081BB84 /* Select.caf */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
 		0AAF408B2354CB06000E3CC8 = {
 			isa = PBXGroup;
 			children = (
 				0AAF41472354FAE8000E3CC8 /* MGLKitSampleApp */,
+				0A28CD23235787370081BB84 /* MGLPaint */,
 				0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */,
 				0AAF40952354CB06000E3CC8 /* Products */,
 				0AAF411B2354F2F9000E3CC8 /* Frameworks */,
@@ -243,6 +406,7 @@
 			isa = PBXGroup;
 			children = (
 				0AAF41462354FAE8000E3CC8 /* MGLKitSampleApp.app */,
+				0A28CD22235787370081BB84 /* MGLPaint.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -332,6 +496,24 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		0A28CD21235787370081BB84 /* MGLPaint */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0A28CD502357873A0081BB84 /* Build configuration list for PBXNativeTarget "MGLPaint" */;
+			buildPhases = (
+				0A28CD1E235787370081BB84 /* Sources */,
+				0A28CD1F235787370081BB84 /* Frameworks */,
+				0A28CD20235787370081BB84 /* Resources */,
+				0A28CD5B235788F40081BB84 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MGLPaint;
+			productName = MGLPaint;
+			productReference = 0A28CD22235787370081BB84 /* MGLPaint.app */;
+			productType = "com.apple.product-type.application";
+		};
 		0AAF41452354FAE8000E3CC8 /* MGLKitSampleApp */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 0AAF415C2354FAE9000E3CC8 /* Build configuration list for PBXNativeTarget "MGLKitSampleApp" */;
@@ -359,6 +541,9 @@
 				LastUpgradeCheck = 1100;
 				ORGANIZATIONNAME = HQGame;
 				TargetAttributes = {
+					0A28CD21235787370081BB84 = {
+						CreatedOnToolsVersion = 11.0;
+					};
 					0AAF41452354FAE8000E3CC8 = {
 						CreatedOnToolsVersion = 11.0;
 					};
@@ -384,6 +569,7 @@
 			projectRoot = "";
 			targets = (
 				0AAF41452354FAE8000E3CC8 /* MGLKitSampleApp */,
+				0A28CD21235787370081BB84 /* MGLPaint */,
 			);
 		};
 /* End PBXProject section */
@@ -539,6 +725,34 @@
 /* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
+		0A28CD20235787370081BB84 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0A28CD7A2357896D0081BB84 /* point.fsh in Resources */,
+				0A28CD6D2357896D0081BB84 /* Icon.png in Resources */,
+				0A28CD342357873A0081BB84 /* LaunchScreen.storyboard in Resources */,
+				0A28CD792357896D0081BB84 /* point.vsh in Resources */,
+				0A28CD80235789B20081BB84 /* Select.caf in Resources */,
+				0A28CD722357896D0081BB84 /* Icon-72.png in Resources */,
+				0A28CD742357896D0081BB84 /* Green.png in Resources */,
+				0A28CD6F2357896D0081BB84 /* Icon-Small.png in Resources */,
+				0A28CD762357896D0081BB84 /* Icon-Small@2x.png in Resources */,
+				0A28CD782357896D0081BB84 /* Purple.png in Resources */,
+				0A28CD83235789B20081BB84 /* Particle.png in Resources */,
+				0A28CD712357896D0081BB84 /* Blue.png in Resources */,
+				0A28CD82235789B20081BB84 /* Recording.data in Resources */,
+				0A28CD702357896D0081BB84 /* Yellow.png in Resources */,
+				0A28CD81235789B20081BB84 /* Erase.caf in Resources */,
+				0A28CD312357873A0081BB84 /* Assets.xcassets in Resources */,
+				0A28CD6E2357896D0081BB84 /* iTunesArtwork in Resources */,
+				0A28CD752357896D0081BB84 /* Icon-Small-50.png in Resources */,
+				0A28CD2F235787370081BB84 /* Main.storyboard in Resources */,
+				0A28CD732357896D0081BB84 /* Icon@2x.png in Resources */,
+				0A28CD772357896D0081BB84 /* Red.png in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		0AAF41442354FAE8000E3CC8 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -556,6 +770,20 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		0A28CD1E235787370081BB84 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0A28CD2C235787370081BB84 /* PaintingViewController.m in Sources */,
+				0A28CD26235787370081BB84 /* AppDelegate.m in Sources */,
+				0A28CD88235789DF0081BB84 /* PaintingView.mm in Sources */,
+				0A28CD89235789DF0081BB84 /* SoundEffect.m in Sources */,
+				0A28CD59235788D50081BB84 /* shaderUtil.c in Sources */,
+				0A28CD372357873A0081BB84 /* main.m in Sources */,
+				0A28CD58235788D50081BB84 /* fileUtil.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		0AAF41422354FAE8000E3CC8 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -573,6 +801,22 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXVariantGroup section */
+		0A28CD2D235787370081BB84 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				0A28CD2E235787370081BB84 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		0A28CD322357873A0081BB84 /* LaunchScreen.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				0A28CD332357873A0081BB84 /* Base */,
+			);
+			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
 		0AAF41512354FAE8000E3CC8 /* Main.storyboard */ = {
 			isa = PBXVariantGroup;
 			children = (
@@ -592,6 +836,52 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
+		0A28CD382357873A0081BB84 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = MGLPaint/MGLPaint.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
+				"ENABLE_HARDENED_RUNTIME[sdk=macosx*]" = NO;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = MGLPaint/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.hqgame.angle.samples.MGLPaint;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		0A28CD392357873A0081BB84 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = MGLPaint/MGLPaint.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
+				"ENABLE_HARDENED_RUNTIME[sdk=macosx*]" = NO;
+				INFOPLIST_FILE = MGLPaint/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.hqgame.angle.samples.MGLPaint;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		0AAF40AB2354CB0A000E3CC8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -761,6 +1051,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		0A28CD502357873A0081BB84 /* Build configuration list for PBXNativeTarget "MGLPaint" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0A28CD382357873A0081BB84 /* Debug */,
+				0A28CD392357873A0081BB84 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		0AAF408F2354CB06000E3CC8 /* Build configuration list for PBXProject "MGLKitSamples" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
