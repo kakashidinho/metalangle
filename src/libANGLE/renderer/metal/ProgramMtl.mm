@@ -19,7 +19,7 @@
 #include "libANGLE/Context.h"
 #include "libANGLE/ProgramLinkedResources.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
-#include "libANGLE/renderer/metal/GlslangWrapper.h"
+#include "libANGLE/renderer/metal/GlslangWrapperMtl.h"
 #include "libANGLE/renderer/metal/RendererMtl.h"
 #include "libANGLE/renderer/metal/TextureMtl.h"
 #include "libANGLE/renderer/metal/mtl_utils.h"

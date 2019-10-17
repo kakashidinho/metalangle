@@ -9,8 +9,8 @@
 
 #include "libANGLE/renderer/metal/RendererMtl.h"
 
+#include "libANGLE/renderer/glslang_wrapper_utils.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
-#include "libANGLE/renderer/metal/GlslangWrapper.h"
 #include "libANGLE/renderer/metal/mtl_common.h"
 
 namespace rx
@@ -33,7 +33,7 @@ angle::Result RendererMtl::initialize(egl::Display *display)
 
         mCapsInitialized = false;
 
-        GlslangWrapperMtl::Initialize();
+        GlslangInitialize();
 
         ANGLE_TRY(mFormatTable.initialize(this));
 
@@ -51,7 +51,7 @@ void RendererMtl::onDestroy()
     mMetalDevice     = nil;
     mCapsInitialized = false;
 
-    GlslangWrapperMtl::Release();
+    GlslangRelease();
 }
 
 std::string RendererMtl::getVendorString() const
