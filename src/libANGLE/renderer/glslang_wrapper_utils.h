@@ -3,7 +3,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
-// Wrapper for Khronos glslang compiler.
+// Wrapper for Khronos glslang compiler. This file is used by Vulkan and Metal backends.
 //
 
 #ifndef LIBANGLE_RENDERER_GLSLANG_WRAPPER_UTILS_H_
