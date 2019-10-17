@@ -3,7 +3,7 @@
  *
  * $Version: cocos3d 0.5-beta (eab7e651f462) on 2011-01-31 $
  * Author: Bill Hollings
- * Copyright (c) 2010-2011 The Brenwill Workshop Ltd. All rights reserved. 
+ * Copyright (c) 2010-2011 The Brenwill Workshop Ltd. All rights reserved.
  * http://www.brenwill.com
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -12,10 +12,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,7 +31,7 @@
  *   http://iphoneincubator.com/blog/debugging/the-evolution-of-a-replacement-for-nslog
  */
 
-/** @file */	// Doxygen marker
+/** @file */  // Doxygen marker
 
 /**
  * For Objective-C code, this library adds flexible, non-intrusive logging capabilities
@@ -54,16 +54,21 @@
  * To perform logging, use any of the following function calls in your code:
  *
  *		LogTrace(fmt, ...)	- recommended for detailed tracing of program flow
- *							- will print if LOGGING_LEVEL_TRACE is set on.
+ *							- will print if LOGGING_LEVEL_TRACE is set
+ *on.
  *
  *		LogInfo(fmt, ...)	- recommended for general, infrequent, information messages
- *							- will print if LOGGING_LEVEL_INFO is set on.
+ *							- will print if LOGGING_LEVEL_INFO is set
+ *on.
  *
- *		LogError(fmt, ...)	- recommended for use only when there is an error to be logged
- *							- will print if LOGGING_LEVEL_ERROR is set on.
+ *		LogError(fmt, ...)	- recommended for use only when there is an error to be
+ *logged
+ *							- will print if LOGGING_LEVEL_ERROR is set
+ *on.
  *
  *		LogDebug(fmt, ...)	- recommended for temporary use during debugging
- *							- will print if LOGGING_LEVEL_DEBUG is set on.
+ *							- will print if LOGGING_LEVEL_DEBUG is set
+ *on.
  *
  * In each case, the functions follow the general NSLog/printf template, where the first argument
  * "fmt" is an NSString that optionally includes embedded Format Specifiers, and subsequent optional
@@ -71,8 +76,8 @@
  * of optional arguments must match the number of embedded Format Specifiers. For more info, see the
  * core documentation for NSLog and String Format Specifiers.
  *
- * You can choose to have each logging entry automatically include class, method and line information
- * by enabling the LOGGING_INCLUDE_CODE_LOCATION switch.
+ * You can choose to have each logging entry automatically include class, method and line
+ *information by enabling the LOGGING_INCLUDE_CODE_LOCATION switch.
  *
  * Although you can directly edit this file to turn on or off the switches below, the preferred
  * technique is to set these switches via the compiler build setting GCC_PREPROCESSOR_DEFINITIONS
@@ -86,7 +91,7 @@
  * ensure that logging is not accidentally left enabled by accident in release builds.
  */
 #ifndef LOGGING_ENABLED
-#	define LOGGING_ENABLED		0
+#    define LOGGING_ENABLED 0
 #endif
 
 /**
@@ -95,16 +100,16 @@
  * For these settings to be effective, LOGGING_ENABLED must also be defined and non-zero.
  */
 #ifndef LOGGING_LEVEL_TRACE
-#	define LOGGING_LEVEL_TRACE		0
+#    define LOGGING_LEVEL_TRACE 0
 #endif
 #ifndef LOGGING_LEVEL_INFO
-#	define LOGGING_LEVEL_INFO		1
+#    define LOGGING_LEVEL_INFO 1
 #endif
 #ifndef LOGGING_LEVEL_ERROR
-#	define LOGGING_LEVEL_ERROR		1
+#    define LOGGING_LEVEL_ERROR 1
 #endif
 #ifndef LOGGING_LEVEL_DEBUG
-#	define LOGGING_LEVEL_DEBUG		1
+#    define LOGGING_LEVEL_DEBUG 1
 #endif
 
 /**
@@ -112,54 +117,53 @@
  * in the log entries. This can be set either here or as a compiler build setting.
  */
 #ifndef LOGGING_INCLUDE_CODE_LOCATION
-	#define LOGGING_INCLUDE_CODE_LOCATION	0
+#    define LOGGING_INCLUDE_CODE_LOCATION 0
 #endif
 
 // *********** END OF USER SETTINGS  - Do not change anything below this line ***********
 
-
 #if !(defined(LOGGING_ENABLED) && LOGGING_ENABLED)
-	#undef LOGGING_LEVEL_TRACE
-	#undef LOGGING_LEVEL_INFO
-	#undef LOGGING_LEVEL_ERROR
-	#undef LOGGING_LEVEL_DEBUG
+#    undef LOGGING_LEVEL_TRACE
+#    undef LOGGING_LEVEL_INFO
+#    undef LOGGING_LEVEL_ERROR
+#    undef LOGGING_LEVEL_DEBUG
 #endif
 
 // Logging format
 #define LOG_FORMAT_NO_LOCATION(fmt, lvl, ...) NSLog((@"[%@] " fmt), lvl, ##__VA_ARGS__)
-#define LOG_FORMAT_WITH_LOCATION(fmt, lvl, ...) NSLog((@"%s[Line %d] [%@] " fmt), __PRETTY_FUNCTION__, __LINE__, lvl, ##__VA_ARGS__)
+#define LOG_FORMAT_WITH_LOCATION(fmt, lvl, ...) \
+    NSLog((@"%s[Line %d] [%@] " fmt), __PRETTY_FUNCTION__, __LINE__, lvl, ##__VA_ARGS__)
 
 #if defined(LOGGING_INCLUDE_CODE_LOCATION) && LOGGING_INCLUDE_CODE_LOCATION
-	#define LOG_FORMAT(fmt, lvl, ...) LOG_FORMAT_WITH_LOCATION(fmt, lvl, ##__VA_ARGS__)
+#    define LOG_FORMAT(fmt, lvl, ...) LOG_FORMAT_WITH_LOCATION(fmt, lvl, ##__VA_ARGS__)
 #else
-	#define LOG_FORMAT(fmt, lvl, ...) LOG_FORMAT_NO_LOCATION(fmt, lvl, ##__VA_ARGS__)
+#    define LOG_FORMAT(fmt, lvl, ...) LOG_FORMAT_NO_LOCATION(fmt, lvl, ##__VA_ARGS__)
 #endif
 
 // Trace logging - for detailed tracing
 #if defined(LOGGING_LEVEL_TRACE) && LOGGING_LEVEL_TRACE
-	#define LogTrace(fmt, ...) LOG_FORMAT(fmt, @"trace", ##__VA_ARGS__)
+#    define LogTrace(fmt, ...) LOG_FORMAT(fmt, @"trace", ##__VA_ARGS__)
 #else
-	#define LogTrace(...)
+#    define LogTrace(...)
 #endif
 
 // Info logging - for general, non-performance affecting information messages
 #if defined(LOGGING_LEVEL_INFO) && LOGGING_LEVEL_INFO
-	#define LogInfo(fmt, ...) LOG_FORMAT(fmt, @"info", ##__VA_ARGS__)
+#    define LogInfo(fmt, ...) LOG_FORMAT(fmt, @"info", ##__VA_ARGS__)
 #else
-	#define LogInfo(...)
+#    define LogInfo(...)
 #endif
 
 // Error logging - only when there is an error to be logged
 #if defined(LOGGING_LEVEL_ERROR) && LOGGING_LEVEL_ERROR
-	#define LogError(fmt, ...) LOG_FORMAT(fmt, @"***ERROR***", ##__VA_ARGS__)
+#    define LogError(fmt, ...) LOG_FORMAT(fmt, @"***ERROR***", ##__VA_ARGS__)
 #else
-	#define LogError(...)
- #endif
+#    define LogError(...)
+#endif
 
 // Debug logging - use only temporarily for highlighting and tracking down problems
 #if defined(LOGGING_LEVEL_DEBUG) && LOGGING_LEVEL_DEBUG
-	#define LogDebug(fmt, ...) LOG_FORMAT(fmt, @"DEBUG", ##__VA_ARGS__)
+#    define LogDebug(fmt, ...) LOG_FORMAT(fmt, @"DEBUG", ##__VA_ARGS__)
 #else
-	#define LogDebug(...)
+#    define LogDebug(...)
 #endif
-

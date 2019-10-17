@@ -10,13 +10,13 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class MGLKViewController;
 
-@protocol MGLKViewControllerDelegate<NSObject>
+@protocol MGLKViewControllerDelegate <NSObject>
 
 - (void)mglkViewControllerUpdate:(MGLKViewController *)controller;
 
 @end
 
-@interface MGLKViewController : UIViewController<MGLKViewDelegate>
+@interface MGLKViewController : UIViewController <MGLKViewDelegate>
 
 @property(nonatomic, assign) IBOutlet id<MGLKViewControllerDelegate> delegate;
 

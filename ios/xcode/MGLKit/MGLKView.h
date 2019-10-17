@@ -11,7 +11,7 @@
 
 @class MGLKView;
 
-@protocol MGLKViewDelegate<NSObject>
+@protocol MGLKViewDelegate <NSObject>
 
 // Implement this method to draw to the view using current OpenGL
 // context associated with the view.

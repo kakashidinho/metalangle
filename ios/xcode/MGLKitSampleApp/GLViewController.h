@@ -10,6 +10,4 @@
 
 @interface GLViewController : MGLKViewController
 
-
 @end
-

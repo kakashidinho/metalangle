@@ -12,10 +12,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -27,31 +27,31 @@
  * http://en.wikipedia.org/wiki/MIT_License
  */
 
-/** @file */	// Doxygen marker
+/** @file */  // Doxygen marker
 
 /* Base library of definitions and functions for operating in a 3D world. */
 
 #import <math.h>
 
-
 #pragma mark Basic math support
 
-#define M_SQRT3  1.732050807568877f						/* sqrt(3) */
-#define kCircleDegreesPeriod  360.0f
+#define M_SQRT3 1.732050807568877f /* sqrt(3) */
+#define kCircleDegreesPeriod 360.0f
 
 /** Conversion between degrees and radians. */
-#define DegreesToRadiansFactor  0.017453292519943f			// PI / 180
-#define RadiansToDegreesFactor  57.29577951308232f			// 180 / PI
-#define DegreesToRadians(D) ((D) * DegreesToRadiansFactor)
-#define RadiansToDegrees(R) ((R) * RadiansToDegreesFactor)
+#define DegreesToRadiansFactor 0.017453292519943f  // PI / 180
+#define RadiansToDegreesFactor 57.29577951308232f  // 180 / PI
+#define DegreesToRadians(D) ((D)*DegreesToRadiansFactor)
+#define RadiansToDegrees(R) ((R)*RadiansToDegreesFactor)
 
 /** Returns -1, 0 or +1 if the arguement is negative, zero or positive respectively. */
-#define SIGN(A)	((A) < 0 ? -1 :((A) > 0 ? 1 : 0))
+#define SIGN(A) ((A) < 0 ? -1 : ((A) > 0 ? 1 : 0))
 
 /** Returns the value clamped to be between the min and max values */
 #define CLAMP(val, min, max) (MIN(MAX((val), (min)), (max)))
 
-/** Returns a weighted average of the two values, where weight is between zero and one, inclusive. */
+/** Returns a weighted average of the two values, where weight is between zero and one, inclusive.
+ */
 #define WAVG(val1, val2, weight) ((val1) + (((val2) - (val1)) * CLAMP(weight, 0.0, 1.0)))
 
 /**
@@ -60,7 +60,7 @@
  * This function is similar to fmod() (and uses fmod()), but converts a negative result
  * into a positive value that is the same distance away from the end of the cycle as the
  * result was below zero. In this sense, this function behaves like the numbers on a clock,
- * and Cyclic(-2.0, 12.0) will return 10.0 rather than -2.0. 
+ * and Cyclic(-2.0, 12.0) will return 10.0 rather than -2.0.
  */
 float Cyclic(float value, float period);
 
@@ -77,10 +77,10 @@ float Cyclic(float value, float period);
  */
 float CyclicDifference(float minuend, float subtrahend, float period);
 
-
 #pragma mark Random number generation
 
-/** Returns a random unsigned integer over the full unsigned interger range (between 0 and 0xFFFFFFFF). */
+/** Returns a random unsigned integer over the full unsigned interger range (between 0 and
+ * 0xFFFFFFFF). */
 unsigned int RandomUInt();
 
 /** Returns a random unsigned integer between 0 inclusive and the specified max exclusive. */

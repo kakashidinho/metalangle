@@ -530,8 +530,8 @@ GLint LinkProgram(GLuint program)
 
     ScopedTexture oldOffscreenTexture = 0;
 
-    if (_offscreenFBOCreatorContext != [MGLContext currentContext] ||
-        ![self verifyOffscreenFBOSize])
+    if (_offscreenFBOCreatorContext != [MGLContext currentContext] || !
+                                                                      [self verifyOffscreenFBOSize])
     {
         // We need to copy the old texture to current texture
         oldOffscreenTexture = _offscreenTexture;

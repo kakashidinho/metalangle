@@ -12,10 +12,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -25,60 +25,69 @@
  * THE SOFTWARE.
  *
  * http://en.wikipedia.org/wiki/MIT_License
- * 
+ *
  * See header file CC3Math.h for full API documentation.
  */
 
-#import "CC3Foundation.h"
 #import <stdlib.h>
-
+#import "CC3Foundation.h"
 
 #pragma mark Basic math support
 
-float Cyclic(float value, float period) {
-	float modVal = fmod(value, period);
-	return (modVal < 0.0) ? (modVal + period) : modVal;
+float Cyclic(float value, float period)
+{
+    float modVal = fmod(value, period);
+    return (modVal < 0.0) ? (modVal + period) : modVal;
 }
 
-float CyclicDifference(float minuend, float subtrahend, float period) {
-	float semiPeriod = period / 2.0;
-	float diff = minuend - subtrahend;
-	// If the difference is outside the range (period/2 >= diff >= -period/2),
-	// adjust it so that it takes the difference in the other direction to
-	// arrive at a smaller change.
-	if(diff > semiPeriod) {
-		diff -= period;
-	} else if(diff < -semiPeriod) {
-		diff += period;
-	}
-	return diff;
+float CyclicDifference(float minuend, float subtrahend, float period)
+{
+    float semiPeriod = period / 2.0;
+    float diff       = minuend - subtrahend;
+    // If the difference is outside the range (period/2 >= diff >= -period/2),
+    // adjust it so that it takes the difference in the other direction to
+    // arrive at a smaller change.
+    if (diff > semiPeriod)
+    {
+        diff -= period;
+    }
+    else if (diff < -semiPeriod)
+    {
+        diff += period;
+    }
+    return diff;
 }
-
 
 #pragma mark Random number generation
 
 #define kRandomUIntMax 0x100000000LL
 
-unsigned int RandomUInt() {
-	return arc4random();
+unsigned int RandomUInt()
+{
+    return arc4random();
 }
 
-unsigned int RandomUIntBelow(unsigned int max) {
-	return RandomUInt() % max;
+unsigned int RandomUIntBelow(unsigned int max)
+{
+    return RandomUInt() % max;
 }
 
-double RandomDouble() {
-	return (double)RandomUInt() / (double)kRandomUIntMax;
+double RandomDouble()
+{
+    return (double)RandomUInt() / (double)kRandomUIntMax;
 }
 
-double RandomDoubleBetween(double min, double max) {
-	return min + (RandomDouble() * (max - min));
+double RandomDoubleBetween(double min, double max)
+{
+    return min + (RandomDouble() * (max - min));
 }
 
-float RandomFloat() {
-	return (float)RandomDouble();
+float RandomFloat()
+{
+    return (float)RandomDouble();
 }
 
-float RandomFloatBetween(float min, float max) {
-	return (float)RandomDoubleBetween(min, max);
+float RandomFloatBetween(float min, float max)
+{
+    return (float)RandomDoubleBetween(min, max);
 }
