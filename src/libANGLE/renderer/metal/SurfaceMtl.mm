@@ -53,7 +53,7 @@ size_t MaxAllowedFrameCapture()
     return 0;
 #else
     auto var                      = std::getenv("ANGLE_METAL_FRAME_CAPTURE_MAX");
-    static const size_t maxFrames = var ? std::atoi(var) : 0;
+    static const size_t maxFrames = var ? std::atoi(var) : 100;
 
     return maxFrames;
 #endif
