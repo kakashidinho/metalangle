@@ -21,11 +21,13 @@ typedef enum MGLRenderingAPI : int
 // Present the content of layer on screen as soon as possible.
 - (BOOL)present:(MGLLayer *)layer;
 
++ (MGLContext *)currentContext;
+
 // Set current context without layer
-+ (BOOL)setCurrentContext:(MGLContext *)context;
++ (BOOL)setCurrentContext:(MGLContext *_Nullable)context;
 
 // Set current context to render to the given layer.
-+ (BOOL)setCurrentContext:(MGLContext *)context forLayer:(MGLLayer *)layer;
++ (BOOL)setCurrentContext:(MGLContext *_Nullable)context forLayer:(MGLLayer *)layer;
 
 @end
 

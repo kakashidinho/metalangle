@@ -21,6 +21,8 @@
 
 namespace
 {
+thread_local void *gCurrentContext;
+
 void Throw(NSString *msg)
 {
     [NSException raise:@"MGLSurfaceException" format:@"%@", msg];
@@ -129,13 +131,20 @@ void Throw(NSString *msg)
     return [layer present];
 }
 
++ (MGLContext *)currentContext
+{
+    return (__bridge MGLContext *)gCurrentContext;
+}
+
 + (BOOL)setCurrentContext:(MGLContext *)context
 {
     if (context)
     {
         return [context setCurrentContextForLayer:nil];
     }
-    return NO;
+
+    return eglMakeCurrent([MGLDisplay defaultDisplay].eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE,
+                          EGL_NO_CONTEXT);
 }
 
 + (BOOL)setCurrentContext:(MGLContext *)context forLayer:(MGLLayer *)layer
@@ -144,7 +153,7 @@ void Throw(NSString *msg)
     {
         return [context setCurrentContextForLayer:layer];
     }
-    return NO;
+    return [self setCurrentContext:nil];
 }
 
 - (BOOL)setCurrentContextForLayer:(MGLLayer *_Nullable)layer
@@ -161,7 +170,17 @@ void Throw(NSString *msg)
             }
         }
     }
-    return [layer setCurrentContext:self];
+    else
+    {
+        if (![layer setCurrentContext:self])
+        {
+            return NO;
+        }
+    }
+
+    gCurrentContext = (__bridge void *)self;
+
+    return YES;
 }
 
 @end
