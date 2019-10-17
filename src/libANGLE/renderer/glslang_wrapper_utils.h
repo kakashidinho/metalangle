@@ -3,7 +3,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
-// GlslangWrapperUtils: Wrapper for Khronos glslang compiler.
+// Wrapper for Khronos glslang compiler.
 //
 
 #ifndef LIBANGLE_RENDERER_GLSLANG_WRAPPER_UTILS_H_
@@ -13,59 +13,48 @@
 
 namespace rx
 {
-// This class currently holds no state. If we want to hold state we would need to solve the
-// potential race conditions with multiple threads.
-class GlslangWrapperUtils
+enum class GlslangError
 {
-  public:
-    enum Error
-    {
-        ERROR_INVALID_SHADER,
-    };
-
-    struct Options
-    {
-        Options();
-        ~Options();
-
-        std::function<angle::Result(Error)> errorCallback;
-
-        // Uniforms set index:
-        uint32_t uniformsAndXfbDescriptorSetIndex;
-        // Textures set index:
-        uint32_t textureDescriptorSetIndex;
-        // Other shader resources set index:
-        uint32_t shaderResourceDescriptorSetIndex;
-        // ANGLE driver uniforms set index:
-        uint32_t driverUniformsDescriptorSetIndex;
-
-        // Binding index start for transform feedback buffers:
-        uint32_t xfbBindingIndexStart;
-    };
-
-    static void Initialize();
-    static void Release();
-
-    static std::string GetMappedSamplerName(const std::string &originalName);
-
-    static void GetShaderSource(const Options &options,
-                                bool useOldRewriteStructSamplers,
-                                const gl::ProgramState &programState,
-                                const gl::ProgramLinkedResources &resources,
-                                gl::ShaderMap<std::string> *shaderSourcesOut);
-
-    static angle::Result GetShaderCode(const Options &options,
-                                       const gl::Caps &glCaps,
-                                       bool enableLineRasterEmulation,
-                                       const gl::ShaderMap<std::string> &shaderSources,
-                                       gl::ShaderMap<std::vector<uint32_t>> *shaderCodesOut);
-
-  private:
-    static angle::Result GetShaderCodeImpl(const Options &options,
-                                           const gl::Caps &glCaps,
-                                           const gl::ShaderMap<std::string> &shaderSources,
-                                           gl::ShaderMap<std::vector<uint32_t>> *shaderCodesOut);
+    InvalidShader,
 };
+
+struct GlslangSourceOptions
+{
+    // Uniforms set index:
+    uint32_t uniformsAndXfbDescriptorSetIndex = 0;
+    // Textures set index:
+    uint32_t textureDescriptorSetIndex = 1;
+    // Other shader resources set index:
+    uint32_t shaderResourceDescriptorSetIndex = 2;
+    // ANGLE driver uniforms set index:
+    uint32_t driverUniformsDescriptorSetIndex = 3;
+
+    // Binding index start for transform feedback buffers:
+    uint32_t xfbBindingIndexStart = 16;
+};
+
+using GlslangErrorCallback = std::function<angle::Result(GlslangError)>;
+
+void GlslangInitialize();
+void GlslangRelease();
+
+// Get the mapped sampler name after the soure is transformed by GlslangGetShaderSource()
+std::string GlslangGetMappedSamplerName(const std::string &originalName);
+
+// Transform the source to include actual binding points for various shader
+// resources (textures, buffers, xfb, etc)
+void GlslangGetShaderSource(const GlslangSourceOptions &options,
+                            bool useOldRewriteStructSamplers,
+                            const gl::ProgramState &programState,
+                            const gl::ProgramLinkedResources &resources,
+                            gl::ShaderMap<std::string> *shaderSourcesOut);
+
+angle::Result GlslangGetShaderSpirvCode(GlslangErrorCallback callback,
+                                        const gl::Caps &glCaps,
+                                        bool enableLineRasterEmulation,
+                                        const gl::ShaderMap<std::string> &shaderSources,
+                                        gl::ShaderMap<std::vector<uint32_t>> *shaderCodesOut);
+
 }  // namespace rx
 
 #endif  // LIBANGLE_RENDERER_GLSLANG_WRAPPER_UTILS_H_

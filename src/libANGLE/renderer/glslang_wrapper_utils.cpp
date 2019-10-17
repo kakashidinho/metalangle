@@ -3,7 +3,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
-// GlslangWrapperUtils: Wrapper for Khronos glslang compiler.
+// Wrapper for Khronos glslang compiler.
 //
 
 #include "libANGLE/renderer/glslang_wrapper_utils.h"
@@ -29,14 +29,14 @@ ANGLE_REENABLE_EXTRA_SEMI_WARNING
 #include "libANGLE/Caps.h"
 #include "libANGLE/ProgramLinkedResources.h"
 
-#define ANGLE_GLSLANG_CHECK(OPTIONS, TEST, ERR) \
-    do                                          \
-    {                                           \
-        if (ANGLE_UNLIKELY(!(TEST)))            \
-        {                                       \
-            return OPTIONS.errorCallback(ERR);  \
-        }                                       \
-                                                \
+#define ANGLE_GLSLANG_CHECK(CALLBACK, TEST, ERR) \
+    do                                           \
+    {                                            \
+        if (ANGLE_UNLIKELY(!(TEST)))             \
+        {                                        \
+            return CALLBACK(ERR);                \
+        }                                        \
+                                                 \
     } while (0)
 
 namespace rx
@@ -462,7 +462,7 @@ std::string GenerateTransformFeedbackVaryingOutput(const gl::TransformFeedbackVa
     return result.str();
 }
 
-void GenerateTransformFeedbackOutputs(const GlslangWrapperUtils::Options &options,
+void GenerateTransformFeedbackOutputs(const GlslangSourceOptions &options,
                                       const gl::ProgramState &programState,
                                       IntermediateShaderSource *vertexShader)
 {
@@ -657,7 +657,7 @@ void AssignVaryingLocations(const gl::ProgramState &programState,
     inStageSource->insertQualifierSpecifier(kVaryingName, "in");
 }
 
-void AssignUniformBindings(const GlslangWrapperUtils::Options &options,
+void AssignUniformBindings(const GlslangSourceOptions &options,
                            gl::ShaderMap<IntermediateShaderSource> *shaderSources)
 {
     // Bind the default uniforms for vertex and fragment shaders.
@@ -716,7 +716,7 @@ void AssignResourceBinding(gl::ShaderBitSet activeShaders,
     }
 }
 
-uint32_t AssignInterfaceBlockBindings(const GlslangWrapperUtils::Options &options,
+uint32_t AssignInterfaceBlockBindings(const GlslangSourceOptions &options,
                                       const std::vector<gl::InterfaceBlock> &blocks,
                                       const char *qualifier,
                                       uint32_t bindingStart,
@@ -741,7 +741,7 @@ uint32_t AssignInterfaceBlockBindings(const GlslangWrapperUtils::Options &option
     return bindingIndex;
 }
 
-uint32_t AssignAtomicCounterBufferBindings(const GlslangWrapperUtils::Options &options,
+uint32_t AssignAtomicCounterBufferBindings(const GlslangSourceOptions &options,
                                            const std::vector<gl::AtomicCounterBuffer> &buffers,
                                            const char *qualifier,
                                            uint32_t bindingStart,
@@ -770,7 +770,7 @@ uint32_t AssignAtomicCounterBufferBindings(const GlslangWrapperUtils::Options &o
     return bindingStart + 1;
 }
 
-uint32_t AssignImageBindings(const GlslangWrapperUtils::Options &options,
+uint32_t AssignImageBindings(const GlslangSourceOptions &options,
                              const std::vector<gl::LinkedUniform> &uniforms,
                              const gl::RangeUI &imageUniformRange,
                              uint32_t bindingStart,
@@ -799,7 +799,7 @@ uint32_t AssignImageBindings(const GlslangWrapperUtils::Options &options,
     return bindingIndex;
 }
 
-void AssignNonTextureBindings(const GlslangWrapperUtils::Options &options,
+void AssignNonTextureBindings(const GlslangSourceOptions &options,
                               const gl::ProgramState &programState,
                               gl::ShaderMap<IntermediateShaderSource> *shaderSources)
 {
@@ -824,7 +824,7 @@ void AssignNonTextureBindings(const GlslangWrapperUtils::Options &options,
         AssignImageBindings(options, uniforms, imageUniformRange, bindingStart, shaderSources);
 }
 
-void AssignTextureBindings(const GlslangWrapperUtils::Options &options,
+void AssignTextureBindings(const GlslangSourceOptions &options,
                            bool useOldRewriteStructSamplers,
                            const gl::ProgramState &programState,
                            gl::ShaderMap<IntermediateShaderSource> *shaderSources)
@@ -849,10 +849,9 @@ void AssignTextureBindings(const GlslangWrapperUtils::Options &options,
             texturesDescriptorSet + ", binding = " + Str(bindingIndex++);
 
         // Samplers in structs are extracted and renamed.
-        const std::string samplerName =
-            useOldRewriteStructSamplers
-                ? GetMappedSamplerNameOld(samplerUniform.name)
-                : GlslangWrapperUtils::GetMappedSamplerName(samplerUniform.name);
+        const std::string samplerName = useOldRewriteStructSamplers
+                                            ? GetMappedSamplerNameOld(samplerUniform.name)
+                                            : GlslangGetMappedSamplerName(samplerUniform.name);
 
         AssignResourceBinding(samplerUniform.activeShaders(), samplerName, bindingString,
                               kUniformQualifier, kUnusedUniformSubstitution, shaderSources);
@@ -908,12 +907,11 @@ void CleanupUnusedEntities(bool useOldRewriteStructSamplers,
     // uniforms to a single line.
     for (const gl::UnusedUniform &unusedUniform : resources.unusedUniforms)
     {
-        std::string uniformName =
-            unusedUniform.isSampler
-                ? useOldRewriteStructSamplers
-                      ? GetMappedSamplerNameOld(unusedUniform.name)
-                      : GlslangWrapperUtils::GetMappedSamplerName(unusedUniform.name)
-                : unusedUniform.name;
+        std::string uniformName = unusedUniform.isSampler
+                                      ? useOldRewriteStructSamplers
+                                            ? GetMappedSamplerNameOld(unusedUniform.name)
+                                            : GlslangGetMappedSamplerName(unusedUniform.name)
+                                      : unusedUniform.name;
 
         for (IntermediateShaderSource &shaderSource : *shaderSources)
         {
@@ -928,27 +926,92 @@ constexpr gl::ShaderMap<EShLanguage> kShLanguageMap = {
     {gl::ShaderType::Fragment, EShLangFragment},
     {gl::ShaderType::Compute, EShLangCompute},
 };
+
+angle::Result GetShaderSpirvCode(GlslangErrorCallback callback,
+                                 const gl::Caps &glCaps,
+                                 const gl::ShaderMap<std::string> &shaderSources,
+                                 gl::ShaderMap<std::vector<uint32_t>> *shaderCodeOut)
+{
+    // Enable SPIR-V and Vulkan rules when parsing GLSL
+    EShMessages messages = static_cast<EShMessages>(EShMsgSpvRules | EShMsgVulkanRules);
+
+    TBuiltInResource builtInResources(glslang::DefaultTBuiltInResource);
+    GetBuiltInResourcesFromCaps(glCaps, &builtInResources);
+
+    glslang::TShader vertexShader(EShLangVertex);
+    glslang::TShader fragmentShader(EShLangFragment);
+    glslang::TShader geometryShader(EShLangGeometry);
+    glslang::TShader computeShader(EShLangCompute);
+
+    gl::ShaderMap<glslang::TShader *> shaders = {
+        {gl::ShaderType::Vertex, &vertexShader},
+        {gl::ShaderType::Fragment, &fragmentShader},
+        {gl::ShaderType::Geometry, &geometryShader},
+        {gl::ShaderType::Compute, &computeShader},
+    };
+    glslang::TProgram program;
+
+    for (const gl::ShaderType shaderType : gl::AllShaderTypes())
+    {
+        if (shaderSources[shaderType].empty())
+        {
+            continue;
+        }
+
+        const char *shaderString = shaderSources[shaderType].c_str();
+        int shaderLength         = static_cast<int>(shaderSources[shaderType].size());
+
+        glslang::TShader *shader = shaders[shaderType];
+        shader->setStringsWithLengths(&shaderString, &shaderLength, 1);
+        shader->setEntryPoint("main");
+
+        bool result = shader->parse(&builtInResources, 450, ECoreProfile, false, false, messages);
+        if (!result)
+        {
+            ERR() << "Internal error parsing Vulkan shader corresponding to " << shaderType << ":\n"
+                  << shader->getInfoLog() << "\n"
+                  << shader->getInfoDebugLog() << "\n";
+            ANGLE_GLSLANG_CHECK(callback, false, GlslangError::InvalidShader);
+        }
+
+        program.addShader(shader);
+    }
+
+    bool linkResult = program.link(messages);
+    if (!linkResult)
+    {
+        ERR() << "Internal error linking Vulkan shaders:\n" << program.getInfoLog() << "\n";
+        ANGLE_GLSLANG_CHECK(callback, false, GlslangError::InvalidShader);
+    }
+
+    for (const gl::ShaderType shaderType : gl::AllShaderTypes())
+    {
+        if (shaderSources[shaderType].empty())
+        {
+            continue;
+        }
+
+        glslang::TIntermediate *intermediate = program.getIntermediate(kShLanguageMap[shaderType]);
+        glslang::GlslangToSpv(*intermediate, (*shaderCodeOut)[shaderType]);
+    }
+
+    return angle::Result::Continue;
+}
 }  // anonymous namespace
 
-GlslangWrapperUtils::Options::Options() : errorCallback(nullptr) {}
-GlslangWrapperUtils::Options::~Options() {}
-
-// static
-void GlslangWrapperUtils::Initialize()
+void GlslangInitialize()
 {
     int result = ShInitialize();
     ASSERT(result != 0);
 }
 
-// static
-void GlslangWrapperUtils::Release()
+void GlslangRelease()
 {
     int result = ShFinalize();
     ASSERT(result != 0);
 }
 
-// static
-std::string GlslangWrapperUtils::GetMappedSamplerName(const std::string &originalName)
+std::string GlslangGetMappedSamplerName(const std::string &originalName)
 {
     std::string samplerName = originalName;
 
@@ -978,12 +1041,11 @@ std::string GlslangWrapperUtils::GetMappedSamplerName(const std::string &origina
     return samplerName;
 }
 
-// static
-void GlslangWrapperUtils::GetShaderSource(const Options &options,
-                                          bool useOldRewriteStructSamplers,
-                                          const gl::ProgramState &programState,
-                                          const gl::ProgramLinkedResources &resources,
-                                          gl::ShaderMap<std::string> *shaderSourcesOut)
+void GlslangGetShaderSource(const GlslangSourceOptions &options,
+                            bool useOldRewriteStructSamplers,
+                            const gl::ProgramState &programState,
+                            const gl::ProgramLinkedResources &resources,
+                            gl::ShaderMap<std::string> *shaderSourcesOut)
 {
     gl::ShaderMap<IntermediateShaderSource> intermediateSources;
 
@@ -1052,13 +1114,11 @@ void GlslangWrapperUtils::GetShaderSource(const Options &options,
     }
 }
 
-// static
-angle::Result GlslangWrapperUtils::GetShaderCode(
-    const Options &options,
-    const gl::Caps &glCaps,
-    bool enableLineRasterEmulation,
-    const gl::ShaderMap<std::string> &shaderSources,
-    gl::ShaderMap<std::vector<uint32_t>> *shaderCodeOut)
+angle::Result GlslangGetShaderSpirvCode(GlslangErrorCallback callback,
+                                        const gl::Caps &glCaps,
+                                        bool enableLineRasterEmulation,
+                                        const gl::ShaderMap<std::string> &shaderSources,
+                                        gl::ShaderMap<std::vector<uint32_t>> *shaderCodeOut)
 {
     if (enableLineRasterEmulation)
     {
@@ -1067,101 +1127,28 @@ angle::Result GlslangWrapperUtils::GetShaderCode(
         gl::ShaderMap<std::string> patchedSources = shaderSources;
 
         // #defines must come after the #version directive.
-        ANGLE_GLSLANG_CHECK(options,
+        ANGLE_GLSLANG_CHECK(callback,
                             angle::ReplaceSubstring(&patchedSources[gl::ShaderType::Vertex],
                                                     kVersionDefine, kLineRasterDefine),
-                            ERROR_INVALID_SHADER);
-        ANGLE_GLSLANG_CHECK(options,
+                            GlslangError::InvalidShader);
+        ANGLE_GLSLANG_CHECK(callback,
                             angle::ReplaceSubstring(&patchedSources[gl::ShaderType::Fragment],
                                                     kVersionDefine, kLineRasterDefine),
-                            ERROR_INVALID_SHADER);
+                            GlslangError::InvalidShader);
 
         if (!shaderSources[gl::ShaderType::Geometry].empty())
         {
-            ANGLE_GLSLANG_CHECK(options,
+            ANGLE_GLSLANG_CHECK(callback,
                                 angle::ReplaceSubstring(&patchedSources[gl::ShaderType::Geometry],
                                                         kVersionDefine, kLineRasterDefine),
-                                ERROR_INVALID_SHADER);
+                                GlslangError::InvalidShader);
         }
 
-        return GetShaderCodeImpl(options, glCaps, patchedSources, shaderCodeOut);
+        return GetShaderSpirvCode(callback, glCaps, patchedSources, shaderCodeOut);
     }
     else
     {
-        return GetShaderCodeImpl(options, glCaps, shaderSources, shaderCodeOut);
+        return GetShaderSpirvCode(callback, glCaps, shaderSources, shaderCodeOut);
     }
-}
-
-// static
-angle::Result GlslangWrapperUtils::GetShaderCodeImpl(
-    const Options &options,
-    const gl::Caps &glCaps,
-    const gl::ShaderMap<std::string> &shaderSources,
-    gl::ShaderMap<std::vector<uint32_t>> *shaderCodeOut)
-{
-    // Enable SPIR-V and Vulkan rules when parsing GLSL
-    EShMessages messages = static_cast<EShMessages>(EShMsgSpvRules | EShMsgVulkanRules);
-
-    TBuiltInResource builtInResources(glslang::DefaultTBuiltInResource);
-    GetBuiltInResourcesFromCaps(glCaps, &builtInResources);
-
-    glslang::TShader vertexShader(EShLangVertex);
-    glslang::TShader fragmentShader(EShLangFragment);
-    glslang::TShader geometryShader(EShLangGeometry);
-    glslang::TShader computeShader(EShLangCompute);
-
-    gl::ShaderMap<glslang::TShader *> shaders = {
-        {gl::ShaderType::Vertex, &vertexShader},
-        {gl::ShaderType::Fragment, &fragmentShader},
-        {gl::ShaderType::Geometry, &geometryShader},
-        {gl::ShaderType::Compute, &computeShader},
-    };
-    glslang::TProgram program;
-
-    for (const gl::ShaderType shaderType : gl::AllShaderTypes())
-    {
-        if (shaderSources[shaderType].empty())
-        {
-            continue;
-        }
-
-        const char *shaderString = shaderSources[shaderType].c_str();
-        int shaderLength         = static_cast<int>(shaderSources[shaderType].size());
-
-        glslang::TShader *shader = shaders[shaderType];
-        shader->setStringsWithLengths(&shaderString, &shaderLength, 1);
-        shader->setEntryPoint("main");
-
-        bool result = shader->parse(&builtInResources, 450, ECoreProfile, false, false, messages);
-        if (!result)
-        {
-            ERR() << "Internal error parsing Vulkan shader corresponding to " << shaderType << ":\n"
-                  << shader->getInfoLog() << "\n"
-                  << shader->getInfoDebugLog() << "\n";
-            ANGLE_GLSLANG_CHECK(options, false, ERROR_INVALID_SHADER);
-        }
-
-        program.addShader(shader);
-    }
-
-    bool linkResult = program.link(messages);
-    if (!linkResult)
-    {
-        ERR() << "Internal error linking Vulkan shaders:\n" << program.getInfoLog() << "\n";
-        ANGLE_GLSLANG_CHECK(options, false, ERROR_INVALID_SHADER);
-    }
-
-    for (const gl::ShaderType shaderType : gl::AllShaderTypes())
-    {
-        if (shaderSources[shaderType].empty())
-        {
-            continue;
-        }
-
-        glslang::TIntermediate *intermediate = program.getIntermediate(kShLanguageMap[shaderType]);
-        glslang::GlslangToSpv(*intermediate, (*shaderCodeOut)[shaderType]);
-    }
-
-    return angle::Result::Continue;
 }
 }  // namespace rx
