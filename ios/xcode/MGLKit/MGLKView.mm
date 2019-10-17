@@ -67,6 +67,11 @@ void Throw(NSString *msg)
     _context = context;
 }
 
+- (void)setRetainedBacking:(BOOL)retainedBacking
+{
+    self.glLayer.retainedBacking = _retainedBacking = retainedBacking;
+}
+
 - (void)setDrawableColorFormat:(MGLDrawableColorFormat)drawableColorFormat
 {
     self.glLayer.drawableColorFormat = _drawableColorFormat = drawableColorFormat;

@@ -26,6 +26,9 @@
 @property(nonatomic) MGLContext *context;
 @property(nonatomic, assign) IBOutlet id<MGLKViewDelegate> delegate;
 
+// Default value is NO. Setting to YES will keep the framebuffer data after presenting.
+// Doing so will reduce performance and increase memory usage.
+@property(nonatomic) BOOL retainedBacking;
 @property(nonatomic) MGLDrawableColorFormat drawableColorFormat;      // Default is RGBA8888
 @property(nonatomic) MGLDrawableDepthFormat drawableDepthFormat;      // Default is DepthNone
 @property(nonatomic) MGLDrawableStencilFormat drawableStencilFormat;  // Default is StencilNone
