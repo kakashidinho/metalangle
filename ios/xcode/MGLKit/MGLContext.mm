@@ -18,10 +18,21 @@
 #include <EGL/eglext_angle.h>
 #include <EGL/eglplatform.h>
 #include <common/debug.h>
+#import "MGLLayer+Private.h"
 
 namespace
 {
-thread_local void *gCurrentContext;
+struct ThreadLocalInfo
+{
+    __weak MGLContext *currentContext = nil;
+    __weak MGLLayer *currentLayer     = nil;
+};
+
+ThreadLocalInfo &CurrentTLS()
+{
+    static thread_local ThreadLocalInfo tls;
+    return tls;
+}
 
 void Throw(NSString *msg)
 {
@@ -133,7 +144,12 @@ void Throw(NSString *msg)
 
 + (MGLContext *)currentContext
 {
-    return (__bridge MGLContext *)gCurrentContext;
+    return CurrentTLS().currentContext;
+}
+
++ (MGLLayer *)currentLayer
+{
+    return CurrentTLS().currentLayer;
 }
 
 + (BOOL)setCurrentContext:(MGLContext *)context
@@ -178,7 +194,8 @@ void Throw(NSString *msg)
         }
     }
 
-    gCurrentContext = (__bridge void *)self;
+    CurrentTLS().currentContext = self;
+    CurrentTLS().currentLayer   = layer;
 
     return YES;
 }
