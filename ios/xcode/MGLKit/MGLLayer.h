@@ -40,7 +40,7 @@ typedef enum MGLDrawableDepthFormat : int
 
 // Return the size of the OpenGL framebuffer.
 @property(readonly) CGSize drawableSize;
-// Default OpenGL id of the framebuffer storing content if this layer.
+// Default OpenGL id of the framebuffer storing content of this layer.
 // Might not necessary be zero.
 @property(readonly) uint32_t defaultOpenGLFrameBufferID;
 
