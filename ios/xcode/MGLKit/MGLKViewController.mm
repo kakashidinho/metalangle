@@ -38,7 +38,8 @@
 
 - (void)constructor
 {
-    _appWasInBackground = YES;
+    _appWasInBackground       = YES;
+    _preferredFramesPerSecond = 30;
 
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(appWillPause:)
@@ -87,8 +88,11 @@
 
 - (void)setPreferredFramesPerSecond:(NSInteger)preferredFramesPerSecond
 {
-    _preferredFramesPerSecond             = preferredFramesPerSecond;
-    _displayLink.preferredFramesPerSecond = _preferredFramesPerSecond;
+    _preferredFramesPerSecond = preferredFramesPerSecond;
+    if (_displayLink)
+    {
+        _displayLink.preferredFramesPerSecond = _preferredFramesPerSecond;
+    }
     [self pause];
     [self resume];
 }
@@ -125,6 +129,7 @@
     if (!_displayLink)
     {
         _displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(frameStep)];
+        _displayLink.preferredFramesPerSecond = _preferredFramesPerSecond;
     }
 
     if (_glView)
