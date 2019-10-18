@@ -9,6 +9,8 @@
 #ifndef LIBANGLE_RENDERER_GLSLANG_WRAPPER_UTILS_H_
 #define LIBANGLE_RENDERER_GLSLANG_WRAPPER_UTILS_H_
 
+#include <functional>
+
 #include "libANGLE/renderer/ProgramImpl.h"
 
 namespace rx
