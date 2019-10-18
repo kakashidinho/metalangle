@@ -1,9 +1,5 @@
 /*
      File: PaintingView.h
- Abstract: The class responsible for the finger painting. The class wraps the
- CAEAGLLayer from CoreAnimation into a convenient UIView subclass. The view
- content is basically an EAGL surface you render your OpenGL scene into.
-  Version: 1.13
 
  Disclaimer: IMPORTANT:  This Apple software is supplied to you by Apple
  Inc. ("Apple") in consideration of your agreement to the following
