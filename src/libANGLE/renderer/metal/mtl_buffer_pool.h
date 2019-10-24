@@ -25,10 +25,10 @@ namespace mtl
 // the buffer data to the device. Buffer lifetime currently assumes that each new allocation will
 // last as long or longer than each prior allocation.
 //
-// Dynamic buffers are used to implement a variety of data streaming operations in Metal, such
+// Buffer pool is used to implement a variety of data streaming operations in Metal, such
 // as for immediate vertex array and element array data, and other dynamic data.
 //
-// Internally dynamic buffers keep a collection of mtl::Buffer. When we write past the end of a
+// Internally buffer pool keeps a collection of mtl::Buffer. When we write past the end of a
 // currently active mtl::Buffer we keep it until it is no longer in use. We then mark it available
 // for future allocations in a free list.
 class BufferPool
