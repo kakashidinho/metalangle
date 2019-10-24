@@ -127,6 +127,13 @@ inline size_t GetIndexCount(BufferMtl *srcBuffer, size_t offset, gl::DrawElement
     return (srcBuffer->size() - offset) / elementSize;
 }
 
+inline void setDefaultVertexBufferLayout(mtl::VertexBufferLayoutDesc *layout)
+{
+    layout->stepFunction = MTLVertexStepFunctionConstant;
+    layout->stepRate     = 0;
+    layout->stride       = 0;
+}
+
 }  // namespace
 
 // VertexArrayMtl implementation
@@ -275,18 +282,10 @@ angle::Result VertexArrayMtl::setupDraw(const gl::Context *glContext,
         desc.numAttribs       = kMaxVertexAttribs;
         desc.numBufferLayouts = kMaxVertexAttribs;
 
-#define ANGLE_MTL_SET_DEFAULT_ATTRIB_BUFFER_LAYOUT(DESC, INDEX)           \
-    do                                                                    \
-    {                                                                     \
-        DESC.layouts[INDEX].stepFunction = MTLVertexStepFunctionConstant; \
-        DESC.layouts[INDEX].stepRate     = 0;                             \
-        DESC.layouts[INDEX].stride       = 0;                             \
-    } while (0)
-
         // Initialize the buffer layouts with constant step rate
         for (uint32_t b = 0; b < kMaxVertexAttribs; ++b)
         {
-            ANGLE_MTL_SET_DEFAULT_ATTRIB_BUFFER_LAYOUT(desc, b);
+            setDefaultVertexBufferLayout(&desc.layouts[b]);
         }
 
         for (uint32_t v = 0; v < kMaxVertexAttribs; ++v)

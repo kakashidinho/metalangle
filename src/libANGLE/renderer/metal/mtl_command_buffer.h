@@ -284,6 +284,8 @@ class RenderCommandEncoder final : public CommandEncoder
     {
         return static_cast<id<MTLRenderCommandEncoder>>(CommandEncoder::get());
     }
+    inline void setWriteDependencyAndStoreAction(const TextureRef &texture,
+                                                 MTLStoreAction *storeActionOut);
 
     RenderPassDesc mRenderPassDesc;
     MTLStoreAction mColorInitialStoreActions[kMaxRenderTargets];

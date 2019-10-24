@@ -390,6 +390,22 @@ void RenderCommandEncoder::endEncoding()
     mRenderPassDesc = RenderPassDesc();
 }
 
+inline void RenderCommandEncoder::setWriteDependencyAndStoreAction(const TextureRef &texture,
+                                                                   MTLStoreAction *storeActionOut)
+{
+    if (texture)
+    {
+        cmdBuffer().setWriteDependency(texture);
+        // Set store action to unknown so that we can change it later
+        *storeActionOut = MTLStoreActionUnknown;
+    }
+    else
+    {
+        // Texture is invalid, use don'tcare store action
+        *storeActionOut = MTLStoreActionDontCare;
+    }
+}
+
 RenderCommandEncoder &RenderCommandEncoder::restart(const RenderPassDesc &desc)
 {
     if (valid())
@@ -414,37 +430,20 @@ RenderCommandEncoder &RenderCommandEncoder::restart(const RenderPassDesc &desc)
 
     ANGLE_MTL_OBJC_SCOPE
     {
-
-#define ANGLE_MTL_SET_DEP_AND_STORE_ACTION(TEXTURE_EXPR, STOREACTION)        \
-    do                                                                       \
-    {                                                                        \
-        auto TEXTURE = TEXTURE_EXPR;                                         \
-        if (TEXTURE)                                                         \
-        {                                                                    \
-            cmdBuffer().setWriteDependency(TEXTURE);                         \
-            /* Set store action to unknown so that we can change it later */ \
-            STOREACTION = MTLStoreActionUnknown;                             \
-        }                                                                    \
-        else                                                                 \
-        {                                                                    \
-            STOREACTION = MTLStoreActionDontCare;                            \
-        }                                                                    \
-    } while (0)
-
         // mask writing dependency
         for (uint32_t i = 0; i < mRenderPassDesc.numColorAttachments; ++i)
         {
-            ANGLE_MTL_SET_DEP_AND_STORE_ACTION(mRenderPassDesc.colorAttachments[i].texture,
-                                               mRenderPassDesc.colorAttachments[i].storeAction);
+            setWriteDependencyAndStoreAction(mRenderPassDesc.colorAttachments[i].texture,
+                                             &mRenderPassDesc.colorAttachments[i].storeAction);
             mColorInitialStoreActions[i] = mRenderPassDesc.colorAttachments[i].storeAction;
         }
 
-        ANGLE_MTL_SET_DEP_AND_STORE_ACTION(mRenderPassDesc.depthAttachment.texture,
-                                           mRenderPassDesc.depthAttachment.storeAction);
+        setWriteDependencyAndStoreAction(mRenderPassDesc.depthAttachment.texture,
+                                         &mRenderPassDesc.depthAttachment.storeAction);
         mDepthInitialStoreAction = mRenderPassDesc.depthAttachment.storeAction;
 
-        ANGLE_MTL_SET_DEP_AND_STORE_ACTION(mRenderPassDesc.stencilAttachment.texture,
-                                           mRenderPassDesc.stencilAttachment.storeAction);
+        setWriteDependencyAndStoreAction(mRenderPassDesc.stencilAttachment.texture,
+                                         &mRenderPassDesc.stencilAttachment.storeAction);
         mStencilInitialStoreAction = mRenderPassDesc.stencilAttachment.storeAction;
 
         // Create objective C object
