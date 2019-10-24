@@ -350,7 +350,6 @@ angle::Result VertexArrayMtl::updateClientAttribs(const gl::Context *context,
     const auto &attribs  = mState.getVertexAttributes();
     const auto &bindings = mState.getVertexBindings();
 
-    // NOTE(hqle): Keep data interleaved.
     for (size_t attribIndex : clientAttribs)
     {
         const gl::VertexAttribute &attrib = attribs[attribIndex];
@@ -362,16 +361,12 @@ angle::Result VertexArrayMtl::updateClientAttribs(const gl::Context *context,
         GLuint stride = vertexFormat.actualAngleFormat().pixelBytes;
 
         const uint8_t *src = static_cast<const uint8_t *>(attrib.pointer);
-        if (src == nullptr)
-        {
-            // Is this an error?
-            return angle::Result::Continue;
-        }
+        ASSERT(src);
 
         if (binding.getDivisor() > 0)
         {
             ANGLE_UNUSED_VARIABLE(instanceCount);
-            // NOTE(hqle): ES 3.0.
+            // NOTE(hqle): support ES 3.0.
             // instanced attrib
             UNREACHABLE();
         }
