@@ -1279,11 +1279,7 @@ angle::Result ContextMtl::setupDraw(const gl::Context *context,
                                     gl::DrawElementsType indexTypeOrNone,
                                     const void *indices)
 {
-    if (!mProgram)
-    {
-        // Is this an error?
-        return angle::Result::Continue;
-    }
+    ASSERT(mProgram);
 
     mtl::BufferRef lineLoopLastSegmentIndexBuffer;
     if (mode == gl::PrimitiveMode::LineLoop)
