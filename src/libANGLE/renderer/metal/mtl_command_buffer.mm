@@ -590,7 +590,8 @@ RenderCommandEncoder &RenderCommandEncoder::setVertexSamplerState(id<MTLSamplerS
 
     return *this;
 }
-RenderCommandEncoder &RenderCommandEncoder::setVertexTexture(const TextureRef &texture, uint32_t index)
+RenderCommandEncoder &RenderCommandEncoder::setVertexTexture(const TextureRef &texture,
+                                                             uint32_t index)
 {
     if (index >= kMaxShaderSamplers)
     {
@@ -650,7 +651,8 @@ RenderCommandEncoder &RenderCommandEncoder::setFragmentSamplerState(id<MTLSample
 
     return *this;
 }
-RenderCommandEncoder &RenderCommandEncoder::setFragmentTexture(const TextureRef &texture, uint32_t index)
+RenderCommandEncoder &RenderCommandEncoder::setFragmentTexture(const TextureRef &texture,
+                                                               uint32_t index)
 {
     if (index >= kMaxShaderSamplers)
     {

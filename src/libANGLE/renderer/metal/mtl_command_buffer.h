@@ -23,9 +23,9 @@
 
 #include "common/FixedVector.h"
 #include "common/angleutils.h"
-#include "libANGLE/renderer/metal/mtl_state_cache.h"
 #include "libANGLE/renderer/metal/mtl_common.h"
 #include "libANGLE/renderer/metal/mtl_resources.h"
+#include "libANGLE/renderer/metal/mtl_state_cache.h"
 
 namespace rx
 {
@@ -197,7 +197,9 @@ class RenderCommandEncoder final : public CommandEncoder
                                                 uint32_t index);
     RenderCommandEncoder &setVertexTexture(const TextureRef &texture, uint32_t index);
 
-    RenderCommandEncoder &setFragmentBuffer(const BufferRef &buffer, uint32_t offset, uint32_t index);
+    RenderCommandEncoder &setFragmentBuffer(const BufferRef &buffer,
+                                            uint32_t offset,
+                                            uint32_t index);
     RenderCommandEncoder &setFragmentBytes(const uint8_t *bytes, size_t size, uint32_t index);
     template <typename T>
     RenderCommandEncoder &setFragmentData(const T &data, uint32_t index)

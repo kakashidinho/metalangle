@@ -13,10 +13,10 @@
 
 #include "common/PackedEnums.h"
 #include "libANGLE/angletypes.h"
-#include "libANGLE/renderer/metal/mtl_state_cache.h"
-#include "libANGLE/renderer/metal/mtl_render_utils.h"
 #include "libANGLE/renderer/metal/mtl_command_buffer.h"
 #include "libANGLE/renderer/metal/mtl_format_utils.h"
+#include "libANGLE/renderer/metal/mtl_render_utils.h"
+#include "libANGLE/renderer/metal/mtl_state_cache.h"
 #include "libANGLE/renderer/metal/mtl_utils.h"
 
 namespace egl

@@ -17,9 +17,9 @@
 #include "common/PackedEnums.h"
 #include "libANGLE/Context.h"
 #include "libANGLE/Texture.h"
-#include "libANGLE/renderer/metal/mtl_state_cache.h"
 #include "libANGLE/renderer/metal/mtl_format_utils.h"
 #include "libANGLE/renderer/metal/mtl_resources.h"
+#include "libANGLE/renderer/metal/mtl_state_cache.h"
 
 namespace rx
 {

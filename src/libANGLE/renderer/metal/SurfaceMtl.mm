@@ -319,9 +319,7 @@ egl::Error SurfaceMtl::getSyncValues(EGLuint64KHR *ust, EGLuint64KHR *msc, EGLui
     return egl::EglBadAccess();
 }
 
-void SurfaceMtl::setSwapInterval(EGLint interval)
-{
-}
+void SurfaceMtl::setSwapInterval(EGLint interval) {}
 
 void SurfaceMtl::setFixedWidth(EGLint width)
 {
