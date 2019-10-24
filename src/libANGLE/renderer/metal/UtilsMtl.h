@@ -90,9 +90,9 @@ class UtilsMtl : public mtl::Context, angle::NonCopyable
     angle::Result convertIndexBuffer(const gl::Context *context,
                                      gl::DrawElementsType srcType,
                                      uint32_t indexCount,
-                                     mtl::BufferRef srcBuffer,
+                                     const mtl::BufferRef &srcBuffer,
                                      uint32_t srcOffset,
-                                     mtl::BufferRef dstBuffer,
+                                     const mtl::BufferRef &dstBuffer,
                                      // Must be multiples of kBufferSettingOffsetAlignment
                                      uint32_t dstOffset);
     angle::Result generateTriFanBufferFromArrays(const gl::Context *context,
@@ -103,7 +103,7 @@ class UtilsMtl : public mtl::Context, angle::NonCopyable
     angle::Result generateLineLoopLastSegment(const gl::Context *context,
                                               uint32_t firstVertex,
                                               uint32_t lastVertex,
-                                              mtl::BufferRef dstBuffer,
+                                              const mtl::BufferRef &dstBuffer,
                                               uint32_t dstOffset);
     angle::Result generateLineLoopLastSegmentFromElementsArray(const gl::Context *context,
                                                                const IndexConversionParams &params);
@@ -160,9 +160,9 @@ class UtilsMtl : public mtl::Context, angle::NonCopyable
         const gl::Context *context,
         gl::DrawElementsType srcType,
         uint32_t indexCount,
-        mtl::BufferRef srcBuffer,
+        const mtl::BufferRef &srcBuffer,
         uint32_t srcOffset,
-        mtl::BufferRef dstBuffer,
+        const mtl::BufferRef &dstBuffer,
         // Must be multiples of kBufferSettingOffsetAlignment
         uint32_t dstOffset);
     angle::Result generateTriFanBufferFromElementsArrayCPU(const gl::Context *context,

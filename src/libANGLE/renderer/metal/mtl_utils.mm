@@ -20,7 +20,7 @@ namespace mtl
 {
 
 angle::Result InitializeTextureContents(const gl::Context *context,
-                                        TextureRef texture,
+                                        const TextureRef &texture,
                                         const Format &textureObjFormat,
                                         const gl::ImageIndex &index)
 {

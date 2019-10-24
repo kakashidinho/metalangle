@@ -24,7 +24,7 @@ RenderTargetMtl::RenderTargetMtl(RenderTargetMtl &&other)
       mLayerIndex(other.mLayerIndex)
 {}
 
-void RenderTargetMtl::set(mtl::TextureRef texture,
+void RenderTargetMtl::set(const mtl::TextureRef &texture,
                           size_t level,
                           size_t layer,
                           const mtl::Format &format)
@@ -35,7 +35,7 @@ void RenderTargetMtl::set(mtl::TextureRef texture,
     mFormat     = &format;
 }
 
-void RenderTargetMtl::set(mtl::TextureRef texture)
+void RenderTargetMtl::set(const mtl::TextureRef &texture)
 {
     mTexture = texture;
 }

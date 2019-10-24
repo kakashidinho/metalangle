@@ -65,7 +65,7 @@ class BufferPool
     // This frees resources immediately.
     void destroy(ContextMtl *contextMtl);
 
-    BufferRef getCurrentBuffer() { return mBuffer; }
+    const BufferRef &getCurrentBuffer() { return mBuffer; }
 
     size_t getAlignment() { return mAlignment; }
     void updateAlignment(ContextMtl *contextMtl, size_t alignment);

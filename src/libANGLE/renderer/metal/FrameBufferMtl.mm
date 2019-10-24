@@ -472,7 +472,7 @@ angle::Result FramebufferMtl::clearWithLoadOp(const gl::Context *context,
         uint32_t attachmentIdx = static_cast<uint32_t>(attachmentCount++);
         mtl::RenderPassColorAttachmentDesc &colorAttachment =
             tempDesc.colorAttachments[attachmentIdx];
-        mtl::TextureRef texture = colorAttachment.texture;
+        const mtl::TextureRef &texture = colorAttachment.texture;
 
         if (clearColorBuffers.test(colorIndexGL))
         {
@@ -544,7 +544,6 @@ angle::Result FramebufferMtl::clearWithDraw(const gl::Context *context,
     {
         mtl::RenderPassColorAttachmentDesc &colorAttachment =
             rpDesc.colorAttachments[attachmentIdx];
-        mtl::TextureRef texture = colorAttachment.texture;
 
         // Need to preserve previous content, since we only clear a portion of the framebuffer
         colorAttachment.loadAction = MTLLoadActionLoad;
@@ -688,7 +687,7 @@ angle::Result FramebufferMtl::readPixelsImpl(const gl::Context *context,
     {
         return angle::Result::Continue;
     }
-    mtl::TextureRef texture = renderTarget->getTexture();
+    const mtl::TextureRef &texture = renderTarget->getTexture();
 
     if (!texture)
     {

@@ -1049,7 +1049,7 @@ mtl::RenderCommandEncoder *ContextMtl::getRenderCommandEncoder(const mtl::Render
 // Utilities to quickly create render command enconder to a specific texture:
 // The previous content of texture will be loaded if clearColor is not provided
 mtl::RenderCommandEncoder *ContextMtl::getRenderCommandEncoder(
-    mtl::TextureRef textureTarget,
+    const mtl::TextureRef &textureTarget,
     const gl::ImageIndex &index,
     const Optional<MTLClearColor> &clearColor)
 {
@@ -1072,7 +1072,7 @@ mtl::RenderCommandEncoder *ContextMtl::getRenderCommandEncoder(
     return getRenderCommandEncoder(rpDesc);
 }
 // The previous content of texture will be loaded
-mtl::RenderCommandEncoder *ContextMtl::getRenderCommandEncoder(mtl::TextureRef textureTarget,
+mtl::RenderCommandEncoder *ContextMtl::getRenderCommandEncoder(const mtl::TextureRef &textureTarget,
                                                                const gl::ImageIndex &index)
 {
     return getRenderCommandEncoder(textureTarget, index, Optional<MTLClearColor>());

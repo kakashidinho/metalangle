@@ -101,7 +101,8 @@ const gl::Limitations &RendererMtl::getNativeLimitations() const
     return mNativeLimitations;
 }
 
-mtl::TextureRef RendererMtl::getNullTexture(const gl::Context *context, gl::TextureType typeEnum)
+const mtl::TextureRef &RendererMtl::getNullTexture(const gl::Context *context,
+                                                   gl::TextureType typeEnum)
 {
     ContextMtl *contextMtl = mtl::GetImpl(context);
     int type               = static_cast<int>(typeEnum);
@@ -133,7 +134,6 @@ mtl::TextureRef RendererMtl::getNullTexture(const gl::Context *context, gl::Text
             default:
                 UNREACHABLE();
                 // NOTE(hqle): Support more texture types.
-                return nullptr;
         }
         ASSERT(mNullTextures[type]);
     }

@@ -322,13 +322,13 @@ void CommandEncoder::set(id<MTLCommandEncoder> metalCmdEncoder)
     cmdBuffer().setActiveCommandEncoder(this);
 }
 
-CommandEncoder &CommandEncoder::markResourceBeingWrittenByGPU(BufferRef buffer)
+CommandEncoder &CommandEncoder::markResourceBeingWrittenByGPU(const BufferRef &buffer)
 {
     cmdBuffer().setWriteDependency(buffer);
     return *this;
 }
 
-CommandEncoder &CommandEncoder::markResourceBeingWrittenByGPU(TextureRef texture)
+CommandEncoder &CommandEncoder::markResourceBeingWrittenByGPU(const TextureRef &texture)
 {
     cmdBuffer().setWriteDependency(texture);
     return *this;
@@ -632,7 +632,7 @@ RenderCommandEncoder &RenderCommandEncoder::setBlendColor(float r, float g, floa
     return *this;
 }
 
-RenderCommandEncoder &RenderCommandEncoder::setVertexBuffer(BufferRef buffer,
+RenderCommandEncoder &RenderCommandEncoder::setVertexBuffer(const BufferRef &buffer,
                                                             uint32_t offset,
                                                             uint32_t index)
 {
@@ -689,7 +689,7 @@ RenderCommandEncoder &RenderCommandEncoder::setVertexSamplerState(id<MTLSamplerS
 
     return *this;
 }
-RenderCommandEncoder &RenderCommandEncoder::setVertexTexture(TextureRef texture, uint32_t index)
+RenderCommandEncoder &RenderCommandEncoder::setVertexTexture(const TextureRef &texture, uint32_t index)
 {
     if (index >= kMaxShaderSamplers)
     {
@@ -704,7 +704,7 @@ RenderCommandEncoder &RenderCommandEncoder::setVertexTexture(TextureRef texture,
     return *this;
 }
 
-RenderCommandEncoder &RenderCommandEncoder::setFragmentBuffer(BufferRef buffer,
+RenderCommandEncoder &RenderCommandEncoder::setFragmentBuffer(const BufferRef &buffer,
                                                               uint32_t offset,
                                                               uint32_t index)
 {
@@ -761,7 +761,7 @@ RenderCommandEncoder &RenderCommandEncoder::setFragmentSamplerState(id<MTLSample
 
     return *this;
 }
-RenderCommandEncoder &RenderCommandEncoder::setFragmentTexture(TextureRef texture, uint32_t index)
+RenderCommandEncoder &RenderCommandEncoder::setFragmentTexture(const TextureRef &texture, uint32_t index)
 {
     if (index >= kMaxShaderSamplers)
     {
@@ -787,7 +787,7 @@ RenderCommandEncoder &RenderCommandEncoder::draw(MTLPrimitiveType primitiveType,
 RenderCommandEncoder &RenderCommandEncoder::drawIndexed(MTLPrimitiveType primitiveType,
                                                         uint32_t indexCount,
                                                         MTLIndexType indexType,
-                                                        BufferRef indexBuffer,
+                                                        const BufferRef &indexBuffer,
                                                         size_t bufferOffset)
 {
     if (!indexBuffer)
@@ -808,7 +808,7 @@ RenderCommandEncoder &RenderCommandEncoder::drawIndexed(MTLPrimitiveType primiti
 RenderCommandEncoder &RenderCommandEncoder::drawIndexedBaseVertex(MTLPrimitiveType primitiveType,
                                                                   uint32_t indexCount,
                                                                   MTLIndexType indexType,
-                                                                  BufferRef indexBuffer,
+                                                                  const BufferRef &indexBuffer,
                                                                   size_t bufferOffset,
                                                                   uint32_t baseVertex)
 {
@@ -896,12 +896,12 @@ BlitCommandEncoder &BlitCommandEncoder::restart()
     }
 }
 
-BlitCommandEncoder &BlitCommandEncoder::copyTexture(TextureRef dst,
+BlitCommandEncoder &BlitCommandEncoder::copyTexture(const TextureRef &dst,
                                                     uint32_t dstSlice,
                                                     uint32_t dstLevel,
                                                     MTLOrigin dstOrigin,
                                                     MTLSize dstSize,
-                                                    TextureRef src,
+                                                    const TextureRef &src,
                                                     uint32_t srcSlice,
                                                     uint32_t srcLevel,
                                                     MTLOrigin srcOrigin)
@@ -926,7 +926,7 @@ BlitCommandEncoder &BlitCommandEncoder::copyTexture(TextureRef dst,
     return *this;
 }
 
-BlitCommandEncoder &BlitCommandEncoder::generateMipmapsForTexture(TextureRef texture)
+BlitCommandEncoder &BlitCommandEncoder::generateMipmapsForTexture(const TextureRef &texture)
 {
     if (!texture)
     {
@@ -938,7 +938,7 @@ BlitCommandEncoder &BlitCommandEncoder::generateMipmapsForTexture(TextureRef tex
 
     return *this;
 }
-BlitCommandEncoder &BlitCommandEncoder::synchronizeResource(TextureRef texture)
+BlitCommandEncoder &BlitCommandEncoder::synchronizeResource(const TextureRef &texture)
 {
     if (!texture)
     {
@@ -991,7 +991,7 @@ ComputeCommandEncoder &ComputeCommandEncoder::setComputePipelineState(
     return *this;
 }
 
-ComputeCommandEncoder &ComputeCommandEncoder::setBuffer(BufferRef buffer,
+ComputeCommandEncoder &ComputeCommandEncoder::setBuffer(const BufferRef &buffer,
                                                         uint32_t offset,
                                                         uint32_t index)
 {
@@ -1037,7 +1037,7 @@ ComputeCommandEncoder &ComputeCommandEncoder::setSamplerState(id<MTLSamplerState
 
     return *this;
 }
-ComputeCommandEncoder &ComputeCommandEncoder::setTexture(TextureRef texture, uint32_t index)
+ComputeCommandEncoder &ComputeCommandEncoder::setTexture(const TextureRef &texture, uint32_t index)
 {
     if (index >= kMaxShaderSamplers)
     {

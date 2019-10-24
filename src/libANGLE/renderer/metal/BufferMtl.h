@@ -166,7 +166,7 @@ class BufferMtl : public BufferImpl, public BufferHolderMtl
 class SimpleWeakBufferHolderMtl : public BufferHolderMtl
 {
   public:
-    void set(mtl::BufferRef buffer) { mBuffer = buffer; }
+    void set(const mtl::BufferRef &buffer) { mBuffer = buffer; }
 
     mtl::BufferRef getCurrentBuffer(const gl::Context *context) override { return mBuffer.lock(); }
 

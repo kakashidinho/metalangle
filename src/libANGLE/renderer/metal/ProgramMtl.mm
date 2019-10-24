@@ -187,7 +187,7 @@ void BindNullSampler(const gl::Context *glContext,
 {
     ContextMtl *contextMtl = mtl::GetImpl(glContext);
 
-    mtl::TextureRef nullTex = contextMtl->getRenderer()->getNullTexture(glContext, textureType);
+    const mtl::TextureRef &nullTex = contextMtl->getRenderer()->getNullTexture(glContext, textureType);
 
     mtl::AutoObjCPtr<id<MTLSamplerState>> nullSampler =
         contextMtl->getRenderer()->getStateCache().getNullSamplerState(contextMtl);

@@ -246,11 +246,11 @@ class ContextMtl : public ContextImpl, public mtl::Context
 
     // Utilities to quickly create render command enconder to a specific texture:
     // The previous content of texture will be loaded if clearColor is not provided
-    mtl::RenderCommandEncoder *getRenderCommandEncoder(mtl::TextureRef textureTarget,
+    mtl::RenderCommandEncoder *getRenderCommandEncoder(const mtl::TextureRef &textureTarget,
                                                        const gl::ImageIndex &index,
                                                        const Optional<MTLClearColor> &clearColor);
     // The previous content of texture will be loaded
-    mtl::RenderCommandEncoder *getRenderCommandEncoder(mtl::TextureRef textureTarget,
+    mtl::RenderCommandEncoder *getRenderCommandEncoder(const mtl::TextureRef &textureTarget,
                                                        const gl::ImageIndex &index);
 
     // Will end current command encoder and start new blit command encoder. Unless a blit comamnd

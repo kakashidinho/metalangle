@@ -61,7 +61,7 @@ class RendererMtl final : angle::NonCopyable
         return mStateCache.getSamplerState(getMetalDevice(), desc);
     }
 
-    mtl::TextureRef getNullTexture(const gl::Context *context, gl::TextureType type);
+    const mtl::TextureRef &getNullTexture(const gl::Context *context, gl::TextureType type);
 
     const mtl::Format &getPixelFormat(angle::FormatID angleFormatId) const
     {

@@ -29,7 +29,7 @@ namespace mtl
 NS_ASSUME_NONNULL_BEGIN
 
 angle::Result InitializeTextureContents(const gl::Context *context,
-                                        TextureRef texture,
+                                        const TextureRef &texture,
                                         const Format &textureObjFormat,
                                         const gl::ImageIndex &index);
 

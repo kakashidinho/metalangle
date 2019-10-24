@@ -137,8 +137,8 @@ class CommandEncoder : public WrappedObject<id<MTLCommandEncoder>>, angle::NonCo
     void reset();
     Type getType() const { return mType; }
 
-    CommandEncoder &markResourceBeingWrittenByGPU(BufferRef buffer);
-    CommandEncoder &markResourceBeingWrittenByGPU(TextureRef texture);
+    CommandEncoder &markResourceBeingWrittenByGPU(const BufferRef &buffer);
+    CommandEncoder &markResourceBeingWrittenByGPU(const TextureRef &texture);
 
   protected:
     typedef WrappedObject<id<MTLCommandEncoder>> ParentClass;
@@ -224,7 +224,7 @@ class RenderCommandEncoder final : public CommandEncoder
 
     RenderCommandEncoder &setBlendColor(float r, float g, float b, float a);
 
-    RenderCommandEncoder &setVertexBuffer(BufferRef buffer, uint32_t offset, uint32_t index);
+    RenderCommandEncoder &setVertexBuffer(const BufferRef &buffer, uint32_t offset, uint32_t index);
     RenderCommandEncoder &setVertexBytes(const uint8_t *bytes, size_t size, uint32_t index);
     template <typename T>
     RenderCommandEncoder &setVertexData(const T &data, uint32_t index)
@@ -235,9 +235,9 @@ class RenderCommandEncoder final : public CommandEncoder
                                                 float lodMinClamp,
                                                 float lodMaxClamp,
                                                 uint32_t index);
-    RenderCommandEncoder &setVertexTexture(TextureRef texture, uint32_t index);
+    RenderCommandEncoder &setVertexTexture(const TextureRef &texture, uint32_t index);
 
-    RenderCommandEncoder &setFragmentBuffer(BufferRef buffer, uint32_t offset, uint32_t index);
+    RenderCommandEncoder &setFragmentBuffer(const BufferRef &buffer, uint32_t offset, uint32_t index);
     RenderCommandEncoder &setFragmentBytes(const uint8_t *bytes, size_t size, uint32_t index);
     template <typename T>
     RenderCommandEncoder &setFragmentData(const T &data, uint32_t index)
@@ -248,7 +248,7 @@ class RenderCommandEncoder final : public CommandEncoder
                                                   float lodMinClamp,
                                                   float lodMaxClamp,
                                                   uint32_t index);
-    RenderCommandEncoder &setFragmentTexture(TextureRef texture, uint32_t index);
+    RenderCommandEncoder &setFragmentTexture(const TextureRef &texture, uint32_t index);
 
     RenderCommandEncoder &draw(MTLPrimitiveType primitiveType,
                                uint32_t vertexStart,
@@ -256,12 +256,12 @@ class RenderCommandEncoder final : public CommandEncoder
     RenderCommandEncoder &drawIndexed(MTLPrimitiveType primitiveType,
                                       uint32_t indexCount,
                                       MTLIndexType indexType,
-                                      BufferRef indexBuffer,
+                                      const BufferRef &indexBuffer,
                                       size_t bufferOffset);
     RenderCommandEncoder &drawIndexedBaseVertex(MTLPrimitiveType primitiveType,
                                                 uint32_t indexCount,
                                                 MTLIndexType indexType,
-                                                BufferRef indexBuffer,
+                                                const BufferRef &indexBuffer,
                                                 size_t bufferOffset,
                                                 uint32_t baseVertex);
 
@@ -297,18 +297,18 @@ class BlitCommandEncoder final : public CommandEncoder
 
     BlitCommandEncoder &restart();
 
-    BlitCommandEncoder &copyTexture(TextureRef dst,
+    BlitCommandEncoder &copyTexture(const TextureRef &dst,
                                     uint32_t dstSlice,
                                     uint32_t dstLevel,
                                     MTLOrigin dstOrigin,
                                     MTLSize dstSize,
-                                    TextureRef src,
+                                    const TextureRef &src,
                                     uint32_t srcSlice,
                                     uint32_t srcLevel,
                                     MTLOrigin srcOrigin);
 
-    BlitCommandEncoder &generateMipmapsForTexture(TextureRef texture);
-    BlitCommandEncoder &synchronizeResource(TextureRef texture);
+    BlitCommandEncoder &generateMipmapsForTexture(const TextureRef &texture);
+    BlitCommandEncoder &synchronizeResource(const TextureRef &texture);
 
   private:
     id<MTLBlitCommandEncoder> get()
@@ -327,7 +327,7 @@ class ComputeCommandEncoder final : public CommandEncoder
 
     ComputeCommandEncoder &setComputePipelineState(id<MTLComputePipelineState> state);
 
-    ComputeCommandEncoder &setBuffer(BufferRef buffer, uint32_t offset, uint32_t index);
+    ComputeCommandEncoder &setBuffer(const BufferRef &buffer, uint32_t offset, uint32_t index);
     ComputeCommandEncoder &setBytes(const uint8_t *bytes, size_t size, uint32_t index);
     template <typename T>
     ComputeCommandEncoder &setData(const T &data, uint32_t index)
@@ -338,7 +338,7 @@ class ComputeCommandEncoder final : public CommandEncoder
                                            float lodMinClamp,
                                            float lodMaxClamp,
                                            uint32_t index);
-    ComputeCommandEncoder &setTexture(TextureRef texture, uint32_t index);
+    ComputeCommandEncoder &setTexture(const TextureRef &texture, uint32_t index);
 
     ComputeCommandEncoder &dispatch(MTLSize threadGroupsPerGrid, MTLSize threadsPerGroup);
 
