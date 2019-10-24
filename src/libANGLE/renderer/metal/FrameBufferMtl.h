@@ -106,15 +106,15 @@ class FramebufferMtl : public FramebufferImpl
     angle::Result invalidateImpl(ContextMtl *contextMtl, size_t count, const GLenum *attachments);
     angle::Result clearImpl(const gl::Context *context,
                             gl::DrawBufferMask clearColorBuffers,
-                            mtl::RenderUtils::ClearParams *clearOpts);
+                            mtl::ClearRectParams *clearOpts);
 
     angle::Result clearWithLoadOp(const gl::Context *context,
                                   gl::DrawBufferMask clearColorBuffers,
-                                  const mtl::RenderUtils::ClearParams &clearOpts);
+                                  const mtl::ClearRectParams &clearOpts);
 
     angle::Result clearWithDraw(const gl::Context *context,
                                 gl::DrawBufferMask clearColorBuffers,
-                                const mtl::RenderUtils::ClearParams &clearOpts);
+                                const mtl::ClearRectParams &clearOpts);
 
     angle::Result prepareRenderPass(const gl::Context *context,
                                     gl::DrawBufferMask drawColorBuffers,

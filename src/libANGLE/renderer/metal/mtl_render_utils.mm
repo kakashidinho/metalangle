@@ -232,7 +232,7 @@ void RenderUtils::initBlitResources()
 
 void RenderUtils::clearWithDraw(const gl::Context *context,
                                 RenderCommandEncoder *cmdEncoder,
-                                const ClearParams &params)
+                                const ClearRectParams &params)
 {
     auto overridedParams = params;
     // Make sure we don't clear attachment that doesn't exist
@@ -286,7 +286,7 @@ void RenderUtils::blitWithDraw(const gl::Context *context,
 
 void RenderUtils::setupClearWithDraw(const gl::Context *context,
                                      RenderCommandEncoder *cmdEncoder,
-                                     const ClearParams &params)
+                                     const ClearRectParams &params)
 {
     // Generate render pipeline state
     auto renderPipelineState = getClearRenderPipelineState(context, cmdEncoder, params);
@@ -386,7 +386,7 @@ void RenderUtils::setupDrawCommonStates(RenderCommandEncoder *cmdEncoder)
 }
 
 id<MTLDepthStencilState> RenderUtils::getClearDepthStencilState(const gl::Context *context,
-                                                                const ClearParams &params)
+                                                                const ClearRectParams &params)
 {
     if (!params.clearDepth.valid() && !params.clearStencil.valid())
     {
@@ -425,7 +425,7 @@ id<MTLDepthStencilState> RenderUtils::getClearDepthStencilState(const gl::Contex
 id<MTLRenderPipelineState> RenderUtils::getClearRenderPipelineState(
     const gl::Context *context,
     RenderCommandEncoder *cmdEncoder,
-    const ClearParams &params)
+    const ClearRectParams &params)
 {
     ContextMtl *contextMtl      = GetImpl(context);
     MTLColorWriteMask colorMask = contextMtl->getColorMask();
@@ -760,7 +760,7 @@ angle::Result RenderUtils::generateTriFanBufferFromArrays(const gl::Context *con
 
 angle::Result RenderUtils::generateTriFanBufferFromElementsArray(
     const gl::Context *context,
-    const IndexConversionParams &params)
+    const IndexGenerationParams &params)
 {
     ContextMtl *contextMtl             = GetImpl(context);
     const gl::VertexArray *vertexArray = context->getState().getVertexArray();
@@ -820,7 +820,7 @@ angle::Result RenderUtils::generateTriFanBufferFromElementsArrayGPU(
 
 angle::Result RenderUtils::generateTriFanBufferFromElementsArrayCPU(
     const gl::Context *context,
-    const IndexConversionParams &params)
+    const IndexGenerationParams &params)
 {
     ContextMtl *contextMtl = GetImpl(context);
     switch (params.srcType)
@@ -863,7 +863,7 @@ angle::Result RenderUtils::generateLineLoopLastSegment(const gl::Context *contex
 
 angle::Result RenderUtils::generateLineLoopLastSegmentFromElementsArray(
     const gl::Context *context,
-    const IndexConversionParams &params)
+    const IndexGenerationParams &params)
 {
     ContextMtl *contextMtl             = GetImpl(context);
     const gl::VertexArray *vertexArray = context->getState().getVertexArray();
@@ -891,7 +891,7 @@ angle::Result RenderUtils::generateLineLoopLastSegmentFromElementsArray(
 
 angle::Result RenderUtils::generateLineLoopLastSegmentFromElementsArrayCPU(
     const gl::Context *context,
-    const IndexConversionParams &params)
+    const IndexGenerationParams &params)
 {
     uint32_t first, last;
 

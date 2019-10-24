@@ -25,57 +25,57 @@ class RendererMtl;
 
 namespace mtl
 {
+struct ClearRectParams : public ClearOptions
+{
+    gl::Rectangle clearArea;
+
+    bool flipY = false;
+};
+
+struct BlitParams
+{
+    gl::Offset dstOffset;
+    // Destination texture needs to have viewport Y flipped?
+    // The difference between this param and unpackFlipY is that unpackFlipY is from
+    // glCopyImageCHROMIUM(), and dstFlipY controls whether the final viewport needs to be
+    // flipped when drawing to destination texture.
+    bool dstFlipY = false;
+
+    MTLColorWriteMask dstColorMask = MTLColorWriteMaskAll;
+
+    TextureRef src;
+    uint32_t srcLevel = 0;
+    gl::Rectangle srcRect;
+    bool srcYFlipped            = false;  // source texture has data flipped in Y direction
+    bool unpackFlipY            = false;  // flip texture data copying process in Y direction
+    bool unpackPremultiplyAlpha = false;
+    bool unpackUnmultiplyAlpha  = false;
+    bool dstLuminance           = false;
+};
+
+struct TriFanFromArrayParams
+{
+    uint32_t firstVertex;
+    uint32_t vertexCount;
+    BufferRef dstBuffer;
+    // Must be multiples of kBufferSettingOffsetAlignment
+    uint32_t dstOffset;
+};
+
+struct IndexGenerationParams
+{
+    gl::DrawElementsType srcType;
+    GLsizei indexCount;
+    const void *indices;
+    BufferRef dstBuffer;
+    uint32_t dstOffset;
+};
+
 class RenderUtils : public Context, angle::NonCopyable
 {
   public:
     RenderUtils(RendererMtl *renderer);
     ~RenderUtils();
-
-    struct ClearParams : public ClearOptions
-    {
-        gl::Rectangle clearArea;
-
-        bool flipY = false;
-    };
-
-    struct BlitParams
-    {
-        gl::Offset dstOffset;
-        // Destination texture needs to have viewport Y flipped?
-        // The difference between this param and unpackFlipY is that unpackFlipY is from
-        // glCopyImageCHROMIUM(), and dstFlipY controls whether the final viewport needs to be
-        // flipped when drawing to destination texture.
-        bool dstFlipY = false;
-
-        MTLColorWriteMask dstColorMask = MTLColorWriteMaskAll;
-
-        TextureRef src;
-        uint32_t srcLevel = 0;
-        gl::Rectangle srcRect;
-        bool srcYFlipped            = false;  // source texture has data flipped in Y direction
-        bool unpackFlipY            = false;  // flip texture data copying process in Y direction
-        bool unpackPremultiplyAlpha = false;
-        bool unpackUnmultiplyAlpha  = false;
-        bool dstLuminance           = false;
-    };
-
-    struct TriFanFromArrayParams
-    {
-        uint32_t firstVertex;
-        uint32_t vertexCount;
-        BufferRef dstBuffer;
-        // Must be multiples of kBufferSettingOffsetAlignment
-        uint32_t dstOffset;
-    };
-
-    struct IndexConversionParams
-    {
-        gl::DrawElementsType srcType;
-        GLsizei indexCount;
-        const void *indices;
-        BufferRef dstBuffer;
-        uint32_t dstOffset;
-    };
 
     angle::Result initialize();
     void onDestroy();
@@ -83,7 +83,7 @@ class RenderUtils : public Context, angle::NonCopyable
     // Clear current framebuffer
     void clearWithDraw(const gl::Context *context,
                        RenderCommandEncoder *cmdEncoder,
-                       const ClearParams &params);
+                       const ClearRectParams &params);
     // Blit texture data to current framebuffer
     void blitWithDraw(const gl::Context *context,
                       RenderCommandEncoder *cmdEncoder,
@@ -100,7 +100,7 @@ class RenderUtils : public Context, angle::NonCopyable
     angle::Result generateTriFanBufferFromArrays(const gl::Context *context,
                                                  const TriFanFromArrayParams &params);
     angle::Result generateTriFanBufferFromElementsArray(const gl::Context *context,
-                                                        const IndexConversionParams &params);
+                                                        const IndexGenerationParams &params);
 
     angle::Result generateLineLoopLastSegment(const gl::Context *context,
                                               uint32_t firstVertex,
@@ -108,7 +108,7 @@ class RenderUtils : public Context, angle::NonCopyable
                                               const BufferRef &dstBuffer,
                                               uint32_t dstOffset);
     angle::Result generateLineLoopLastSegmentFromElementsArray(const gl::Context *context,
-                                                               const IndexConversionParams &params);
+                                                               const IndexGenerationParams &params);
 
     angle::Result dispatchCompute(const gl::Context *context,
                                   ComputeCommandEncoder *encoder,
@@ -132,15 +132,15 @@ class RenderUtils : public Context, angle::NonCopyable
 
     void setupClearWithDraw(const gl::Context *context,
                             RenderCommandEncoder *cmdEncoder,
-                            const ClearParams &params);
+                            const ClearRectParams &params);
     void setupBlitWithDraw(const gl::Context *context,
                            RenderCommandEncoder *cmdEncoder,
                            const BlitParams &params);
     id<MTLDepthStencilState> getClearDepthStencilState(const gl::Context *context,
-                                                       const ClearParams &params);
+                                                       const ClearRectParams &params);
     id<MTLRenderPipelineState> getClearRenderPipelineState(const gl::Context *context,
                                                            RenderCommandEncoder *cmdEncoder,
-                                                           const ClearParams &params);
+                                                           const ClearRectParams &params);
     id<MTLRenderPipelineState> getBlitRenderPipelineState(const gl::Context *context,
                                                           RenderCommandEncoder *cmdEncoder,
                                                           const BlitParams &params);
@@ -167,10 +167,10 @@ class RenderUtils : public Context, angle::NonCopyable
         // Must be multiples of kBufferSettingOffsetAlignment
         uint32_t dstOffset);
     angle::Result generateTriFanBufferFromElementsArrayCPU(const gl::Context *context,
-                                                           const IndexConversionParams &params);
+                                                           const IndexGenerationParams &params);
     angle::Result generateLineLoopLastSegmentFromElementsArrayCPU(
         const gl::Context *context,
-        const IndexConversionParams &params);
+        const IndexGenerationParams &params);
 
     AutoObjCPtr<id<MTLLibrary>> mDefaultShaders = nil;
     RenderPipelineCache mClearRenderPipelineCache;
