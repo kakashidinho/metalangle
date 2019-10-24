@@ -78,7 +78,7 @@ void Resource::setUsedByCommandBufferWithQueueSerial(uint64_t serial, bool writi
     } while (!mRef->mCmdBufferQueueSerial.compare_exchange_weak(
         curSerial, serial, std::memory_order_release, std::memory_order_relaxed));
 
-    // TODO(hqle): This is not thread safe, if multiple command buffers on multiple threads
+    // NOTE(hqle): This is not thread safe, if multiple command buffers on multiple threads
     // are writing to it.
     if (writing)
     {
@@ -230,7 +230,7 @@ void Texture::replaceRegion(ContextMtl *context,
 
     syncContent(context);
 
-    // TODO(hqle): what if multiple contexts on multiple threads are using this texture?
+    // NOTE(hqle): what if multiple contexts on multiple threads are using this texture?
     if (this->isBeingUsedByGPU(context))
     {
         context->flushCommandBufer();
@@ -256,7 +256,7 @@ void Texture::getBytes(ContextMtl *context,
 
     syncContent(context);
 
-    // TODO(hqle): what if multiple contexts on multiple threads are using this texture?
+    // NOTE(hqle): what if multiple contexts on multiple threads are using this texture?
     if (this->isBeingUsedByGPU(context))
     {
         context->flushCommandBufer();
@@ -382,13 +382,13 @@ uint8_t *Buffer::map(ContextMtl *context)
 {
     CommandQueue &cmdQueue = context->cmdQueue();
 
-    // TODO(hqle): what if multiple contexts on multiple threads are using this buffer?
+    // NOTE(hqle): what if multiple contexts on multiple threads are using this buffer?
     if (this->isBeingUsedByGPU(context))
     {
         context->flushCommandBufer();
     }
 
-    // TODO(hqle): currently not support reading data written by GPU
+    // NOTE(hqle): currently not support reading data written by GPU
     cmdQueue.ensureResourceReadyForCPU(this);
 
     return reinterpret_cast<uint8_t *>([get() contents]);

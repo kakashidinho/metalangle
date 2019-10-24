@@ -171,7 +171,7 @@ SurfaceMtl::SurfaceMtl(DisplayMtl *displayMtl,
 {
     RendererMtl *renderer = displayMtl->getRenderer();
 
-    // TODO(hqle): Width and height attributes is ignored for now.
+    // NOTE(hqle): Width and height attributes is ignored for now.
     mColorFormat = renderer->getPixelFormat(kDefaultFrameBufferColorFormatId);
 
     int depthBits   = 0;
@@ -321,18 +321,15 @@ egl::Error SurfaceMtl::getSyncValues(EGLuint64KHR *ust, EGLuint64KHR *msc, EGLui
 
 void SurfaceMtl::setSwapInterval(EGLint interval)
 {
-    // TODO(hqle)
 }
 
 void SurfaceMtl::setFixedWidth(EGLint width)
 {
-    // TODO(hqle)
     UNIMPLEMENTED();
 }
 
 void SurfaceMtl::setFixedHeight(EGLint height)
 {
-    // TODO(hqle)
     UNIMPLEMENTED();
 }
 
@@ -381,7 +378,7 @@ angle::Result SurfaceMtl::getAttachmentRenderTarget(const gl::Context *context,
                                                     GLsizei samples,
                                                     FramebufferAttachmentRenderTarget **rtOut)
 {
-    // TODO(hqle): Support MSAA.
+    // NOTE(hqle): Support MSAA.
     ANGLE_TRY(ensureRenderTargetsCreated(context));
 
     switch (binding)
@@ -396,7 +393,7 @@ angle::Result SurfaceMtl::getAttachmentRenderTarget(const gl::Context *context,
             *rtOut = mStencilFormat.valid() ? &mStencilRenderTarget : nullptr;
             break;
         case GL_DEPTH_STENCIL:
-            // TODO(hqle): ES 3.0 feature
+            // NOTE(hqle): ES 3.0 feature
             UNREACHABLE();
             break;
     }

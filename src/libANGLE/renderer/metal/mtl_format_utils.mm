@@ -26,7 +26,7 @@ bool OverrideTextureCaps(const RendererMtl *renderer,
                          angle::FormatID formatId,
                          gl::TextureCaps *caps)
 {
-    // TODO(hqle): Auto generate this.
+    // NOTE(hqle): Auto generate this.
     switch (formatId)
     {
         case angle::FormatID::R8G8_UNORM:
@@ -40,7 +40,7 @@ bool OverrideTextureCaps(const RendererMtl *renderer,
                 true;
             return true;
         default:
-            // TODO(hqle): Handle more cases
+            // NOTE(hqle): Handle more cases
             return false;
     }
 }
@@ -153,7 +153,7 @@ void GenerateTextureCapsMap(const FormatTable &formatTable,
                                                          clientVersion, tmpTextureExtensions);
         }
 
-        // TODO(hqle): Support MSAA.
+        // NOTE(hqle): Support MSAA.
         textureCaps.sampleCounts.clear();
         textureCaps.sampleCounts.insert(0);
         textureCaps.sampleCounts.insert(1);
@@ -235,7 +235,7 @@ bool Format::FormatRenderable(MTLPixelFormat format)
         case MTLPixelFormatABGR4Unorm:
         case MTLPixelFormatBGR5A1Unorm:
 #endif
-            // TODO(hqle): we may add more formats support here in future.
+            // NOTE(hqle): we may add more formats support here in future.
             return true;
         default:
             return false;
@@ -255,7 +255,7 @@ bool Format::FormatCPUReadable(MTLPixelFormat format)
         case MTLPixelFormatDepth16Unorm:
         case MTLPixelFormatDepth24Unorm_Stencil8:
 #endif
-            // TODO(hqle): we may add more formats support here in future.
+            // NOTE(hqle): we may add more formats support here in future.
             return false;
         default:
             return true;

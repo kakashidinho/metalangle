@@ -164,7 +164,7 @@ angle::Result BufferMtl::copySubData(const gl::Context *context,
 
     auto srcMtl = GetAs<BufferMtl>(source);
 
-    // TODO(hqle): use blit command.
+    // NOTE(hqle): use blit command.
     return setSubDataImpl(context, srcMtl->getClientShadowCopyData(context) + sourceOffset, size,
                           destOffset);
 }
@@ -183,7 +183,7 @@ angle::Result BufferMtl::mapRange(const gl::Context *context,
 {
     ASSERT(mShadowCopy.size());
 
-    // TODO(hqle): use access flags
+    // NOTE(hqle): use access flags
     if (mapPtr)
     {
         *mapPtr = mShadowCopy.data() + offset;
@@ -255,7 +255,7 @@ mtl::BufferRef BufferMtl::getCurrentBuffer(const gl::Context *context)
 
 const uint8_t *BufferMtl::getClientShadowCopyData(const gl::Context *context)
 {
-    // TODO(hqle): Support buffer update from GPU.
+    // NOTE(hqle): Support buffer update from GPU.
     // Which mean we have to stall the GPU by calling finish and copy
     // data back to shadow copy.
     return mShadowCopy.data();

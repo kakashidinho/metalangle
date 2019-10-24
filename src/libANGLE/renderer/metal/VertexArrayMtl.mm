@@ -86,7 +86,7 @@ angle::Result StreamIndexData(ContextMtl *contextMtl,
         const GLubyte *in     = static_cast<const GLubyte *>(sourcePointer);
         GLushort *expandedDst = reinterpret_cast<GLushort *>(dst);
 
-        // TODO(hqle): May need to handle primitive restart index in future when ES 3.0
+        // NOTE(hqle): May need to handle primitive restart index in future when ES 3.0
         // is supported.
         // Fast path for common case.
         for (size_t index = 0; index < indexCount; index++)
@@ -353,7 +353,7 @@ angle::Result VertexArrayMtl::updateClientAttribs(const gl::Context *context,
     const auto &attribs  = mState.getVertexAttributes();
     const auto &bindings = mState.getVertexBindings();
 
-    // TODO(hqle): Keep data interleaved.
+    // NOTE(hqle): Keep data interleaved.
     for (size_t attribIndex : clientAttribs)
     {
         const gl::VertexAttribute &attrib = attribs[attribIndex];
@@ -374,7 +374,7 @@ angle::Result VertexArrayMtl::updateClientAttribs(const gl::Context *context,
         if (binding.getDivisor() > 0)
         {
             (void)instanceCount;
-            // TODO(hqle): ES 3.0.
+            // NOTE(hqle): ES 3.0.
             // instanced attrib
             UNREACHABLE();
         }
@@ -453,7 +453,7 @@ angle::Result VertexArrayMtl::syncDirtyAttrib(const gl::Context *glContext,
         mCurrentArrayBuffers[attribIndex]       = nullptr;
         mCurrentArrayBufferOffsets[attribIndex] = 0;
         mCurrentArrayBufferStrides[attribIndex] = 0;
-        // TODO(hqle): We only support ES 2.0 atm. So default attribute type should always
+        // NOTE(hqle): We only support ES 2.0 atm. So default attribute type should always
         // be float.
         mCurrentArrayBufferFormats[attribIndex] = MTLVertexFormatFloat4;
     }
@@ -591,7 +591,7 @@ angle::Result VertexArrayMtl::convertVertexBuffer(const gl::Context *glContext,
         return angle::Result::Continue;
     }
 
-    // TODO(hqle): Do the conversion on GPU.
+    // NOTE(hqle): Do the conversion on GPU.
     return convertVertexBufferCPU(glContext, srcBuffer, binding, attribIndex, vertexFormat,
                                   conversion);
 }

@@ -370,7 +370,7 @@ class ContextMtl : public ContextImpl, public mtl::Context
         float viewportYScale;
         float negViewportYScale;
 
-        // TODO(hqle): Transform feedsback is not supported yet.
+        // NOTE(hqle): Transform feedsback is not supported yet.
         uint32_t xfbActiveUnpaused;
 
         int32_t xfbBufferOffsets[4];
@@ -382,7 +382,7 @@ class ContextMtl : public ContextImpl, public mtl::Context
 
     struct DefaultAttribute
     {
-        // TODO(hqle): Support integer default attributes in ES 3.0
+        // NOTE(hqle): Support integer default attributes in ES 3.0
         float values[4];
     } mDefaultAttributes[kMaxVertexAttribs];
 };

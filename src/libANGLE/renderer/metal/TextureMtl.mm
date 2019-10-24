@@ -191,7 +191,6 @@ angle::Result TextureMtl::copyTexture(const gl::Context *context,
                                       bool unpackUnmultiplyAlpha,
                                       const gl::Texture *source)
 {
-    // TODO(hqle)
     UNIMPLEMENTED();
 
     return angle::Result::Stop;
@@ -207,7 +206,6 @@ angle::Result TextureMtl::copySubTexture(const gl::Context *context,
                                          bool unpackUnmultiplyAlpha,
                                          const gl::Texture *source)
 {
-    // TODO(hqle)
     UNIMPLEMENTED();
 
     return angle::Result::Stop;
@@ -216,7 +214,6 @@ angle::Result TextureMtl::copySubTexture(const gl::Context *context,
 angle::Result TextureMtl::copyCompressedTexture(const gl::Context *context,
                                                 const gl::Texture *source)
 {
-    // TODO(hqle)
     UNIMPLEMENTED();
 
     return angle::Result::Stop;
@@ -245,7 +242,6 @@ angle::Result TextureMtl::setStorageExternalMemory(const gl::Context *context,
                                                    gl::MemoryObject *memoryObject,
                                                    GLuint64 offset)
 {
-    // TODO(hqle)
     UNIMPLEMENTED();
 
     return angle::Result::Stop;
@@ -258,7 +254,6 @@ angle::Result TextureMtl::setStorageMultisample(const gl::Context *context,
                                                 const gl::Extents &size,
                                                 bool fixedSampleLocations)
 {
-    // TODO(hqle)
     UNIMPLEMENTED();
 
     return angle::Result::Stop;
@@ -268,7 +263,6 @@ angle::Result TextureMtl::setEGLImageTarget(const gl::Context *context,
                                             gl::TextureType type,
                                             egl::Image *image)
 {
-    // TODO(hqle)
     UNIMPLEMENTED();
 
     return angle::Result::Stop;
@@ -318,7 +312,7 @@ angle::Result TextureMtl::generateMipmapCPU(const gl::Context *context)
     // This format must have mip generation function.
     ANGLE_MTL_TRY(contextMtl, angleFormat.mipGenerationFunction);
 
-    // TODO(hqle): Support base level of ES 3.0.
+    // NOTE(hqle): Support base level of ES 3.0.
     for (uint32_t layer = 0; layer < layers; ++layer)
     {
         int maxMipLevel = static_cast<int>(mTexture->mipmapLevels()) - 1;
@@ -373,7 +367,7 @@ angle::Result TextureMtl::generateMipmapCPU(const gl::Context *context)
 
 angle::Result TextureMtl::setBaseLevel(const gl::Context *context, GLuint baseLevel)
 {
-    // TODO(hqle): ES 3.0
+    // NOTE(hqle): ES 3.0
     UNIMPLEMENTED();
 
     return angle::Result::Stop;
@@ -381,7 +375,6 @@ angle::Result TextureMtl::setBaseLevel(const gl::Context *context, GLuint baseLe
 
 angle::Result TextureMtl::bindTexImage(const gl::Context *context, egl::Surface *surface)
 {
-    // TODO(hqle)
     UNIMPLEMENTED();
 
     return angle::Result::Stop;
@@ -389,7 +382,6 @@ angle::Result TextureMtl::bindTexImage(const gl::Context *context, egl::Surface 
 
 angle::Result TextureMtl::releaseTexImage(const gl::Context *context)
 {
-    // TODO(hqle)
     UNIMPLEMENTED();
 
     return angle::Result::Stop;
@@ -401,7 +393,7 @@ angle::Result TextureMtl::getAttachmentRenderTarget(const gl::Context *context,
                                                     GLsizei samples,
                                                     FramebufferAttachmentRenderTarget **rtOut)
 {
-    // TODO(hqle): Support MSAA.
+    // NOTE(hqle): Support MSAA.
     // Non-zero mip level attachments are an ES 3.0 feature.
     ASSERT(imageIndex.getLevelIndex() == 0);
 
@@ -443,7 +435,7 @@ angle::Result TextureMtl::syncState(const gl::Context *context,
         dirtyBits.test(gl::Texture::DIRTY_BIT_SWIZZLE_BLUE) ||
         dirtyBits.test(gl::Texture::DIRTY_BIT_SWIZZLE_ALPHA))
     {
-        // TODO(hqle): Metal doesn't support swizzle on many devices. Skip for now.
+        // NOTE(hqle): Metal doesn't support swizzle on many devices. Skip for now.
     }
 
     mMetalSamplerState = renderer->getStateCache().getSamplerState(
@@ -782,7 +774,7 @@ angle::Result TextureMtl::copySubImageImpl(const gl::Context *context,
                                internalFormat, source);
     }
 
-    // TODO(hqle): Use compute shader.
+    // NOTE(hqle): Use compute shader.
     return copySubImageWithDraw(context, index, modifiedDestOffset, clippedSourceArea,
                                 internalFormat, source);
 }

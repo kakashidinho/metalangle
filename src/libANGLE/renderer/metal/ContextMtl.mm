@@ -230,7 +230,7 @@ angle::Result ContextMtl::drawArraysInstanced(const gl::Context *context,
                                               GLsizei count,
                                               GLsizei instanceCount)
 {
-    // TODO(hqle): ES 3.0
+    // NOTE(hqle): ES 3.0
     UNIMPLEMENTED();
     return angle::Result::Stop;
 }
@@ -242,7 +242,6 @@ angle::Result ContextMtl::drawArraysInstancedBaseInstance(const gl::Context *con
                                                           GLsizei instanceCount,
                                                           GLuint baseInstance)
 {
-    // TODO(hqle)
     UNIMPLEMENTED();
     return angle::Result::Stop;
 }
@@ -340,7 +339,7 @@ angle::Result ContextMtl::drawElementsInstanced(const gl::Context *context,
                                                 const void *indices,
                                                 GLsizei instanceCount)
 {
-    // TODO(hqle): ES 3.0
+    // NOTE(hqle): ES 3.0
     UNIMPLEMENTED();
     return angle::Result::Stop;
 }
@@ -353,7 +352,6 @@ angle::Result ContextMtl::drawElementsInstancedBaseVertexBaseInstance(const gl::
                                                                       GLint baseVertex,
                                                                       GLuint baseInstance)
 {
-    // TODO(hqle)
     UNIMPLEMENTED();
     return angle::Result::Stop;
 }
@@ -365,7 +363,7 @@ angle::Result ContextMtl::drawRangeElements(const gl::Context *context,
                                             gl::DrawElementsType type,
                                             const void *indices)
 {
-    // TODO(hqle): ES 3.0
+    // NOTE(hqle): ES 3.0
     UNIMPLEMENTED();
     return angle::Result::Stop;
 }
@@ -373,7 +371,7 @@ angle::Result ContextMtl::drawArraysIndirect(const gl::Context *context,
                                              gl::PrimitiveMode mode,
                                              const void *indirect)
 {
-    // TODO(hqle): ES 3.0
+    // NOTE(hqle): ES 3.0
     UNIMPLEMENTED();
     return angle::Result::Stop;
 }
@@ -382,7 +380,7 @@ angle::Result ContextMtl::drawElementsIndirect(const gl::Context *context,
                                                gl::DrawElementsType type,
                                                const void *indirect)
 {
-    // TODO(hqle): ES 3.0
+    // NOTE(hqle): ES 3.0
     UNIMPLEMENTED();
     return angle::Result::Stop;
 }
@@ -404,28 +402,16 @@ std::string ContextMtl::getRendererDescription() const
 }
 
 // EXT_debug_marker
-void ContextMtl::insertEventMarker(GLsizei length, const char *marker)
-{
-    // TODO(hqle)
-}
-void ContextMtl::pushGroupMarker(GLsizei length, const char *marker)
-{
-    // TODO(hqle)
-}
+void ContextMtl::insertEventMarker(GLsizei length, const char *marker) {}
+void ContextMtl::pushGroupMarker(GLsizei length, const char *marker) {}
 void ContextMtl::popGroupMarker()
 {
     // TODO(hqle
 }
 
 // KHR_debug
-void ContextMtl::pushDebugGroup(GLenum source, GLuint id, const std::string &message)
-{
-    // TODO(hqle)
-}
-void ContextMtl::popDebugGroup()
-{
-    // TODO(hqle)
-}
+void ContextMtl::pushDebugGroup(GLenum source, GLuint id, const std::string &message) {}
+void ContextMtl::popDebugGroup() {}
 
 // State sync with dirty bits.
 angle::Result ContextMtl::syncState(const gl::Context *context,
@@ -474,19 +460,19 @@ angle::Result ContextMtl::syncState(const gl::Context *context,
                 invalidateRenderPipeline();
                 break;
             case gl::State::DIRTY_BIT_SAMPLE_ALPHA_TO_COVERAGE_ENABLED:
-                // TODO(hqle): MSAA support
+                // NOTE(hqle): MSAA support
                 break;
             case gl::State::DIRTY_BIT_SAMPLE_COVERAGE_ENABLED:
-                // TODO(hqle): MSAA support
+                // NOTE(hqle): MSAA support
                 break;
             case gl::State::DIRTY_BIT_SAMPLE_COVERAGE:
-                // TODO(hqle): MSAA support
+                // NOTE(hqle): MSAA support
                 break;
             case gl::State::DIRTY_BIT_SAMPLE_MASK_ENABLED:
-                // TODO(hqle): MSAA support
+                // NOTE(hqle): MSAA support
                 break;
             case gl::State::DIRTY_BIT_SAMPLE_MASK:
-                // TODO(hqle): MSAA support
+                // NOTE(hqle): MSAA support
                 break;
             case gl::State::DIRTY_BIT_DEPTH_TEST_ENABLED:
                 mDepthStencilDesc.updateDepthTestEnabled(glState.getDepthStencilState());
@@ -542,13 +528,13 @@ angle::Result ContextMtl::syncState(const gl::Context *context,
                 updateDepthBias(glState);
                 break;
             case gl::State::DIRTY_BIT_RASTERIZER_DISCARD_ENABLED:
-                // TODO(hqle): ES 3.0 feature.
+                // NOTE(hqle): ES 3.0 feature.
                 break;
             case gl::State::DIRTY_BIT_LINE_WIDTH:
                 // Do nothing
                 break;
             case gl::State::DIRTY_BIT_PRIMITIVE_RESTART_ENABLED:
-                // TODO(hqle): ES 3.0 feature.
+                // NOTE(hqle): ES 3.0 feature.
                 break;
             case gl::State::DIRTY_BIT_CLEAR_COLOR:
                 mClearColor.red   = glState.getColorClearValue().red;
@@ -608,21 +594,21 @@ angle::Result ContextMtl::syncState(const gl::Context *context,
                 // Nothing to do.
                 break;
             case gl::State::DIRTY_BIT_SHADER_STORAGE_BUFFER_BINDING:
-                // TODO(hqle): ES 3.0 feature.
+                // NOTE(hqle): ES 3.0 feature.
                 break;
             case gl::State::DIRTY_BIT_UNIFORM_BUFFER_BINDINGS:
-                // TODO(hqle): ES 3.0 feature.
+                // NOTE(hqle): ES 3.0 feature.
                 break;
             case gl::State::DIRTY_BIT_ATOMIC_COUNTER_BUFFER_BINDING:
                 break;
             case gl::State::DIRTY_BIT_IMAGE_BINDINGS:
                 break;
             case gl::State::DIRTY_BIT_MULTISAMPLING:
-                // TODO(hqle): MSAA feature.
+                // NOTE(hqle): MSAA feature.
                 break;
             case gl::State::DIRTY_BIT_SAMPLE_ALPHA_TO_ONE:
-                // TODO(hqle): this is part of EXT_multisample_compatibility.
-                // TODO(hqle): MSAA feature.
+                // NOTE(hqle): this is part of EXT_multisample_compatibility.
+                // NOTE(hqle): MSAA feature.
                 break;
             case gl::State::DIRTY_BIT_COVERAGE_MODULATION:
                 break;
@@ -649,13 +635,11 @@ angle::Result ContextMtl::syncState(const gl::Context *context,
 // Disjoint timer queries
 GLint ContextMtl::getGPUDisjoint()
 {
-    // TODO(hqle)
     UNIMPLEMENTED();
     return 0;
 }
 GLint64 ContextMtl::getTimestamp()
 {
-    // TODO(hqle)
     UNIMPLEMENTED();
     return 0;
 }
@@ -737,19 +721,17 @@ VertexArrayImpl *ContextMtl::createVertexArray(const gl::VertexArrayState &state
 // Query and Fence creation
 QueryImpl *ContextMtl::createQuery(gl::QueryType type)
 {
-    // TODO(hqle): ES 3.0
+    // NOTE(hqle): ES 3.0
     UNIMPLEMENTED();
     return nullptr;
 }
 FenceNVImpl *ContextMtl::createFenceNV()
 {
-    // TODO(hqle)
     UNIMPLEMENTED();
     return nullptr;
 }
 SyncImpl *ContextMtl::createSync()
 {
-    // TODO(hqle)
     UNIMPLEMENTED();
     return nullptr;
 }
@@ -757,7 +739,7 @@ SyncImpl *ContextMtl::createSync()
 // Transform Feedback creation
 TransformFeedbackImpl *ContextMtl::createTransformFeedback(const gl::TransformFeedbackState &state)
 {
-    // TODO(hqle): ES 3.0
+    // NOTE(hqle): ES 3.0
     UNIMPLEMENTED();
     return nullptr;
 }
@@ -765,7 +747,7 @@ TransformFeedbackImpl *ContextMtl::createTransformFeedback(const gl::TransformFe
 // Sampler object creation
 SamplerImpl *ContextMtl::createSampler(const gl::SamplerState &state)
 {
-    // TODO(hqle): ES 3.0
+    // NOTE(hqle): ES 3.0
     UNIMPLEMENTED();
     return nullptr;
 }
@@ -773,7 +755,7 @@ SamplerImpl *ContextMtl::createSampler(const gl::SamplerState &state)
 // Program Pipeline object creation
 ProgramPipelineImpl *ContextMtl::createProgramPipeline(const gl::ProgramPipelineState &data)
 {
-    // TODO(hqle): ES 3.0
+    // NOTE(hqle): ES 3.0
     UNIMPLEMENTED();
     return nullptr;
 }
@@ -781,7 +763,6 @@ ProgramPipelineImpl *ContextMtl::createProgramPipeline(const gl::ProgramPipeline
 // Path object creation
 std::vector<PathImpl *> ContextMtl::createPaths(GLsizei)
 {
-    // TODO(hqle)
     UNIMPLEMENTED();
     return std::vector<PathImpl *>();
 }
@@ -789,7 +770,6 @@ std::vector<PathImpl *> ContextMtl::createPaths(GLsizei)
 // Memory object creation.
 MemoryObjectImpl *ContextMtl::createMemoryObject()
 {
-    // TODO(hqle)
     UNIMPLEMENTED();
     return nullptr;
 }
@@ -797,14 +777,12 @@ MemoryObjectImpl *ContextMtl::createMemoryObject()
 // Semaphore creation.
 SemaphoreImpl *ContextMtl::createSemaphore()
 {
-    // TODO(hqle)
     UNIMPLEMENTED();
     return nullptr;
 }
 
 OverlayImpl *ContextMtl::createOverlay(const gl::OverlayState &state)
 {
-    // TODO(hqle)
     UNIMPLEMENTED();
     return nullptr;
 }
@@ -814,26 +792,26 @@ angle::Result ContextMtl::dispatchCompute(const gl::Context *context,
                                           GLuint numGroupsY,
                                           GLuint numGroupsZ)
 {
-    // TODO(hqle): ES 3.0
+    // NOTE(hqle): ES 3.0
     UNIMPLEMENTED();
     return angle::Result::Stop;
 }
 angle::Result ContextMtl::dispatchComputeIndirect(const gl::Context *context, GLintptr indirect)
 {
-    // TODO(hqle): ES 3.0
+    // NOTE(hqle): ES 3.0
     UNIMPLEMENTED();
     return angle::Result::Stop;
 }
 
 angle::Result ContextMtl::memoryBarrier(const gl::Context *context, GLbitfield barriers)
 {
-    // TODO(hqle): ES 3.0
+    // NOTE(hqle): ES 3.0
     UNIMPLEMENTED();
     return angle::Result::Stop;
 }
 angle::Result ContextMtl::memoryBarrierByRegion(const gl::Context *context, GLbitfield barriers)
 {
-    // TODO(hqle): ES 3.0
+    // NOTE(hqle): ES 3.0
     UNIMPLEMENTED();
     return angle::Result::Stop;
 }
@@ -1423,7 +1401,7 @@ angle::Result ContextMtl::genLineLoopLastSegment(const gl::Context *context,
     }
     else
     {
-        // TODO(hqle): Support drawRangeElements & instanced draw, which means firstVertex has to be
+        // NOTE(hqle): Support drawRangeElements & instanced draw, which means firstVertex has to be
         // taken into account
         ASSERT(firstVertex == 0);
         ANGLE_TRY(getRenderer()->getUtils().generateLineLoopLastSegmentFromElementsArray(

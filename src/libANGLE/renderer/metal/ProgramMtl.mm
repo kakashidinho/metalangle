@@ -74,7 +74,7 @@ angle::Result BindResources2(spirv_cross::CompilerMSL *compiler,
         resBinding.binding = compilerMsl.get_decoration(resource.id, spv::DecorationBinding);
 
         uint32_t bindingPoint;
-        // TODO(hqle): We use separate discrete binding point for now, in future, we should use
+        // NOTE(hqle): We use separate discrete binding point for now, in future, we should use
         // one argument buffer for each descriptor set.
         switch (resBinding.desc_set)
         {
@@ -86,7 +86,7 @@ angle::Result BindResources2(spirv_cross::CompilerMSL *compiler,
                 bindingPoint = kDriverUniformsBindingIndex;
                 break;
             case kDefaultUniformsBindingIndex:
-                // TODO(hqle): Properly handle transform feedbacks and UBO binding once ES 3.0 is
+                // NOTE(hqle): Properly handle transform feedbacks and UBO binding once ES 3.0 is
                 // implemented.
                 bindingPoint = kDefaultUniformsBindingIndex;
                 break;
@@ -117,8 +117,6 @@ angle::Result BindResources(spirv_cross::CompilerMSL *compiler,
     return BindResources2<bindingField, bindingField>(compiler, resources, shaderType);
 }
 
-// TODO(hqle): some of the code here are duplicated from Vulkan's ProgramMtl.cpp
-// In future, we should move common code to a dedicated file
 void InitDefaultUniformBlock(const std::vector<sh::Uniform> &uniforms,
                              gl::Shader *shader,
                              sh::BlockLayoutMap *blockLayoutMapOut,
@@ -273,14 +271,14 @@ std::unique_ptr<rx::LinkEvent> ProgramMtl::load(const gl::Context *context,
                                                 gl::BinaryInputStream *stream,
                                                 gl::InfoLog &infoLog)
 {
-    // TODO(hqle): support binary shader
+    // NOTE(hqle): support binary shader
     UNIMPLEMENTED();
     return std::make_unique<LinkEventDone>(angle::Result::Stop);
 }
 
 void ProgramMtl::save(const gl::Context *context, gl::BinaryOutputStream *stream)
 {
-    // TODO(hqle): support binary shader
+    // NOTE(hqle): support binary shader
     UNIMPLEMENTED();
 }
 
@@ -304,14 +302,14 @@ std::unique_ptr<LinkEvent> ProgramMtl::link(const gl::Context *context,
 
     GlslangWrapperMtl::GetShaderSource(mState, resources, &mShaderSource);
 
-    // TODO(hqle): Parallelize linking.
+    // NOTE(hqle): Parallelize linking.
     return std::make_unique<LinkEventDone>(linkImpl(context, infoLog));
 }
 
 angle::Result ProgramMtl::linkImpl(const gl::Context *glContext, gl::InfoLog &infoLog)
 {
     ContextMtl *contextMtl = mtl::GetImpl(glContext);
-    // TODO(hqle): No transform feedbacks for now, since we only support ES 2.0 atm
+    // NOTE(hqle): No transform feedbacks for now, since we only support ES 2.0 atm
 
     reset(contextMtl);
 
@@ -462,7 +460,7 @@ angle::Result ProgramMtl::convertToMsl(const gl::Context *glContext,
         &compilerMsl, mslRes.sampled_images, shaderType);
     ANGLE_MTL_TRY(contextMtl, !IsError(bindingErr));
 
-    // TODO(hqle): spirv-cross uses exceptions to report error, what should we do here
+    // NOTE(hqle): spirv-cross uses exceptions to report error, what should we do here
     // in case of error?
     std::string translatedMsl = compilerMsl.compile();
     if (translatedMsl.size() == 0)

@@ -38,7 +38,7 @@ angle::Result RenderbufferMtl::setStorageImpl(const gl::Context *context,
 {
     ContextMtl *contextMtl = mtl::GetImpl(context);
 
-    // TODO(hqle): Support MSAA
+    // NOTE(hqle): Support MSAA
     ANGLE_CHECK(contextMtl, samples == 1, "Multisample is not supported atm.", GL_INVALID_VALUE);
 
     if (mTexture != nullptr && mTexture->valid())
@@ -81,7 +81,7 @@ angle::Result RenderbufferMtl::setStorageMultisample(const gl::Context *context,
                                                      size_t width,
                                                      size_t height)
 {
-    // TODO(hqle): Support MSAA
+    // NOTE(hqle): Support MSAA
     UNIMPLEMENTED();
     return angle::Result::Stop;
 }
@@ -89,7 +89,7 @@ angle::Result RenderbufferMtl::setStorageMultisample(const gl::Context *context,
 angle::Result RenderbufferMtl::setStorageEGLImageTarget(const gl::Context *context,
                                                         egl::Image *image)
 {
-    // TODO(hqle): Support EGLimage
+    // NOTE(hqle): Support EGLimage
     UNIMPLEMENTED();
     return angle::Result::Stop;
 }
@@ -100,7 +100,7 @@ angle::Result RenderbufferMtl::getAttachmentRenderTarget(const gl::Context *cont
                                                          GLsizei samples,
                                                          FramebufferAttachmentRenderTarget **rtOut)
 {
-    // TODO(hqle): Support MSAA.
+    // NOTE(hqle): Support MSAA.
     ASSERT(mTexture && mTexture->valid());
     *rtOut = &mRenderTarget;
     return angle::Result::Continue;

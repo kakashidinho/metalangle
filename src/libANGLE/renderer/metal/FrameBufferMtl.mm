@@ -90,7 +90,7 @@ angle::Result FramebufferMtl::invalidateSub(const gl::Context *context,
                                             const GLenum *attachments,
                                             const gl::Rectangle &area)
 {
-    // TODO(hqle): ES 3.0 feature.
+    // NOTE(hqle): ES 3.0 feature.
     UNIMPLEMENTED();
     return angle::Result::Stop;
 }
@@ -128,7 +128,7 @@ angle::Result FramebufferMtl::clearBufferfv(const gl::Context *context,
                                             GLint drawbuffer,
                                             const GLfloat *values)
 {
-    // TODO(hqle): ES 3.0 feature.
+    // NOTE(hqle): ES 3.0 feature.
     UNIMPLEMENTED();
     return angle::Result::Stop;
 }
@@ -137,7 +137,7 @@ angle::Result FramebufferMtl::clearBufferuiv(const gl::Context *context,
                                              GLint drawbuffer,
                                              const GLuint *values)
 {
-    // TODO(hqle): ES 3.0 feature.
+    // NOTE(hqle): ES 3.0 feature.
     UNIMPLEMENTED();
     return angle::Result::Stop;
 }
@@ -146,7 +146,7 @@ angle::Result FramebufferMtl::clearBufferiv(const gl::Context *context,
                                             GLint drawbuffer,
                                             const GLint *values)
 {
-    // TODO(hqle): ES 3.0 feature.
+    // NOTE(hqle): ES 3.0 feature.
     UNIMPLEMENTED();
     return angle::Result::Stop;
 }
@@ -156,7 +156,7 @@ angle::Result FramebufferMtl::clearBufferfi(const gl::Context *context,
                                             GLfloat depth,
                                             GLint stencil)
 {
-    // TODO(hqle): ES 3.0 feature.
+    // NOTE(hqle): ES 3.0 feature.
     UNIMPLEMENTED();
     return angle::Result::Stop;
 }
@@ -231,7 +231,7 @@ angle::Result FramebufferMtl::blit(const gl::Context *context,
                                    GLbitfield mask,
                                    GLenum filter)
 {
-    // TODO(hqle): MSAA feature.
+    // NOTE(hqle): MSAA feature.
     UNIMPLEMENTED();
     return angle::Result::Stop;
 }
@@ -270,7 +270,7 @@ angle::Result FramebufferMtl::syncState(const gl::Context *context,
                 break;
             case gl::Framebuffer::DIRTY_BIT_DEPTH_BUFFER_CONTENTS:
             case gl::Framebuffer::DIRTY_BIT_STENCIL_BUFFER_CONTENTS:
-                // TODO(hqle): What are we supposed to do?
+                // NOTE(hqle): What are we supposed to do?
                 break;
             case gl::Framebuffer::DIRTY_BIT_DRAW_BUFFERS:
             case gl::Framebuffer::DIRTY_BIT_READ_BUFFER:
@@ -292,7 +292,7 @@ angle::Result FramebufferMtl::syncState(const gl::Context *context,
                 {
                     ASSERT(dirtyBit >= gl::Framebuffer::DIRTY_BIT_COLOR_BUFFER_CONTENTS_0 &&
                            dirtyBit < gl::Framebuffer::DIRTY_BIT_COLOR_BUFFER_CONTENTS_MAX);
-                    // TODO(hqle): What are we supposed to do?
+                    // NOTE(hqle): What are we supposed to do?
                 }
                 break;
             }
@@ -320,7 +320,6 @@ angle::Result FramebufferMtl::getSamplePosition(const gl::Context *context,
                                                 size_t index,
                                                 GLfloat *xy) const
 {
-    // TODO(hqle)
     UNIMPLEMENTED();
     return angle::Result::Stop;
 }
@@ -682,7 +681,7 @@ angle::Result FramebufferMtl::readPixelsImpl(const gl::Context *context,
     ContextMtl *contextMtl = mtl::GetImpl(context);
     if (packPixelsParams.packBuffer)
     {
-        // TODO(hqle): PBO is not supported atm
+        // NOTE(hqle): PBO is not supported atm
         ANGLE_MTL_CHECK(contextMtl, false, GL_INVALID_OPERATION);
     }
     if (!renderTarget)
@@ -699,7 +698,7 @@ angle::Result FramebufferMtl::readPixelsImpl(const gl::Context *context,
     const mtl::Format &readFormat        = *renderTarget->getFormat();
     const angle::Format &readAngleFormat = readFormat.actualAngleFormat();
 
-    // TODO(hqle): resolve MSAA texture before readback
+    // NOTE(hqle): resolve MSAA texture before readback
     int srcRowPitch         = area.width * readAngleFormat.pixelBytes;
     auto readPixelRowBuffer = new (std::nothrow) uint8_t[srcRowPitch];
 

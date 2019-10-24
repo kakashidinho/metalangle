@@ -1000,7 +1000,7 @@ ComputeCommandEncoder &ComputeCommandEncoder::setBuffer(BufferRef buffer,
         return *this;
     }
 
-    // TODO(hqle): Assume compute shader both reads and writes to this buffer for now.
+    // NOTE(hqle): Assume compute shader both reads and writes to this buffer for now.
     cmdBuffer().setReadDependency(buffer);
     cmdBuffer().setWriteDependency(buffer);
 
@@ -1044,7 +1044,7 @@ ComputeCommandEncoder &ComputeCommandEncoder::setTexture(TextureRef texture, uin
         return *this;
     }
 
-    // TODO(hqle): Assume compute shader both reads and writes to this texture for now.
+    // NOTE(hqle): Assume compute shader both reads and writes to this texture for now.
     cmdBuffer().setReadDependency(texture);
     cmdBuffer().setWriteDependency(texture);
     [get() setTexture:(texture ? texture->get() : nil) atIndex:index];

@@ -73,7 +73,7 @@ class Resource : angle::NonCopyable
         // The command buffer's writing ref count
         std::atomic<uint64_t> mCmdBufferQueueSerial{0};
 
-        // TODO(hqle): resource dirty handle is not threadsafe.
+        // NOTE(hqle): resource dirty handle is not threadsafe.
         bool mCPUReadMemDirty = false;
     };
 

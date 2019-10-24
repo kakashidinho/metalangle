@@ -161,7 +161,6 @@ gl::Version DisplayMtl::getMaxConformantESVersion() const
 
 EGLSyncImpl *DisplayMtl::createSync(const egl::AttributeMap &attribs)
 {
-    // TODO(hqle)
     UNIMPLEMENTED();
     return nullptr;
 }
@@ -175,8 +174,6 @@ egl::Error DisplayMtl::makeCurrent(egl::Surface *drawSurface,
         return egl::NoError();
     }
 
-    // TODO(hqle)
-
     return egl::NoError();
 }
 
@@ -189,12 +186,11 @@ void DisplayMtl::generateCaps(egl::Caps *outCaps) const {}
 
 void DisplayMtl::populateFeatureList(angle::FeatureList *features)
 {
-    // TODO(hqle)
 }
 
 egl::ConfigSet DisplayMtl::generateConfigs()
 {
-    // TODO(hqle): generate more config permutations
+    // NOTE(hqle): generate more config permutations
     egl::ConfigSet configs;
 
     const gl::Version &maxVersion = getMaxSupportedESVersion();

@@ -421,7 +421,7 @@ bool IsPolygonPrimitiveType(gl::PrimitiveMode mode)
 #if ANGLE_MTL_PRIMITIVE_TOPOLOGY_CLASS_AVAILABLE
 PrimitiveTopologyClass GetPrimitiveTopologyClass(gl::PrimitiveMode mode)
 {
-    // TODO(hqle): Support layered renderring in future.
+    // NOTE(hqle): Support layered renderring in future.
     // In non-layered rendering mode, unspecified is enough.
     return MTLPrimitiveTopologyClassUnspecified;
 }
@@ -448,7 +448,7 @@ MTLPrimitiveType GetPrimitiveType(gl::PrimitiveMode mode)
         case gl::PrimitiveMode::TriangleStrip:
             return MTLPrimitiveTypeTriangleStrip;
         case gl::PrimitiveMode::TriangleFan:
-            // TODO(hqle): Emulate triangle fan.
+            // NOTE(hqle): Emulate triangle fan.
         default:
             return MTLPrimitiveTypeInvalid;
     }
@@ -463,7 +463,7 @@ MTLIndexType GetIndexType(gl::DrawElementsType type)
         case gl::DrawElementsType::UnsignedInt:
             return MTLIndexTypeUInt32;
         case gl::DrawElementsType::UnsignedByte:
-            // TODO(hqle): Convert to supported type
+            // NOTE(hqle): Convert to supported type
         default:
             return MTLIndexTypeInvalid;
     }

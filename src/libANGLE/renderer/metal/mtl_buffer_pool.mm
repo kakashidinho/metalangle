@@ -224,7 +224,7 @@ void BufferPool::updateAlignment(ContextMtl *contextMtl, size_t alignment)
 {
     ASSERT(alignment > 0);
 
-    // TODO(hqle): May check additional platform limits.
+    // NOTE(hqle): May check additional platform limits.
 
     mAlignment = alignment;
 }

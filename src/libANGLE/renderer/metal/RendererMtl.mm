@@ -132,7 +132,7 @@ mtl::TextureRef RendererMtl::getNullTexture(const gl::Context *context, gl::Text
                 break;
             default:
                 UNREACHABLE();
-                // TODO(hqle): Support more texture types.
+                // NOTE(hqle): Support more texture types.
                 return nullptr;
         }
         ASSERT(mNullTextures[type]);
@@ -196,7 +196,7 @@ void RendererMtl::ensureCapsInitialized() const
     mNativeCaps.maxViewportWidth     = mNativeCaps.max2DTextureSize;
     mNativeCaps.maxViewportHeight    = mNativeCaps.max2DTextureSize;
 
-    // TODO(hqle): MSAA
+    // NOTE(hqle): MSAA
     mNativeCaps.maxSampleMaskWords     = 0;
     mNativeCaps.maxColorTextureSamples = 1;
     mNativeCaps.maxDepthTextureSamples = 1;
@@ -236,7 +236,7 @@ void RendererMtl::ensureCapsInitialized() const
     mNativeCaps.maxFragmentUniformVectors                            = maxUniformVectors;
     mNativeCaps.maxShaderUniformComponents[gl::ShaderType::Fragment] = maxUniformComponents;
 
-    // TODO(hqle): support UBO (ES 3.0 feature)
+    // NOTE(hqle): support UBO (ES 3.0 feature)
     mNativeCaps.maxShaderUniformBlocks[gl::ShaderType::Vertex]   = 0;
     mNativeCaps.maxShaderUniformBlocks[gl::ShaderType::Fragment] = 0;
     mNativeCaps.maxCombinedUniformBlocks                         = 0;
@@ -247,7 +247,7 @@ void RendererMtl::ensureCapsInitialized() const
     mNativeCaps.maxShaderTextureImageUnits[gl::ShaderType::Fragment] = kMaxShaderSamplers;
     mNativeCaps.maxShaderTextureImageUnits[gl::ShaderType::Vertex]   = kMaxShaderSamplers;
 
-    // TODO(hqle): support storage buffer.
+    // NOTE(hqle): support storage buffer.
     const uint32_t maxPerStageStorageBuffers                     = 0;
     mNativeCaps.maxShaderStorageBlocks[gl::ShaderType::Vertex]   = maxPerStageStorageBuffers;
     mNativeCaps.maxShaderStorageBlocks[gl::ShaderType::Fragment] = maxPerStageStorageBuffers;
@@ -262,7 +262,7 @@ void RendererMtl::ensureCapsInitialized() const
     mNativeCaps.maxShaderStorageBlockSize          = 0;
     mNativeCaps.shaderStorageBufferOffsetAlignment = 0;
 
-    // TODO(hqle): support UBO
+    // NOTE(hqle): support UBO
     for (gl::ShaderType shaderType : gl::kAllGraphicsShaderTypes)
     {
         mNativeCaps.maxCombinedShaderUniformComponents[shaderType] = maxUniformComponents;
@@ -277,10 +277,10 @@ void RendererMtl::ensureCapsInitialized() const
     mNativeCaps.maxTransformFeedbackSeparateComponents =
         gl::IMPLEMENTATION_MAX_TRANSFORM_FEEDBACK_SEPARATE_COMPONENTS;
 
-    // TODO(hqle): support MSAA.
+    // NOTE(hqle): support MSAA.
     mNativeCaps.maxSamples = 1;
 
-    // TODO(hqle): Fill gl::Limitations
+    // NOTE(hqle): Fill gl::Limitations
 }
 
 void RendererMtl::initializeExtensions() const
@@ -289,7 +289,7 @@ void RendererMtl::initializeExtensions() const
     mNativeExtensions = gl::Extensions();
 
     // Enable this for simple buffer readback testing, but some functionality is missing.
-    // TODO(hqle): Support full mapBufferRange extension.
+    // NOTE(hqle): Support full mapBufferRange extension.
     mNativeExtensions.mapBuffer              = true;
     mNativeExtensions.mapBufferRange         = false;
     mNativeExtensions.textureStorage         = true;
@@ -308,13 +308,11 @@ void RendererMtl::initializeExtensions() const
     // Enable EXT_blend_minmax
     mNativeExtensions.blendMinMax = true;
 
-    // TODO(hqle)
     mNativeExtensions.eglImage         = false;
     mNativeExtensions.eglImageExternal = false;
-    // TODO(hqle): Support GL_OES_EGL_image_external_essl3.
+    // NOTE(hqle): Support GL_OES_EGL_image_external_essl3.
     mNativeExtensions.eglImageExternalEssl3 = false;
 
-    // TODO(hqle)
     mNativeExtensions.memoryObject   = false;
     mNativeExtensions.memoryObjectFd = false;
 
@@ -329,7 +327,7 @@ void RendererMtl::initializeExtensions() const
 
     mNativeExtensions.eglSync = false;
 
-    // TODO(hqle): support occlusion query
+    // NOTE(hqle): support occlusion query
     mNativeExtensions.occlusionQueryBoolean = false;
 
     mNativeExtensions.disjointTimerQuery          = false;
@@ -339,7 +337,7 @@ void RendererMtl::initializeExtensions() const
     mNativeExtensions.textureFilterAnisotropic = true;
     mNativeExtensions.maxTextureAnisotropy     = 16;
 
-    // TODO(hqle): Support true NPOT textures.
+    // NOTE(hqle): Support true NPOT textures.
     mNativeExtensions.textureNPOT = false;
 
     mNativeExtensions.texture3DOES = false;

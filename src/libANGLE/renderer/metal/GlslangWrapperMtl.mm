@@ -28,7 +28,7 @@ GlslangSourceOptions CreateSourceOptions()
     options.uniformsAndXfbDescriptorSetIndex = kDefaultUniformsBindingIndex;
     options.textureDescriptorSetIndex        = 0;
     options.driverUniformsDescriptorSetIndex = kDriverUniformsBindingIndex;
-    // TODO(hqle): Unused for now, until we support ES 3.0
+    // NOTE(hqle): Unused for now, until we support ES 3.0
     options.shaderResourceDescriptorSetIndex = -1;
     options.xfbBindingIndexStart             = -1;
 
