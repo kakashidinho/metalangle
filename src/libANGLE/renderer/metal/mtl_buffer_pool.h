@@ -82,7 +82,6 @@ class BufferPool
     size_t mInitialSize;
     BufferRef mBuffer;
     uint32_t mNextAllocationOffset;
-    uint32_t mLastFlushOrInvalidateOffset;
     size_t mSize;
     size_t mAlignment;
 

@@ -22,7 +22,6 @@ BufferPool::BufferPool(bool alwaysAllocNewBuffer)
     : mInitialSize(0),
       mBuffer(nullptr),
       mNextAllocationOffset(0),
-      mLastFlushOrInvalidateOffset(0),
       mSize(0),
       mAlignment(1),
       mBuffersAllocated(0),
@@ -129,8 +128,7 @@ angle::Result BufferPool::allocate(ContextMtl *contextMtl,
 
         ASSERT(mBuffer->size() == mSize);
 
-        mNextAllocationOffset        = 0;
-        mLastFlushOrInvalidateOffset = 0;
+        mNextAllocationOffset = 0;
 
         if (newBufferAllocatedOut != nullptr)
         {
@@ -173,8 +171,7 @@ angle::Result BufferPool::commit(ContextMtl *contextMtl)
         mBuffer = nullptr;
     }
 
-    mNextAllocationOffset        = 0;
-    mLastFlushOrInvalidateOffset = 0;
+    mNextAllocationOffset = 0;
 
     return angle::Result::Continue;
 }
@@ -231,12 +228,11 @@ void BufferPool::updateAlignment(ContextMtl *contextMtl, size_t alignment)
 
 void BufferPool::reset()
 {
-    mSize                        = 0;
-    mNextAllocationOffset        = 0;
-    mLastFlushOrInvalidateOffset = 0;
-    mMaxBuffers                  = 0;
-    mAlwaysAllocateNewBuffer     = false;
-    mBuffersAllocated            = 0;
+    mSize                    = 0;
+    mNextAllocationOffset    = 0;
+    mMaxBuffers              = 0;
+    mAlwaysAllocateNewBuffer = false;
+    mBuffersAllocated        = 0;
 }
 }
 }
