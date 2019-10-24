@@ -386,7 +386,6 @@ void RenderCommandEncoder::endEncoding()
     CommandEncoder::endEncoding();
 
     // reset state
-    mStateCache     = StateCache();
     mRenderPassDesc = RenderPassDesc();
 }
 
@@ -472,70 +471,9 @@ RenderCommandEncoder &RenderCommandEncoder::restart(const RenderPassDesc &desc)
     return *this;
 }
 
-RenderCommandEncoder &RenderCommandEncoder::restart(const RenderPassDesc &desc,
-                                                    const StateCache &retainedState)
-{
-    restart(desc);
-
-    // sync the state
-    setRenderPipelineState(retainedState.renderPipelineState);
-    setTriangleFillMode(retainedState.triangleFillMode);
-    setFrontFacingWinding(retainedState.frontFace);
-    setCullMode(retainedState.cullMode);
-    setDepthStencilState(retainedState.depthStencilState);
-    setDepthBias(retainedState.depthBias, retainedState.slopeScale, retainedState.clamp);
-    setStencilRefVals(retainedState.frontStencilRef, retainedState.backStencilRef);
-    setBlendColor(retainedState.blendR, retainedState.blendG, retainedState.blendB,
-                  retainedState.blendA);
-
-    for (uint32_t i = 0; i < kMaxShaderBuffers; ++i)
-    {
-        if (retainedState.vertexBuffers[i].buffer)
-        {
-            setVertexBuffer(retainedState.vertexBuffers[i].buffer,
-                            retainedState.vertexBuffers[i].offset, i);
-        }
-
-        if (retainedState.fragmentBuffers[i].buffer)
-        {
-            setFragmentBuffer(retainedState.fragmentBuffers[i].buffer,
-                              retainedState.fragmentBuffers[i].offset, i);
-        }
-    }
-
-    for (uint32_t i = 0; i < kMaxShaderSamplers; ++i)
-    {
-        if (retainedState.vertexTextures[i])
-        {
-            setVertexTexture(retainedState.vertexTextures[i], i);
-        }
-        if (retainedState.vertexSamplers[i].stateObject)
-        {
-            setVertexSamplerState(retainedState.vertexSamplers[i].stateObject,
-                                  retainedState.vertexSamplers[i].lodMinClamp,
-                                  retainedState.vertexSamplers[i].lodMaxClamp, i);
-        }
-
-        if (retainedState.fragmentTextures[i])
-        {
-            setFragmentTexture(retainedState.fragmentTextures[i], i);
-        }
-        if (retainedState.fragmentSamplers[i].stateObject)
-        {
-            setFragmentSamplerState(retainedState.fragmentSamplers[i].stateObject,
-                                    retainedState.fragmentSamplers[i].lodMinClamp,
-                                    retainedState.fragmentSamplers[i].lodMaxClamp, i);
-        }
-    }
-
-    return *this;
-}
-
 RenderCommandEncoder &RenderCommandEncoder::setRenderPipelineState(id<MTLRenderPipelineState> state)
 {
     [get() setRenderPipelineState:state];
-
-    mStateCache.renderPipelineState.retainAssign(state);
 
     return *this;
 }
@@ -543,15 +481,11 @@ RenderCommandEncoder &RenderCommandEncoder::setTriangleFillMode(MTLTriangleFillM
 {
     [get() setTriangleFillMode:mode];
 
-    mStateCache.triangleFillMode = mode;
-
     return *this;
 }
 RenderCommandEncoder &RenderCommandEncoder::setFrontFacingWinding(MTLWinding winding)
 {
     [get() setFrontFacingWinding:winding];
-
-    mStateCache.frontFace = winding;
 
     return *this;
 }
@@ -559,16 +493,12 @@ RenderCommandEncoder &RenderCommandEncoder::setCullMode(MTLCullMode mode)
 {
     [get() setCullMode:mode];
 
-    mStateCache.cullMode = mode;
-
     return *this;
 }
 
 RenderCommandEncoder &RenderCommandEncoder::setDepthStencilState(id<MTLDepthStencilState> state)
 {
     [get() setDepthStencilState:state];
-
-    mStateCache.depthStencilState.retainAssign(state);
 
     return *this;
 }
@@ -578,18 +508,11 @@ RenderCommandEncoder &RenderCommandEncoder::setDepthBias(float depthBias,
 {
     [get() setDepthBias:depthBias slopeScale:slopeScale clamp:clamp];
 
-    mStateCache.depthBias  = depthBias;
-    mStateCache.slopeScale = slopeScale;
-    mStateCache.clamp      = clamp;
-
     return *this;
 }
 RenderCommandEncoder &RenderCommandEncoder::setStencilRefVals(uint32_t frontRef, uint32_t backRef)
 {
     [get() setStencilFrontReferenceValue:frontRef backReferenceValue:backRef];
-
-    mStateCache.frontStencilRef = frontRef;
-    mStateCache.backStencilRef  = backRef;
 
     return *this;
 }
@@ -603,9 +526,6 @@ RenderCommandEncoder &RenderCommandEncoder::setViewport(const MTLViewport &viewp
 {
     [get() setViewport:viewport];
 
-    mStateCache.viewports[0] = viewport;
-    mStateCache.numViewports = 1;
-
     return *this;
 }
 
@@ -613,20 +533,12 @@ RenderCommandEncoder &RenderCommandEncoder::setScissorRect(const MTLScissorRect 
 {
     [get() setScissorRect:rect];
 
-    mStateCache.scissorRects[0] = rect;
-    mStateCache.numScissorRects = 1;
-
     return *this;
 }
 
 RenderCommandEncoder &RenderCommandEncoder::setBlendColor(float r, float g, float b, float a)
 {
     [get() setBlendColorRed:r green:g blue:b alpha:a];
-
-    mStateCache.blendR = r;
-    mStateCache.blendG = g;
-    mStateCache.blendB = b;
-    mStateCache.blendA = a;
 
     return *this;
 }
@@ -644,9 +556,6 @@ RenderCommandEncoder &RenderCommandEncoder::setVertexBuffer(const BufferRef &buf
 
     [get() setVertexBuffer:(buffer ? buffer->get() : nil) offset:offset atIndex:index];
 
-    mStateCache.vertexBuffers[index].offset = offset;
-    mStateCache.vertexBuffers[index].buffer = buffer;
-
     return *this;
 }
 
@@ -660,9 +569,6 @@ RenderCommandEncoder &RenderCommandEncoder::setVertexBytes(const uint8_t *bytes,
     }
 
     [get() setVertexBytes:bytes length:size atIndex:index];
-
-    mStateCache.vertexBuffers[index].offset = 0;
-    mStateCache.vertexBuffers[index].buffer = nullptr;
 
     return *this;
 }
@@ -682,10 +588,6 @@ RenderCommandEncoder &RenderCommandEncoder::setVertexSamplerState(id<MTLSamplerS
                      lodMaxClamp:lodMaxClamp
                          atIndex:index];
 
-    mStateCache.vertexSamplers[index].lodMinClamp = lodMinClamp;
-    mStateCache.vertexSamplers[index].lodMaxClamp = lodMaxClamp;
-    mStateCache.vertexSamplers[index].stateObject.retainAssign(state);
-
     return *this;
 }
 RenderCommandEncoder &RenderCommandEncoder::setVertexTexture(const TextureRef &texture, uint32_t index)
@@ -697,8 +599,6 @@ RenderCommandEncoder &RenderCommandEncoder::setVertexTexture(const TextureRef &t
 
     cmdBuffer().setReadDependency(texture);
     [get() setVertexTexture:(texture ? texture->get() : nil) atIndex:index];
-
-    mStateCache.vertexTextures[index] = texture;
 
     return *this;
 }
@@ -716,9 +616,6 @@ RenderCommandEncoder &RenderCommandEncoder::setFragmentBuffer(const BufferRef &b
 
     [get() setFragmentBuffer:(buffer ? buffer->get() : nil) offset:offset atIndex:index];
 
-    mStateCache.fragmentBuffers[index].offset = offset;
-    mStateCache.fragmentBuffers[index].buffer = buffer;
-
     return *this;
 }
 
@@ -732,9 +629,6 @@ RenderCommandEncoder &RenderCommandEncoder::setFragmentBytes(const uint8_t *byte
     }
 
     [get() setFragmentBytes:bytes length:size atIndex:index];
-
-    mStateCache.fragmentBuffers[index].offset = 0;
-    mStateCache.fragmentBuffers[index].buffer = nullptr;
 
     return *this;
 }
@@ -754,10 +648,6 @@ RenderCommandEncoder &RenderCommandEncoder::setFragmentSamplerState(id<MTLSample
                        lodMaxClamp:lodMaxClamp
                            atIndex:index];
 
-    mStateCache.fragmentSamplers[index].lodMinClamp = lodMinClamp;
-    mStateCache.fragmentSamplers[index].lodMaxClamp = lodMaxClamp;
-    mStateCache.fragmentSamplers[index].stateObject.retainAssign(state);
-
     return *this;
 }
 RenderCommandEncoder &RenderCommandEncoder::setFragmentTexture(const TextureRef &texture, uint32_t index)
@@ -769,8 +659,6 @@ RenderCommandEncoder &RenderCommandEncoder::setFragmentTexture(const TextureRef 
 
     cmdBuffer().setReadDependency(texture);
     [get() setFragmentTexture:(texture ? texture->get() : nil) atIndex:index];
-
-    mStateCache.fragmentTextures[index] = texture;
 
     return *this;
 }

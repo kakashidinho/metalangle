@@ -162,56 +162,12 @@ class CommandEncoder : public WrappedObject<id<MTLCommandEncoder>>, angle::NonCo
 class RenderCommandEncoder final : public CommandEncoder
 {
   public:
-    struct StateCache
-    {
-        AutoObjCPtr<id<MTLRenderPipelineState>> renderPipelineState    = nil;
-        MTLTriangleFillMode triangleFillMode                           = MTLTriangleFillModeFill;
-        MTLWinding frontFace                                           = MTLWindingClockwise;
-        MTLCullMode cullMode                                           = MTLCullModeNone;
-        AutoObjCPtr<id<MTLDepthStencilState>> depthStencilState        = nil;
-        float depthBias                                                = 0;
-        float slopeScale                                               = 0;
-        float clamp                                                    = 0;
-        uint32_t frontStencilRef                                       = 0;
-        uint32_t backStencilRef                                        = 0;
-        angle::FixedVector<MTLViewport, kMaxViewports> viewports       = {};
-        angle::FixedVector<MTLScissorRect, kMaxViewports> scissorRects = {};
-        uint32_t numViewports                                          = 0;
-        uint32_t numScissorRects                                       = 0;
-
-        float blendR = 0;
-        float blendG = 0;
-        float blendB = 0;
-        float blendA = 0;
-
-        struct BufferBinding
-        {
-            BufferRef buffer;
-            uint32_t offset = 0;
-        };
-
-        struct SamplerState
-        {
-            AutoObjCPtr<id<MTLSamplerState>> stateObject;
-            float lodMinClamp = 0;
-            float lodMaxClamp = FLT_MAX;
-        };
-
-        angle::FixedVector<BufferBinding, kMaxShaderBuffers> vertexBuffers    = {};
-        angle::FixedVector<TextureRef, kMaxShaderSamplers> vertexTextures     = {};
-        angle::FixedVector<SamplerState, kMaxShaderSamplers> vertexSamplers   = {};
-        angle::FixedVector<BufferBinding, kMaxShaderBuffers> fragmentBuffers  = {};
-        angle::FixedVector<TextureRef, kMaxShaderSamplers> fragmentTextures   = {};
-        angle::FixedVector<SamplerState, kMaxShaderSamplers> fragmentSamplers = {};
-    };
-
     RenderCommandEncoder(CommandBuffer *cmdBuffer);
     ~RenderCommandEncoder();
 
     void endEncoding() override;
 
     RenderCommandEncoder &restart(const RenderPassDesc &desc);
-    RenderCommandEncoder &restart(const RenderPassDesc &desc, const StateCache &retainedState);
 
     RenderCommandEncoder &setRenderPipelineState(id<MTLRenderPipelineState> state);
     RenderCommandEncoder &setTriangleFillMode(MTLTriangleFillMode mode);
@@ -277,7 +233,6 @@ class RenderCommandEncoder final : public CommandEncoder
                                                      MTLStoreAction stencilStoreAction);
 
     const RenderPassDesc &renderPassDesc() const { return mRenderPassDesc; }
-    const StateCache &getStateCache() const { return mStateCache; }
 
   private:
     id<MTLRenderCommandEncoder> get()
@@ -291,8 +246,6 @@ class RenderCommandEncoder final : public CommandEncoder
     MTLStoreAction mColorInitialStoreActions[kMaxRenderTargets];
     MTLStoreAction mDepthInitialStoreAction;
     MTLStoreAction mStencilInitialStoreAction;
-
-    StateCache mStateCache;
 };
 
 class BlitCommandEncoder final : public CommandEncoder
