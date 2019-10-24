@@ -143,7 +143,7 @@ void CommandQueue::onCommandBufferCompleted(id<MTLCommandBuffer> buf, uint64_t s
     while (!mMetalCmdBuffers.empty() && mMetalCmdBuffers.front().serial <= serial)
     {
         auto metalBufferEntry = mMetalCmdBuffers.front();
-        (void)metalBufferEntry;
+        ANGLE_UNUSED_VARIABLE(metalBufferEntry);
         ANGLE_MTL_LOG("Popped MTLCommandBuffer %llu:%p", metalBufferEntry.serial,
                       metalBufferEntry.buffer.get());
 

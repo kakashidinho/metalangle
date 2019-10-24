@@ -370,7 +370,7 @@ angle::Result VertexArrayMtl::updateClientAttribs(const gl::Context *context,
 
         if (binding.getDivisor() > 0)
         {
-            (void)instanceCount;
+            ANGLE_UNUSED_VARIABLE(instanceCount);
             // NOTE(hqle): ES 3.0.
             // instanced attrib
             UNREACHABLE();
