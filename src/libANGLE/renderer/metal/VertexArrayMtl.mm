@@ -156,10 +156,10 @@ VertexArrayMtl::VertexArrayMtl(const gl::VertexArrayState &state, ContextMtl *co
         format = MTLVertexFormatFloat4;
     }
 
-    mDynamicVertexData.initialize(context, 0, kVertexAttribBufferStrideAlignment,
-                                  kMaxVertexAttribs);
+    mDynamicVertexData.initialize(context, 0, mtl::kVertexAttribBufferStrideAlignment,
+                                  mtl::kMaxVertexAttribs);
 
-    mDynamicIndexData.initialize(context, kDynamicIndexDataSize, kIndexBufferOffsetAlignment);
+    mDynamicIndexData.initialize(context, kDynamicIndexDataSize, mtl::kIndexBufferOffsetAlignment);
 }
 VertexArrayMtl::~VertexArrayMtl() {}
 
@@ -279,16 +279,16 @@ angle::Result VertexArrayMtl::setupDraw(const gl::Context *glContext,
 
         auto &desc = *vertexDescOut;
 
-        desc.numAttribs       = kMaxVertexAttribs;
-        desc.numBufferLayouts = kMaxVertexAttribs;
+        desc.numAttribs       = mtl::kMaxVertexAttribs;
+        desc.numBufferLayouts = mtl::kMaxVertexAttribs;
 
         // Initialize the buffer layouts with constant step rate
-        for (uint32_t b = 0; b < kMaxVertexAttribs; ++b)
+        for (uint32_t b = 0; b < mtl::kMaxVertexAttribs; ++b)
         {
             setDefaultVertexBufferLayout(&desc.layouts[b]);
         }
 
-        for (uint32_t v = 0; v < kMaxVertexAttribs; ++v)
+        for (uint32_t v = 0; v < mtl::kMaxVertexAttribs; ++v)
         {
             const auto &attrib = attribs[v];
 
@@ -304,10 +304,10 @@ angle::Result VertexArrayMtl::setupDraw(const gl::Context *glContext,
 
             if (attribEnabled)
             {
-                uint32_t bufferIdx             = kVboBindingIndexStart + v;
+                uint32_t bufferIdx             = mtl::kVboBindingIndexStart + v;
                 desc.attributes[v].bufferIndex = bufferIdx;
 
-                ASSERT(bufferIdx < kMaxVertexAttribs);
+                ASSERT(bufferIdx < mtl::kMaxVertexAttribs);
                 desc.layouts[bufferIdx].stepFunction = MTLVertexStepFunctionPerVertex;
                 desc.layouts[bufferIdx].stepRate     = 1;
                 desc.layouts[bufferIdx].stride       = mCurrentArrayBufferStrides[v];
@@ -317,8 +317,8 @@ angle::Result VertexArrayMtl::setupDraw(const gl::Context *glContext,
             }
             else
             {
-                desc.attributes[v].bufferIndex = kDefaultAttribsBindingIndex;
-                desc.attributes[v].offset      = v * kDefaultAttributeSize;
+                desc.attributes[v].bufferIndex = mtl::kDefaultAttribsBindingIndex;
+                desc.attributes[v].offset      = v * mtl::kDefaultAttributeSize;
             }
         }
     }
@@ -407,7 +407,7 @@ angle::Result VertexArrayMtl::syncDirtyAttrib(const gl::Context *glContext,
                                               size_t attribIndex)
 {
     ContextMtl *contextMtl = mtl::GetImpl(glContext);
-    ASSERT(kMaxVertexAttribs > attribIndex);
+    ASSERT(mtl::kMaxVertexAttribs > attribIndex);
 
     if (attrib.enabled)
     {
@@ -419,8 +419,8 @@ angle::Result VertexArrayMtl::syncDirtyAttrib(const gl::Context *glContext,
             BufferMtl *bufferMtl = mtl::GetImpl(bufferGL);
             bool needConversion =
                 format.actualFormatId != format.intendedFormatId ||
-                (binding.getOffset() % kVertexAttribBufferOffsetAlignment) != 0 ||
-                (binding.getStride() % kVertexAttribBufferStrideAlignment) != 0 ||
+                (binding.getOffset() % mtl::kVertexAttribBufferOffsetAlignment) != 0 ||
+                (binding.getStride() % mtl::kVertexAttribBufferStrideAlignment) != 0 ||
                 // This is Metal requirement:
                 (format.actualAngleFormat().pixelBytes + binding.getOffset() > binding.getStride());
 
@@ -462,7 +462,7 @@ angle::Result VertexArrayMtl::convertIndexBuffer(const gl::Context *glContext,
                                                  gl::DrawElementsType indexType,
                                                  size_t offset)
 {
-    ASSERT((offset % kIndexBufferOffsetAlignment) != 0 ||
+    ASSERT((offset % mtl::kIndexBufferOffsetAlignment) != 0 ||
            indexType == gl::DrawElementsType::UnsignedByte);
 
     BufferMtl *idxBuffer = mtl::GetImpl(getState().getElementArrayBuffer());

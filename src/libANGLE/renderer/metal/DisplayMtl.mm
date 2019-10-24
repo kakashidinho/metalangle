@@ -151,7 +151,7 @@ StreamProducerImpl *DisplayMtl::createStreamProducerD3DTexture(
 
 gl::Version DisplayMtl::getMaxSupportedESVersion() const
 {
-    return kMaxSupportedGLVersion;
+    return mtl::kMaxSupportedGLVersion;
 }
 
 gl::Version DisplayMtl::getMaxConformantESVersion() const

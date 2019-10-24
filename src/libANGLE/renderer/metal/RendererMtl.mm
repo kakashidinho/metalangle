@@ -189,10 +189,10 @@ void RendererMtl::ensureCapsInitialized() const
     mNativeCaps.minAliasedLineWidth = 1.0f;
     mNativeCaps.maxAliasedLineWidth = 1.0f;
 
-    mNativeCaps.maxDrawBuffers       = kMaxRenderTargets;
+    mNativeCaps.maxDrawBuffers       = mtl::kMaxRenderTargets;
     mNativeCaps.maxFramebufferWidth  = mNativeCaps.max2DTextureSize;
     mNativeCaps.maxFramebufferHeight = mNativeCaps.max2DTextureSize;
-    mNativeCaps.maxColorAttachments  = kMaxRenderTargets;
+    mNativeCaps.maxColorAttachments  = mtl::kMaxRenderTargets;
     mNativeCaps.maxViewportWidth     = mNativeCaps.max2DTextureSize;
     mNativeCaps.maxViewportHeight    = mNativeCaps.max2DTextureSize;
 
@@ -202,8 +202,8 @@ void RendererMtl::ensureCapsInitialized() const
     mNativeCaps.maxDepthTextureSamples = 1;
     mNativeCaps.maxIntegerSamples      = 1;
 
-    mNativeCaps.maxVertexAttributes           = kMaxVertexAttribs;
-    mNativeCaps.maxVertexAttribBindings       = kMaxVertexAttribs;
+    mNativeCaps.maxVertexAttributes           = mtl::kMaxVertexAttribs;
+    mNativeCaps.maxVertexAttribBindings       = mtl::kMaxVertexAttribs;
     mNativeCaps.maxVertexAttribRelativeOffset = std::numeric_limits<GLint>::max();
     mNativeCaps.maxVertexAttribStride         = std::numeric_limits<GLint>::max();
 
@@ -225,7 +225,7 @@ void RendererMtl::ensureCapsInitialized() const
     mNativeCaps.fragmentMediumpInt.setTwosComplementInt(32);
     mNativeCaps.fragmentLowpInt.setTwosComplementInt(32);
 
-    GLuint maxUniformVectors = kDefaultUniformsMaxSize / (sizeof(GLfloat) * 4);
+    GLuint maxUniformVectors = mtl::kDefaultUniformsMaxSize / (sizeof(GLfloat) * 4);
 
     const GLuint maxUniformComponents = maxUniformVectors * 4;
 
@@ -243,9 +243,9 @@ void RendererMtl::ensureCapsInitialized() const
 
     // Note that we currently implement textures as combined image+samplers, so the limit is
     // the minimum of supported samplers and sampled images.
-    mNativeCaps.maxCombinedTextureImageUnits                         = kMaxShaderSamplers;
-    mNativeCaps.maxShaderTextureImageUnits[gl::ShaderType::Fragment] = kMaxShaderSamplers;
-    mNativeCaps.maxShaderTextureImageUnits[gl::ShaderType::Vertex]   = kMaxShaderSamplers;
+    mNativeCaps.maxCombinedTextureImageUnits                         = mtl::kMaxShaderSamplers;
+    mNativeCaps.maxShaderTextureImageUnits[gl::ShaderType::Fragment] = mtl::kMaxShaderSamplers;
+    mNativeCaps.maxShaderTextureImageUnits[gl::ShaderType::Vertex]   = mtl::kMaxShaderSamplers;
 
     // NOTE(hqle): support storage buffer.
     const uint32_t maxPerStageStorageBuffers                     = 0;

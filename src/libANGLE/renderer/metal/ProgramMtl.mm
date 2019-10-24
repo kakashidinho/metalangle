@@ -82,13 +82,13 @@ angle::Result BindResources2(spirv_cross::CompilerMSL *compiler,
                 // Use resBinding.binding as binding point.
                 bindingPoint = resBinding.binding;
                 break;
-            case kDriverUniformsBindingIndex:
-                bindingPoint = kDriverUniformsBindingIndex;
+            case mtl::kDriverUniformsBindingIndex:
+                bindingPoint = mtl::kDriverUniformsBindingIndex;
                 break;
-            case kDefaultUniformsBindingIndex:
+            case mtl::kDefaultUniformsBindingIndex:
                 // NOTE(hqle): Properly handle transform feedbacks and UBO binding once ES 3.0 is
                 // implemented.
-                bindingPoint = kDefaultUniformsBindingIndex;
+                bindingPoint = mtl::kDefaultUniformsBindingIndex;
                 break;
             default:
                 // We don't support this descriptor set.
@@ -404,7 +404,7 @@ angle::Result ProgramMtl::initDefaultUniformBlocks(const gl::Context *glContext)
     {
         if (requiredBufferSize[shaderType] > 0)
         {
-            ASSERT(requiredBufferSize[shaderType] <= kDefaultUniformsMaxSize);
+            ASSERT(requiredBufferSize[shaderType] <= mtl::kDefaultUniformsMaxSize);
 
             if (!mDefaultUniformBlocks[shaderType].uniformData.resize(
                     requiredBufferSize[shaderType]))
@@ -855,12 +855,12 @@ angle::Result ProgramMtl::commitUniforms(ContextMtl *context, mtl::RenderCommand
             case gl::ShaderType::Vertex:
                 cmdEncoder->setVertexBytes(uniformBlock.uniformData.data(),
                                            uniformBlock.uniformData.size(),
-                                           kDefaultUniformsBindingIndex);
+                                           mtl::kDefaultUniformsBindingIndex);
                 break;
             case gl::ShaderType::Fragment:
                 cmdEncoder->setFragmentBytes(uniformBlock.uniformData.data(),
                                              uniformBlock.uniformData.size(),
-                                             kDefaultUniformsBindingIndex);
+                                             mtl::kDefaultUniformsBindingIndex);
                 break;
             default:
                 UNREACHABLE();

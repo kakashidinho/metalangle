@@ -25,15 +25,17 @@ GlslangSourceOptions CreateSourceOptions()
     GlslangSourceOptions options;
     // We don't actually use descriptor set for now, the actual binding will be done inside
     // ProgramMtl using spirv-cross.
-    options.uniformsAndXfbDescriptorSetIndex = kDefaultUniformsBindingIndex;
+    options.uniformsAndXfbDescriptorSetIndex = mtl::kDefaultUniformsBindingIndex;
     options.textureDescriptorSetIndex        = 0;
-    options.driverUniformsDescriptorSetIndex = kDriverUniformsBindingIndex;
+    options.driverUniformsDescriptorSetIndex = mtl::kDriverUniformsBindingIndex;
     // NOTE(hqle): Unused for now, until we support ES 3.0
     options.shaderResourceDescriptorSetIndex = -1;
     options.xfbBindingIndexStart             = -1;
 
-    static_assert(kDefaultUniformsBindingIndex != 0, "kDefaultUniformsBindingIndex must not be 0");
-    static_assert(kDriverUniformsBindingIndex != 0, "kDriverUniformsBindingIndex must not be 0");
+    static_assert(mtl::kDefaultUniformsBindingIndex != 0,
+                  "mtl::kDefaultUniformsBindingIndex must not be 0");
+    static_assert(mtl::kDriverUniformsBindingIndex != 0,
+                  "mtl::kDriverUniformsBindingIndex must not be 0");
 
     return options;
 }

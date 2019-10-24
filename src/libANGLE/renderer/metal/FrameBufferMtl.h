@@ -131,8 +131,8 @@ class FramebufferMtl : public FramebufferImpl
                                            const gl::FramebufferAttachment *attachment,
                                            RenderTargetMtl **cachedRenderTarget);
 
-    std::array<RenderTargetMtl *, kMaxRenderTargets> mColorRenderTargets;
-    std::array<bool, kMaxRenderTargets> mDiscardColors;
+    std::array<RenderTargetMtl *, mtl::kMaxRenderTargets> mColorRenderTargets;
+    std::array<bool, mtl::kMaxRenderTargets> mDiscardColors;
     RenderTargetMtl *mDepthRenderTarget   = nullptr;
     bool mDiscardDepth                    = false;
     RenderTargetMtl *mStencilRenderTarget = nullptr;

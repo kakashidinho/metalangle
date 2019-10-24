@@ -53,7 +53,7 @@ IndexConversionBufferMtl::IndexConversionBufferMtl(const gl::Context *context,
                                                    size_t offsetIn)
     : ConversionBufferMtl(context,
                           kConvertedElementArrayBufferInitialSize,
-                          kBufferSettingOffsetAlignment),
+                          mtl::kBufferSettingOffsetAlignment),
       type(typeIn),
       offset(offsetIn),
       convertedBuffer(nullptr),
@@ -65,7 +65,7 @@ BufferMtl::VertexConversionBuffer::VertexConversionBuffer(const gl::Context *con
                                                           angle::FormatID formatIDIn,
                                                           GLuint strideIn,
                                                           size_t offsetIn)
-    : ConversionBufferMtl(context, 0, kVertexAttribBufferStrideAlignment),
+    : ConversionBufferMtl(context, 0, mtl::kVertexAttribBufferStrideAlignment),
       formatID(formatIDIn),
       stride(strideIn),
       offset(offsetIn)

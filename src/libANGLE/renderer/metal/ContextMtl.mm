@@ -103,7 +103,7 @@ angle::Result ContextMtl::initialize()
     mBlendDesc.reset();
     mDepthStencilDesc.reset();
 
-    mTriFanIndexBuffer.initialize(this, 0, kBufferSettingOffsetAlignment,
+    mTriFanIndexBuffer.initialize(this, 0, mtl::kBufferSettingOffsetAlignment,
                                   kMaxTriFanLineLoopBuffersPerFrame);
     mLineLoopIndexBuffer.initialize(this, 0, 2 * sizeof(uint32_t),
                                     kMaxTriFanLineLoopBuffersPerFrame);
@@ -302,7 +302,7 @@ angle::Result ContextMtl::drawElements(const gl::Context *context,
     else
     {
         bool needConversion = type == gl::DrawElementsType::UnsignedByte ||
-                              (convertedOffset % kIndexBufferOffsetAlignment) != 0;
+                              (convertedOffset % mtl::kIndexBufferOffsetAlignment) != 0;
         if (needConversion)
         {
             ANGLE_TRY(mVertexArray->convertIndexBuffer(context, type, convertedOffset));
@@ -312,7 +312,7 @@ angle::Result ContextMtl::drawElements(const gl::Context *context,
 
     BufferHolderMtl *idxBuffer = mVertexArray->getElementArrayBuffer();
     ASSERT(idxBuffer);
-    ASSERT((convertedOffset % kIndexBufferOffsetAlignment) == 0);
+    ASSERT((convertedOffset % mtl::kIndexBufferOffsetAlignment) == 0);
 
     ANGLE_TRY(setupDraw(context, mode, 0, count, 1, type, indices));
 
@@ -1264,9 +1264,10 @@ angle::Result ContextMtl::updateDefaultAttribute(size_t attribIndex)
     constexpr size_t kDefaultGLAttributeValueSize =
         sizeof(gl::VertexAttribCurrentValueData::Values);
 
-    static_assert(kDefaultGLAttributeValueSize == kDefaultAttributeSize,
+    static_assert(kDefaultGLAttributeValueSize == mtl::kDefaultAttributeSize,
                   "Unexpected default attribute size");
-    memcpy(mDefaultAttributes[attribIndex].values, &defaultValue.Values, kDefaultAttributeSize);
+    memcpy(mDefaultAttributes[attribIndex].values, &defaultValue.Values,
+           mtl::kDefaultAttributeSize);
 
     return angle::Result::Continue;
 }
@@ -1419,8 +1420,8 @@ angle::Result ContextMtl::handleDirtyDefaultAttribs(const gl::Context *context)
     }
 
     ASSERT(mRenderEncoder.valid());
-    mRenderEncoder.setFragmentData(mDefaultAttributes, kDefaultAttribsBindingIndex);
-    mRenderEncoder.setVertexData(mDefaultAttributes, kDefaultAttribsBindingIndex);
+    mRenderEncoder.setFragmentData(mDefaultAttributes, mtl::kDefaultAttribsBindingIndex);
+    mRenderEncoder.setVertexData(mDefaultAttributes, mtl::kDefaultAttribsBindingIndex);
 
     mDirtyDefaultAttribsMask.reset();
     mDirtyBits.reset(DIRTY_BIT_DEFAULT_ATTRIBS);
@@ -1450,8 +1451,8 @@ angle::Result ContextMtl::handleDirtyDriverUniforms(const gl::Context *context)
     mDriverUniforms.depthRange[2] = depthRangeDiff;
 
     ASSERT(mRenderEncoder.valid());
-    mRenderEncoder.setFragmentData(mDriverUniforms, kDriverUniformsBindingIndex);
-    mRenderEncoder.setVertexData(mDriverUniforms, kDriverUniformsBindingIndex);
+    mRenderEncoder.setFragmentData(mDriverUniforms, mtl::kDriverUniformsBindingIndex);
+    mRenderEncoder.setVertexData(mDriverUniforms, mtl::kDriverUniformsBindingIndex);
 
     mDirtyBits.reset(DIRTY_BIT_DRIVER_UNIFORMS);
     return angle::Result::Continue;

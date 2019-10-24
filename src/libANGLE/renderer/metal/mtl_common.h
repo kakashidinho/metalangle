@@ -50,46 +50,6 @@
 #    define ANGLE_MTL_LOG(...) (void)0
 #endif
 
-// NOTE(hqle): support variable max number of vertex attributes
-constexpr uint32_t kMaxVertexAttribs = gl::MAX_VERTEX_ATTRIBS;
-// NOTE(hqle): support variable max number of render targets
-constexpr uint32_t kMaxRenderTargets = 1;
-
-constexpr size_t kDefaultAttributeSize = 4 * sizeof(float);
-
-// Metal limits
-constexpr uint32_t kMaxShaderBuffers     = 31;
-constexpr uint32_t kMaxShaderSamplers    = 16;
-constexpr size_t kDefaultUniformsMaxSize = 4 * 1024;
-constexpr uint32_t kMaxViewports         = 1;
-
-constexpr uint32_t kVertexAttribBufferOffsetAlignment = 4;
-constexpr uint32_t kVertexAttribBufferStrideAlignment = 4;
-// Alignment requirement for offset passed to setVertex|FragmentBuffer
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-constexpr uint32_t kBufferSettingOffsetAlignment = 256;
-#else
-constexpr uint32_t kBufferSettingOffsetAlignment = 4;
-#endif
-constexpr uint32_t kIndexBufferOffsetAlignment = 4;
-
-// Binding index start for vertex data buffers:
-constexpr uint32_t kVboBindingIndexStart = 0;
-
-// Binding index for default attribute buffer:
-constexpr uint32_t kDefaultAttribsBindingIndex = kVboBindingIndexStart + kMaxVertexAttribs;
-// Binding index for driver uniforms:
-constexpr uint32_t kDriverUniformsBindingIndex = kDefaultAttribsBindingIndex + 1;
-// Binding index for default uniforms:
-constexpr uint32_t kDefaultUniformsBindingIndex = kDefaultAttribsBindingIndex + 3;
-
-constexpr uint32_t kStencilMaskAll = 0xff;  // Only 8 bits stencil is supported
-
-constexpr float kEmulatedAlphaValue = 1.0f;
-
-// NOTE(hqle): Support ES 3.0.
-static constexpr gl::Version kMaxSupportedGLVersion = gl::Version(2, 0);
-
 namespace egl
 {
 class Display;
@@ -133,6 +93,46 @@ ANGLE_GL_OBJECTS_X(ANGLE_PRE_DECLARE_MTL_OBJECT)
 
 namespace mtl
 {
+
+// NOTE(hqle): support variable max number of vertex attributes
+constexpr uint32_t kMaxVertexAttribs = gl::MAX_VERTEX_ATTRIBS;
+// NOTE(hqle): support variable max number of render targets
+constexpr uint32_t kMaxRenderTargets = 1;
+
+constexpr size_t kDefaultAttributeSize = 4 * sizeof(float);
+
+// Metal limits
+constexpr uint32_t kMaxShaderBuffers     = 31;
+constexpr uint32_t kMaxShaderSamplers    = 16;
+constexpr size_t kDefaultUniformsMaxSize = 4 * 1024;
+constexpr uint32_t kMaxViewports         = 1;
+
+constexpr uint32_t kVertexAttribBufferOffsetAlignment = 4;
+constexpr uint32_t kVertexAttribBufferStrideAlignment = 4;
+// Alignment requirement for offset passed to setVertex|FragmentBuffer
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
+constexpr uint32_t kBufferSettingOffsetAlignment = 256;
+#else
+constexpr uint32_t kBufferSettingOffsetAlignment = 4;
+#endif
+constexpr uint32_t kIndexBufferOffsetAlignment = 4;
+
+// Binding index start for vertex data buffers:
+constexpr uint32_t kVboBindingIndexStart = 0;
+
+// Binding index for default attribute buffer:
+constexpr uint32_t kDefaultAttribsBindingIndex = kVboBindingIndexStart + kMaxVertexAttribs;
+// Binding index for driver uniforms:
+constexpr uint32_t kDriverUniformsBindingIndex = kDefaultAttribsBindingIndex + 1;
+// Binding index for default uniforms:
+constexpr uint32_t kDefaultUniformsBindingIndex = kDefaultAttribsBindingIndex + 3;
+
+constexpr uint32_t kStencilMaskAll = 0xff;  // Only 8 bits stencil is supported
+
+constexpr float kEmulatedAlphaValue = 1.0f;
+
+// NOTE(hqle): Support ES 3.0.
+constexpr gl::Version kMaxSupportedGLVersion = gl::Version(2, 0);
 
 template <typename T>
 struct ImplTypeHelper;

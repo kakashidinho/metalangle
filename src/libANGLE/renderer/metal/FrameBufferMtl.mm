@@ -415,7 +415,7 @@ angle::Result FramebufferMtl::prepareRenderPass(const gl::Context *context,
 
     for (size_t colorIndexGL : drawColorBuffers)
     {
-        if (colorIndexGL >= kMaxRenderTargets)
+        if (colorIndexGL >= mtl::kMaxRenderTargets)
         {
             continue;
         }
@@ -468,7 +468,7 @@ angle::Result FramebufferMtl::clearWithLoadOp(const gl::Context *context,
     size_t attachmentCount = 0;
     for (size_t colorIndexGL : mState.getEnabledDrawBuffers())
     {
-        ASSERT(colorIndexGL < kMaxRenderTargets);
+        ASSERT(colorIndexGL < mtl::kMaxRenderTargets);
 
         uint32_t attachmentIdx = static_cast<uint32_t>(attachmentCount++);
         mtl::RenderPassColorAttachmentDesc &colorAttachment =
@@ -604,7 +604,8 @@ angle::Result FramebufferMtl::clearImpl(const gl::Context *context,
 
     if (clearOpts.clearArea == renderArea &&
         (!clearOpts.clearColor.valid() || colorMask == MTLColorWriteMaskAll) &&
-        (!clearOpts.clearStencil.valid() || (stencilMask & kStencilMaskAll) == kStencilMaskAll))
+        (!clearOpts.clearStencil.valid() ||
+         (stencilMask & mtl::kStencilMaskAll) == mtl::kStencilMaskAll))
     {
         return clearWithLoadOp(context, clearColorBuffers, clearOpts);
     }

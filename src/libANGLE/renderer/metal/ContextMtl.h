@@ -384,7 +384,7 @@ class ContextMtl : public ContextImpl, public mtl::Context
     {
         // NOTE(hqle): Support integer default attributes in ES 3.0
         float values[4];
-    } mDefaultAttributes[kMaxVertexAttribs];
+    } mDefaultAttributes[mtl::kMaxVertexAttribs];
 };
 
 }  // namespace rx
