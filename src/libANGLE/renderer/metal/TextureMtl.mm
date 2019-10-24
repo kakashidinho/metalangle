@@ -799,7 +799,7 @@ angle::Result TextureMtl::copySubImageWithDraw(const gl::Context *context,
     }
 
     mtl::RenderCommandEncoder *cmdEncoder = contextMtl->getRenderCommandEncoder(mTexture, index);
-    UtilsMtl::BlitParams blitParams;
+    mtl::RenderUtils::BlitParams blitParams;
 
     blitParams.dstOffset    = modifiedDestOffset;
     blitParams.dstColorMask = mTexture->getColorWritableMask();

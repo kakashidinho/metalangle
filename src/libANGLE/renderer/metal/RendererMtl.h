@@ -13,8 +13,8 @@
 
 #include "common/PackedEnums.h"
 #include "libANGLE/angletypes.h"
-#include "libANGLE/renderer/metal/StateCacheMtl.h"
-#include "libANGLE/renderer/metal/UtilsMtl.h"
+#include "libANGLE/renderer/metal/mtl_state_cache.h"
+#include "libANGLE/renderer/metal/mtl_render_utils.h"
 #include "libANGLE/renderer/metal/mtl_command_buffer.h"
 #include "libANGLE/renderer/metal/mtl_format_utils.h"
 #include "libANGLE/renderer/metal/mtl_utils.h"
@@ -49,8 +49,8 @@ class RendererMtl final : angle::NonCopyable
 
     mtl::CommandQueue &cmdQueue() { return mCmdQueue; }
     const mtl::FormatTable &getFormatTable() const { return mFormatTable; }
-    UtilsMtl &getUtils() { return mUtils; }
-    StateCacheMtl &getStateCache() { return mStateCache; }
+    mtl::RenderUtils &getUtils() { return mUtils; }
+    mtl::StateCache &getStateCache() { return mStateCache; }
 
     id<MTLDepthStencilState> getDepthStencilState(const mtl::DepthStencilDesc &desc)
     {
@@ -86,8 +86,8 @@ class RendererMtl final : angle::NonCopyable
     mtl::CommandQueue mCmdQueue;
 
     mtl::FormatTable mFormatTable;
-    StateCacheMtl mStateCache;
-    UtilsMtl mUtils;
+    mtl::StateCache mStateCache;
+    mtl::RenderUtils mUtils;
 
     static const size_t kNumTexturesType = static_cast<size_t>(gl::TextureType::EnumCount);
     mtl::TextureRef mNullTextures[kNumTexturesType];

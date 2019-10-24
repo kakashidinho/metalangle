@@ -15,7 +15,7 @@
 #include "libANGLE/renderer/FramebufferImpl.h"
 #include "libANGLE/renderer/SurfaceImpl.h"
 #include "libANGLE/renderer/metal/RenderTargetMtl.h"
-#include "libANGLE/renderer/metal/StateCacheMtl.h"
+#include "libANGLE/renderer/metal/mtl_state_cache.h"
 #include "libANGLE/renderer/metal/mtl_format_utils.h"
 #include "libANGLE/renderer/metal/mtl_resources.h"
 

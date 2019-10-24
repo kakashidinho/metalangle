@@ -99,7 +99,7 @@ angle::Result FramebufferMtl::clear(const gl::Context *context, GLbitfield mask)
 {
     ContextMtl *contextMtl = mtl::GetImpl(context);
 
-    UtilsMtl::ClearParams clearOpts;
+    mtl::RenderUtils::ClearParams clearOpts;
 
     bool clearColor   = IsMaskFlagSet(mask, static_cast<GLbitfield>(GL_COLOR_BUFFER_BIT));
     bool clearDepth   = IsMaskFlagSet(mask, static_cast<GLbitfield>(GL_DEPTH_BUFFER_BIT));
@@ -452,7 +452,7 @@ void FramebufferMtl::overrideClearColor(const mtl::TextureRef &texture,
 
 angle::Result FramebufferMtl::clearWithLoadOp(const gl::Context *context,
                                               gl::DrawBufferMask clearColorBuffers,
-                                              const UtilsMtl::ClearParams &clearOpts)
+                                              const mtl::RenderUtils::ClearParams &clearOpts)
 {
     ContextMtl *contextMtl             = mtl::GetImpl(context);
     bool startedRenderPass             = contextMtl->hasStartedRenderPass(mRenderPassDesc);
@@ -533,7 +533,7 @@ angle::Result FramebufferMtl::clearWithLoadOp(const gl::Context *context,
 
 angle::Result FramebufferMtl::clearWithDraw(const gl::Context *context,
                                             gl::DrawBufferMask clearColorBuffers,
-                                            const UtilsMtl::ClearParams &clearOpts)
+                                            const mtl::RenderUtils::ClearParams &clearOpts)
 {
     ContextMtl *contextMtl = mtl::GetImpl(context);
     RendererMtl *renderer  = contextMtl->getRenderer();
@@ -569,7 +569,7 @@ angle::Result FramebufferMtl::clearWithDraw(const gl::Context *context,
 
 angle::Result FramebufferMtl::clearImpl(const gl::Context *context,
                                         gl::DrawBufferMask clearColorBuffers,
-                                        UtilsMtl::ClearParams *pClearOpts)
+                                        mtl::RenderUtils::ClearParams *pClearOpts)
 {
     auto &clearOpts = *pClearOpts;
 

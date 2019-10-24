@@ -3,11 +3,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
-// UtilsMtl.mm:
-//    Implements the class methods for UtilsMtl.
+// mtl_render_utils.mm:
+//    Implements the class methods for RenderUtils.
 //
 
-#include "libANGLE/renderer/metal/UtilsMtl.h"
+#include "libANGLE/renderer/metal/mtl_render_utils.h"
 
 #include <utility>
 
@@ -21,6 +21,8 @@
 #include "libANGLE/renderer/metal/shaders/mtl_default_shaders_src_autogen.inc"
 
 namespace rx
+{
+namespace mtl
 {
 namespace
 {
@@ -60,7 +62,7 @@ template <typename T>
 angle::Result GenTriFanFromClientElements(ContextMtl *contextMtl,
                                           GLsizei count,
                                           const T *indices,
-                                          const mtl::BufferRef &dstBuffer,
+                                          const BufferRef &dstBuffer,
                                           uint32_t dstOffset)
 {
     ASSERT(count > 2);
@@ -98,12 +100,12 @@ void GetFirstLastIndicesFromClientElements(GLsizei count,
 
 }  // namespace
 
-bool UtilsMtl::IndexConvesionPipelineCacheKey::operator==(
+bool RenderUtils::IndexConvesionPipelineCacheKey::operator==(
     const IndexConvesionPipelineCacheKey &other) const
 {
     return srcType == other.srcType && srcBufferOffsetAligned == other.srcBufferOffsetAligned;
 }
-bool UtilsMtl::IndexConvesionPipelineCacheKey::operator<(
+bool RenderUtils::IndexConvesionPipelineCacheKey::operator<(
     const IndexConvesionPipelineCacheKey &other) const
 {
     if (!srcBufferOffsetAligned && other.srcBufferOffsetAligned)
@@ -117,11 +119,11 @@ bool UtilsMtl::IndexConvesionPipelineCacheKey::operator<(
     return static_cast<int>(srcType) < static_cast<int>(other.srcType);
 }
 
-UtilsMtl::UtilsMtl(RendererMtl *renderer) : mtl::Context(renderer) {}
+RenderUtils::RenderUtils(RendererMtl *renderer) : Context(renderer) {}
 
-UtilsMtl::~UtilsMtl() {}
+RenderUtils::~RenderUtils() {}
 
-angle::Result UtilsMtl::initialize()
+angle::Result RenderUtils::initialize()
 {
     auto re = initShaderLibrary();
     if (re != angle::Result::Continue)
@@ -135,7 +137,7 @@ angle::Result UtilsMtl::initialize()
     return angle::Result::Continue;
 }
 
-void UtilsMtl::onDestroy()
+void RenderUtils::onDestroy()
 {
     mDefaultShaders = nil;
 
@@ -150,19 +152,19 @@ void UtilsMtl::onDestroy()
     mTriFanFromArraysGeneratorPipeline = nil;
 }
 
-// override mtl::ErrorHandler
-void UtilsMtl::handleError(GLenum glErrorCode,
-                           const char *file,
-                           const char *function,
-                           unsigned int line)
+// override ErrorHandler
+void RenderUtils::handleError(GLenum glErrorCode,
+                              const char *file,
+                              const char *function,
+                              unsigned int line)
 {
     ERR() << "Metal backend encountered an internal error. Code=" << glErrorCode << ".";
 }
 
-void UtilsMtl::handleError(NSError *nserror,
-                           const char *file,
-                           const char *function,
-                           unsigned int line)
+void RenderUtils::handleError(NSError *nserror,
+                              const char *file,
+                              const char *function,
+                              unsigned int line)
 {
     if (!nserror)
     {
@@ -174,17 +176,17 @@ void UtilsMtl::handleError(NSError *nserror,
           << nserror.localizedDescription.UTF8String;
 }
 
-angle::Result UtilsMtl::initShaderLibrary()
+angle::Result RenderUtils::initShaderLibrary()
 {
-    mtl::AutoObjCObj<NSError> err = nil;
+    AutoObjCObj<NSError> err = nil;
 
 #if defined(ANGLE_MTL_DEBUG_INTERNAL_SHADERS)
-    mDefaultShaders = mtl::CreateShaderLibrary(
-        getRenderer()->getMetalDevice(), default_metallib_src, sizeof(default_metallib_src), &err);
+    mDefaultShaders = CreateShaderLibrary(getRenderer()->getMetalDevice(), default_metallib_src,
+                                          sizeof(default_metallib_src), &err);
 #else
-    mDefaultShaders = mtl::CreateShaderLibraryFromBinary(getRenderer()->getMetalDevice(),
-                                                         compiled_default_metallib,
-                                                         compiled_default_metallib_len, &err);
+    mDefaultShaders =
+        CreateShaderLibraryFromBinary(getRenderer()->getMetalDevice(), compiled_default_metallib,
+                                      compiled_default_metallib_len, &err);
 #endif
 
     if (err && !mDefaultShaders)
@@ -196,7 +198,7 @@ angle::Result UtilsMtl::initShaderLibrary()
     return angle::Result::Continue;
 }
 
-void UtilsMtl::initClearResources()
+void RenderUtils::initClearResources()
 {
     ANGLE_MTL_OBJC_SCOPE
     {
@@ -208,7 +210,7 @@ void UtilsMtl::initClearResources()
     }
 }
 
-void UtilsMtl::initBlitResources()
+void RenderUtils::initBlitResources()
 {
     ANGLE_MTL_OBJC_SCOPE
     {
@@ -228,13 +230,13 @@ void UtilsMtl::initBlitResources()
     }
 }
 
-void UtilsMtl::clearWithDraw(const gl::Context *context,
-                             mtl::RenderCommandEncoder *cmdEncoder,
-                             const ClearParams &params)
+void RenderUtils::clearWithDraw(const gl::Context *context,
+                                RenderCommandEncoder *cmdEncoder,
+                                const ClearParams &params)
 {
     auto overridedParams = params;
     // Make sure we don't clear attachment that doesn't exist
-    const mtl::RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
+    const RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
     if (renderPassDesc.numColorAttachments == 0)
     {
         overridedParams.clearColor.reset();
@@ -260,13 +262,13 @@ void UtilsMtl::clearWithDraw(const gl::Context *context,
     cmdEncoder->draw(MTLPrimitiveTypeTriangle, 0, 6);
 
     // Invalidate current context's state
-    auto contextMtl = mtl::GetImpl(context);
+    auto contextMtl = GetImpl(context);
     contextMtl->invalidateState(context);
 }
 
-void UtilsMtl::blitWithDraw(const gl::Context *context,
-                            mtl::RenderCommandEncoder *cmdEncoder,
-                            const BlitParams &params)
+void RenderUtils::blitWithDraw(const gl::Context *context,
+                               RenderCommandEncoder *cmdEncoder,
+                               const BlitParams &params)
 {
     if (!params.src)
     {
@@ -278,13 +280,13 @@ void UtilsMtl::blitWithDraw(const gl::Context *context,
     cmdEncoder->draw(MTLPrimitiveTypeTriangle, 0, 6);
 
     // Invalidate current context's state
-    ContextMtl *contextMtl = mtl::GetImpl(context);
+    ContextMtl *contextMtl = GetImpl(context);
     contextMtl->invalidateState(context);
 }
 
-void UtilsMtl::setupClearWithDraw(const gl::Context *context,
-                                  mtl::RenderCommandEncoder *cmdEncoder,
-                                  const ClearParams &params)
+void RenderUtils::setupClearWithDraw(const gl::Context *context,
+                                     RenderCommandEncoder *cmdEncoder,
+                                     const ClearParams &params)
 {
     // Generate render pipeline state
     auto renderPipelineState = getClearRenderPipelineState(context, cmdEncoder, params);
@@ -297,12 +299,12 @@ void UtilsMtl::setupClearWithDraw(const gl::Context *context,
     cmdEncoder->setDepthStencilState(dsState).setStencilRefVal(params.clearStencil.value());
 
     // Viewports
-    const mtl::RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
+    const RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
 
     MTLViewport viewport;
     MTLScissorRect scissorRect;
 
-    mtl::RenderPassAttachmentDesc renderPassAttachment;
+    RenderPassAttachmentDesc renderPassAttachment;
 
     if (renderPassDesc.numColorAttachments)
     {
@@ -320,11 +322,11 @@ void UtilsMtl::setupClearWithDraw(const gl::Context *context,
 
     auto texture = renderPassAttachment.texture;
 
-    viewport = mtl::GetViewport(params.clearArea, texture->height(renderPassAttachment.level),
-                                params.flipY);
+    viewport =
+        GetViewport(params.clearArea, texture->height(renderPassAttachment.level), params.flipY);
 
-    scissorRect = mtl::GetScissorRect(params.clearArea, texture->height(renderPassAttachment.level),
-                                      params.flipY);
+    scissorRect =
+        GetScissorRect(params.clearArea, texture->height(renderPassAttachment.level), params.flipY);
 
     cmdEncoder->setViewport(viewport);
     cmdEncoder->setScissorRect(scissorRect);
@@ -341,9 +343,9 @@ void UtilsMtl::setupClearWithDraw(const gl::Context *context,
     cmdEncoder->setFragmentData(uniformParams, 0);
 }
 
-void UtilsMtl::setupBlitWithDraw(const gl::Context *context,
-                                 mtl::RenderCommandEncoder *cmdEncoder,
-                                 const BlitParams &params)
+void RenderUtils::setupBlitWithDraw(const gl::Context *context,
+                                    RenderCommandEncoder *cmdEncoder,
+                                    const BlitParams &params)
 {
     ASSERT(cmdEncoder->renderPassDesc().numColorAttachments == 1 && params.src);
 
@@ -356,17 +358,17 @@ void UtilsMtl::setupBlitWithDraw(const gl::Context *context,
     cmdEncoder->setDepthStencilState(getRenderer()->getStateCache().getNullDepthStencilState(this));
 
     // Viewport
-    const mtl::RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
-    const mtl::RenderPassColorAttachmentDesc &renderPassColorAttachment =
+    const RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
+    const RenderPassColorAttachmentDesc &renderPassColorAttachment =
         renderPassDesc.colorAttachments[0];
     auto texture = renderPassColorAttachment.texture;
 
     gl::Rectangle dstRect(params.dstOffset.x, params.dstOffset.y, params.srcRect.width,
                           params.srcRect.height);
-    MTLViewport viewportMtl = mtl::GetViewport(
-        dstRect, texture->height(renderPassColorAttachment.level), params.dstFlipY);
-    MTLScissorRect scissorRectMtl = mtl::GetScissorRect(
-        dstRect, texture->height(renderPassColorAttachment.level), params.dstFlipY);
+    MTLViewport viewportMtl =
+        GetViewport(dstRect, texture->height(renderPassColorAttachment.level), params.dstFlipY);
+    MTLScissorRect scissorRectMtl =
+        GetScissorRect(dstRect, texture->height(renderPassColorAttachment.level), params.dstFlipY);
     cmdEncoder->setViewport(viewportMtl);
     cmdEncoder->setScissorRect(scissorRectMtl);
 
@@ -376,15 +378,15 @@ void UtilsMtl::setupBlitWithDraw(const gl::Context *context,
     setupBlitWithDrawUniformData(cmdEncoder, params);
 }
 
-void UtilsMtl::setupDrawCommonStates(mtl::RenderCommandEncoder *cmdEncoder)
+void RenderUtils::setupDrawCommonStates(RenderCommandEncoder *cmdEncoder)
 {
     cmdEncoder->setCullMode(MTLCullModeNone);
     cmdEncoder->setTriangleFillMode(MTLTriangleFillModeFill);
     cmdEncoder->setDepthBias(0, 0, 0);
 }
 
-id<MTLDepthStencilState> UtilsMtl::getClearDepthStencilState(const gl::Context *context,
-                                                             const ClearParams &params)
+id<MTLDepthStencilState> RenderUtils::getClearDepthStencilState(const gl::Context *context,
+                                                                const ClearParams &params)
 {
     if (!params.clearDepth.valid() && !params.clearStencil.valid())
     {
@@ -392,9 +394,9 @@ id<MTLDepthStencilState> UtilsMtl::getClearDepthStencilState(const gl::Context *
         return getRenderer()->getStateCache().getNullDepthStencilState(this);
     }
 
-    ContextMtl *contextMtl = mtl::GetImpl(context);
+    ContextMtl *contextMtl = GetImpl(context);
 
-    mtl::DepthStencilDesc desc;
+    DepthStencilDesc desc;
     desc.reset();
 
     if (params.clearDepth.valid())
@@ -420,43 +422,42 @@ id<MTLDepthStencilState> UtilsMtl::getClearDepthStencilState(const gl::Context *
                                                                desc);
 }
 
-id<MTLRenderPipelineState> UtilsMtl::getClearRenderPipelineState(
+id<MTLRenderPipelineState> RenderUtils::getClearRenderPipelineState(
     const gl::Context *context,
-    mtl::RenderCommandEncoder *cmdEncoder,
+    RenderCommandEncoder *cmdEncoder,
     const ClearParams &params)
 {
-    ContextMtl *contextMtl      = mtl::GetImpl(context);
+    ContextMtl *contextMtl      = GetImpl(context);
     MTLColorWriteMask colorMask = contextMtl->getColorMask();
     if (!params.clearColor.valid())
     {
         colorMask = MTLColorWriteMaskNone;
     }
 
-    mtl::RenderPipelineDesc pipelineDesc;
-    const mtl::RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
+    RenderPipelineDesc pipelineDesc;
+    const RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
 
     renderPassDesc.populateRenderPipelineOutputDesc(colorMask, &pipelineDesc.outputDescriptor);
 
-    pipelineDesc.inputPrimitiveTopology = mtl::kPrimitiveTopologyClassTriangle;
+    pipelineDesc.inputPrimitiveTopology = kPrimitiveTopologyClassTriangle;
 
     return mClearRenderPipelineCache.getRenderPipelineState(contextMtl, pipelineDesc);
 }
 
-id<MTLRenderPipelineState> UtilsMtl::getBlitRenderPipelineState(
-    const gl::Context *context,
-    mtl::RenderCommandEncoder *cmdEncoder,
-    const BlitParams &params)
+id<MTLRenderPipelineState> RenderUtils::getBlitRenderPipelineState(const gl::Context *context,
+                                                                   RenderCommandEncoder *cmdEncoder,
+                                                                   const BlitParams &params)
 {
-    ContextMtl *contextMtl = mtl::GetImpl(context);
-    mtl::RenderPipelineDesc pipelineDesc;
-    const mtl::RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
+    ContextMtl *contextMtl = GetImpl(context);
+    RenderPipelineDesc pipelineDesc;
+    const RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
 
     renderPassDesc.populateRenderPipelineOutputDesc(params.dstColorMask,
                                                     &pipelineDesc.outputDescriptor);
 
-    pipelineDesc.inputPrimitiveTopology = mtl::kPrimitiveTopologyClassTriangle;
+    pipelineDesc.inputPrimitiveTopology = kPrimitiveTopologyClassTriangle;
 
-    RenderPipelineCacheMtl *pipelineCache;
+    RenderPipelineCache *pipelineCache;
     if (params.unpackPremultiplyAlpha == params.unpackUnmultiplyAlpha)
     {
         pipelineCache = &mBlitRenderPipelineCache;
@@ -473,8 +474,8 @@ id<MTLRenderPipelineState> UtilsMtl::getBlitRenderPipelineState(
     return pipelineCache->getRenderPipelineState(contextMtl, pipelineDesc);
 }
 
-void UtilsMtl::setupBlitWithDrawUniformData(mtl::RenderCommandEncoder *cmdEncoder,
-                                            const BlitParams &params)
+void RenderUtils::setupBlitWithDrawUniformData(RenderCommandEncoder *cmdEncoder,
+                                               const BlitParams &params)
 {
     BlitParamsUniform uniformParams;
     uniformParams.dstFlipY     = params.dstFlipY ? 1 : 0;
@@ -528,7 +529,7 @@ void UtilsMtl::setupBlitWithDrawUniformData(mtl::RenderCommandEncoder *cmdEncode
     cmdEncoder->setFragmentData(uniformParams, 0);
 }
 
-mtl::AutoObjCPtr<id<MTLComputePipelineState>> UtilsMtl::getIndexConversionPipeline(
+AutoObjCPtr<id<MTLComputePipelineState>> RenderUtils::getIndexConversionPipeline(
     ContextMtl *context,
     gl::DrawElementsType srcType,
     uint32_t srcOffset)
@@ -591,7 +592,7 @@ mtl::AutoObjCPtr<id<MTLComputePipelineState>> UtilsMtl::getIndexConversionPipeli
     return cache;
 }
 
-mtl::AutoObjCPtr<id<MTLComputePipelineState>> UtilsMtl::getTriFanFromElemArrayGeneratorPipeline(
+AutoObjCPtr<id<MTLComputePipelineState>> RenderUtils::getTriFanFromElemArrayGeneratorPipeline(
     ContextMtl *context,
     gl::DrawElementsType srcType,
     uint32_t srcOffset)
@@ -666,7 +667,7 @@ mtl::AutoObjCPtr<id<MTLComputePipelineState>> UtilsMtl::getTriFanFromElemArrayGe
     return cache;
 }
 
-angle::Result UtilsMtl::ensureTriFanFromArrayGeneratorInitialized(ContextMtl *context)
+angle::Result RenderUtils::ensureTriFanFromArrayGeneratorInitialized(ContextMtl *context)
 {
     if (!mTriFanFromArraysGeneratorPipeline)
     {
@@ -690,19 +691,19 @@ angle::Result UtilsMtl::ensureTriFanFromArrayGeneratorInitialized(ContextMtl *co
     return angle::Result::Continue;
 }
 
-angle::Result UtilsMtl::convertIndexBuffer(const gl::Context *context,
-                                           gl::DrawElementsType srcType,
-                                           uint32_t indexCount,
-                                           const mtl::BufferRef &srcBuffer,
-                                           uint32_t srcOffset,
-                                           const mtl::BufferRef &dstBuffer,
-                                           uint32_t dstOffset)
+angle::Result RenderUtils::convertIndexBuffer(const gl::Context *context,
+                                              gl::DrawElementsType srcType,
+                                              uint32_t indexCount,
+                                              const BufferRef &srcBuffer,
+                                              uint32_t srcOffset,
+                                              const BufferRef &dstBuffer,
+                                              uint32_t dstOffset)
 {
-    ContextMtl *contextMtl                 = mtl::GetImpl(context);
-    mtl::ComputeCommandEncoder *cmdEncoder = contextMtl->getComputeCommandEncoder();
+    ContextMtl *contextMtl            = GetImpl(context);
+    ComputeCommandEncoder *cmdEncoder = contextMtl->getComputeCommandEncoder();
     ASSERT(cmdEncoder);
 
-    mtl::AutoObjCPtr<id<MTLComputePipelineState>> pipelineState =
+    AutoObjCPtr<id<MTLComputePipelineState>> pipelineState =
         getIndexConversionPipeline(contextMtl, srcType, srcOffset);
 
     ASSERT(pipelineState);
@@ -724,11 +725,11 @@ angle::Result UtilsMtl::convertIndexBuffer(const gl::Context *context,
     return angle::Result::Continue;
 }
 
-angle::Result UtilsMtl::generateTriFanBufferFromArrays(const gl::Context *context,
-                                                       const TriFanFromArrayParams &params)
+angle::Result RenderUtils::generateTriFanBufferFromArrays(const gl::Context *context,
+                                                          const TriFanFromArrayParams &params)
 {
-    ContextMtl *contextMtl                 = mtl::GetImpl(context);
-    mtl::ComputeCommandEncoder *cmdEncoder = contextMtl->getComputeCommandEncoder();
+    ContextMtl *contextMtl            = GetImpl(context);
+    ComputeCommandEncoder *cmdEncoder = contextMtl->getComputeCommandEncoder();
     ASSERT(cmdEncoder);
     ANGLE_TRY(ensureTriFanFromArrayGeneratorInitialized(contextMtl));
 
@@ -757,10 +758,11 @@ angle::Result UtilsMtl::generateTriFanBufferFromArrays(const gl::Context *contex
     return angle::Result::Continue;
 }
 
-angle::Result UtilsMtl::generateTriFanBufferFromElementsArray(const gl::Context *context,
-                                                              const IndexConversionParams &params)
+angle::Result RenderUtils::generateTriFanBufferFromElementsArray(
+    const gl::Context *context,
+    const IndexConversionParams &params)
 {
-    ContextMtl *contextMtl             = mtl::GetImpl(context);
+    ContextMtl *contextMtl             = GetImpl(context);
     const gl::VertexArray *vertexArray = context->getState().getVertexArray();
     const gl::Buffer *elementBuffer    = vertexArray->getElementArrayBuffer();
     if (elementBuffer)
@@ -770,8 +772,8 @@ angle::Result UtilsMtl::generateTriFanBufferFromElementsArray(const gl::Context 
                     "Index offset is too large", GL_INVALID_VALUE);
         return generateTriFanBufferFromElementsArrayGPU(
             context, params.srcType, params.indexCount,
-            mtl::GetImpl(elementBuffer)->getCurrentBuffer(context),
-            static_cast<uint32_t>(srcOffset), params.dstBuffer, params.dstOffset);
+            GetImpl(elementBuffer)->getCurrentBuffer(context), static_cast<uint32_t>(srcOffset),
+            params.dstBuffer, params.dstOffset);
     }
     else
     {
@@ -779,21 +781,21 @@ angle::Result UtilsMtl::generateTriFanBufferFromElementsArray(const gl::Context 
     }
 }
 
-angle::Result UtilsMtl::generateTriFanBufferFromElementsArrayGPU(
+angle::Result RenderUtils::generateTriFanBufferFromElementsArrayGPU(
     const gl::Context *context,
     gl::DrawElementsType srcType,
     uint32_t indexCount,
-    const mtl::BufferRef &srcBuffer,
+    const BufferRef &srcBuffer,
     uint32_t srcOffset,
-    const mtl::BufferRef &dstBuffer,
+    const BufferRef &dstBuffer,
     // Must be multiples of kBufferSettingOffsetAlignment
     uint32_t dstOffset)
 {
-    ContextMtl *contextMtl                 = mtl::GetImpl(context);
-    mtl::ComputeCommandEncoder *cmdEncoder = contextMtl->getComputeCommandEncoder();
+    ContextMtl *contextMtl            = GetImpl(context);
+    ComputeCommandEncoder *cmdEncoder = contextMtl->getComputeCommandEncoder();
     ASSERT(cmdEncoder);
 
-    mtl::AutoObjCPtr<id<MTLComputePipelineState>> pipelineState =
+    AutoObjCPtr<id<MTLComputePipelineState>> pipelineState =
         getTriFanFromElemArrayGeneratorPipeline(contextMtl, srcType, srcOffset);
 
     ASSERT(pipelineState);
@@ -816,11 +818,11 @@ angle::Result UtilsMtl::generateTriFanBufferFromElementsArrayGPU(
     return angle::Result::Continue;
 }
 
-angle::Result UtilsMtl::generateTriFanBufferFromElementsArrayCPU(
+angle::Result RenderUtils::generateTriFanBufferFromElementsArrayCPU(
     const gl::Context *context,
     const IndexConversionParams &params)
 {
-    ContextMtl *contextMtl = mtl::GetImpl(context);
+    ContextMtl *contextMtl = GetImpl(context);
     switch (params.srcType)
     {
         case gl::DrawElementsType::UnsignedByte:
@@ -842,13 +844,13 @@ angle::Result UtilsMtl::generateTriFanBufferFromElementsArrayCPU(
     return angle::Result::Stop;
 }
 
-angle::Result UtilsMtl::generateLineLoopLastSegment(const gl::Context *context,
-                                                    uint32_t firstVertex,
-                                                    uint32_t lastVertex,
-                                                    const mtl::BufferRef &dstBuffer,
-                                                    uint32_t dstOffset)
+angle::Result RenderUtils::generateLineLoopLastSegment(const gl::Context *context,
+                                                       uint32_t firstVertex,
+                                                       uint32_t lastVertex,
+                                                       const BufferRef &dstBuffer,
+                                                       uint32_t dstOffset)
 {
-    ContextMtl *contextMtl = mtl::GetImpl(context);
+    ContextMtl *contextMtl = GetImpl(context);
     uint8_t *ptr           = dstBuffer->map(contextMtl);
 
     uint32_t indices[2] = {lastVertex, firstVertex};
@@ -859,11 +861,11 @@ angle::Result UtilsMtl::generateLineLoopLastSegment(const gl::Context *context,
     return angle::Result::Continue;
 }
 
-angle::Result UtilsMtl::generateLineLoopLastSegmentFromElementsArray(
+angle::Result RenderUtils::generateLineLoopLastSegmentFromElementsArray(
     const gl::Context *context,
     const IndexConversionParams &params)
 {
-    ContextMtl *contextMtl             = mtl::GetImpl(context);
+    ContextMtl *contextMtl             = GetImpl(context);
     const gl::VertexArray *vertexArray = context->getState().getVertexArray();
     const gl::Buffer *elementBuffer    = vertexArray->getElementArrayBuffer();
     if (elementBuffer)
@@ -872,7 +874,7 @@ angle::Result UtilsMtl::generateLineLoopLastSegmentFromElementsArray(
         ANGLE_CHECK(contextMtl, srcOffset <= std::numeric_limits<uint32_t>::max(),
                     "Index offset is too large", GL_INVALID_VALUE);
 
-        BufferMtl *bufferMtl = mtl::GetImpl(elementBuffer);
+        BufferMtl *bufferMtl = GetImpl(elementBuffer);
         std::pair<uint32_t, uint32_t> firstLast;
         ANGLE_TRY(bufferMtl->getFirstLastIndices(context, params.srcType,
                                                  static_cast<uint32_t>(srcOffset),
@@ -887,7 +889,7 @@ angle::Result UtilsMtl::generateLineLoopLastSegmentFromElementsArray(
     }
 }
 
-angle::Result UtilsMtl::generateLineLoopLastSegmentFromElementsArrayCPU(
+angle::Result RenderUtils::generateLineLoopLastSegmentFromElementsArrayCPU(
     const gl::Context *context,
     const IndexConversionParams &params)
 {
@@ -915,10 +917,10 @@ angle::Result UtilsMtl::generateLineLoopLastSegmentFromElementsArrayCPU(
     return generateLineLoopLastSegment(context, first, last, params.dstBuffer, params.dstOffset);
 }
 
-angle::Result UtilsMtl::dispatchCompute(const gl::Context *context,
-                                        mtl::ComputeCommandEncoder *cmdEncoder,
-                                        id<MTLComputePipelineState> pipelineState,
-                                        size_t numThreads)
+angle::Result RenderUtils::dispatchCompute(const gl::Context *context,
+                                           ComputeCommandEncoder *cmdEncoder,
+                                           id<MTLComputePipelineState> pipelineState,
+                                           size_t numThreads)
 {
     NSUInteger w                  = pipelineState.threadExecutionWidth;
     MTLSize threadsPerThreadgroup = MTLSizeMake(w, 1, 1);
@@ -938,5 +940,5 @@ angle::Result UtilsMtl::dispatchCompute(const gl::Context *context,
 
     return angle::Result::Continue;
 }
-
+}  // namespace mtl
 }  // namespace rx

@@ -23,7 +23,7 @@
 
 #include "common/FixedVector.h"
 #include "common/angleutils.h"
-#include "libANGLE/renderer/metal/StateCacheMtl.h"
+#include "libANGLE/renderer/metal/mtl_state_cache.h"
 #include "libANGLE/renderer/metal/mtl_common.h"
 #include "libANGLE/renderer/metal/mtl_resources.h"
 

@@ -3,18 +3,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
-// UtilsMtl.h:
-//    Defines the class interface for UtilsMtl.
+// mtl_render_utils.h:
+//    Defines the class interface for RenderUtils.
 //
 
-#ifndef LIBANGLE_RENDERER_METAL_UTILSMTL_H_
-#define LIBANGLE_RENDERER_METAL_UTILSMTL_H_
+#ifndef LIBANGLE_RENDERER_METAL_MTL_RENDER_UTILS_H_
+#define LIBANGLE_RENDERER_METAL_MTL_RENDER_UTILS_H_
 
 #import <Metal/Metal.h>
 
 #include "libANGLE/angletypes.h"
-#include "libANGLE/renderer/metal/StateCacheMtl.h"
 #include "libANGLE/renderer/metal/mtl_command_buffer.h"
+#include "libANGLE/renderer/metal/mtl_state_cache.h"
 
 namespace rx
 {
@@ -23,13 +23,15 @@ class BufferMtl;
 class ContextMtl;
 class RendererMtl;
 
-class UtilsMtl : public mtl::Context, angle::NonCopyable
+namespace mtl
+{
+class RenderUtils : public Context, angle::NonCopyable
 {
   public:
-    UtilsMtl(RendererMtl *renderer);
-    ~UtilsMtl();
+    RenderUtils(RendererMtl *renderer);
+    ~RenderUtils();
 
-    struct ClearParams : public mtl::ClearOptions
+    struct ClearParams : public ClearOptions
     {
         gl::Rectangle clearArea;
 
@@ -47,7 +49,7 @@ class UtilsMtl : public mtl::Context, angle::NonCopyable
 
         MTLColorWriteMask dstColorMask = MTLColorWriteMaskAll;
 
-        mtl::TextureRef src;
+        TextureRef src;
         uint32_t srcLevel = 0;
         gl::Rectangle srcRect;
         bool srcYFlipped            = false;  // source texture has data flipped in Y direction
@@ -61,7 +63,7 @@ class UtilsMtl : public mtl::Context, angle::NonCopyable
     {
         uint32_t firstVertex;
         uint32_t vertexCount;
-        mtl::BufferRef dstBuffer;
+        BufferRef dstBuffer;
         // Must be multiples of kBufferSettingOffsetAlignment
         uint32_t dstOffset;
     };
@@ -71,7 +73,7 @@ class UtilsMtl : public mtl::Context, angle::NonCopyable
         gl::DrawElementsType srcType;
         GLsizei indexCount;
         const void *indices;
-        mtl::BufferRef dstBuffer;
+        BufferRef dstBuffer;
         uint32_t dstOffset;
     };
 
@@ -80,19 +82,19 @@ class UtilsMtl : public mtl::Context, angle::NonCopyable
 
     // Clear current framebuffer
     void clearWithDraw(const gl::Context *context,
-                       mtl::RenderCommandEncoder *cmdEncoder,
+                       RenderCommandEncoder *cmdEncoder,
                        const ClearParams &params);
     // Blit texture data to current framebuffer
     void blitWithDraw(const gl::Context *context,
-                      mtl::RenderCommandEncoder *cmdEncoder,
+                      RenderCommandEncoder *cmdEncoder,
                       const BlitParams &params);
 
     angle::Result convertIndexBuffer(const gl::Context *context,
                                      gl::DrawElementsType srcType,
                                      uint32_t indexCount,
-                                     const mtl::BufferRef &srcBuffer,
+                                     const BufferRef &srcBuffer,
                                      uint32_t srcOffset,
-                                     const mtl::BufferRef &dstBuffer,
+                                     const BufferRef &dstBuffer,
                                      // Must be multiples of kBufferSettingOffsetAlignment
                                      uint32_t dstOffset);
     angle::Result generateTriFanBufferFromArrays(const gl::Context *context,
@@ -103,18 +105,18 @@ class UtilsMtl : public mtl::Context, angle::NonCopyable
     angle::Result generateLineLoopLastSegment(const gl::Context *context,
                                               uint32_t firstVertex,
                                               uint32_t lastVertex,
-                                              const mtl::BufferRef &dstBuffer,
+                                              const BufferRef &dstBuffer,
                                               uint32_t dstOffset);
     angle::Result generateLineLoopLastSegmentFromElementsArray(const gl::Context *context,
                                                                const IndexConversionParams &params);
 
     angle::Result dispatchCompute(const gl::Context *context,
-                                  mtl::ComputeCommandEncoder *encoder,
+                                  ComputeCommandEncoder *encoder,
                                   id<MTLComputePipelineState> pipelineState,
                                   size_t numThreads);
 
   private:
-    // override mtl::ErrorHandler
+    // override ErrorHandler
     void handleError(GLenum error,
                      const char *file,
                      const char *function,
@@ -129,29 +131,28 @@ class UtilsMtl : public mtl::Context, angle::NonCopyable
     void initBlitResources();
 
     void setupClearWithDraw(const gl::Context *context,
-                            mtl::RenderCommandEncoder *cmdEncoder,
+                            RenderCommandEncoder *cmdEncoder,
                             const ClearParams &params);
     void setupBlitWithDraw(const gl::Context *context,
-                           mtl::RenderCommandEncoder *cmdEncoder,
+                           RenderCommandEncoder *cmdEncoder,
                            const BlitParams &params);
     id<MTLDepthStencilState> getClearDepthStencilState(const gl::Context *context,
                                                        const ClearParams &params);
     id<MTLRenderPipelineState> getClearRenderPipelineState(const gl::Context *context,
-                                                           mtl::RenderCommandEncoder *cmdEncoder,
+                                                           RenderCommandEncoder *cmdEncoder,
                                                            const ClearParams &params);
     id<MTLRenderPipelineState> getBlitRenderPipelineState(const gl::Context *context,
-                                                          mtl::RenderCommandEncoder *cmdEncoder,
+                                                          RenderCommandEncoder *cmdEncoder,
                                                           const BlitParams &params);
-    void setupBlitWithDrawUniformData(mtl::RenderCommandEncoder *cmdEncoder,
-                                      const BlitParams &params);
+    void setupBlitWithDrawUniformData(RenderCommandEncoder *cmdEncoder, const BlitParams &params);
 
-    void setupDrawCommonStates(mtl::RenderCommandEncoder *cmdEncoder);
+    void setupDrawCommonStates(RenderCommandEncoder *cmdEncoder);
 
-    mtl::AutoObjCPtr<id<MTLComputePipelineState>> getIndexConversionPipeline(
+    AutoObjCPtr<id<MTLComputePipelineState>> getIndexConversionPipeline(
         ContextMtl *context,
         gl::DrawElementsType srcType,
         uint32_t srcOffset);
-    mtl::AutoObjCPtr<id<MTLComputePipelineState>> getTriFanFromElemArrayGeneratorPipeline(
+    AutoObjCPtr<id<MTLComputePipelineState>> getTriFanFromElemArrayGeneratorPipeline(
         ContextMtl *context,
         gl::DrawElementsType srcType,
         uint32_t srcOffset);
@@ -160,9 +161,9 @@ class UtilsMtl : public mtl::Context, angle::NonCopyable
         const gl::Context *context,
         gl::DrawElementsType srcType,
         uint32_t indexCount,
-        const mtl::BufferRef &srcBuffer,
+        const BufferRef &srcBuffer,
         uint32_t srcOffset,
-        const mtl::BufferRef &dstBuffer,
+        const BufferRef &dstBuffer,
         // Must be multiples of kBufferSettingOffsetAlignment
         uint32_t dstOffset);
     angle::Result generateTriFanBufferFromElementsArrayCPU(const gl::Context *context,
@@ -171,11 +172,11 @@ class UtilsMtl : public mtl::Context, angle::NonCopyable
         const gl::Context *context,
         const IndexConversionParams &params);
 
-    mtl::AutoObjCPtr<id<MTLLibrary>> mDefaultShaders = nil;
-    RenderPipelineCacheMtl mClearRenderPipelineCache;
-    RenderPipelineCacheMtl mBlitRenderPipelineCache;
-    RenderPipelineCacheMtl mBlitPremultiplyAlphaRenderPipelineCache;
-    RenderPipelineCacheMtl mBlitUnmultiplyAlphaRenderPipelineCache;
+    AutoObjCPtr<id<MTLLibrary>> mDefaultShaders = nil;
+    RenderPipelineCache mClearRenderPipelineCache;
+    RenderPipelineCache mBlitRenderPipelineCache;
+    RenderPipelineCache mBlitPremultiplyAlphaRenderPipelineCache;
+    RenderPipelineCache mBlitUnmultiplyAlphaRenderPipelineCache;
 
     struct IndexConvesionPipelineCacheKey
     {
@@ -185,13 +186,14 @@ class UtilsMtl : public mtl::Context, angle::NonCopyable
         bool operator==(const IndexConvesionPipelineCacheKey &other) const;
         bool operator<(const IndexConvesionPipelineCacheKey &other) const;
     };
-    std::map<IndexConvesionPipelineCacheKey, mtl::AutoObjCPtr<id<MTLComputePipelineState>>>
+    std::map<IndexConvesionPipelineCacheKey, AutoObjCPtr<id<MTLComputePipelineState>>>
         mIndexConversionPipelineCaches;
-    std::map<IndexConvesionPipelineCacheKey, mtl::AutoObjCPtr<id<MTLComputePipelineState>>>
+    std::map<IndexConvesionPipelineCacheKey, AutoObjCPtr<id<MTLComputePipelineState>>>
         mTriFanFromElemArrayGeneratorPipelineCaches;
-    mtl::AutoObjCPtr<id<MTLComputePipelineState>> mTriFanFromArraysGeneratorPipeline;
+    AutoObjCPtr<id<MTLComputePipelineState>> mTriFanFromArraysGeneratorPipeline;
 };
 
+}  // namespace mtl
 }  // namespace rx
 
-#endif /* LIBANGLE_RENDERER_METAL_UTILSMTL_H_ */
+#endif /* LIBANGLE_RENDERER_METAL_MTL_RENDER_UTILS_H_ */

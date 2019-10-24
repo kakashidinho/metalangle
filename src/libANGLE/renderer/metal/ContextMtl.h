@@ -15,7 +15,7 @@
 #include "common/Optional.h"
 #include "libANGLE/Context.h"
 #include "libANGLE/renderer/ContextImpl.h"
-#include "libANGLE/renderer/metal/StateCacheMtl.h"
+#include "libANGLE/renderer/metal/mtl_state_cache.h"
 #include "libANGLE/renderer/metal/mtl_buffer_pool.h"
 #include "libANGLE/renderer/metal/mtl_command_buffer.h"
 #include "libANGLE/renderer/metal/mtl_resources.h"

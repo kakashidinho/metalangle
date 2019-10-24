@@ -14,7 +14,7 @@
 
 #include "libANGLE/renderer/FramebufferImpl.h"
 #include "libANGLE/renderer/metal/RenderTargetMtl.h"
-#include "libANGLE/renderer/metal/UtilsMtl.h"
+#include "libANGLE/renderer/metal/mtl_render_utils.h"
 
 namespace rx
 {
@@ -106,15 +106,15 @@ class FramebufferMtl : public FramebufferImpl
     angle::Result invalidateImpl(ContextMtl *contextMtl, size_t count, const GLenum *attachments);
     angle::Result clearImpl(const gl::Context *context,
                             gl::DrawBufferMask clearColorBuffers,
-                            UtilsMtl::ClearParams *clearOpts);
+                            mtl::RenderUtils::ClearParams *clearOpts);
 
     angle::Result clearWithLoadOp(const gl::Context *context,
                                   gl::DrawBufferMask clearColorBuffers,
-                                  const UtilsMtl::ClearParams &clearOpts);
+                                  const mtl::RenderUtils::ClearParams &clearOpts);
 
     angle::Result clearWithDraw(const gl::Context *context,
                                 gl::DrawBufferMask clearColorBuffers,
-                                const UtilsMtl::ClearParams &clearOpts);
+                                const mtl::RenderUtils::ClearParams &clearOpts);
 
     angle::Result prepareRenderPass(const gl::Context *context,
                                     gl::DrawBufferMask drawColorBuffers,
