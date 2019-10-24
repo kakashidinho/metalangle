@@ -15,8 +15,6 @@
 
 #include "common/debug.h"
 
-#define ANGLE_MTL_CONVERT_INDEX_GPU 1
-
 namespace rx
 {
 namespace
@@ -485,7 +483,7 @@ angle::Result VertexArrayMtl::convertIndexBuffer(const gl::Context *glContext,
 
     size_t indexCount = GetIndexCount(idxBuffer, offset, indexType);
 
-#if ANGLE_MTL_CONVERT_INDEX_GPU
+#if !defined(ANGLE_MTL_FORCE_CONVERT_INDEX_CPU)
     ANGLE_TRY(
         convertIndexBufferGPU(glContext, indexType, idxBuffer, offset, indexCount, conversion));
 #else
