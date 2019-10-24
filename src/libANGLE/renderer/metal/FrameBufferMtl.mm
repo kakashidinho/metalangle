@@ -11,6 +11,7 @@
 
 #include <TargetConditionals.h>
 
+#include "common/MemoryBuffer.h"
 #include "common/angleutils.h"
 #include "common/debug.h"
 #include "libANGLE/renderer/metal/FrameBufferMtl.h"
@@ -698,10 +699,9 @@ angle::Result FramebufferMtl::readPixelsImpl(const gl::Context *context,
     const angle::Format &readAngleFormat = readFormat.actualAngleFormat();
 
     // NOTE(hqle): resolve MSAA texture before readback
-    int srcRowPitch         = area.width * readAngleFormat.pixelBytes;
-    auto readPixelRowBuffer = new (std::nothrow) uint8_t[srcRowPitch];
-
-    ANGLE_CHECK_GL_ALLOC(contextMtl, readPixelRowBuffer);
+    int srcRowPitch = area.width * readAngleFormat.pixelBytes;
+    angle::MemoryBuffer readPixelRowBuffer;
+    ANGLE_CHECK_GL_ALLOC(contextMtl, readPixelRowBuffer.resize(srcRowPitch));
 
     auto packPixelsRowParams  = packPixelsParams;
     MTLRegion mtlSrcRowRegion = MTLRegionMake2D(area.x, area.y, area.width, 1);
@@ -720,13 +720,13 @@ angle::Result FramebufferMtl::readPixelsImpl(const gl::Context *context,
 
         // Read the pixels data to the row buffer
         texture->getBytes(contextMtl, srcRowPitch, mtlSrcRowRegion,
-                          static_cast<uint32_t>(renderTarget->getLevelIndex()), readPixelRowBuffer);
+                          static_cast<uint32_t>(renderTarget->getLevelIndex()),
+                          readPixelRowBuffer.data());
 
         // Convert to destination format
-        PackPixels(packPixelsRowParams, readAngleFormat, srcRowPitch, readPixelRowBuffer, pixels);
+        PackPixels(packPixelsRowParams, readAngleFormat, srcRowPitch, readPixelRowBuffer.data(),
+                   pixels);
     }
-
-    delete[] readPixelRowBuffer;
 
     return angle::Result::Continue;
 }

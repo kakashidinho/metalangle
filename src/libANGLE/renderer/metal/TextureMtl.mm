@@ -10,6 +10,7 @@
 
 #include "libANGLE/renderer/metal/TextureMtl.h"
 
+#include "common/MemoryBuffer.h"
 #include "common/debug.h"
 #include "common/mathutil.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
@@ -709,10 +710,9 @@ angle::Result TextureMtl::convertAndSetSubImage(const gl::Context *context,
 
     // Create scratch buffer
     const angle::Format &dstFormat = angle::Format::Get(mFormat.actualFormatId);
-    uint8_t *conversionRow;
+    angle::MemoryBuffer conversionRow;
     const size_t dstRowPitch = dstFormat.pixelBytes * mtlArea.size.width;
-    ANGLE_CHECK_GL_ALLOC(contextMtl,
-                         (conversionRow = new (std::nothrow) uint8_t[dstRowPitch]) != nullptr);
+    ANGLE_CHECK_GL_ALLOC(contextMtl, conversionRow.resize(dstRowPitch));
 
     MTLRegion mtlRow    = mtlArea;
     mtlRow.size.height  = 1;
@@ -723,18 +723,16 @@ angle::Result TextureMtl::convertAndSetSubImage(const gl::Context *context,
 
         // Convert pixels
         CopyImageCHROMIUM(psrc, pixelsRowPitch, pixelsFormat.pixelBytes, 0,
-                          pixelsFormat.pixelReadFunction, conversionRow, dstRowPitch,
+                          pixelsFormat.pixelReadFunction, conversionRow.data(), dstRowPitch,
                           dstFormat.pixelBytes, 0, dstFormat.pixelWriteFunction,
                           internalFormat.format, dstFormat.componentType, mtlRow.size.width, 1, 1,
                           false, false, false);
 
         // Upload to texture
         mTexture->replaceRegion(contextMtl, mtlRow, index.getLevelIndex(),
-                                index.hasLayer() ? index.cubeMapFaceIndex() : 0, conversionRow,
-                                dstRowPitch);
+                                index.hasLayer() ? index.cubeMapFaceIndex() : 0,
+                                conversionRow.data(), dstRowPitch);
     }
-
-    delete[] conversionRow;
 
     return angle::Result::Continue;
 }
@@ -826,8 +824,8 @@ angle::Result TextureMtl::copySubImageCPU(const gl::Context *context,
 
     const angle::Format &dstFormat = angle::Format::Get(mFormat.actualFormatId);
     const int dstRowPitch          = dstFormat.pixelBytes * clippedSourceArea.width;
-    std::unique_ptr<uint8_t[]> conversionRow(new (std::nothrow) uint8_t[dstRowPitch]);
-    ANGLE_CHECK_GL_ALLOC(contextMtl, conversionRow);
+    angle::MemoryBuffer conversionRow;
+    ANGLE_CHECK_GL_ALLOC(contextMtl, conversionRow.resize(dstRowPitch));
 
     MTLRegion mtlDstRowArea  = MTLRegionMake2D(clippedSourceArea.x, 0, clippedSourceArea.width, 1);
     gl::Rectangle srcRowArea = gl::Rectangle(clippedSourceArea.x, 0, clippedSourceArea.width, 1);
@@ -842,12 +840,12 @@ angle::Result TextureMtl::copySubImageCPU(const gl::Context *context,
         // Read pixels from framebuffer to memory:
         ANGLE_TRY(framebufferMtl->readPixelsImpl(context, srcRowArea, packParams,
                                                  framebufferMtl->getColorReadRenderTarget(),
-                                                 conversionRow.get()));
+                                                 conversionRow.data()));
 
         // Upload to texture
         mTexture->replaceRegion(contextMtl, mtlDstRowArea, index.getLevelIndex(),
                                 index.hasLayer() ? index.cubeMapFaceIndex() : 0,
-                                conversionRow.get(), dstRowPitch);
+                                conversionRow.data(), dstRowPitch);
     }
 
     return angle::Result::Continue;

@@ -12,6 +12,7 @@
 
 #include <TargetConditionals.h>
 
+#include "common/MemoryBuffer.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
 
 namespace rx
@@ -44,24 +45,20 @@ angle::Result InitializeTextureContents(const gl::Context *context,
         angle::Format::Get(intendedInternalFormat.alphaBits > 0 ? angle::FormatID::R8G8B8A8_UNORM
                                                                 : angle::FormatID::R8G8B8_UNORM);
     const size_t srcRowPitch = srcFormat.pixelBytes * size.width;
-    auto srcRow              = new (std::nothrow) uint8_t[srcRowPitch];
-    ANGLE_CHECK_GL_ALLOC(contextMtl, srcRow);
-    memset(srcRow, 0, srcRowPitch);
+    angle::MemoryBuffer srcRow;
+    ANGLE_CHECK_GL_ALLOC(contextMtl, srcRow.resize(srcRowPitch));
+    memset(srcRow.data(), 0, srcRowPitch);
 
     const angle::Format &dstFormat = angle::Format::Get(textureObjFormat.actualFormatId);
     const size_t dstRowPitch       = dstFormat.pixelBytes * size.width;
-    auto conversionRow             = new (std::nothrow) uint8_t[dstRowPitch];
-    if (!conversionRow)
-    {
-        contextMtl->handleError(GL_OUT_OF_MEMORY, __FILE__, ANGLE_FUNCTION, __LINE__);
-        delete[] srcRow;
-        return angle::Result::Stop;
-    }
+    angle::MemoryBuffer conversionRow;
+    ANGLE_CHECK_GL_ALLOC(contextMtl, conversionRow.resize(dstRowPitch));
 
-    CopyImageCHROMIUM(srcRow, srcRowPitch, srcFormat.pixelBytes, 0, srcFormat.pixelReadFunction,
-                      conversionRow, dstRowPitch, dstFormat.pixelBytes, 0,
-                      dstFormat.pixelWriteFunction, intendedInternalFormat.format,
-                      dstFormat.componentType, size.width, 1, 1, false, false, false);
+    CopyImageCHROMIUM(srcRow.data(), srcRowPitch, srcFormat.pixelBytes, 0,
+                      srcFormat.pixelReadFunction, conversionRow.data(), dstRowPitch,
+                      dstFormat.pixelBytes, 0, dstFormat.pixelWriteFunction,
+                      intendedInternalFormat.format, dstFormat.componentType, size.width, 1, 1,
+                      false, false, false);
 
     auto mtlRowRegion = MTLRegionMake2D(0, 0, size.width, 1);
 
@@ -71,12 +68,9 @@ angle::Result InitializeTextureContents(const gl::Context *context,
 
         // Upload to texture
         texture->replaceRegion(contextMtl, mtlRowRegion, index.getLevelIndex(),
-                               index.hasLayer() ? index.cubeMapFaceIndex() : 0, conversionRow,
-                               dstRowPitch);
+                               index.hasLayer() ? index.cubeMapFaceIndex() : 0,
+                               conversionRow.data(), dstRowPitch);
     }
-
-    delete[] srcRow;
-    delete[] conversionRow;
 
     return angle::Result::Continue;
 }
