@@ -45,7 +45,7 @@ struct StencilDesc
 
 struct DepthStencilDesc
 {
-    DepthStencilDesc() { memset(this, 0, sizeof(*this)); }
+    DepthStencilDesc();
 
     bool operator==(const DepthStencilDesc &rhs) const;
 
@@ -75,7 +75,7 @@ struct DepthStencilDesc
 
 struct SamplerDesc
 {
-    SamplerDesc() { memset(this, 0, sizeof(*this)); }
+    SamplerDesc();
 
     explicit SamplerDesc(const gl::SamplerState &glState);
 
@@ -203,11 +203,7 @@ constexpr PrimitiveTopologyClass kPrimitiveTopologyClassPoint = MTLPrimitiveTopo
 
 struct RenderPipelineDesc
 {
-    RenderPipelineDesc()
-    {
-        memset(this, 0, sizeof(*this));
-        rasterizationEnabled = true;
-    }
+    RenderPipelineDesc();
 
     bool operator==(const RenderPipelineDesc &rhs) const;
 
@@ -224,7 +220,7 @@ struct RenderPipelineDesc
 
 struct RenderPassAttachmentDesc
 {
-    RenderPassAttachmentDesc() { reset(); }
+    RenderPassAttachmentDesc();
     // Set default values
     void reset();
 

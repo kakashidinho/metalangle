@@ -241,6 +241,8 @@ void StencilDesc::reset()
 }
 
 // DepthStencilDesc implementation
+DepthStencilDesc::DepthStencilDesc() { memset(this, 0, sizeof(*this)); }
+
 bool DepthStencilDesc::operator==(const DepthStencilDesc &rhs) const
 {
     return ANGLE_PROP_EQ(*this, rhs, backFaceStencil) &&
@@ -377,6 +379,8 @@ size_t DepthStencilDesc::hash() const
 }
 
 // SamplerDesc implementation
+SamplerDesc::SamplerDesc() { memset(this, 0, sizeof(*this)); }
+
 SamplerDesc::SamplerDesc(const gl::SamplerState &glState) : SamplerDesc()
 {
     rAddressMode = GetSamplerAddressMode(glState.getWrapR());
@@ -552,6 +556,12 @@ bool RenderPipelineOutputDesc::operator==(const RenderPipelineOutputDesc &rhs) c
 }
 
 // RenderPipelineDesc implementation
+RenderPipelineDesc::RenderPipelineDesc()
+{
+    memset(this, 0, sizeof(*this));
+    rasterizationEnabled = true;
+}
+
 bool RenderPipelineDesc::operator==(const RenderPipelineDesc &rhs) const
 {
     return ANGLE_PROP_EQ(*this, rhs, vertexDescriptor) &&
@@ -566,6 +576,8 @@ size_t RenderPipelineDesc::hash() const
 }
 
 // RenderPassDesc implementation
+RenderPassAttachmentDesc::RenderPassAttachmentDesc() { reset(); }
+
 void RenderPassAttachmentDesc::reset()
 {
     texture.reset();
