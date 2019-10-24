@@ -87,6 +87,7 @@ void BufferMtl::destroy(const gl::Context *context)
     ContextMtl *contextMtl = mtl::GetImpl(context);
     mShadowCopy.resize(0);
     mBufferPool.destroy(contextMtl);
+    mBuffer = nullptr;
 }
 
 angle::Result BufferMtl::setData(const gl::Context *context,
@@ -247,12 +248,6 @@ angle::Result BufferMtl::getFirstLastIndices(const gl::Context *context,
     return angle::Result::Continue;
 }
 
-mtl::BufferRef BufferMtl::getCurrentBuffer(const gl::Context *context)
-{
-    (void)context;
-    return mBuffer;
-}
-
 const uint8_t *BufferMtl::getClientShadowCopyData(const gl::Context *context)
 {
     // NOTE(hqle): Support buffer update from GPU.
@@ -348,6 +343,12 @@ angle::Result BufferMtl::commitShadowCopy(const gl::Context *context)
     ANGLE_TRY(mBufferPool.commit(contextMtl));
 
     return angle::Result::Continue;
+}
+
+// SimpleWeakBufferHolderMtl implementation
+SimpleWeakBufferHolderMtl::SimpleWeakBufferHolderMtl()
+{
+    mIsWeak = true;
 }
 
 }  // namespace rx
