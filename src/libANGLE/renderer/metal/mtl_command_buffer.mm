@@ -389,13 +389,13 @@ void RenderCommandEncoder::endEncoding()
     mRenderPassDesc = RenderPassDesc();
 }
 
-inline void RenderCommandEncoder::setWriteDependencyAndStoreAction(const TextureRef &texture,
-                                                                   MTLStoreAction *storeActionOut)
+inline void RenderCommandEncoder::initWriteDependencyAndStoreAction(const TextureRef &texture,
+                                                                    MTLStoreAction *storeActionOut)
 {
     if (texture)
     {
         cmdBuffer().setWriteDependency(texture);
-        // Set store action to unknown so that we can change it later
+        // Set initial store action to unknown so that we can change it later when the encoder ends.
         *storeActionOut = MTLStoreActionUnknown;
     }
     else
@@ -432,17 +432,17 @@ RenderCommandEncoder &RenderCommandEncoder::restart(const RenderPassDesc &desc)
         // mask writing dependency
         for (uint32_t i = 0; i < mRenderPassDesc.numColorAttachments; ++i)
         {
-            setWriteDependencyAndStoreAction(mRenderPassDesc.colorAttachments[i].texture,
-                                             &mRenderPassDesc.colorAttachments[i].storeAction);
+            initWriteDependencyAndStoreAction(mRenderPassDesc.colorAttachments[i].texture,
+                                              &mRenderPassDesc.colorAttachments[i].storeAction);
             mColorInitialStoreActions[i] = mRenderPassDesc.colorAttachments[i].storeAction;
         }
 
-        setWriteDependencyAndStoreAction(mRenderPassDesc.depthAttachment.texture,
-                                         &mRenderPassDesc.depthAttachment.storeAction);
+        initWriteDependencyAndStoreAction(mRenderPassDesc.depthAttachment.texture,
+                                          &mRenderPassDesc.depthAttachment.storeAction);
         mDepthInitialStoreAction = mRenderPassDesc.depthAttachment.storeAction;
 
-        setWriteDependencyAndStoreAction(mRenderPassDesc.stencilAttachment.texture,
-                                         &mRenderPassDesc.stencilAttachment.storeAction);
+        initWriteDependencyAndStoreAction(mRenderPassDesc.stencilAttachment.texture,
+                                          &mRenderPassDesc.stencilAttachment.storeAction);
         mStencilInitialStoreAction = mRenderPassDesc.stencilAttachment.storeAction;
 
         // Create objective C object
