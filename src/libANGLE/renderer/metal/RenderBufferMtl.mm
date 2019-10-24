@@ -52,9 +52,10 @@ angle::Result RenderbufferMtl::setStorageImpl(const gl::Context *context,
         }
     }
 
-    const auto &internalFormat = gl::GetSizedInternalFormatInfo(internalformat);
-    auto angleFormatId = angle::Format::InternalFormatToID(internalFormat.sizedInternalFormat);
-    mFormat            = contextMtl->getPixelFormat(angleFormatId);
+    const gl::InternalFormat &internalFormat = gl::GetSizedInternalFormatInfo(internalformat);
+    angle::FormatID angleFormatId =
+        angle::Format::InternalFormatToID(internalFormat.sizedInternalFormat);
+    mFormat = contextMtl->getPixelFormat(angleFormatId);
 
     if ((mTexture == nullptr || !mTexture->valid()) && (width != 0 && height != 0))
     {

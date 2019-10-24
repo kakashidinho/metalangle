@@ -143,15 +143,15 @@ VertexArrayMtl::VertexArrayMtl(const gl::VertexArrayState &state, ContextMtl *co
       // buffer for every conversion.
       mDynamicVertexData(true)
 {
-    for (auto &offset : mCurrentArrayBufferOffsets)
+    for (size_t &offset : mCurrentArrayBufferOffsets)
     {
         offset = 0;
     }
-    for (auto &stride : mCurrentArrayBufferStrides)
+    for (GLuint &stride : mCurrentArrayBufferStrides)
     {
         stride = 0;
     }
-    for (auto &format : mCurrentArrayBufferFormats)
+    for (MTLVertexFormat &format : mCurrentArrayBufferFormats)
     {
         format = MTLVertexFormatFloat4;
     }
@@ -167,19 +167,19 @@ void VertexArrayMtl::destroy(const gl::Context *context)
 {
     ContextMtl *contextMtl = mtl::GetImpl(context);
 
-    for (auto &buffer : mCurrentArrayBuffers)
+    for (BufferHolderMtl *&buffer : mCurrentArrayBuffers)
     {
         buffer = nullptr;
     }
-    for (auto &offset : mCurrentArrayBufferOffsets)
+    for (size_t &offset : mCurrentArrayBufferOffsets)
     {
         offset = 0;
     }
-    for (auto &stride : mCurrentArrayBufferStrides)
+    for (GLuint &stride : mCurrentArrayBufferStrides)
     {
         stride = 0;
     }
-    for (auto &format : mCurrentArrayBufferFormats)
+    for (MTLVertexFormat &format : mCurrentArrayBufferFormats)
     {
         format = MTLVertexFormatInvalid;
     }
@@ -537,7 +537,7 @@ angle::Result VertexArrayMtl::convertIndexBufferCPU(const gl::Context *glContext
 {
     ContextMtl *contextMtl = mtl::GetImpl(glContext);
 
-    const auto srcData = idxBuffer->getClientShadowCopyData(glContext) + offset;
+    const uint8_t *srcData = idxBuffer->getClientShadowCopyData(glContext) + offset;
     ANGLE_TRY(StreamIndexData(contextMtl, &conversion->data, srcData, indexType, indexCount,
                               &mConvertedElementArrayBufferHolder,
                               &mCurrentElementArrayBufferOffset));
