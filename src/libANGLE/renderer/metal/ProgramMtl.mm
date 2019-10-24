@@ -19,9 +19,9 @@
 #include "libANGLE/Context.h"
 #include "libANGLE/ProgramLinkedResources.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
-#include "libANGLE/renderer/metal/GlslangWrapperMtl.h"
 #include "libANGLE/renderer/metal/RendererMtl.h"
 #include "libANGLE/renderer/metal/TextureMtl.h"
+#include "libANGLE/renderer/metal/mtl_glslang_utils.h"
 #include "libANGLE/renderer/metal/mtl_utils.h"
 #include "libANGLE/renderer/renderer_utils.h"
 
@@ -301,7 +301,7 @@ std::unique_ptr<LinkEvent> ProgramMtl::link(const gl::Context *context,
     // assignment done in that function.
     linkResources(resources);
 
-    GlslangWrapperMtl::GetShaderSource(mState, resources, &mShaderSource);
+    mtl::GlslangUtils::GetShaderSource(mState, resources, &mShaderSource);
 
     // NOTE(hqle): Parallelize linking.
     return std::make_unique<LinkEventDone>(linkImpl(context, infoLog));
@@ -318,7 +318,7 @@ angle::Result ProgramMtl::linkImpl(const gl::Context *glContext, gl::InfoLog &in
 
     // Convert GLSL to spirv code
     gl::ShaderMap<std::vector<uint32_t>> shaderCodes;
-    ANGLE_TRY(GlslangWrapperMtl::GetShaderCode(contextMtl, contextMtl->getCaps(), false,
+    ANGLE_TRY(mtl::GlslangUtils::GetShaderCode(contextMtl, contextMtl->getCaps(), false,
                                                mShaderSource, &shaderCodes));
 
     // Convert spirv code to MSL

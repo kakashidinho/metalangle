@@ -3,7 +3,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
-// GlslangWrapperMtl: Wrapper for Khronos's glslang compiler.
+// GlslangUtils: Wrapper for Khronos's glslang compiler.
 //
 
 #ifndef LIBANGLE_RENDERER_METAL_GLSLANGWRAPPER_H_
@@ -16,20 +16,22 @@
 
 namespace rx
 {
-class GlslangWrapperMtl
+namespace mtl
+{
+class GlslangUtils
 {
   public:
     static void GetShaderSource(const gl::ProgramState &programState,
                                 const gl::ProgramLinkedResources &resources,
                                 gl::ShaderMap<std::string> *shaderSourcesOut);
 
-    static angle::Result GetShaderCode(mtl::ErrorHandler *context,
+    static angle::Result GetShaderCode(ErrorHandler *context,
                                        const gl::Caps &glCaps,
                                        bool enableLineRasterEmulation,
                                        const gl::ShaderMap<std::string> &shaderSources,
                                        gl::ShaderMap<std::vector<uint32_t>> *shaderCodeOut);
 };
-
+}  // namespace mtl
 }  // namespace rx
 
 #endif /* LIBANGLE_RENDERER_METAL_GLSLANGWRAPPER_H_ */
