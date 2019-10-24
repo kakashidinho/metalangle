@@ -72,12 +72,6 @@ class VertexArrayMtl : public VertexArrayImpl
                                         size_t offset,
                                         size_t indexCount,
                                         IndexConversionBufferMtl *conversion);
-    angle::Result convertIndexBufferCPU(const gl::Context *glContext,
-                                        gl::DrawElementsType indexType,
-                                        BufferMtl *idxBuffer,
-                                        size_t offset,
-                                        size_t indexCount,
-                                        IndexConversionBufferMtl *conversion);
 
     angle::Result convertVertexBuffer(const gl::Context *glContext,
                                       BufferMtl *srcBuffer,

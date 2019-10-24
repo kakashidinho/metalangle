@@ -477,13 +477,8 @@ angle::Result VertexArrayMtl::convertIndexBuffer(const gl::Context *glContext,
 
     size_t indexCount = GetIndexCount(idxBuffer, offset, indexType);
 
-#if !defined(ANGLE_MTL_FORCE_CONVERT_INDEX_CPU)
     ANGLE_TRY(
         convertIndexBufferGPU(glContext, indexType, idxBuffer, offset, indexCount, conversion));
-#else
-    ANGLE_TRY(
-        convertIndexBufferCPU(glContext, indexType, idxBuffer, offset, indexCount, conversion));
-#endif
 
     return angle::Result::Continue;
 }
@@ -517,31 +512,6 @@ angle::Result VertexArrayMtl::convertIndexBufferGPU(const gl::Context *glContext
 
     mCurrentElementArrayBuffer       = &mConvertedElementArrayBufferHolder;
     mCurrentElementArrayBufferOffset = conversion->convertedOffset;
-    ASSERT(conversion->dirty);
-    conversion->dirty = false;
-
-    return angle::Result::Continue;
-}
-
-angle::Result VertexArrayMtl::convertIndexBufferCPU(const gl::Context *glContext,
-                                                    gl::DrawElementsType indexType,
-                                                    BufferMtl *idxBuffer,
-                                                    size_t offset,
-                                                    size_t indexCount,
-                                                    IndexConversionBufferMtl *conversion)
-{
-    ContextMtl *contextMtl = mtl::GetImpl(glContext);
-
-    const uint8_t *srcData = idxBuffer->getClientShadowCopyData(glContext) + offset;
-    ANGLE_TRY(StreamIndexData(contextMtl, &conversion->data, srcData, indexType, indexCount,
-                              &mConvertedElementArrayBufferHolder,
-                              &mCurrentElementArrayBufferOffset));
-
-    // Save the buffer and offset, so that we can reuse if when the buffer's content is not dirty
-    conversion->convertedBuffer = mConvertedElementArrayBufferHolder.getCurrentBuffer(glContext);
-    conversion->convertedOffset = mCurrentElementArrayBufferOffset;
-
-    mCurrentElementArrayBuffer = &mConvertedElementArrayBufferHolder;
     ASSERT(conversion->dirty);
     conversion->dirty = false;
 
