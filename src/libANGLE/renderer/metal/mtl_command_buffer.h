@@ -44,6 +44,10 @@ class CommandQueue final : public WrappedObject<id<MTLCommandQueue>>, angle::Non
 
     void finishAllCommands();
 
+    // This method will ensure that every GPU command buffer using this resource will finish before
+    // returning. Note: this doesn't incldue the "in-progress" command buffer, i.e. the one hasn't
+    // been commmitted yet. It's the responsibility of caller to make sure that command buffer is
+    // commited/flushed first before calling this method.
     void ensureResourceReadyForCPU(const ResourceRef &resource);
     void ensureResourceReadyForCPU(Resource *resource);
     bool isResourceBeingUsedByGPU(const ResourceRef &resource) const
@@ -69,8 +73,8 @@ class CommandQueue final : public WrappedObject<id<MTLCommandQueue>>, angle::Non
         AutoObjCPtr<id<MTLCommandBuffer>> buffer;
         uint64_t serial;
     };
-    std::deque<CmdBufferQueueEntry> mQueuedMetalCmdBuffers;
-    std::deque<CmdBufferQueueEntry> mQueuedMetalCmdBuffersTmp;
+    std::deque<CmdBufferQueueEntry> mMetalCmdBuffers;
+    std::deque<CmdBufferQueueEntry> mMetalCmdBuffersTmp;
 
     uint64_t mQueueSerialCounter = 1;
     std::atomic<uint64_t> mCompletedBufferSerial{0};

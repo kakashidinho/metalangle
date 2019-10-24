@@ -40,20 +40,20 @@ void CommandQueue::finishAllCommands()
         // Copy to temp list
         std::lock_guard<std::mutex> lg(mLock);
 
-        for (auto metalBufferEntry : mQueuedMetalCmdBuffers)
+        for (auto metalBufferEntry : mMetalCmdBuffers)
         {
-            mQueuedMetalCmdBuffersTmp.push_back(metalBufferEntry);
+            mMetalCmdBuffersTmp.push_back(metalBufferEntry);
         }
 
-        mQueuedMetalCmdBuffers.clear();
+        mMetalCmdBuffers.clear();
     }
 
     // Wait for command buffers to finish
-    for (auto metalBufferEntry : mQueuedMetalCmdBuffersTmp)
+    for (auto metalBufferEntry : mMetalCmdBuffersTmp)
     {
         [metalBufferEntry.buffer waitUntilCompleted];
     }
-    mQueuedMetalCmdBuffersTmp.clear();
+    mMetalCmdBuffersTmp.clear();
 }
 
 void CommandQueue::ensureResourceReadyForCPU(const ResourceRef &resource)
@@ -69,10 +69,10 @@ void CommandQueue::ensureResourceReadyForCPU(const ResourceRef &resource)
 void CommandQueue::ensureResourceReadyForCPU(Resource *resource)
 {
     mLock.lock();
-    while (isResourceBeingUsedByGPU(resource) && mQueuedMetalCmdBuffers.size())
+    while (isResourceBeingUsedByGPU(resource) && !mMetalCmdBuffers.empty())
     {
-        CmdBufferQueueEntry metalBufferEntry = mQueuedMetalCmdBuffers.front();
-        mQueuedMetalCmdBuffers.pop_front();
+        CmdBufferQueueEntry metalBufferEntry = mMetalCmdBuffers.front();
+        mMetalCmdBuffers.pop_front();
         mLock.unlock();
 
         ANGLE_MTL_LOG("Waiting for MTLCommandBuffer %llu:%p", metalBufferEntry.serial,
@@ -110,7 +110,7 @@ AutoObjCPtr<id<MTLCommandBuffer>> CommandQueue::makeMetalCommandBuffer(uint64_t 
 
         uint64_t serial = mQueueSerialCounter++;
 
-        mQueuedMetalCmdBuffers.push_back({metalCmdBuffer, serial});
+        mMetalCmdBuffers.push_back({metalCmdBuffer, serial});
 
         ANGLE_MTL_LOG("Created MTLCommandBuffer %llu:%p", serial, metalCmdBuffer.get());
 
@@ -140,14 +140,14 @@ void CommandQueue::onCommandBufferCompleted(id<MTLCommandBuffer> buf, uint64_t s
         return;
     }
 
-    while (mQueuedMetalCmdBuffers.size() && mQueuedMetalCmdBuffers.front().serial <= serial)
+    while (!mMetalCmdBuffers.empty() && mMetalCmdBuffers.front().serial <= serial)
     {
-        auto metalBufferEntry = mQueuedMetalCmdBuffers.front();
+        auto metalBufferEntry = mMetalCmdBuffers.front();
         (void)metalBufferEntry;
         ANGLE_MTL_LOG("Popped MTLCommandBuffer %llu:%p", metalBufferEntry.serial,
                       metalBufferEntry.buffer.get());
 
-        mQueuedMetalCmdBuffers.pop_front();
+        mMetalCmdBuffers.pop_front();
     }
 
     mCompletedBufferSerial.store(

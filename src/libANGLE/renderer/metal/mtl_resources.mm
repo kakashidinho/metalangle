@@ -53,12 +53,12 @@ void SetTextureSwizzle(ContextMtl *context,
 }
 }  // namespace
 // Resource implementation
-Resource::Resource() : mRef(std::make_shared<Ref>()) {}
+Resource::Resource() : mUsageRef(std::make_shared<UsageRef>()) {}
 
 // Share the GPU usage ref with other resource
-Resource::Resource(Resource *other) : mRef(other->mRef)
+Resource::Resource(Resource *other) : mUsageRef(other->mUsageRef)
 {
-    ASSERT(mRef);
+    ASSERT(mUsageRef);
 }
 
 bool Resource::isBeingUsedByGPU(Context *context) const
@@ -68,21 +68,21 @@ bool Resource::isBeingUsedByGPU(Context *context) const
 
 void Resource::setUsedByCommandBufferWithQueueSerial(uint64_t serial, bool writing)
 {
-    auto curSerial = mRef->mCmdBufferQueueSerial.load(std::memory_order_relaxed);
+    auto curSerial = mUsageRef->cmdBufferQueueSerial.load(std::memory_order_relaxed);
     do
     {
         if (curSerial >= serial)
         {
             return;
         }
-    } while (!mRef->mCmdBufferQueueSerial.compare_exchange_weak(
+    } while (!mUsageRef->cmdBufferQueueSerial.compare_exchange_weak(
         curSerial, serial, std::memory_order_release, std::memory_order_relaxed));
 
     // NOTE(hqle): This is not thread safe, if multiple command buffers on multiple threads
     // are writing to it.
     if (writing)
     {
-        mRef->mCPUReadMemDirty = true;
+        mUsageRef->cpuReadMemDirty = true;
     }
 }
 
