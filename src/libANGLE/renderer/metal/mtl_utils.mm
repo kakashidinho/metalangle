@@ -394,24 +394,6 @@ MTLWinding GetFontfaceWinding(GLenum frontFaceMode, bool invert)
     }
 }
 
-bool IsPolygonPrimitiveType(gl::PrimitiveMode mode)
-{
-    switch (mode)
-    {
-        case gl::PrimitiveMode::Points:
-        case gl::PrimitiveMode::Lines:
-        case gl::PrimitiveMode::LineStrip:
-        case gl::PrimitiveMode::LineLoop:
-        case gl::PrimitiveMode::LinesAdjacency:
-        case gl::PrimitiveMode::LineStripAdjacency:
-            return false;
-        default:
-            break;
-    }
-
-    return true;
-}
-
 #if ANGLE_MTL_PRIMITIVE_TOPOLOGY_CLASS_AVAILABLE
 PrimitiveTopologyClass GetPrimitiveTopologyClass(gl::PrimitiveMode mode)
 {

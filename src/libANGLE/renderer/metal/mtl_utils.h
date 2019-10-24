@@ -89,7 +89,6 @@ MTLStencilOperation GetStencilOp(GLenum op);
 MTLCullMode GetCullMode(GLenum mode);
 MTLWinding GetFontfaceWinding(GLenum frontFaceMode, bool invert);
 
-bool IsPolygonPrimitiveType(gl::PrimitiveMode mode);
 PrimitiveTopologyClass GetPrimitiveTopologyClass(gl::PrimitiveMode mode);
 MTLPrimitiveType GetPrimitiveType(gl::PrimitiveMode mode);
 MTLIndexType GetIndexType(gl::DrawElementsType type);

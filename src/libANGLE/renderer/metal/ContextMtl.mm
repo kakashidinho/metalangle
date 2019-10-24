@@ -205,7 +205,7 @@ angle::Result ContextMtl::drawArrays(const gl::Context *context,
                                      GLint first,
                                      GLsizei count)
 {
-    if (mCullAllPolygons && mtl::IsPolygonPrimitiveType(mode))
+    if (mCullAllPolygons && gl::IsPolygonMode(mode))
     {
         return angle::Result::Continue;
     }
@@ -281,7 +281,7 @@ angle::Result ContextMtl::drawElements(const gl::Context *context,
                                        gl::DrawElementsType type,
                                        const void *indices)
 {
-    if (mCullAllPolygons && mtl::IsPolygonPrimitiveType(mode))
+    if (mCullAllPolygons && gl::IsPolygonMode(mode))
     {
         return angle::Result::Continue;
     }
