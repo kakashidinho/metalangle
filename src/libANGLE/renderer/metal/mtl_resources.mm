@@ -18,14 +18,17 @@
 #include "libANGLE/renderer/metal/mtl_command_buffer.h"
 #include "libANGLE/renderer/metal/mtl_format_utils.h"
 
-#define MIP_SIZE(baseSize, level) std::max<NSUInteger>(1, baseSize >> level)
-
 namespace rx
 {
 namespace mtl
 {
 namespace
 {
+inline NSUInteger GetMipSize(NSUInteger baseSize, NSUInteger level)
+{
+    return std::max<NSUInteger>(1, baseSize >> level);
+}
+
 void SetTextureSwizzle(ContextMtl *context,
                        const Format &format,
                        MTLTextureDescriptor *textureDescOut)
@@ -299,12 +302,12 @@ uint32_t Texture::mipmapLevels() const
 
 uint32_t Texture::width(uint32_t level) const
 {
-    return static_cast<uint32_t>(MIP_SIZE(get().width, level));
+    return static_cast<uint32_t>(GetMipSize(get().width, level));
 }
 
 uint32_t Texture::height(uint32_t level) const
 {
-    return static_cast<uint32_t>(MIP_SIZE(get().height, level));
+    return static_cast<uint32_t>(GetMipSize(get().height, level));
 }
 
 gl::Extents Texture::size(uint32_t level) const
@@ -313,7 +316,7 @@ gl::Extents Texture::size(uint32_t level) const
 
     re.width  = width(level);
     re.height = height(level);
-    re.depth  = static_cast<uint32_t>(MIP_SIZE(get().depth, level));
+    re.depth  = static_cast<uint32_t>(GetMipSize(get().depth, level));
 
     return re;
 }
