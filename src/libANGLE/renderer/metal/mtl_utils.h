@@ -86,7 +86,6 @@ MTLBlendOperation GetBlendOp(GLenum op);
 MTLCompareFunction GetCompareFunc(GLenum func);
 MTLStencilOperation GetStencilOp(GLenum op);
 
-MTLCullMode GetCullMode(GLenum mode);
 MTLWinding GetFontfaceWinding(GLenum frontFaceMode, bool invert);
 
 PrimitiveTopologyClass GetPrimitiveTopologyClass(gl::PrimitiveMode mode);

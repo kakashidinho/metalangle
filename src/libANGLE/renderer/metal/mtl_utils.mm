@@ -366,20 +366,6 @@ MTLStencilOperation GetStencilOp(GLenum op)
     }
 }
 
-MTLCullMode GetCullMode(GLenum mode)
-{
-    switch (mode)
-    {
-        case GL_FRONT:
-            return MTLCullModeFront;
-        case GL_BACK:
-            return MTLCullModeBack;
-        default:
-            UNREACHABLE();
-            return MTLCullModeNone;
-    }
-}
-
 MTLWinding GetFontfaceWinding(GLenum frontFaceMode, bool invert)
 {
     switch (frontFaceMode)
