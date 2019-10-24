@@ -210,7 +210,7 @@ template <typename T>
 class AutoObjCPtr : public WrappedObject<T>
 {
   public:
-    typedef WrappedObject<T> ParentType;
+    using ParentType = WrappedObject<T>;
 
     AutoObjCPtr() {}
 

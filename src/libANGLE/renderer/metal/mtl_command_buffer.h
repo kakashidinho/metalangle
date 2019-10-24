@@ -66,7 +66,7 @@ class CommandQueue final : public WrappedObject<id<MTLCommandQueue>>, angle::Non
 
   private:
     void onCommandBufferCompleted(id<MTLCommandBuffer> buf, uint64_t serial);
-    typedef WrappedObject<id<MTLCommandQueue>> ParentClass;
+    using ParentClass = WrappedObject<id<MTLCommandQueue>>;
 
     struct CmdBufferQueueEntry
     {
@@ -111,7 +111,7 @@ class CommandBuffer final : public WrappedObject<id<MTLCommandBuffer>>, angle::N
     bool validImpl() const;
     void commitImpl();
 
-    typedef WrappedObject<id<MTLCommandBuffer>> ParentClass;
+    using ParentClass = WrappedObject<id<MTLCommandBuffer>>;
 
     CommandQueue &mCmdQueue;
 
@@ -145,7 +145,7 @@ class CommandEncoder : public WrappedObject<id<MTLCommandEncoder>>, angle::NonCo
     CommandEncoder &markResourceBeingWrittenByGPU(const TextureRef &texture);
 
   protected:
-    typedef WrappedObject<id<MTLCommandEncoder>> ParentClass;
+    using ParentClass = WrappedObject<id<MTLCommandEncoder>>;
 
     CommandEncoder(CommandBuffer *cmdBuffer, Type type);
 

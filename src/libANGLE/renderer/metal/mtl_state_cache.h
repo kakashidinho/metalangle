@@ -192,12 +192,12 @@ struct RenderPipelineOutputDesc
 
 #if !(TARGET_OS_OSX || TARGET_OS_MACCATALYST) && ANGLE_IOS_DEPLOY_TARGET < __IPHONE_12_0
 #    define ANGLE_MTL_PRIMITIVE_TOPOLOGY_CLASS_AVAILABLE 0
-typedef uint32_t PrimitiveTopologyClass;
+using PrimitiveTopologyClass                                     = uint32_t;
 constexpr PrimitiveTopologyClass kPrimitiveTopologyClassTriangle = 0;
 constexpr PrimitiveTopologyClass kPrimitiveTopologyClassPoint    = 0;
 #else
 #    define ANGLE_MTL_PRIMITIVE_TOPOLOGY_CLASS_AVAILABLE 1
-typedef MTLPrimitiveTopologyClass PrimitiveTopologyClass;
+using PrimitiveTopologyClass = MTLPrimitiveTopologyClass;
 constexpr PrimitiveTopologyClass kPrimitiveTopologyClassTriangle =
     MTLPrimitiveTopologyClassTriangle;
 constexpr PrimitiveTopologyClass kPrimitiveTopologyClassPoint = MTLPrimitiveTopologyClassPoint;

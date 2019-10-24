@@ -47,7 +47,7 @@ spv::ExecutionModel ShaderTypeToSpvExecutionModel(gl::ShaderType shaderType)
     }
 }
 
-typedef uint32_t(spirv_cross::MSLResourceBinding::*BindingField);
+using BindingField = uint32_t(spirv_cross::MSLResourceBinding::*);
 template <BindingField bindingField1, BindingField bindingField2>
 angle::Result BindResources2(spirv_cross::CompilerMSL *compiler,
                              const spirv_cross::SmallVector<spirv_cross::Resource> &resources,

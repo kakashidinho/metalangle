@@ -37,11 +37,11 @@ class Resource;
 class Texture;
 class Buffer;
 
-typedef std::shared_ptr<Resource> ResourceRef;
-typedef std::shared_ptr<Texture> TextureRef;
-typedef std::weak_ptr<Texture> TextureWeakRef;
-typedef std::shared_ptr<Buffer> BufferRef;
-typedef std::weak_ptr<Buffer> BufferWeakRef;
+using ResourceRef    = std::shared_ptr<Resource>;
+using TextureRef     = std::shared_ptr<Texture>;
+using TextureWeakRef = std::weak_ptr<Texture>;
+using BufferRef      = std::shared_ptr<Buffer>;
+using BufferWeakRef  = std::weak_ptr<Buffer>;
 
 class Resource : angle::NonCopyable
 {
@@ -145,7 +145,7 @@ class Texture final : public Resource,
     void set(id<MTLTexture> metalTexture);
 
   private:
-    typedef WrappedObject<id<MTLTexture>> ParentClass;
+    using ParentClass = WrappedObject<id<MTLTexture>>;
 
     Texture(id<MTLTexture> metalTexture);
     Texture(ContextMtl *context,
