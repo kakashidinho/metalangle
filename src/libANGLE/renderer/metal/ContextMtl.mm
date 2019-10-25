@@ -1033,7 +1033,7 @@ mtl::RenderCommandEncoder *ContextMtl::getRenderCommandEncoder(const mtl::Render
         return &mRenderEncoder;
     }
 
-    endEncoding();
+    endEncoding(false);
 
     ensureCommandBufferValid();
 

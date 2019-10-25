@@ -25,8 +25,8 @@ class FramebufferMtl : public FramebufferImpl
 {
   public:
     explicit FramebufferMtl(const gl::FramebufferState &state,
-                            bool flipY                     = false,
-                            bool alwaysDiscardDepthStencil = false);
+                            bool flipY,
+                            bool alwaysDiscardDepthStencil);
     ~FramebufferMtl() override;
     void destroy(const gl::Context *context) override;
 
