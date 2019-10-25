@@ -50,6 +50,9 @@ class CommandQueue final : public WrappedObject<id<MTLCommandQueue>>, angle::Non
     // commited/flushed first before calling this method.
     void ensureResourceReadyForCPU(const ResourceRef &resource);
     void ensureResourceReadyForCPU(Resource *resource);
+
+    // Check whether the resource is being used by any command buffer still running on GPU.
+    // This must be called before attempting to read the content of resource on CPU side.
     bool isResourceBeingUsedByGPU(const ResourceRef &resource) const
     {
         return isResourceBeingUsedByGPU(resource.get());
