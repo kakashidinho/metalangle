@@ -10,7 +10,7 @@
   "src/libANGLE/renderer/metal/shaders/gen_indices.metal":
     "002511e2b980a7fca7e80cbda6a82712",
   "src/libANGLE/renderer/metal/shaders/gen_mtl_internal_shaders.py":
-    "46f6fc729d6e56ae6269378d1ea46530",
+    "8de75752bb966cdbe575defc04fa7a7a",
   "src/libANGLE/renderer/metal/shaders/master_source.metal":
     "fbe6f4bfb49a48ae87791a4cff5fab0a",
   "src/libANGLE/renderer/metal/shaders/mtl_default_shaders_src_autogen.inc":
