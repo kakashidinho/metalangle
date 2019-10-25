@@ -34,6 +34,7 @@ angle::Result RendererMtl::initialize(egl::Display *display)
         mCapsInitialized = false;
 
         GlslangInitialize();
+        initializeLimitations();
 
         ANGLE_TRY(mFormatTable.initialize(this));
 
@@ -93,12 +94,6 @@ const gl::Extensions &RendererMtl::getNativeExtensions() const
 {
     ensureCapsInitialized();
     return mNativeExtensions;
-}
-
-const gl::Limitations &RendererMtl::getNativeLimitations() const
-{
-    ensureCapsInitialized();
-    return mNativeLimitations;
 }
 
 const mtl::TextureRef &RendererMtl::getNullTexture(const gl::Context *context,
@@ -279,8 +274,6 @@ void RendererMtl::ensureCapsInitialized() const
 
     // NOTE(hqle): support MSAA.
     mNativeCaps.maxSamples = 1;
-
-    // NOTE(hqle): Fill gl::Limitations
 }
 
 void RendererMtl::initializeExtensions() const
@@ -356,5 +349,33 @@ void RendererMtl::initializeTextureCaps() const
 
     // Re-verify texture extensions.
     mNativeExtensions.setTextureExtensionSupport(mNativeTextureCaps);
+}
+
+void RendererMtl::initializeLimitations()
+{
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
+//   Texture swizzle is only supported if macos sdk 10.15 is present
+#    if defined(__MAC_10_15)
+    if (ANGLE_APPLE_AVAILABLE_XC(10.15, 13.0))
+    {
+        // The runtime OS must be MacOS 10.15+ or Mac Catalyst for this to be supported:
+        mNativeLimitations.hasTextureSwizzle = [getMetalDevice() supportsFamily:MTLGPUFamilyMac2];
+    }
+#    endif
+#elif TARGET_OS_IOS
+    // Base Vertex drawing is only supported since GPU family 3.
+    if (![getMetalDevice() supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily3_v1])
+    {
+        mNativeLimitations.hasBaseVertexInstancedDraw = false;
+    }
+    if (![getMetalDevice() supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily4_v1])
+    {
+        mNativeLimitations.hasNonUniformDispatch = false;
+    }
+
+#    if !TARGET_OS_SIMULATOR
+    mNativeLimitations.allowSeparatedDepthStencilBuffers = true;
+#    endif
+#endif
 }
 }

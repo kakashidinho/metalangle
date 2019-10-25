@@ -29,6 +29,18 @@ namespace rx
 
 class ContextMtl;
 
+struct LimitationsMtl : public gl::Limitations
+{
+    // BaseVertex/Instanced draw support:
+    bool hasBaseVertexInstancedDraw = true;
+    // Non-uniform compute shader dispatch support, i.e. Group size is not necessarily to be fixed:
+    bool hasNonUniformDispatch = true;
+    // Texture swizzle support:
+    bool hasTextureSwizzle = false;
+
+    bool allowSeparatedDepthStencilBuffers = false;
+};
+
 class RendererMtl final : angle::NonCopyable
 {
   public:
@@ -43,7 +55,7 @@ class RendererMtl final : angle::NonCopyable
     gl::Caps getNativeCaps() const;
     const gl::TextureCapsMap &getNativeTextureCaps() const;
     const gl::Extensions &getNativeExtensions() const;
-    const gl::Limitations &getNativeLimitations() const;
+    const LimitationsMtl &getNativeLimitations() const { return mNativeLimitations; }
 
     id<MTLDevice> getMetalDevice() const { return mMetalDevice; }
 
@@ -80,6 +92,7 @@ class RendererMtl final : angle::NonCopyable
     void initializeCaps() const;
     void initializeExtensions() const;
     void initializeTextureCaps() const;
+    void initializeLimitations();
 
     mtl::AutoObjCPtr<id<MTLDevice>> mMetalDevice = nil;
 
@@ -96,7 +109,7 @@ class RendererMtl final : angle::NonCopyable
     mutable gl::TextureCapsMap mNativeTextureCaps;
     mutable gl::Extensions mNativeExtensions;
     mutable gl::Caps mNativeCaps;
-    mutable gl::Limitations mNativeLimitations;
+    LimitationsMtl mNativeLimitations;
 };
 }  // namespace rx
 

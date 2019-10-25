@@ -244,12 +244,12 @@ bool FramebufferMtl::checkStatus(const gl::Context *context) const
         return false;
     }
 
-#if !ANGLE_MTL_ALLOW_SEPARATED_DEPTH_STENCIL
-    if (mState.hasSeparateDepthAndStencilAttachments())
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+    if (!contextMtl->getRenderer()->getNativeLimitations().allowSeparatedDepthStencilBuffers &&
+        mState.hasSeparateDepthAndStencilAttachments())
     {
         return false;
     }
-#endif
 
     return true;
 }

@@ -925,17 +925,15 @@ angle::Result RenderUtils::dispatchCompute(const gl::Context *context,
     NSUInteger w                  = pipelineState.threadExecutionWidth;
     MTLSize threadsPerThreadgroup = MTLSizeMake(w, 1, 1);
 
-#if TARGET_OS_IOS && !TARGET_OS_MACCATALYST
-    if (![getMetalDevice() supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily4_v1])
-    {
-        MTLSize groups = MTLSizeMake((numThreads + w - 1) / w, 1, 1);
-        cmdEncoder->dispatch(groups, threadsPerThreadgroup);
-    }
-    else
-#endif
+    if (getRenderer()->getNativeLimitations().hasNonUniformDispatch)
     {
         MTLSize threads = MTLSizeMake(numThreads, 1, 1);
         cmdEncoder->dispatchNonUniform(threads, threadsPerThreadgroup);
+    }
+    else
+    {
+        MTLSize groups = MTLSizeMake((numThreads + w - 1) / w, 1, 1);
+        cmdEncoder->dispatch(groups, threadsPerThreadgroup);
     }
 
     return angle::Result::Continue;

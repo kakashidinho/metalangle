@@ -31,9 +31,6 @@
 #    endif
 #endif
 
-// Don't allow separated depth stencil buffers
-#define ANGLE_MTL_ALLOW_SEPARATED_DEPTH_STENCIL 0
-
 #define ANGLE_MTL_OBJC_SCOPE @autoreleasepool
 
 #if !__has_feature(objc_arc)

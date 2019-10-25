@@ -184,15 +184,18 @@ SurfaceMtl::SurfaceMtl(DisplayMtl *displayMtl,
 
     if (depthBits && stencilBits)
     {
-#if ANGLE_MTL_ALLOW_SEPARATED_DEPTH_STENCIL
-        mDepthFormat   = renderer->getPixelFormat(kDefaultFrameBufferDepthFormatId);
-        mStencilFormat = renderer->getPixelFormat(kDefaultFrameBufferStencilFormatId);
-#else
-        // We must use packed depth stencil
-        mUsePackedDepthStencil = true;
-        mDepthFormat           = renderer->getPixelFormat(kDefaultFrameBufferDepthStencilFormatId);
-        mStencilFormat         = mDepthFormat;
-#endif
+        if (renderer->getNativeLimitations().allowSeparatedDepthStencilBuffers)
+        {
+            mDepthFormat   = renderer->getPixelFormat(kDefaultFrameBufferDepthFormatId);
+            mStencilFormat = renderer->getPixelFormat(kDefaultFrameBufferStencilFormatId);
+        }
+        else
+        {
+            // We must use packed depth stencil
+            mUsePackedDepthStencil = true;
+            mDepthFormat   = renderer->getPixelFormat(kDefaultFrameBufferDepthStencilFormatId);
+            mStencilFormat = mDepthFormat;
+        }
     }
     else if (depthBits)
     {

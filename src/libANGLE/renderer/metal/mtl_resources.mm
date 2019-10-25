@@ -15,6 +15,7 @@
 
 #include "common/debug.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
+#include "libANGLE/renderer/metal/RendererMtl.h"
 #include "libANGLE/renderer/metal/mtl_command_buffer.h"
 #include "libANGLE/renderer/metal/mtl_format_utils.h"
 
@@ -33,23 +34,21 @@ void SetTextureSwizzle(ContextMtl *context,
                        const Format &format,
                        MTLTextureDescriptor *textureDescOut)
 {
-#if (TARGET_OS_OSX || TARGET_OS_MACCATALYST) && defined(__MAC_10_15)
-    if (ANGLE_APPLE_AVAILABLE_XC(10.15, 13.0))
+// Texture swizzle functions's declarations are only available if macos 10.15 sdk is present
+#if defined(__MAC_10_15)
+    if (context->getRenderer()->getNativeLimitations().hasTextureSwizzle)
     {
-        if ([context->getMetalDevice() supportsFamily:MTLGPUFamilyMac2])
+        // Work around Metal doesn't have native support for DXT1 without alpha.
+        switch (format.intendedFormatId)
         {
-            // Work around Metal doesn't have native support for DXT1 without alpha.
-            switch (format.intendedFormatId)
-            {
-                case angle::FormatID::BC1_RGB_UNORM_BLOCK:
-                case angle::FormatID::BC1_RGB_UNORM_SRGB_BLOCK:
-                    textureDescOut.swizzle =
-                        MTLTextureSwizzleChannelsMake(MTLTextureSwizzleRed, MTLTextureSwizzleGreen,
-                                                      MTLTextureSwizzleBlue, MTLTextureSwizzleOne);
-                    break;
-                default:
-                    break;
-            }
+            case angle::FormatID::BC1_RGB_UNORM_BLOCK:
+            case angle::FormatID::BC1_RGB_UNORM_SRGB_BLOCK:
+                textureDescOut.swizzle =
+                    MTLTextureSwizzleChannelsMake(MTLTextureSwizzleRed, MTLTextureSwizzleGreen,
+                                                  MTLTextureSwizzleBlue, MTLTextureSwizzleOne);
+                break;
+            default:
+                break;
         }
     }
 #endif
