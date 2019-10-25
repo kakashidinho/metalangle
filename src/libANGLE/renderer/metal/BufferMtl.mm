@@ -27,8 +27,13 @@ angle::Result GetFirstLastIndices(const IndexType *indices,
                                   size_t count,
                                   std::pair<uint32_t, uint32_t> *outIndices)
 {
-    outIndices->first  = indices[0];
-    outIndices->second = indices[count - 1];
+    IndexType first, last;
+    // Use memcpy to avoid unaligned memory access crash:
+    memcpy(&first, &indices[0], sizeof(first));
+    memcpy(&last, &indices[count - 1], sizeof(last));
+
+    outIndices->first  = first;
+    outIndices->second = last;
 
     return angle::Result::Continue;
 }
