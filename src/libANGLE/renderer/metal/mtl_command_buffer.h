@@ -163,7 +163,7 @@ class RenderCommandEncoder final : public CommandEncoder
 {
   public:
     RenderCommandEncoder(CommandBuffer *cmdBuffer);
-    ~RenderCommandEncoder();
+    ~RenderCommandEncoder() override;
 
     void endEncoding() override;
 
@@ -254,7 +254,7 @@ class BlitCommandEncoder final : public CommandEncoder
 {
   public:
     BlitCommandEncoder(CommandBuffer *cmdBuffer);
-    ~BlitCommandEncoder();
+    ~BlitCommandEncoder() override;
 
     BlitCommandEncoder &restart();
 
@@ -282,7 +282,7 @@ class ComputeCommandEncoder final : public CommandEncoder
 {
   public:
     ComputeCommandEncoder(CommandBuffer *cmdBuffer);
-    ~ComputeCommandEncoder();
+    ~ComputeCommandEncoder() override;
 
     ComputeCommandEncoder &restart();
 

@@ -75,7 +75,7 @@ class RenderUtils : public Context, angle::NonCopyable
 {
   public:
     RenderUtils(RendererMtl *renderer);
-    ~RenderUtils();
+    ~RenderUtils() override;
 
     angle::Result initialize();
     void onDestroy();
