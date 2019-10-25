@@ -450,9 +450,9 @@ void BlendDesc::reset()
     reset(MTLColorWriteMaskAll);
 }
 
-void BlendDesc::reset(MTLColorWriteMask writeMask)
+void BlendDesc::reset(MTLColorWriteMask _writeMask)
 {
-    this->writeMask = writeMask;
+    writeMask = _writeMask;
 
     blendingEnabled     = false;
     alphaBlendOperation = rgbBlendOperation = MTLBlendOperationAdd;
@@ -522,11 +522,11 @@ void RenderPipelineColorAttachmentDesc::reset(MTLPixelFormat format)
     reset(format, MTLColorWriteMaskAll);
 }
 
-void RenderPipelineColorAttachmentDesc::reset(MTLPixelFormat format, MTLColorWriteMask writeMask)
+void RenderPipelineColorAttachmentDesc::reset(MTLPixelFormat format, MTLColorWriteMask _writeMask)
 {
     this->pixelFormat = format;
 
-    BlendDesc::reset(writeMask);
+    BlendDesc::reset(_writeMask);
 }
 
 void RenderPipelineColorAttachmentDesc::reset(MTLPixelFormat format, const BlendDesc &blendState)
