@@ -12,7 +12,7 @@
 #include <TargetConditionals.h>
 
 #include "libANGLE/renderer/Format.h"
-#include "libANGLE/renderer/metal/RendererMtl.h"
+#include "libANGLE/renderer/metal/DisplayMtl.h"
 #include "libANGLE/renderer/metal/mtl_format_utils.h"
 
 namespace rx
@@ -20,11 +20,11 @@ namespace rx
 namespace mtl
 {
 
-void Format::init(const RendererMtl *renderer, angle::FormatID intendedFormatId_)
+void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 {
     this->intendedFormatId = intendedFormatId_;
 
-    id<MTLDevice> metalDevice = renderer->getMetalDevice();
+    id<MTLDevice> metalDevice = display->getMetalDevice();
 
     // Actual conversion
     switch (this->intendedFormatId)

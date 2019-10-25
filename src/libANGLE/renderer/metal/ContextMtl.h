@@ -23,7 +23,7 @@
 
 namespace rx
 {
-class RendererMtl;
+class DisplayMtl;
 class FramebufferMtl;
 class VertexArrayMtl;
 class ProgramMtl;
@@ -31,7 +31,7 @@ class ProgramMtl;
 class ContextMtl : public ContextImpl, public mtl::Context
 {
   public:
-    ContextMtl(const gl::State &state, gl::ErrorSet *errorSet, RendererMtl *renderer);
+    ContextMtl(const gl::State &state, gl::ErrorSet *errorSet, DisplayMtl *display);
     ~ContextMtl() override;
 
     angle::Result initialize() override;

@@ -14,7 +14,7 @@
 #include "common/debug.h"
 #include "libANGLE/renderer/metal/BufferMtl.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
-#include "libANGLE/renderer/metal/RendererMtl.h"
+#include "libANGLE/renderer/metal/DisplayMtl.h"
 #include "libANGLE/renderer/metal/mtl_common.h"
 #include "libANGLE/renderer/metal/mtl_utils.h"
 #include "libANGLE/renderer/metal/shaders/compiled/mtl_default_shaders.inc"
@@ -119,7 +119,7 @@ bool RenderUtils::IndexConvesionPipelineCacheKey::operator<(
     return static_cast<int>(srcType) < static_cast<int>(other.srcType);
 }
 
-RenderUtils::RenderUtils(RendererMtl *renderer) : Context(renderer) {}
+RenderUtils::RenderUtils(DisplayMtl *display) : Context(display) {}
 
 RenderUtils::~RenderUtils() {}
 
@@ -181,11 +181,11 @@ angle::Result RenderUtils::initShaderLibrary()
     AutoObjCObj<NSError> err = nil;
 
 #if defined(ANGLE_MTL_DEBUG_INTERNAL_SHADERS)
-    mDefaultShaders = CreateShaderLibrary(getRenderer()->getMetalDevice(), default_metallib_src,
+    mDefaultShaders = CreateShaderLibrary(getDisplay()->getMetalDevice(), default_metallib_src,
                                           sizeof(default_metallib_src), &err);
 #else
     mDefaultShaders =
-        CreateShaderLibraryFromBinary(getRenderer()->getMetalDevice(), compiled_default_metallib,
+        CreateShaderLibraryFromBinary(getDisplay()->getMetalDevice(), compiled_default_metallib,
                                       compiled_default_metallib_len, &err);
 #endif
 
@@ -355,7 +355,7 @@ void RenderUtils::setupBlitWithDraw(const gl::Context *context,
     // Setup states
     setupDrawCommonStates(cmdEncoder);
     cmdEncoder->setRenderPipelineState(renderPipelineState);
-    cmdEncoder->setDepthStencilState(getRenderer()->getStateCache().getNullDepthStencilState(this));
+    cmdEncoder->setDepthStencilState(getDisplay()->getStateCache().getNullDepthStencilState(this));
 
     // Viewport
     const RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
@@ -391,7 +391,7 @@ id<MTLDepthStencilState> RenderUtils::getClearDepthStencilState(const gl::Contex
     if (!params.clearDepth.valid() && !params.clearStencil.valid())
     {
         // Doesn't clear depth nor stencil
-        return getRenderer()->getStateCache().getNullDepthStencilState(this);
+        return getDisplay()->getStateCache().getNullDepthStencilState(this);
     }
 
     ContextMtl *contextMtl = GetImpl(context);
@@ -418,8 +418,7 @@ id<MTLDepthStencilState> RenderUtils::getClearDepthStencilState(const gl::Contex
         desc.backFaceStencil.writeMask                  = contextMtl->getStencilMask();
     }
 
-    return getRenderer()->getStateCache().getDepthStencilState(getRenderer()->getMetalDevice(),
-                                                               desc);
+    return getDisplay()->getStateCache().getDepthStencilState(getDisplay()->getMetalDevice(), desc);
 }
 
 id<MTLRenderPipelineState> RenderUtils::getClearRenderPipelineState(
@@ -925,7 +924,7 @@ angle::Result RenderUtils::dispatchCompute(const gl::Context *context,
     NSUInteger w                  = pipelineState.threadExecutionWidth;
     MTLSize threadsPerThreadgroup = MTLSizeMake(w, 1, 1);
 
-    if (getRenderer()->getNativeLimitations().hasNonUniformDispatch)
+    if (getDisplay()->getNativeLimitations().hasNonUniformDispatch)
     {
         MTLSize threads = MTLSizeMake(numThreads, 1, 1);
         cmdEncoder->dispatchNonUniform(threads, threadsPerThreadgroup);

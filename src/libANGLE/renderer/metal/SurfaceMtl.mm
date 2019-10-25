@@ -16,7 +16,6 @@
 #include "libANGLE/renderer/metal/ContextMtl.h"
 #include "libANGLE/renderer/metal/DisplayMtl.h"
 #include "libANGLE/renderer/metal/FrameBufferMtl.h"
-#include "libANGLE/renderer/metal/RendererMtl.h"
 #include "libANGLE/renderer/metal/mtl_format_utils.h"
 
 // Compiler can turn on programmatical frame capture in release build by defining
@@ -171,16 +170,14 @@ void StopFrameCapture()
 }
 }
 
-SurfaceMtl::SurfaceMtl(DisplayMtl *displayMtl,
+SurfaceMtl::SurfaceMtl(DisplayMtl *display,
                        const egl::SurfaceState &state,
                        EGLNativeWindowType window,
                        const egl::AttributeMap &attribs)
     : SurfaceImpl(state), mLayer((__bridge CALayer *)(window))
 {
-    RendererMtl *renderer = displayMtl->getRenderer();
-
     // NOTE(hqle): Width and height attributes is ignored for now.
-    mColorFormat = renderer->getPixelFormat(kDefaultFrameBufferColorFormatId);
+    mColorFormat = display->getPixelFormat(kDefaultFrameBufferColorFormatId);
 
     int depthBits   = 0;
     int stencilBits = 0;
@@ -192,26 +189,26 @@ SurfaceMtl::SurfaceMtl(DisplayMtl *displayMtl,
 
     if (depthBits && stencilBits)
     {
-        if (renderer->getNativeLimitations().allowSeparatedDepthStencilBuffers)
+        if (display->getNativeLimitations().allowSeparatedDepthStencilBuffers)
         {
-            mDepthFormat   = renderer->getPixelFormat(kDefaultFrameBufferDepthFormatId);
-            mStencilFormat = renderer->getPixelFormat(kDefaultFrameBufferStencilFormatId);
+            mDepthFormat   = display->getPixelFormat(kDefaultFrameBufferDepthFormatId);
+            mStencilFormat = display->getPixelFormat(kDefaultFrameBufferStencilFormatId);
         }
         else
         {
             // We must use packed depth stencil
             mUsePackedDepthStencil = true;
-            mDepthFormat   = renderer->getPixelFormat(kDefaultFrameBufferDepthStencilFormatId);
+            mDepthFormat   = display->getPixelFormat(kDefaultFrameBufferDepthStencilFormatId);
             mStencilFormat = mDepthFormat;
         }
     }
     else if (depthBits)
     {
-        mDepthFormat = renderer->getPixelFormat(kDefaultFrameBufferDepthFormatId);
+        mDepthFormat = display->getPixelFormat(kDefaultFrameBufferDepthFormatId);
     }
     else if (stencilBits)
     {
-        mStencilFormat = renderer->getPixelFormat(kDefaultFrameBufferStencilFormatId);
+        mStencilFormat = display->getPixelFormat(kDefaultFrameBufferStencilFormatId);
     }
 }
 
@@ -229,10 +226,9 @@ void SurfaceMtl::destroy(const egl::Display *display)
 egl::Error SurfaceMtl::initialize(const egl::Display *display)
 {
     DisplayMtl *displayMtl    = mtl::GetImpl(display);
-    RendererMtl *renderer     = displayMtl->getRenderer();
-    id<MTLDevice> metalDevice = renderer->getMetalDevice();
+    id<MTLDevice> metalDevice = displayMtl->getMetalDevice();
 
-    StartFrameCapture(metalDevice, renderer->cmdQueue().get());
+    StartFrameCapture(metalDevice, displayMtl->cmdQueue().get());
 
     ANGLE_MTL_OBJC_SCOPE
     {

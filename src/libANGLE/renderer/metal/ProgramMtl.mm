@@ -19,7 +19,7 @@
 #include "libANGLE/Context.h"
 #include "libANGLE/ProgramLinkedResources.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
-#include "libANGLE/renderer/metal/RendererMtl.h"
+#include "libANGLE/renderer/metal/DisplayMtl.h"
 #include "libANGLE/renderer/metal/TextureMtl.h"
 #include "libANGLE/renderer/metal/mtl_glslang_utils.h"
 #include "libANGLE/renderer/metal/mtl_utils.h"
@@ -188,10 +188,10 @@ void BindNullSampler(const gl::Context *glContext,
     ContextMtl *contextMtl = mtl::GetImpl(glContext);
 
     const mtl::TextureRef &nullTex =
-        contextMtl->getRenderer()->getNullTexture(glContext, textureType);
+        contextMtl->getDisplay()->getNullTexture(glContext, textureType);
 
     mtl::AutoObjCPtr<id<MTLSamplerState>> nullSampler =
-        contextMtl->getRenderer()->getStateCache().getNullSamplerState(contextMtl);
+        contextMtl->getDisplay()->getStateCache().getNullSamplerState(contextMtl);
 
     switch (shaderType)
     {
@@ -483,8 +483,8 @@ angle::Result ProgramMtl::createMslShader(const gl::Context *glContext,
     ANGLE_MTL_OBJC_SCOPE
     {
         ContextMtl *contextMtl  = mtl::GetImpl(glContext);
-        RendererMtl *renderer   = contextMtl->getRenderer();
-        id<MTLDevice> mtlDevice = renderer->getMetalDevice();
+        DisplayMtl *display     = contextMtl->getDisplay();
+        id<MTLDevice> mtlDevice = display->getMetalDevice();
 
         // Convert to actual binary shader
         mtl::AutoObjCPtr<NSError *> err = nil;

@@ -14,10 +14,10 @@
 #include "common/debug.h"
 #include "libANGLE/renderer/metal/BufferMtl.h"
 #include "libANGLE/renderer/metal/CompilerMtl.h"
+#include "libANGLE/renderer/metal/DisplayMtl.h"
 #include "libANGLE/renderer/metal/FrameBufferMtl.h"
 #include "libANGLE/renderer/metal/ProgramMtl.h"
 #include "libANGLE/renderer/metal/RenderBufferMtl.h"
-#include "libANGLE/renderer/metal/RendererMtl.h"
 #include "libANGLE/renderer/metal/ShaderMtl.h"
 #include "libANGLE/renderer/metal/TextureMtl.h"
 #include "libANGLE/renderer/metal/VertexArrayMtl.h"
@@ -87,10 +87,10 @@ angle::Result AllocateTriangleFanBufferFromPool(ContextMtl *context,
 }
 }  // namespace
 
-ContextMtl::ContextMtl(const gl::State &state, gl::ErrorSet *errorSet, RendererMtl *renderer)
+ContextMtl::ContextMtl(const gl::State &state, gl::ErrorSet *errorSet, DisplayMtl *display)
     : ContextImpl(state, errorSet),
-      mtl::Context(renderer),
-      mCmdBuffer(&renderer->cmdQueue()),
+      mtl::Context(display),
+      mCmdBuffer(&display->cmdQueue()),
       mRenderEncoder(&mCmdBuffer),
       mBlitEncoder(&mCmdBuffer),
       mComputeEncoder(&mCmdBuffer)
@@ -146,7 +146,7 @@ angle::Result ContextMtl::drawTriFanArraysWithBaseVertex(const gl::Context *cont
         // Re-generate a new index buffer, which the first index will be zero.
         ANGLE_TRY(
             mtl::Buffer::MakeBuffer(this, indexBufferSize, nullptr, &mTriFanArraysIndexBuffer));
-        ANGLE_TRY(getRenderer()->getUtils().generateTriFanBufferFromArrays(
+        ANGLE_TRY(getDisplay()->getUtils().generateTriFanBufferFromArrays(
             context, {0, static_cast<uint32_t>(count), mTriFanArraysIndexBuffer, 0}));
     }
 
@@ -169,7 +169,7 @@ angle::Result ContextMtl::drawTriFanArraysLegacy(const gl::Context *context,
     uint32_t genIndicesCount;
     ANGLE_TRY(AllocateTriangleFanBufferFromPool(this, count, &mTriFanIndexBuffer, &genIdxBuffer,
                                                 &genIdxBufferOffset, &genIndicesCount));
-    ANGLE_TRY(getRenderer()->getUtils().generateTriFanBufferFromArrays(
+    ANGLE_TRY(getDisplay()->getUtils().generateTriFanBufferFromArrays(
         context, {static_cast<uint32_t>(first), static_cast<uint32_t>(count), genIdxBuffer,
                   genIdxBufferOffset}));
 
@@ -186,7 +186,7 @@ angle::Result ContextMtl::drawTriFanArrays(const gl::Context *context, GLint fir
 {
     if (count > 3)
     {
-        if (getRenderer()->getNativeLimitations().hasBaseVertexInstancedDraw)
+        if (getDisplay()->getNativeLimitations().hasBaseVertexInstancedDraw)
         {
             return drawTriFanArraysWithBaseVertex(context, first, count);
         }
@@ -256,7 +256,7 @@ angle::Result ContextMtl::drawTriFanElements(const gl::Context *context,
         ANGLE_TRY(AllocateTriangleFanBufferFromPool(this, count, &mTriFanIndexBuffer, &genIdxBuffer,
                                                     &genIdxBufferOffset, &genIndicesCount));
 
-        ANGLE_TRY(getRenderer()->getUtils().generateTriFanBufferFromElementsArray(
+        ANGLE_TRY(getDisplay()->getUtils().generateTriFanBufferFromElementsArray(
             context, {type, count, indices, genIdxBuffer, genIdxBufferOffset}));
 
         ANGLE_TRY(mTriFanIndexBuffer.commit(this));
@@ -391,11 +391,11 @@ gl::GraphicsResetStatus ContextMtl::getResetStatus()
 // Vendor and description strings.
 std::string ContextMtl::getVendorString() const
 {
-    return getRenderer()->getVendorString();
+    return getDisplay()->getVendorString();
 }
 std::string ContextMtl::getRendererDescription() const
 {
-    return getRenderer()->getRendererDescription();
+    return getDisplay()->getRendererDescription();
 }
 
 // EXT_debug_marker
@@ -656,19 +656,19 @@ angle::Result ContextMtl::onUnMakeCurrent(const gl::Context *context)
 // Native capabilities, unmodified by gl::Context.
 gl::Caps ContextMtl::getNativeCaps() const
 {
-    return getRenderer()->getNativeCaps();
+    return getDisplay()->getNativeCaps();
 }
 const gl::TextureCapsMap &ContextMtl::getNativeTextureCaps() const
 {
-    return getRenderer()->getNativeTextureCaps();
+    return getDisplay()->getNativeTextureCaps();
 }
 const gl::Extensions &ContextMtl::getNativeExtensions() const
 {
-    return getRenderer()->getNativeExtensions();
+    return getDisplay()->getNativeExtensions();
 }
 const gl::Limitations &ContextMtl::getNativeLimitations() const
 {
-    return getRenderer()->getNativeLimitations();
+    return getDisplay()->getNativeLimitations();
 }
 
 // Shader creation
@@ -907,14 +907,14 @@ bool ContextMtl::isDepthWriteEnabled() const
 
 const mtl::Format &ContextMtl::getPixelFormat(angle::FormatID angleFormatId) const
 {
-    return getRenderer()->getPixelFormat(angleFormatId);
+    return getDisplay()->getPixelFormat(angleFormatId);
 }
 
 // See mtl::FormatTable::getVertexFormat()
 const mtl::VertexFormat &ContextMtl::getVertexFormat(angle::FormatID angleFormatId,
                                                      bool tightlyPacked) const
 {
-    return getRenderer()->getVertexFormat(angleFormatId, tightlyPacked);
+    return getDisplay()->getVertexFormat(angleFormatId, tightlyPacked);
 }
 
 void ContextMtl::endEncoding(mtl::RenderCommandEncoder *encoder)
@@ -1380,7 +1380,7 @@ angle::Result ContextMtl::genLineLoopLastSegment(const gl::Context *context,
 
     if (indexTypeOrNone == gl::DrawElementsType::InvalidEnum)
     {
-        ANGLE_TRY(getRenderer()->getUtils().generateLineLoopLastSegment(
+        ANGLE_TRY(getDisplay()->getUtils().generateLineLoopLastSegment(
             context, firstVertex, firstVertex + vertexOrIndexCount - 1, newBuffer, 0));
     }
     else
@@ -1388,7 +1388,7 @@ angle::Result ContextMtl::genLineLoopLastSegment(const gl::Context *context,
         // NOTE(hqle): Support drawRangeElements & instanced draw, which means firstVertex has to be
         // taken into account
         ASSERT(firstVertex == 0);
-        ANGLE_TRY(getRenderer()->getUtils().generateLineLoopLastSegmentFromElementsArray(
+        ANGLE_TRY(getDisplay()->getUtils().generateLineLoopLastSegmentFromElementsArray(
             context, {indexTypeOrNone, vertexOrIndexCount, indices, newBuffer, 0}));
     }
 
@@ -1466,7 +1466,7 @@ angle::Result ContextMtl::handleDirtyDepthStencilState(const gl::Context *contex
     }
 
     // Apply depth stencil state
-    mRenderEncoder.setDepthStencilState(getRenderer()->getDepthStencilState(dsDesc));
+    mRenderEncoder.setDepthStencilState(getDisplay()->getDepthStencilState(dsDesc));
 
     mDirtyBits.reset(DIRTY_BIT_DEPTH_STENCIL_DESC);
     return angle::Result::Continue;

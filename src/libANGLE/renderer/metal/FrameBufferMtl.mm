@@ -14,8 +14,8 @@
 #include "common/MemoryBuffer.h"
 #include "common/angleutils.h"
 #include "common/debug.h"
+#include "libANGLE/renderer/metal/DisplayMtl.h"
 #include "libANGLE/renderer/metal/FrameBufferMtl.h"
-#include "libANGLE/renderer/metal/RendererMtl.h"
 #include "libANGLE/renderer/metal/SurfaceMtl.h"
 #include "libANGLE/renderer/metal/mtl_utils.h"
 #include "libANGLE/renderer/renderer_utils.h"
@@ -245,7 +245,7 @@ bool FramebufferMtl::checkStatus(const gl::Context *context) const
     }
 
     ContextMtl *contextMtl = mtl::GetImpl(context);
-    if (!contextMtl->getRenderer()->getNativeLimitations().allowSeparatedDepthStencilBuffers &&
+    if (!contextMtl->getDisplay()->getNativeLimitations().allowSeparatedDepthStencilBuffers &&
         mState.hasSeparateDepthAndStencilAttachments())
     {
         return false;
@@ -537,7 +537,7 @@ angle::Result FramebufferMtl::clearWithDraw(const gl::Context *context,
                                             const mtl::ClearRectParams &clearOpts)
 {
     ContextMtl *contextMtl = mtl::GetImpl(context);
-    RendererMtl *renderer  = contextMtl->getRenderer();
+    DisplayMtl *display    = contextMtl->getDisplay();
     mtl::RenderPassDesc rpDesc;
     ANGLE_TRY(prepareRenderPass(context, mState.getEnabledDrawBuffers(), &rpDesc));
 
@@ -563,7 +563,7 @@ angle::Result FramebufferMtl::clearWithDraw(const gl::Context *context,
     // Start new render encoder with loadOp=Load
     mtl::RenderCommandEncoder *encoder = contextMtl->getRenderCommandEncoder(rpDesc);
 
-    renderer->getUtils().clearWithDraw(context, encoder, clearOpts);
+    display->getUtils().clearWithDraw(context, encoder, clearOpts);
 
     return angle::Result::Continue;
 }

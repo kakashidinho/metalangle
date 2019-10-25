@@ -10,7 +10,7 @@
 #include "libANGLE/renderer/metal/VertexArrayMtl.h"
 #include "libANGLE/renderer/metal/BufferMtl.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
-#include "libANGLE/renderer/metal/RendererMtl.h"
+#include "libANGLE/renderer/metal/DisplayMtl.h"
 #include "libANGLE/renderer/metal/mtl_format_utils.h"
 
 #include "common/debug.h"
@@ -491,7 +491,7 @@ angle::Result VertexArrayMtl::convertIndexBufferGPU(const gl::Context *glContext
                                                     IndexConversionBufferMtl *conversion)
 {
     ContextMtl *contextMtl = mtl::GetImpl(glContext);
-    RendererMtl *renderer  = contextMtl->getRenderer();
+    DisplayMtl *display    = contextMtl->getDisplay();
 
     const size_t amount = GetIndexConvertedBufferSize(indexType, indexCount);
 
@@ -503,7 +503,7 @@ angle::Result VertexArrayMtl::convertIndexBufferGPU(const gl::Context *glContext
     mConvertedElementArrayBufferHolder.set(conversion->convertedBuffer);
 
     // Do the conversion on GPU.
-    ANGLE_TRY(renderer->getUtils().convertIndexBuffer(
+    ANGLE_TRY(display->getUtils().convertIndexBuffer(
         glContext, indexType, static_cast<uint32_t>(indexCount),
         idxBuffer->getCurrentBuffer(glContext), static_cast<uint32_t>(offset),
         conversion->convertedBuffer, static_cast<uint32_t>(conversion->convertedOffset)));

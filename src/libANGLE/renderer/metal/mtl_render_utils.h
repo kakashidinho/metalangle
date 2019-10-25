@@ -21,7 +21,7 @@ namespace rx
 
 class BufferMtl;
 class ContextMtl;
-class RendererMtl;
+class DisplayMtl;
 
 namespace mtl
 {
@@ -74,7 +74,7 @@ struct IndexGenerationParams
 class RenderUtils : public Context, angle::NonCopyable
 {
   public:
-    RenderUtils(RendererMtl *renderer);
+    RenderUtils(DisplayMtl *display);
     ~RenderUtils() override;
 
     angle::Result initialize();

@@ -15,7 +15,7 @@
 
 #include "common/debug.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
-#include "libANGLE/renderer/metal/RendererMtl.h"
+#include "libANGLE/renderer/metal/DisplayMtl.h"
 #include "libANGLE/renderer/metal/mtl_command_buffer.h"
 #include "libANGLE/renderer/metal/mtl_format_utils.h"
 
@@ -36,7 +36,7 @@ void SetTextureSwizzle(ContextMtl *context,
 {
 // Texture swizzle functions's declarations are only available if macos 10.15 sdk is present
 #if defined(__MAC_10_15)
-    if (context->getRenderer()->getNativeLimitations().hasTextureSwizzle)
+    if (context->getDisplay()->getNativeLimitations().hasTextureSwizzle)
     {
         // Work around Metal doesn't have native support for DXT1 without alpha.
         switch (format.intendedFormatId)

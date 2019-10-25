@@ -14,8 +14,8 @@
 #include "common/debug.h"
 #include "common/mathutil.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
+#include "libANGLE/renderer/metal/DisplayMtl.h"
 #include "libANGLE/renderer/metal/FrameBufferMtl.h"
-#include "libANGLE/renderer/metal/RendererMtl.h"
 #include "libANGLE/renderer/metal/mtl_common.h"
 #include "libANGLE/renderer/metal/mtl_format_utils.h"
 #include "libANGLE/renderer/metal/mtl_utils.h"
@@ -429,7 +429,7 @@ angle::Result TextureMtl::syncState(const gl::Context *context,
         return angle::Result::Continue;
     }
 
-    RendererMtl *renderer = contextMtl->getRenderer();
+    DisplayMtl *display = contextMtl->getDisplay();
 
     if (dirtyBits.test(gl::Texture::DIRTY_BIT_SWIZZLE_RED) ||
         dirtyBits.test(gl::Texture::DIRTY_BIT_SWIZZLE_GREEN) ||
@@ -439,8 +439,8 @@ angle::Result TextureMtl::syncState(const gl::Context *context,
         // NOTE(hqle): Metal doesn't support swizzle on many devices. Skip for now.
     }
 
-    mMetalSamplerState = renderer->getStateCache().getSamplerState(
-        renderer->getMetalDevice(), mtl::SamplerDesc(mState.getSamplerState()));
+    mMetalSamplerState = display->getStateCache().getSamplerState(
+        display->getMetalDevice(), mtl::SamplerDesc(mState.getSamplerState()));
 
     return angle::Result::Continue;
 }
@@ -785,7 +785,7 @@ angle::Result TextureMtl::copySubImageWithDraw(const gl::Context *context,
                                                gl::Framebuffer *source)
 {
     ContextMtl *contextMtl         = mtl::GetImpl(context);
-    RendererMtl *rendererMtl       = contextMtl->getRenderer();
+    DisplayMtl *displayMtl         = contextMtl->getDisplay();
     FramebufferMtl *framebufferMtl = mtl::GetImpl(source);
 
     RenderTargetMtl *colorReadRT = framebufferMtl->getColorReadRenderTarget();
@@ -807,7 +807,7 @@ angle::Result TextureMtl::copySubImageWithDraw(const gl::Context *context,
     blitParams.srcYFlipped  = framebufferMtl->flipY();
     blitParams.dstLuminance = internalFormat.isLUMA();
 
-    rendererMtl->getUtils().blitWithDraw(context, cmdEncoder, blitParams);
+    displayMtl->getUtils().blitWithDraw(context, cmdEncoder, blitParams);
 
     return angle::Result::Continue;
 }

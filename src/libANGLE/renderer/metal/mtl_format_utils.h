@@ -20,7 +20,7 @@
 
 namespace rx
 {
-class RendererMtl;
+class DisplayMtl;
 
 namespace mtl
 {
@@ -56,7 +56,7 @@ struct Format : public FormatBase
     MTLPixelFormat metalFormat = MTLPixelFormatInvalid;
 
   private:
-    void init(const RendererMtl *renderer, angle::FormatID intendedFormatId);
+    void init(const DisplayMtl *display, angle::FormatID intendedFormatId);
 
     friend class FormatTable;
 };
@@ -82,9 +82,9 @@ class FormatTable final : angle::NonCopyable
     FormatTable()  = default;
     ~FormatTable() = default;
 
-    angle::Result initialize(const RendererMtl *renderer);
+    angle::Result initialize(const DisplayMtl *display);
 
-    void generateTextureCaps(const RendererMtl *renderer,
+    void generateTextureCaps(const DisplayMtl *display,
                              gl::TextureCapsMap *capsMapOut,
                              std::vector<GLenum> *compressedFormatsOut) const;
 

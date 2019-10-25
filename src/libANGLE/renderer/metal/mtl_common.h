@@ -77,7 +77,6 @@ ANGLE_GL_OBJECTS_X(ANGLE_PRE_DECLARE_OBJECT)
 
 namespace rx
 {
-class RendererMtl;
 class DisplayMtl;
 class ContextMtl;
 class FramebufferMtl;
@@ -302,14 +301,14 @@ class ErrorHandler
 class Context : public ErrorHandler
 {
   public:
-    Context(RendererMtl *rendererMtl);
+    Context(DisplayMtl *displayMtl);
     _Nullable id<MTLDevice> getMetalDevice() const;
     mtl::CommandQueue &cmdQueue();
 
-    RendererMtl *getRenderer() const { return mRendererMtl; }
+    DisplayMtl *getDisplay() const { return mDisplay; }
 
   protected:
-    RendererMtl *mRendererMtl;
+    DisplayMtl *mDisplay;
 };
 
 #define ANGLE_MTL_CHECK(context, test, error)                                \

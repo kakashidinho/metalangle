@@ -80,7 +80,7 @@
 #endif  // defined(ANGLE_ENABLE_VULKAN)
 
 #if defined(ANGLE_ENABLE_METAL)
-#    include "libANGLE/renderer/metal/DisplayMtl.h"
+#    include "libANGLE/renderer/metal/DisplayMtl_api.h"
 #endif  // defined(ANGLE_ENABLE_METAL)
 
 namespace egl
@@ -181,7 +181,7 @@ EGLAttrib GetDisplayTypeFromEnvironment()
 #endif
 
 #if defined(ANGLE_ENABLE_METAL)
-    if (rx::DisplayMtl::IsMetalAvailable())
+    if (rx::IsMetalDisplayAvailable())
     {
         return EGL_PLATFORM_ANGLE_TYPE_METAL_ANGLE;
     }
@@ -201,7 +201,7 @@ EGLAttrib GetDisplayTypeFromEnvironment()
     return EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE;
 #    endif
 #elif defined(ANGLE_ENABLE_METAL)
-    // If we reach this point, it means rx::DisplayMtl::IsMetalAvailable() return false
+    // If we reach this point, it means rx::IsMetalDisplayAvailable() return false
     // and ANGLE_ENABLE_OPENGL is not defined.
     // Use default type as a fallback. Just to please the compiler.
     // CreateDisplayFromAttribs() will fail regardless.
@@ -302,9 +302,9 @@ rx::DisplayImpl *CreateDisplayFromAttribs(const AttributeMap &attribMap, const D
             break;
         case EGL_PLATFORM_ANGLE_TYPE_METAL_ANGLE:
 #if defined(ANGLE_ENABLE_METAL)
-            if (rx::DisplayMtl::IsMetalAvailable())
+            if (rx::IsMetalDisplayAvailable())
             {
-                impl = new rx::DisplayMtl(state);
+                impl = rx::CreateMetalDisplay(state);
                 break;
             }
 #endif

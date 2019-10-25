@@ -12,7 +12,7 @@
 
 #include "common/debug.h"
 #include "libANGLE/renderer/Format.h"
-#include "libANGLE/renderer/metal/RendererMtl.h"
+#include "libANGLE/renderer/metal/DisplayMtl.h"
 
 namespace rx
 {
@@ -22,9 +22,7 @@ namespace mtl
 namespace
 {
 
-bool OverrideTextureCaps(const RendererMtl *renderer,
-                         angle::FormatID formatId,
-                         gl::TextureCaps *caps)
+bool OverrideTextureCaps(const DisplayMtl *display, angle::FormatID formatId, gl::TextureCaps *caps)
 {
     // NOTE(hqle): Auto generate this.
     switch (formatId)
@@ -46,7 +44,7 @@ bool OverrideTextureCaps(const RendererMtl *renderer,
 }
 
 void GenerateTextureCapsMap(const FormatTable &formatTable,
-                            const RendererMtl *renderer,
+                            const DisplayMtl *display,
                             gl::TextureCapsMap *capsMapOut,
                             std::vector<GLenum> *compressedFormatsOut)
 {
@@ -68,7 +66,7 @@ void GenerateTextureCapsMap(const FormatTable &formatTable,
     // https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
     // Requires depth24Stencil8PixelFormatSupported=YES for these extensions
     bool packedDepthStencil24Support =
-        renderer->getMetalDevice().depth24Stencil8PixelFormatSupported;
+        display->getMetalDevice().depth24Stencil8PixelFormatSupported;
     tmpTextureExtensions.packedDepthStencil     = true;  // We support this reguardless
     tmpTextureExtensions.colorBufferHalfFloat   = packedDepthStencil24Support;
     tmpTextureExtensions.colorBufferFloat       = packedDepthStencil24Support;
@@ -85,8 +83,7 @@ void GenerateTextureCapsMap(const FormatTable &formatTable,
     tmpTextureExtensions.textureCompressionDXT5 = true;
 
     // We can only fully support DXT1 without alpha using texture swizzle support from MacOs 10.15
-    tmpTextureExtensions.textureCompressionDXT1 =
-        renderer->getNativeLimitations().hasTextureSwizzle;
+    tmpTextureExtensions.textureCompressionDXT1 = display->getNativeLimitations().hasTextureSwizzle;
 
     tmpTextureExtensions.textureCompressionS3TCsRGB = tmpTextureExtensions.textureCompressionDXT1;
 #else
@@ -100,7 +97,7 @@ void GenerateTextureCapsMap(const FormatTable &formatTable,
     tmpTextureExtensions.textureFloat           = true;
     tmpTextureExtensions.textureRG              = true;
     tmpTextureExtensions.textureFormatBGRA8888  = true;
-    if ([renderer->getMetalDevice() supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily1_v1])
+    if ([display->getMetalDevice() supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily1_v1])
     {
         tmpTextureExtensions.compressedETC1RGB8Texture        = true;
         tmpTextureExtensions.compressedETC2RGB8Texture        = true;
@@ -137,7 +134,7 @@ void GenerateTextureCapsMap(const FormatTable &formatTable,
         const auto &clientVersion = kMaxSupportedGLVersion;
 
         // First let check whether we can determine programmatically.
-        if (!OverrideTextureCaps(renderer, mtlFormat.intendedFormatId, &textureCaps))
+        if (!OverrideTextureCaps(display, mtlFormat.intendedFormatId, &textureCaps))
         {
             // Let angle decide based on extensions we enabled above.
             textureCaps = gl::GenerateMinimumTextureCaps(internalFormatInfo.sizedInternalFormat,
@@ -259,13 +256,13 @@ const gl::InternalFormat &Format::intendedInternalFormat() const
 }
 
 // FormatTable implementation
-angle::Result FormatTable::initialize(const RendererMtl *renderer)
+angle::Result FormatTable::initialize(const DisplayMtl *display)
 {
     for (size_t i = 0; i < angle::kNumANGLEFormats; ++i)
     {
         const auto formatId = static_cast<angle::FormatID>(i);
 
-        mPixelFormatTable[i].init(renderer, formatId);
+        mPixelFormatTable[i].init(display, formatId);
         mVertexFormatTables[0][i].init(formatId, false);
         mVertexFormatTables[1][i].init(formatId, true);
     }
@@ -273,11 +270,11 @@ angle::Result FormatTable::initialize(const RendererMtl *renderer)
     return angle::Result::Continue;
 }
 
-void FormatTable::generateTextureCaps(const RendererMtl *renderer,
+void FormatTable::generateTextureCaps(const DisplayMtl *display,
                                       gl::TextureCapsMap *capsMapOut,
                                       std::vector<GLenum> *compressedFormatsOut) const
 {
-    GenerateTextureCapsMap(*this, renderer, capsMapOut, compressedFormatsOut);
+    GenerateTextureCapsMap(*this, display, capsMapOut, compressedFormatsOut);
 }
 
 const Format &FormatTable::getPixelFormat(angle::FormatID angleFormatId) const
