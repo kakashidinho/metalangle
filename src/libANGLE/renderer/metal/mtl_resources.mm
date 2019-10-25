@@ -209,7 +209,9 @@ Texture::Texture(Texture *original, MTLTextureType type, NSRange mipmapLevelRang
 void Texture::syncContent(ContextMtl *context)
 {
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-    // Make sure GPU & CPU contents are synchronized
+    // Make sure GPU & CPU contents are synchronized.
+    // NOTE: Only MacOS has separated storage for resource on CPU and GPU and needs explicit
+    // synchronization
     if (this->isCPUReadMemDirty())
     {
         mtl::BlitCommandEncoder *blitEncoder = context->getBlitCommandEncoder();

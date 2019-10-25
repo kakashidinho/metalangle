@@ -835,6 +835,8 @@ BlitCommandEncoder &BlitCommandEncoder::synchronizeResource(const TextureRef &te
     }
 
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
+    // Only MacOS has separated storage for resource on CPU and GPU and needs explicit
+    // synchronization
     cmdBuffer().setWriteDependency(texture);
     [get() synchronizeResource:texture->get()];
 #endif
