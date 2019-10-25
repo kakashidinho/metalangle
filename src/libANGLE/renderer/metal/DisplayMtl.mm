@@ -101,14 +101,17 @@ egl::Error DisplayMtl::restoreLostDevice(const egl::Display *display)
 
 std::string DisplayMtl::getVendorString() const
 {
-    std::string vendorString = "Google Inc.";
-    if (mMetalDevice)
+    ANGLE_MTL_OBJC_SCOPE
     {
-        vendorString += " Metal Renderer: ";
-        vendorString += mMetalDevice.get().name.UTF8String;
-    }
+        std::string vendorString = "Google Inc.";
+        if (mMetalDevice)
+        {
+            vendorString += " Metal Renderer: ";
+            vendorString += mMetalDevice.get().name.UTF8String;
+        }
 
-    return vendorString;
+        return vendorString;
+    }
 }
 
 DeviceImpl *DisplayMtl::createDevice()
@@ -319,15 +322,18 @@ bool DisplayMtl::isValidNativeWindow(EGLNativeWindowType window) const
 
 std::string DisplayMtl::getRendererDescription() const
 {
-    std::string desc = "Metal Renderer";
-
-    if (mMetalDevice)
+    ANGLE_MTL_OBJC_SCOPE
     {
-        desc += ": ";
-        desc += mMetalDevice.get().name.UTF8String;
-    }
+        std::string desc = "Metal Renderer";
 
-    return desc;
+        if (mMetalDevice)
+        {
+            desc += ": ";
+            desc += mMetalDevice.get().name.UTF8String;
+        }
+
+        return desc;
+    }
 }
 
 gl::Caps DisplayMtl::getNativeCaps() const

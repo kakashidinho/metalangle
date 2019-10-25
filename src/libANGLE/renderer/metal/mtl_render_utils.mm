@@ -204,9 +204,9 @@ void RenderUtils::initClearResources()
     {
         // Shader pipeline
         mClearRenderPipelineCache.setVertexShader(
-            this, [mDefaultShaders.get() newFunctionWithName:@"clearVS"]);
+            this, [[mDefaultShaders.get() newFunctionWithName:@"clearVS"] ANGLE_MTL_AUTORELEASE]);
         mClearRenderPipelineCache.setFragmentShader(
-            this, [mDefaultShaders.get() newFunctionWithName:@"clearFS"]);
+            this, [[mDefaultShaders.get() newFunctionWithName:@"clearFS"] ANGLE_MTL_AUTORELEASE]);
     }
 }
 
@@ -215,18 +215,20 @@ void RenderUtils::initBlitResources()
     ANGLE_MTL_OBJC_SCOPE
     {
         auto shaderLib    = mDefaultShaders.get();
-        auto vertexShader = [shaderLib newFunctionWithName:@"blitVS"];
+        auto vertexShader = [[shaderLib newFunctionWithName:@"blitVS"] ANGLE_MTL_AUTORELEASE];
 
         mBlitRenderPipelineCache.setVertexShader(this, vertexShader);
-        mBlitRenderPipelineCache.setFragmentShader(this, [shaderLib newFunctionWithName:@"blitFS"]);
+        mBlitRenderPipelineCache.setFragmentShader(
+            this, [[shaderLib newFunctionWithName:@"blitFS"] ANGLE_MTL_AUTORELEASE]);
 
         mBlitPremultiplyAlphaRenderPipelineCache.setVertexShader(this, vertexShader);
         mBlitPremultiplyAlphaRenderPipelineCache.setFragmentShader(
-            this, [shaderLib newFunctionWithName:@"blitPremultiplyAlphaFS"]);
+            this,
+            [[shaderLib newFunctionWithName:@"blitPremultiplyAlphaFS"] ANGLE_MTL_AUTORELEASE]);
 
         mBlitUnmultiplyAlphaRenderPipelineCache.setVertexShader(this, vertexShader);
         mBlitUnmultiplyAlphaRenderPipelineCache.setFragmentShader(
-            this, [shaderLib newFunctionWithName:@"blitUnmultiplyAlphaFS"]);
+            this, [[shaderLib newFunctionWithName:@"blitUnmultiplyAlphaFS"] ANGLE_MTL_AUTORELEASE]);
     }
 }
 
@@ -577,9 +579,10 @@ AutoObjCPtr<id<MTLComputePipelineState>> RenderUtils::getIndexConversionPipeline
             {
                 ERR() << "Internal error: " << err.localizedDescription.UTF8String << "\n";
             }
-            ASSERT(shader);
+            ASSERT([shader ANGLE_MTL_AUTORELEASE]);
 
-            cache = [metalDevice newComputePipelineStateWithFunction:shader error:&err];
+            cache = [[metalDevice newComputePipelineStateWithFunction:shader
+                                                                error:&err] ANGLE_MTL_AUTORELEASE];
             if (err && !cache)
             {
                 ERR() << "Internal error: " << err.localizedDescription.UTF8String << "\n";
@@ -652,9 +655,10 @@ AutoObjCPtr<id<MTLComputePipelineState>> RenderUtils::getTriFanFromElemArrayGene
             {
                 ERR() << "Internal error: " << err.localizedDescription.UTF8String << "\n";
             }
-            ASSERT(shader);
+            ASSERT([shader ANGLE_MTL_AUTORELEASE]);
 
-            cache = [metalDevice newComputePipelineStateWithFunction:shader error:&err];
+            cache = [[metalDevice newComputePipelineStateWithFunction:shader
+                                                                error:&err] ANGLE_MTL_AUTORELEASE];
             if (err && !cache)
             {
                 ERR() << "Internal error: " << err.localizedDescription.UTF8String << "\n";
@@ -677,8 +681,11 @@ angle::Result RenderUtils::ensureTriFanFromArrayGeneratorInitialized(ContextMtl 
             NSError *err              = nil;
             id<MTLFunction> shader = [shaderLib newFunctionWithName:@"genTriFanIndicesFromArray"];
 
+            [shader ANGLE_MTL_AUTORELEASE];
+
             mTriFanFromArraysGeneratorPipeline =
-                [metalDevice newComputePipelineStateWithFunction:shader error:&err];
+                [[metalDevice newComputePipelineStateWithFunction:shader
+                                                            error:&err] ANGLE_MTL_AUTORELEASE];
             if (err && !mTriFanFromArraysGeneratorPipeline)
             {
                 ERR() << "Internal error: " << err.localizedDescription.UTF8String << "\n";

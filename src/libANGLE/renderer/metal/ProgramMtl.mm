@@ -504,6 +504,7 @@ angle::Result ProgramMtl::createMslShader(const gl::Context *glContext,
         }
 
         auto mtlShader = [mtlShaderLib.get() newFunctionWithName:SHADER_ENTRY_NAME];
+        [mtlShader ANGLE_MTL_AUTORELEASE];
         ASSERT(mtlShader);
         if (shaderType == gl::ShaderType::Vertex)
         {
