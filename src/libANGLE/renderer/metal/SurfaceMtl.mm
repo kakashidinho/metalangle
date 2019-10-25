@@ -19,26 +19,34 @@
 #include "libANGLE/renderer/metal/RendererMtl.h"
 #include "libANGLE/renderer/metal/mtl_format_utils.h"
 
+// Compiler can turn on programmatical frame capture in release build by defining
+// ANGLE_METAL_FRAME_CAPTURE flag.
+#if defined(NDEBUG) && !defined(ANGLE_METAL_FRAME_CAPTURE)
+#    define ANGLE_METAL_FRAME_CAPTURE_ENABLED 0
+#else
+#    define ANGLE_METAL_FRAME_CAPTURE_ENABLED 1
+#endif
+
 namespace rx
 {
 
 namespace
 {
-constexpr angle::FormatID kDefaultFrameBufferColorFormatId = angle::FormatID::B8G8R8A8_UNORM;
-ANGLE_MTL_UNUSED
-constexpr angle::FormatID kDefaultFrameBufferDepthFormatId = angle::FormatID::D32_FLOAT;
-ANGLE_MTL_UNUSED
+constexpr angle::FormatID kDefaultFrameBufferColorFormatId   = angle::FormatID::B8G8R8A8_UNORM;
+constexpr angle::FormatID kDefaultFrameBufferDepthFormatId   = angle::FormatID::D32_FLOAT;
 constexpr angle::FormatID kDefaultFrameBufferStencilFormatId = angle::FormatID::S8_UINT;
-ANGLE_MTL_UNUSED
 constexpr angle::FormatID kDefaultFrameBufferDepthStencilFormatId =
     angle::FormatID::D24_UNORM_S8_UINT;
 
 ANGLE_MTL_UNUSED
 bool IsFrameCaptureEnabled()
 {
-#if defined(NDEBUG)
+#if !ANGLE_METAL_FRAME_CAPTURE_ENABLED
     return false;
 #else
+    // We only support frame capture programmatically if the ANGLE_METAL_FRAME_CAPTURE
+    // environment flag is set. Otherwise, it will slow down the rendering. This allows user to
+    // finely control whether he wants to capture the frame for particular application or not.
     auto var                  = std::getenv("ANGLE_METAL_FRAME_CAPTURE");
     static const bool enabled = var ? (strcmp(var, "1") == 0) : false;
 
@@ -49,7 +57,7 @@ bool IsFrameCaptureEnabled()
 ANGLE_MTL_UNUSED
 size_t MaxAllowedFrameCapture()
 {
-#if defined(NDEBUG)
+#if !ANGLE_METAL_FRAME_CAPTURE_ENABLED
     return 0;
 #else
     auto var                      = std::getenv("ANGLE_METAL_FRAME_CAPTURE_MAX");
@@ -62,7 +70,7 @@ size_t MaxAllowedFrameCapture()
 ANGLE_MTL_UNUSED
 size_t MinAllowedFrameCapture()
 {
-#if defined(NDEBUG)
+#if !ANGLE_METAL_FRAME_CAPTURE_ENABLED
     return 0;
 #else
     auto var                     = std::getenv("ANGLE_METAL_FRAME_CAPTURE_MIN");
@@ -75,7 +83,7 @@ size_t MinAllowedFrameCapture()
 ANGLE_MTL_UNUSED
 bool FrameCaptureDeviceScope()
 {
-#if defined(NDEBUG)
+#if !ANGLE_METAL_FRAME_CAPTURE_ENABLED
     return false;
 #else
     auto var                      = std::getenv("ANGLE_METAL_FRAME_CAPTURE_SCOPE");
@@ -91,7 +99,7 @@ std::atomic<size_t> gFrameCaptured(0);
 ANGLE_MTL_UNUSED
 void StartFrameCapture(id<MTLDevice> metalDevice, id<MTLCommandQueue> metalCmdQueue)
 {
-#if !defined(NDEBUG)
+#if ANGLE_METAL_FRAME_CAPTURE_ENABLED
     if (!IsFrameCaptureEnabled())
     {
         return;
@@ -139,7 +147,7 @@ void StartFrameCapture(id<MTLDevice> metalDevice, id<MTLCommandQueue> metalCmdQu
             [captureManager startCaptureWithCommandQueue:metalCmdQueue];
         }
     }
-#endif  // NDEBUG
+#endif  // ANGLE_METAL_FRAME_CAPTURE_ENABLED
 }
 
 void StartFrameCapture(ContextMtl *context)
@@ -149,7 +157,7 @@ void StartFrameCapture(ContextMtl *context)
 
 void StopFrameCapture()
 {
-#if !defined(NDEBUG)
+#if ANGLE_METAL_FRAME_CAPTURE_ENABLED
     if (!IsFrameCaptureEnabled())
     {
         return;
