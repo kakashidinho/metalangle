@@ -579,6 +579,18 @@ angle_source_set("libANGLE_headers") {
   ]
 }
 
+angle_source_set("angle_glslang_wrapper") {
+  sources = [
+    "src/libANGLE/renderer/glslang_wrapper_utils.cpp",
+    "src/libANGLE/renderer/glslang_wrapper_utils.h",
+  ]
+  deps = [
+    ":libANGLE_headers",
+    "${angle_glslang_dir}:glslang_default_resource_limits_sources",
+    "${angle_glslang_dir}:glslang_sources",
+  ]
+}
+
 angle_source_set("libANGLE_base") {
   sources = libangle_sources
 
@@ -689,14 +701,6 @@ angle_source_set("libANGLE_base") {
 
   if (is_mac) {
     sources += libangle_mac_sources
-  }
-
-  if (angle_enable_vulkan || angle_enable_metal) {
-    deps += [
-      "${angle_glslang_dir}:glslang_default_resource_limits_sources",
-      "${angle_glslang_dir}:glslang_sources",
-    ]
-    sources += libangle_glslang_wrapper_sources
   }
 
   if (is_debug) {

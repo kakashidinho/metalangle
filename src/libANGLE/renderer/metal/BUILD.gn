@@ -73,6 +73,7 @@ angle_source_set("angle_metal_backend") {
   libs = []
 
   public_deps = [
+    "${angle_root}:angle_glslang_wrapper",
     "${angle_root}:libANGLE_headers",
   ]
 

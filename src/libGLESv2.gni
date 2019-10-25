@@ -857,11 +857,6 @@ libangle_gl_cgl_sources = [
   "src/libANGLE/renderer/gl/cgl/WindowSurfaceCGL.h",
 ]
 
-libangle_glslang_wrapper_sources = [
-  "src/libANGLE/renderer/glslang_wrapper_utils.cpp",
-  "src/libANGLE/renderer/glslang_wrapper_utils.h",
-]
-
 libangle_mac_sources = [ "src/libANGLE/renderer/driver_utils_mac.mm" ]
 
 # The frame capture headers are always visible to libANGLE.
