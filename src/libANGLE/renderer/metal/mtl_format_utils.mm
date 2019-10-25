@@ -84,19 +84,10 @@ void GenerateTextureCapsMap(const FormatTable &formatTable,
     tmpTextureExtensions.textureCompressionDXT3 = true;
     tmpTextureExtensions.textureCompressionDXT5 = true;
 
-#    if defined(__MAC_10_15)
-    if (ANGLE_APPLE_AVAILABLE_XC(10.15, 13.0))
-    {
-        // We can only fully support DXT1 without alpha with texture swizzle support from
-        // MacOs 10.15
-        tmpTextureExtensions.textureCompressionDXT1 =
-            [renderer->getMetalDevice() supportsFamily:MTLGPUFamilyMac2];
-    }
-    else
-#    endif
-    {
-        tmpTextureExtensions.textureCompressionDXT1 = false;
-    }
+    // We can only fully support DXT1 without alpha using texture swizzle support from MacOs 10.15
+    tmpTextureExtensions.textureCompressionDXT1 =
+        renderer->getNativeLimitations().hasTextureSwizzle;
+
     tmpTextureExtensions.textureCompressionS3TCsRGB = tmpTextureExtensions.textureCompressionDXT1;
 #else
     tmpTextureExtensions.packedDepthStencil     = true;  // override to D32_FLOAT_S8X24_UINT
