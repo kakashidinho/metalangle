@@ -306,7 +306,6 @@
 		0A60565423465667005CEA98 /* mtl_utils.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A6055E0234655FC005CEA98 /* mtl_utils.mm */; };
 		0A60565523465667005CEA98 /* ProgramMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A6055F1234655FD005CEA98 /* ProgramMtl.mm */; };
 		0A60565623465667005CEA98 /* RenderBufferMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A6055CD234655FB005CEA98 /* RenderBufferMtl.mm */; };
-		0A60565723465667005CEA98 /* RendererMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A6055E3234655FC005CEA98 /* RendererMtl.mm */; };
 		0A60565823465667005CEA98 /* RenderTargetMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A6055CE234655FB005CEA98 /* RenderTargetMtl.mm */; };
 		0A60565923465667005CEA98 /* ShaderMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A6055E5234655FD005CEA98 /* ShaderMtl.mm */; };
 		0A60565A23465667005CEA98 /* mtl_state_cache.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A6055F2234655FD005CEA98 /* mtl_state_cache.mm */; };
@@ -1300,7 +1299,6 @@
 		0AA2FFC4234727A400E0B98C /* mtl_render_utils.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A6055DA234655FC005CEA98 /* mtl_render_utils.mm */; };
 		0AA2FFC5234727A400E0B98C /* VertexArrayMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A6055FC234655FE005CEA98 /* VertexArrayMtl.mm */; };
 		0AA2FFC6234727A400E0B98C /* FrameBufferMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A605603234655FE005CEA98 /* FrameBufferMtl.mm */; };
-		0AA2FFC7234727A400E0B98C /* RendererMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A6055E3234655FC005CEA98 /* RendererMtl.mm */; };
 		0AA2FFC8234727A400E0B98C /* ShaderMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A6055E5234655FD005CEA98 /* ShaderMtl.mm */; };
 		0AA2FFC9234727A400E0B98C /* BufferMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A6055F4234655FD005CEA98 /* BufferMtl.mm */; };
 		0AA2FFCB234727A400E0B98C /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A60566023465AEE005CEA98 /* Metal.framework */; };
@@ -1956,7 +1954,6 @@
 		0A6055DF234655FC005CEA98 /* RenderTargetMtl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RenderTargetMtl.h; path = ../../src/libANGLE/renderer/metal/RenderTargetMtl.h; sourceTree = "<group>"; };
 		0A6055E0234655FC005CEA98 /* mtl_utils.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = mtl_utils.mm; path = ../../src/libANGLE/renderer/metal/mtl_utils.mm; sourceTree = "<group>"; };
 		0A6055E1234655FC005CEA98 /* mtl_format_table_autogen.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = mtl_format_table_autogen.mm; path = ../../src/libANGLE/renderer/metal/mtl_format_table_autogen.mm; sourceTree = "<group>"; };
-		0A6055E3234655FC005CEA98 /* RendererMtl.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = RendererMtl.mm; path = ../../src/libANGLE/renderer/metal/RendererMtl.mm; sourceTree = "<group>"; };
 		0A6055E4234655FD005CEA98 /* BufferMtl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BufferMtl.h; path = ../../src/libANGLE/renderer/metal/BufferMtl.h; sourceTree = "<group>"; };
 		0A6055E5234655FD005CEA98 /* ShaderMtl.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = ShaderMtl.mm; path = ../../src/libANGLE/renderer/metal/ShaderMtl.mm; sourceTree = "<group>"; };
 		0A6055EE234655FD005CEA98 /* mtl_default_shaders.inc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.pascal; path = mtl_default_shaders.inc; sourceTree = "<group>"; };
@@ -1966,7 +1963,6 @@
 		0A6055F3234655FD005CEA98 /* TextureMtl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TextureMtl.h; path = ../../src/libANGLE/renderer/metal/TextureMtl.h; sourceTree = "<group>"; };
 		0A6055F4234655FD005CEA98 /* BufferMtl.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = BufferMtl.mm; path = ../../src/libANGLE/renderer/metal/BufferMtl.mm; sourceTree = "<group>"; };
 		0A6055F5234655FD005CEA98 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../../src/libANGLE/renderer/metal/README.md; sourceTree = "<group>"; };
-		0A6055F6234655FD005CEA98 /* RendererMtl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RendererMtl.h; path = ../../src/libANGLE/renderer/metal/RendererMtl.h; sourceTree = "<group>"; };
 		0A6055F7234655FD005CEA98 /* mtl_common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mtl_common.h; path = ../../src/libANGLE/renderer/metal/mtl_common.h; sourceTree = "<group>"; };
 		0A6055F8234655FD005CEA98 /* SurfaceMtl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SurfaceMtl.h; path = ../../src/libANGLE/renderer/metal/SurfaceMtl.h; sourceTree = "<group>"; };
 		0A6055F9234655FD005CEA98 /* mtl_state_cache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mtl_state_cache.h; path = ../../src/libANGLE/renderer/metal/mtl_state_cache.h; sourceTree = "<group>"; };
@@ -2266,6 +2262,7 @@
 		0A97E5682348749C007CA616 /* mip_map_2d.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = mip_map_2d.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A97E589234874E2007CA616 /* stencil_operations.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = stencil_operations.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A97E5AA234878FD007CA616 /* commit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = commit.h; sourceTree = "<group>"; };
+		0A99BDEB236349C900BD36CC /* DisplayMtl_api.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DisplayMtl_api.h; sourceTree = "<group>"; };
 		0A9B83E4234CCDF6008BF16F /* crash_handler_posix.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = crash_handler_posix.cpp; sourceTree = "<group>"; };
 		0A9B83E6234CCE1B008BF16F /* Timer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Timer.cpp; path = ../../util/Timer.cpp; sourceTree = "<group>"; };
 		0A9B83E8234CCEBC008BF16F /* system_utils_mac.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = system_utils_mac.cpp; path = ../../src/common/system_utils_mac.cpp; sourceTree = "<group>"; };
@@ -3196,6 +3193,7 @@
 				0A6055D3234655FC005CEA98 /* CompilerMtl.mm */,
 				0A6055D4234655FC005CEA98 /* ContextMtl.h */,
 				0A605607234655FF005CEA98 /* ContextMtl.mm */,
+				0A99BDEB236349C900BD36CC /* DisplayMtl_api.h */,
 				0A6055D9234655FC005CEA98 /* DisplayMtl.h */,
 				0A605609234655FF005CEA98 /* DisplayMtl.mm */,
 				0A6055D1234655FC005CEA98 /* FrameBufferMtl.h */,
@@ -3220,8 +3218,6 @@
 				0A6055F5234655FD005CEA98 /* README.md */,
 				0A6055CF234655FB005CEA98 /* RenderBufferMtl.h */,
 				0A6055CD234655FB005CEA98 /* RenderBufferMtl.mm */,
-				0A6055F6234655FD005CEA98 /* RendererMtl.h */,
-				0A6055E3234655FC005CEA98 /* RendererMtl.mm */,
 				0A6055DF234655FC005CEA98 /* RenderTargetMtl.h */,
 				0A6055CE234655FB005CEA98 /* RenderTargetMtl.mm */,
 				0A605604234655FE005CEA98 /* ShaderMtl.h */,
@@ -5773,7 +5769,6 @@
 				0A60565D23465667005CEA98 /* mtl_render_utils.mm in Sources */,
 				0A60565E23465667005CEA98 /* VertexArrayMtl.mm in Sources */,
 				0A60564B23465667005CEA98 /* FrameBufferMtl.mm in Sources */,
-				0A60565723465667005CEA98 /* RendererMtl.mm in Sources */,
 				0A60565923465667005CEA98 /* ShaderMtl.mm in Sources */,
 				0A60564723465667005CEA98 /* BufferMtl.mm in Sources */,
 			);
@@ -6245,7 +6240,6 @@
 				0AA2FFC4234727A400E0B98C /* mtl_render_utils.mm in Sources */,
 				0AA2FFC5234727A400E0B98C /* VertexArrayMtl.mm in Sources */,
 				0AA2FFC6234727A400E0B98C /* FrameBufferMtl.mm in Sources */,
-				0AA2FFC7234727A400E0B98C /* RendererMtl.mm in Sources */,
 				0AA2FFC8234727A400E0B98C /* ShaderMtl.mm in Sources */,
 				0AA2FFC9234727A400E0B98C /* BufferMtl.mm in Sources */,
 			);
@@ -6790,6 +6784,7 @@
 				CODE_SIGN_ENTITLEMENTS = samples/samples.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
+				DEVELOPMENT_TEAM = RV3H8CMK8J;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					ANGLE_USE_UTIL_LOADER,
 					"GL_GLES_PROTOTYPES=0",
@@ -6816,6 +6811,7 @@
 				CODE_SIGN_ENTITLEMENTS = samples/samples.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
+				DEVELOPMENT_TEAM = RV3H8CMK8J;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					ANGLE_USE_UTIL_LOADER,
 					"GL_GLES_PROTOTYPES=0",
@@ -6946,6 +6942,7 @@
 				CODE_SIGN_ENTITLEMENTS = samples/samples.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
+				DEVELOPMENT_TEAM = RV3H8CMK8J;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					ANGLE_USE_UTIL_LOADER,
 					"GL_GLES_PROTOTYPES=0",
@@ -6972,6 +6969,7 @@
 				CODE_SIGN_ENTITLEMENTS = samples/samples.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
+				DEVELOPMENT_TEAM = RV3H8CMK8J;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					ANGLE_USE_UTIL_LOADER,
 					"GL_GLES_PROTOTYPES=0",
