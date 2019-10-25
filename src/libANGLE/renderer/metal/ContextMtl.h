@@ -222,8 +222,6 @@ class ContextMtl : public ContextImpl, public mtl::Context
     // Recommended to call these methods to end encoding instead of invoking the encoder's
     // endEncoding() directly.
     void endEncoding(mtl::RenderCommandEncoder *encoder);
-    void endEncoding(mtl::BlitCommandEncoder *encoder);
-    void endEncoding(mtl::ComputeCommandEncoder *encoder);
     // Ends any active command encoder
     void endEncoding(bool forceSaveRenderPassContent);
 

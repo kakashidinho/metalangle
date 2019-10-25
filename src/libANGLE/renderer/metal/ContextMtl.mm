@@ -922,16 +922,6 @@ void ContextMtl::endEncoding(mtl::RenderCommandEncoder *encoder)
     encoder->endEncoding();
 }
 
-void ContextMtl::endEncoding(mtl::BlitCommandEncoder *encoder)
-{
-    encoder->endEncoding();
-}
-
-void ContextMtl::endEncoding(mtl::ComputeCommandEncoder *encoder)
-{
-    encoder->endEncoding();
-}
-
 void ContextMtl::endEncoding(bool forceSaveRenderPassContent)
 {
     if (mRenderEncoder.valid())
