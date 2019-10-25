@@ -248,7 +248,7 @@ struct RenderPassColorAttachmentDesc : public RenderPassAttachmentDesc
     {
         return !(*this == other);
     }
-    MTLClearColor clearColor = {0};
+    MTLClearColor clearColor = {0, 0, 0, 0};
 };
 
 struct RenderPassDepthAttachmentDesc : public RenderPassAttachmentDesc
