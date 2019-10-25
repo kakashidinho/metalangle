@@ -376,13 +376,17 @@ class ContextMtl : public ContextImpl, public mtl::Context
 
         // We'll use x, y, z for near / far / diff respectively.
         float depthRange[4];
-    } mDriverUniforms;
+    };
+
+    DriverUniforms mDriverUniforms;
 
     struct DefaultAttribute
     {
         // NOTE(hqle): Support integer default attributes in ES 3.0
         float values[4];
-    } mDefaultAttributes[mtl::kMaxVertexAttribs];
+    };
+
+    DefaultAttribute mDefaultAttributes[mtl::kMaxVertexAttribs];
 };
 
 }  // namespace rx
