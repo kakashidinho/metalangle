@@ -8,6 +8,7 @@ to continue operate on Apple platforms by translating OpenGL ES draw calls to Me
 - Almost all basic samples has been tested to work fine.
 - __Over 90% of ANGLE end2end tests have been passed__. See [List of failed tests](src/libANGLE/renderer/metal/README.md#Failed-ANGLE-end2end-tests).
 - [MGLKit](src/libANGLE/renderer/metal/DevSetup.md#MGLKit) utilities classes have been added. Proving kind of similar functionalies to Apples's GLKit.
+- Urho3D engine's demos have been tested using MetalANGLE without issues. See [Urho3D's MetalANGLE integration testing branch](https://github.com/kakashidinho/Urho3D/tree/angle-metal-backend).
 - ~~No `GL_TRIANGLE_FAN` & `GL_LINE_LOOP` support in draw calls yet.~~
 - Metal doesn't allow buffer offset not being multiple of 4 bytes. Hence, draw calls that use unsupported offsets, strides,
 and vertex formats will force MetalANGLE to do software conversions on CPU.
