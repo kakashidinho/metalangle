@@ -230,6 +230,10 @@ void Texture::replaceRegion(ContextMtl *context,
                             const uint8_t *data,
                             size_t bytesPerRow)
 {
+    if (mipmapLevel >= this->mipmapLevels())
+    {
+        return;
+    }
     CommandQueue &cmdQueue = context->cmdQueue();
 
     syncContent(context);
