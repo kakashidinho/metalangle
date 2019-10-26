@@ -17,6 +17,6 @@ namespace rx
 // Check whether minimum required Metal version is available on the host platform.
 bool IsMetalDisplayAvailable();
 DisplayImpl *CreateMetalDisplay(const egl::DisplayState &state);
-}
+}  // namespace rx
 
 #endif /* LIBANGLE_RENDERER_METAL_DISPLAYMTL_API_H_ */
