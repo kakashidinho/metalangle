@@ -50,22 +50,32 @@ class VertexArrayMtl : public VertexArrayImpl
                             bool *vertexDescChanged,
                             mtl::VertexDesc *vertexDescOut);
 
-    BufferHolderMtl *getElementArrayBuffer() const { return mCurrentElementArrayBuffer; }
-    size_t getElementArrayBufferOffset() const { return mCurrentElementArrayBufferOffset; }
-
-    angle::Result convertIndexBuffer(const gl::Context *glContext,
-                                     gl::DrawElementsType indexType,
-                                     size_t offset);
-    angle::Result streamIndexBufferFromClient(const gl::Context *glContext,
-                                              gl::DrawElementsType indexType,
-                                              size_t indexCount,
-                                              const void *sourcePointer);
+    angle::Result getIndexBuffer(const gl::Context *glContext,
+                                 gl::DrawElementsType indexType,
+                                 size_t indexCount,
+                                 const void *sourcePointer,
+                                 mtl::BufferRef *idxBufferOut,
+                                 size_t *idxBufferOffsetOut,
+                                 gl::DrawElementsType *indexTypeOut);
 
   private:
     angle::Result syncDirtyAttrib(const gl::Context *glContext,
                                   const gl::VertexAttribute &attrib,
                                   const gl::VertexBinding &binding,
                                   size_t attribIndex);
+
+    angle::Result convertIndexBuffer(const gl::Context *glContext,
+                                     gl::DrawElementsType indexType,
+                                     size_t offset,
+                                     mtl::BufferRef *idxBufferOut,
+                                     size_t *idxBufferOffsetOut);
+    angle::Result streamIndexBufferFromClient(const gl::Context *glContext,
+                                              gl::DrawElementsType indexType,
+                                              size_t indexCount,
+                                              const void *sourcePointer,
+                                              mtl::BufferRef *idxBufferOut,
+                                              size_t *idxBufferOffsetOut);
+
     angle::Result convertIndexBufferGPU(const gl::Context *glContext,
                                         gl::DrawElementsType indexType,
                                         BufferMtl *idxBuffer,
@@ -92,11 +102,6 @@ class VertexArrayMtl : public VertexArrayImpl
     gl::AttribArray<size_t> mCurrentArrayBufferOffsets;
     gl::AttribArray<GLuint> mCurrentArrayBufferStrides;
     gl::AttribArray<MTLVertexFormat> mCurrentArrayBufferFormats;
-
-    // This can point to real BufferMtl or mConvertedElementArrayBufferHolder
-    BufferHolderMtl *mCurrentElementArrayBuffer;
-    size_t mCurrentElementArrayBufferOffset = 0;
-    SimpleWeakBufferHolderMtl mConvertedElementArrayBufferHolder;
 
     mtl::BufferPool mDynamicVertexData;
     mtl::BufferPool mDynamicIndexData;

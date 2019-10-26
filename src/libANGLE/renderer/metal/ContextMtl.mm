@@ -288,26 +288,13 @@ angle::Result ContextMtl::drawElements(const gl::Context *context,
         return drawTriFanElements(context, count, type, indices);
     }
 
-    const gl::Buffer *glElementArrayBuffer = mVertexArray->getState().getElementArrayBuffer();
+    mtl::BufferRef idxBuffer;
+    size_t convertedOffset             = 0;
+    gl::DrawElementsType convertedType = type;
 
-    size_t convertedOffset = reinterpret_cast<size_t>(indices);
-    if (!glElementArrayBuffer)
-    {
-        ANGLE_TRY(mVertexArray->streamIndexBufferFromClient(context, type, count, indices));
-        convertedOffset = mVertexArray->getElementArrayBufferOffset();
-    }
-    else
-    {
-        bool needConversion = type == gl::DrawElementsType::UnsignedByte ||
-                              (convertedOffset % mtl::kIndexBufferOffsetAlignment) != 0;
-        if (needConversion)
-        {
-            ANGLE_TRY(mVertexArray->convertIndexBuffer(context, type, convertedOffset));
-            convertedOffset = mVertexArray->getElementArrayBufferOffset();
-        }
-    }
+    ANGLE_TRY(mVertexArray->getIndexBuffer(context, type, count, indices, &idxBuffer,
+                                           &convertedOffset, &convertedType));
 
-    BufferHolderMtl *idxBuffer = mVertexArray->getElementArrayBuffer();
     ASSERT(idxBuffer);
     ASSERT((convertedOffset % mtl::kIndexBufferOffsetAlignment) == 0);
 
@@ -315,17 +302,9 @@ angle::Result ContextMtl::drawElements(const gl::Context *context,
 
     MTLPrimitiveType mtlType = mtl::GetPrimitiveType(mode);
 
-    gl::DrawElementsType convertedType = type;
-    if (type == gl::DrawElementsType::UnsignedByte)
-    {
-        // This buffer is already converted to ushort indices above
-        convertedType = gl::DrawElementsType::UnsignedShort;
-    }
-
     MTLIndexType mtlIdxType = mtl::GetIndexType(convertedType);
 
-    mRenderEncoder.drawIndexed(mtlType, count, mtlIdxType, idxBuffer->getCurrentBuffer(context),
-                               convertedOffset);
+    mRenderEncoder.drawIndexed(mtlType, count, mtlIdxType, idxBuffer, convertedOffset);
 
     return angle::Result::Continue;
 }
