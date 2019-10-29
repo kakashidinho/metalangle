@@ -352,11 +352,9 @@ const gl::Extensions &DisplayMtl::getNativeExtensions() const
     return mNativeExtensions;
 }
 
-const mtl::TextureRef &DisplayMtl::getNullTexture(const gl::Context *context,
-                                                  gl::TextureType typeEnum)
+const mtl::TextureRef &DisplayMtl::getNullTexture(const gl::Context *context, gl::TextureType type)
 {
     ContextMtl *contextMtl = mtl::GetImpl(context);
-    int type               = static_cast<int>(typeEnum);
     if (!mNullTextures[type])
     {
         // initialize content with zeros
@@ -365,7 +363,7 @@ const mtl::TextureRef &DisplayMtl::getNullTexture(const gl::Context *context,
 
         const auto &rgbaFormat = getPixelFormat(angle::FormatID::R8G8B8A8_UNORM);
 
-        switch (typeEnum)
+        switch (type)
         {
             case gl::TextureType::_2D:
                 (void)(mtl::Texture::Make2DTexture(contextMtl, rgbaFormat, 1, 1, 1, false,

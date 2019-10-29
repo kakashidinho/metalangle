@@ -157,8 +157,7 @@ class DisplayMtl : public DisplayImpl
     mtl::StateCache mStateCache;
     mtl::RenderUtils mUtils;
 
-    static const size_t kNumTexturesType = static_cast<size_t>(gl::TextureType::EnumCount);
-    mtl::TextureRef mNullTextures[kNumTexturesType];
+    angle::PackedEnumMap<gl::TextureType, mtl::TextureRef> mNullTextures;
 
     mutable bool mCapsInitialized;
     mutable gl::TextureCapsMap mNativeTextureCaps;

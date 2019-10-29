@@ -40,7 +40,7 @@ void CommandQueue::finishAllCommands()
         // Copy to temp list
         std::lock_guard<std::mutex> lg(mLock);
 
-        for (auto metalBufferEntry : mMetalCmdBuffers)
+        for (CmdBufferQueueEntry &metalBufferEntry : mMetalCmdBuffers)
         {
             mMetalCmdBuffersTmp.push_back(metalBufferEntry);
         }
@@ -49,7 +49,7 @@ void CommandQueue::finishAllCommands()
     }
 
     // Wait for command buffers to finish
-    for (auto metalBufferEntry : mMetalCmdBuffersTmp)
+    for (CmdBufferQueueEntry &metalBufferEntry : mMetalCmdBuffersTmp)
     {
         [metalBufferEntry.buffer waitUntilCompleted];
     }
@@ -142,7 +142,7 @@ void CommandQueue::onCommandBufferCompleted(id<MTLCommandBuffer> buf, uint64_t s
 
     while (!mMetalCmdBuffers.empty() && mMetalCmdBuffers.front().serial <= serial)
     {
-        auto metalBufferEntry = mMetalCmdBuffers.front();
+        CmdBufferQueueEntry metalBufferEntry = mMetalCmdBuffers.front();
         ANGLE_UNUSED_VARIABLE(metalBufferEntry);
         ANGLE_MTL_LOG("Popped MTLCommandBuffer %llu:%p", metalBufferEntry.serial,
                       metalBufferEntry.buffer.get());

@@ -261,7 +261,7 @@ angle::Result VertexArrayMtl::setupDraw(const gl::Context *glContext,
 
         const std::vector<gl::VertexAttribute> &attribs = mState.getVertexAttributes();
 
-        auto &desc = *vertexDescOut;
+        mtl::VertexDesc &desc = *vertexDescOut;
 
         desc.numAttribs       = mtl::kMaxVertexAttribs;
         desc.numBufferLayouts = mtl::kMaxVertexAttribs;
@@ -331,8 +331,8 @@ angle::Result VertexArrayMtl::updateClientAttribs(const gl::Context *context,
 
     mDynamicVertexData.releaseInFlightBuffers(contextMtl);
 
-    const auto &attribs  = mState.getVertexAttributes();
-    const auto &bindings = mState.getVertexBindings();
+    const std::vector<gl::VertexAttribute> &attribs = mState.getVertexAttributes();
+    const std::vector<gl::VertexBinding> &bindings  = mState.getVertexBindings();
 
     for (size_t attribIndex : clientAttribs)
     {

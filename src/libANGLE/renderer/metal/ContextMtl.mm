@@ -184,18 +184,15 @@ angle::Result ContextMtl::drawTriFanArraysLegacy(const gl::Context *context,
 }
 angle::Result ContextMtl::drawTriFanArrays(const gl::Context *context, GLint first, GLsizei count)
 {
-    if (count > 3)
+    if (count <= 3)
     {
-        if (getDisplay()->getNativeLimitations().hasBaseVertexInstancedDraw)
-        {
-            return drawTriFanArraysWithBaseVertex(context, first, count);
-        }
-        else
-        {
-            return drawTriFanArraysLegacy(context, first, count);
-        }
-    }  // if (count > 3)
-    return drawArrays(context, gl::PrimitiveMode::Triangles, first, count);
+        return drawArrays(context, gl::PrimitiveMode::Triangles, first, count);
+    }
+    if (getDisplay()->getNativeLimitations().hasBaseVertexInstancedDraw)
+    {
+        return drawTriFanArraysWithBaseVertex(context, first, count);
+    }
+    return drawTriFanArraysLegacy(context, first, count);
 }
 angle::Result ContextMtl::drawArrays(const gl::Context *context,
                                      gl::PrimitiveMode mode,
