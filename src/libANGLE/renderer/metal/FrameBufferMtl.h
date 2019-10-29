@@ -131,6 +131,9 @@ class FramebufferMtl : public FramebufferImpl
                                            const gl::FramebufferAttachment *attachment,
                                            RenderTargetMtl **cachedRenderTarget);
 
+    // NOTE: we cannot use RenderTargetCache here because it doesn't support separate
+    // depth & stencil attachments as of now. Separate depth & stencil could be useful to
+    // save spaces on iOS devices. See doc/PackedDepthStencilSupport.md.
     std::array<RenderTargetMtl *, mtl::kMaxRenderTargets> mColorRenderTargets;
     std::array<bool, mtl::kMaxRenderTargets> mDiscardColors;
     RenderTargetMtl *mDepthRenderTarget   = nullptr;
