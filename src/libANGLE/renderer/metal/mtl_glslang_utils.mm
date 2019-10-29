@@ -41,22 +41,21 @@ GlslangSourceOptions CreateSourceOptions()
 }
 }  // namespace
 
-// static
-void GlslangUtils::GetShaderSource(const gl::ProgramState &programState,
-                                   const gl::ProgramLinkedResources &resources,
-                                   gl::ShaderMap<std::string> *shaderSourcesOut)
+void GlslangGetShaderSource(const gl::ProgramState &programState,
+                            const gl::ProgramLinkedResources &resources,
+                            gl::ShaderMap<std::string> *shaderSourcesOut)
 {
-    GlslangGetShaderSource(CreateSourceOptions(), false, programState, resources, shaderSourcesOut);
+    rx::GlslangGetShaderSource(CreateSourceOptions(), false, programState, resources,
+                               shaderSourcesOut);
 }
 
-// static
-angle::Result GlslangUtils::GetShaderCode(ErrorHandler *context,
-                                          const gl::Caps &glCaps,
-                                          bool enableLineRasterEmulation,
-                                          const gl::ShaderMap<std::string> &shaderSources,
-                                          gl::ShaderMap<std::vector<uint32_t>> *shaderCodeOut)
+angle::Result GlslangGetShaderSpirvCode(ErrorHandler *context,
+                                        const gl::Caps &glCaps,
+                                        bool enableLineRasterEmulation,
+                                        const gl::ShaderMap<std::string> &shaderSources,
+                                        gl::ShaderMap<std::vector<uint32_t>> *shaderCodeOut)
 {
-    return GlslangGetShaderSpirvCode(
+    return rx::GlslangGetShaderSpirvCode(
         [context](GlslangError error) { return HandleError(context, error); }, glCaps,
         enableLineRasterEmulation, shaderSources, shaderCodeOut);
 }
