@@ -86,6 +86,7 @@ angle_source_set("angle_metal_backend") {
     "-Wno-nullability-completeness",
     "-Wno-unguarded-availability",
     "-fno-objc-arc",
+    "-Wno-extra-semi-stmt",
   ]
   cflags_objc += objc_flags
   cflags_objcc += objc_flags
