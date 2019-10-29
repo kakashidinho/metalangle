@@ -32,6 +32,8 @@ angle::Result InitializeTextureContents(const gl::Context *context,
 
     const gl::InternalFormat &intendedInternalFormat = textureObjFormat.intendedInternalFormat();
 
+    // This function is called in many places to initialize the content of a texture.
+    // So it's better we do the sanity check here instead of let the callers do it themselves:
     if (!textureObjFormat.valid() || intendedInternalFormat.compressed ||
         intendedInternalFormat.depthBits > 0 || intendedInternalFormat.stencilBits > 0)
     {
