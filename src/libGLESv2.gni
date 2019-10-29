@@ -159,6 +159,7 @@ libangle_includes = [
   "include/platform/Feature.h",
   "include/platform/FeaturesD3D.h",
   "include/platform/FeaturesGL.h",
+  "include/platform/FeaturesMtl.h",
   "include/platform/FeaturesVk.h",
   "include/platform/FrontendFeatures.h",
   "include/platform/Platform.h",

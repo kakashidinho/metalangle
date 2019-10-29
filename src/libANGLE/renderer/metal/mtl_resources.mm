@@ -36,7 +36,7 @@ void SetTextureSwizzle(ContextMtl *context,
 {
 // Texture swizzle functions's declarations are only available if macos 10.15 sdk is present
 #if defined(__MAC_10_15)
-    if (context->getDisplay()->getNativeLimitations().hasTextureSwizzle)
+    if (context->getDisplay()->getFeatures().hasTextureSwizzle.enabled)
     {
         // Work around Metal doesn't have native support for DXT1 without alpha.
         switch (format.intendedFormatId)

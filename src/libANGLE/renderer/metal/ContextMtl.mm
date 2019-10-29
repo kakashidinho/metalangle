@@ -188,7 +188,7 @@ angle::Result ContextMtl::drawTriFanArrays(const gl::Context *context, GLint fir
     {
         return drawArrays(context, gl::PrimitiveMode::Triangles, first, count);
     }
-    if (getDisplay()->getNativeLimitations().hasBaseVertexInstancedDraw)
+    if (getDisplay()->getFeatures().hasBaseVertexInstancedDraw.enabled)
     {
         return drawTriFanArraysWithBaseVertex(context, first, count);
     }

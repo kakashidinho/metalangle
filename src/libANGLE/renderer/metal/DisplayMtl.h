@@ -18,6 +18,7 @@
 #include "libANGLE/renderer/metal/mtl_render_utils.h"
 #include "libANGLE/renderer/metal/mtl_state_cache.h"
 #include "libANGLE/renderer/metal/mtl_utils.h"
+#include "platform/FeaturesMtl.h"
 
 namespace egl
 {
@@ -27,18 +28,6 @@ class Surface;
 namespace rx
 {
 class ContextMtl;
-
-struct LimitationsMtl : public gl::Limitations
-{
-    // BaseVertex/Instanced draw support:
-    bool hasBaseVertexInstancedDraw = true;
-    // Non-uniform compute shader dispatch support, i.e. Group size is not necessarily to be fixed:
-    bool hasNonUniformDispatch = true;
-    // Texture swizzle support:
-    bool hasTextureSwizzle = false;
-
-    bool allowSeparatedDepthStencilBuffers = false;
-};
 
 class DisplayMtl : public DisplayImpl
 {
@@ -105,7 +94,8 @@ class DisplayMtl : public DisplayImpl
     gl::Caps getNativeCaps() const;
     const gl::TextureCapsMap &getNativeTextureCaps() const;
     const gl::Extensions &getNativeExtensions() const;
-    const LimitationsMtl &getNativeLimitations() const { return mNativeLimitations; }
+    const gl::Limitations &getNativeLimitations() const { return mNativeLimitations; }
+    const angle::FeaturesMtl &getFeatures() const { return mFeatures; }
 
     id<MTLDevice> getMetalDevice() const { return mMetalDevice; }
 
@@ -147,7 +137,7 @@ class DisplayMtl : public DisplayImpl
     void initializeCaps() const;
     void initializeExtensions() const;
     void initializeTextureCaps() const;
-    void initializeLimitations();
+    void initializeFeatures();
 
     mtl::AutoObjCPtr<id<MTLDevice>> mMetalDevice = nil;
 
@@ -163,7 +153,9 @@ class DisplayMtl : public DisplayImpl
     mutable gl::TextureCapsMap mNativeTextureCaps;
     mutable gl::Extensions mNativeExtensions;
     mutable gl::Caps mNativeCaps;
-    LimitationsMtl mNativeLimitations;
+    mutable gl::Limitations mNativeLimitations;
+
+    angle::FeaturesMtl mFeatures;
 };
 
 }  // namespace rx

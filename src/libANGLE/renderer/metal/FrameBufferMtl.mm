@@ -245,7 +245,7 @@ bool FramebufferMtl::checkStatus(const gl::Context *context) const
     }
 
     ContextMtl *contextMtl = mtl::GetImpl(context);
-    if (!contextMtl->getDisplay()->getNativeLimitations().allowSeparatedDepthStencilBuffers &&
+    if (!contextMtl->getDisplay()->getFeatures().allowSeparatedDepthStencilBuffers.enabled &&
         mState.hasSeparateDepthAndStencilAttachments())
     {
         return false;

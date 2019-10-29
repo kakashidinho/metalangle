@@ -83,7 +83,7 @@ void GenerateTextureCapsMap(const FormatTable &formatTable,
     tmpTextureExtensions.textureCompressionDXT5 = true;
 
     // We can only fully support DXT1 without alpha using texture swizzle support from MacOs 10.15
-    tmpTextureExtensions.textureCompressionDXT1 = display->getNativeLimitations().hasTextureSwizzle;
+    tmpTextureExtensions.textureCompressionDXT1 = display->getFeatures().hasTextureSwizzle.enabled;
 
     tmpTextureExtensions.textureCompressionS3TCsRGB = tmpTextureExtensions.textureCompressionDXT1;
 #else

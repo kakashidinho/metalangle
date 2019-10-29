@@ -28,6 +28,7 @@ enum class FeatureCategory
     D3DCompilerWorkarounds,
     VulkanWorkarounds,
     VulkanFeatures,
+    MetalFeatures,
 };
 
 constexpr char kFeatureCategoryFrontendWorkarounds[]    = "Frontend workarounds";
@@ -36,6 +37,7 @@ constexpr char kFeatureCategoryD3DWorkarounds[]         = "D3D workarounds";
 constexpr char kFeatureCategoryD3DCompilerWorkarounds[] = "D3D compiler workarounds";
 constexpr char kFeatureCategoryVulkanWorkarounds[]      = "Vulkan workarounds";
 constexpr char kFeatureCategoryVulkanFeatures[]         = "Vulkan features";
+constexpr char kFeatureCategoryMetalFeatures[]          = "Metal features";
 constexpr char kFeatureCategoryUnknown[]                = "Unknown";
 
 inline const char *FeatureCategoryToString(const FeatureCategory &fc)
@@ -64,6 +66,10 @@ inline const char *FeatureCategoryToString(const FeatureCategory &fc)
 
         case FeatureCategory::VulkanFeatures:
             return kFeatureCategoryVulkanFeatures;
+            break;
+
+        case FeatureCategory::MetalFeatures:
+            return kFeatureCategoryMetalFeatures;
             break;
 
         default:

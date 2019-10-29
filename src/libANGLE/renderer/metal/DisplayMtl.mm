@@ -15,6 +15,7 @@
 #include "libANGLE/renderer/metal/ContextMtl.h"
 #include "libANGLE/renderer/metal/SurfaceMtl.h"
 #include "libANGLE/renderer/metal/mtl_common.h"
+#include "platform/Platform.h"
 
 #include "EGL/eglext.h"
 
@@ -67,7 +68,7 @@ angle::Result DisplayMtl::initializeImpl(egl::Display *display)
         mCapsInitialized = false;
 
         GlslangInitialize();
-        initializeLimitations();
+        initializeFeatures();
 
         ANGLE_TRY(mFormatTable.initialize(this));
 
@@ -605,32 +606,39 @@ void DisplayMtl::initializeTextureCaps() const
     mNativeExtensions.setTextureExtensionSupport(mNativeTextureCaps);
 }
 
-void DisplayMtl::initializeLimitations()
+void DisplayMtl::initializeFeatures()
 {
+    // default values:
+    mFeatures.hasBaseVertexInstancedDraw.enabled        = true;
+    mFeatures.hasNonUniformDispatch.enabled             = true;
+    mFeatures.hasTextureSwizzle.enabled                 = false;
+    mFeatures.allowSeparatedDepthStencilBuffers.enabled = false;
+
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-//   Texture swizzle is only supported if macos sdk 10.15 is present
+    // Texture swizzle is only supported if macos sdk 10.15 is present
 #    if defined(__MAC_10_15)
     if (ANGLE_APPLE_AVAILABLE_XC(10.15, 13.0))
     {
         // The runtime OS must be MacOS 10.15+ or Mac Catalyst for this to be supported:
-        mNativeLimitations.hasTextureSwizzle = [getMetalDevice() supportsFamily:MTLGPUFamilyMac2];
+        ANGLE_FEATURE_CONDITION((&mFeatures), hasTextureSwizzle,
+                                [getMetalDevice() supportsFamily:MTLGPUFamilyMac2]);
     }
 #    endif
 #elif TARGET_OS_IOS
     // Base Vertex drawing is only supported since GPU family 3.
-    if (![getMetalDevice() supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily3_v1])
-    {
-        mNativeLimitations.hasBaseVertexInstancedDraw = false;
-    }
-    if (![getMetalDevice() supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily4_v1])
-    {
-        mNativeLimitations.hasNonUniformDispatch = false;
-    }
+    ANGLE_FEATURE_CONDITION((&mFeatures), hasBaseVertexInstancedDraw,
+                            [getMetalDevice() supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily3_v1]);
+
+    ANGLE_FEATURE_CONDITION((&mFeatures), hasNonUniformDispatch,
+                            [getMetalDevice() supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily4_v1]);
 
 #    if !TARGET_OS_SIMULATOR
-    mNativeLimitations.allowSeparatedDepthStencilBuffers = true;
+    mFeatures.allowSeparatedDepthStencilBuffers.enabled = true;
 #    endif
 #endif
+
+    angle::PlatformMethods *platform = ANGLEPlatformCurrent();
+    platform->overrideFeaturesMtl(platform, &mFeatures);
 }
 
 }  // namespace rx
