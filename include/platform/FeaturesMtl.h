@@ -19,21 +19,14 @@ struct FeaturesMtl : FeatureSetBase
     // BaseVertex/Instanced draw support:
     Feature hasBaseVertexInstancedDraw = {
         "has_base_vertex_instanced_draw", FeatureCategory::MetalFeatures,
-        "The renderer supports base vertex instanced draw",
-        &members
-    };
+        "The renderer supports base vertex instanced draw", &members};
     // Non-uniform compute shader dispatch support, i.e. Group size is not necessarily to be fixed:
     Feature hasNonUniformDispatch = {
         "has_non_uniform_dispatch", FeatureCategory::MetalFeatures,
-        "The renderer supports non uniform compute shader dispatch's group size",
-        &members
-    };
+        "The renderer supports non uniform compute shader dispatch's group size", &members};
     // Texture swizzle support:
-    Feature hasTextureSwizzle = {
-        "has_texture_swizzle", FeatureCategory::MetalFeatures,
-        "The renderer supports texture swizzle",
-        &members
-    };
+    Feature hasTextureSwizzle = {"has_texture_swizzle", FeatureCategory::MetalFeatures,
+                                 "The renderer supports texture swizzle", &members};
 
     // On macos, separate depth & stencil buffers are not supproted. However, on iOS devices,
     // they are supproted:
@@ -41,8 +34,7 @@ struct FeaturesMtl : FeatureSetBase
         "allow_separate_depth_stencil_buffers", FeatureCategory::MetalFeatures,
         "Some Apple platforms such as iOS allows separate depth & stencil buffers, "
         "whereas others such as macOS don't",
-        &members
-    };
+        &members};
 };
 
 }  // namespace angle
