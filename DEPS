@@ -24,7 +24,7 @@ vars = {
   'glslang_revision': '4b97a1108114107a8082a55e9e0721a40f9536d3',
 
   # Current revision of spirv-cross, the Khronos SPIRV cross compiler.
-  'spirv_cross_revision': '7cc84020b37a69cd3503d63c4b9ae76cb75d9f6a',
+  'spirv_cross_revision': 'd253f41e17e27285756d031d8ba43bf370264e1f',
 
   # Current revision fo the SPIRV-Headers Vulkan support library.
   'spirv_headers_revision': '842ec90674627ed2ffef609e3cd79d1562eded01',
@@ -154,7 +154,7 @@ deps = {
     'url': '{chromium_git}/external/github.com/Tencent/rapidjson@7484e06c589873e1ed80382d262087e4fa80fb63',
   },
 
-  '{angle_root}/third_party/spirv-cross/src': {
+  '{angle_root}/third_party/spirv-cross/spirv-cross': {
     'url': '{chromium_git}/external/github.com/KhronosGroup/SPIRV-Cross@{spirv_cross_revision}',
     'condition': 'not build_with_chromium',
   },
