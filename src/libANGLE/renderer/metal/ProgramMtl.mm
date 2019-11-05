@@ -51,10 +51,10 @@ spv::ExecutionModel ShaderTypeToSpvExecutionModel(gl::ShaderType shaderType)
 // glsl sampler will be converted to 2 metal objects: texture and sampler.
 // Thus we need to set 2 binding points for one glsl sampler variable.
 using BindingField = uint32_t spirv_cross::MSLResourceBinding::*;
-template <BindingField bindingField1, BindingField bindingField2>
-angle::Result BindResources2Slots(spirv_cross::CompilerMSL *compiler,
-                                  const spirv_cross::SmallVector<spirv_cross::Resource> &resources,
-                                  gl::ShaderType shaderType)
+template <BindingField bindingField1, BindingField bindingField2 = bindingField1>
+angle::Result BindResources(spirv_cross::CompilerMSL *compiler,
+                            const spirv_cross::SmallVector<spirv_cross::Resource> &resources,
+                            gl::ShaderType shaderType)
 {
     auto &compilerMsl = *compiler;
 
@@ -110,14 +110,6 @@ angle::Result BindResources2Slots(spirv_cross::CompilerMSL *compiler,
     }
 
     return angle::Result::Continue;
-}
-
-template <BindingField bindingField>
-angle::Result BindResources(spirv_cross::CompilerMSL *compiler,
-                            const spirv_cross::SmallVector<spirv_cross::Resource> &resources,
-                            gl::ShaderType shaderType)
-{
-    return BindResources2Slots<bindingField, bindingField>(compiler, resources, shaderType);
 }
 
 void InitDefaultUniformBlock(const std::vector<sh::Uniform> &uniforms,
@@ -459,8 +451,8 @@ angle::Result ProgramMtl::convertToMsl(const gl::Context *glContext,
     ANGLE_TRY(BindResources<&spirv_cross::MSLResourceBinding::msl_buffer>(
         &compilerMsl, mslRes.uniform_buffers, shaderType));
 
-    ANGLE_TRY((BindResources2Slots<&spirv_cross::MSLResourceBinding::msl_sampler,
-                                   &spirv_cross::MSLResourceBinding::msl_texture>(
+    ANGLE_TRY((BindResources<&spirv_cross::MSLResourceBinding::msl_sampler,
+                             &spirv_cross::MSLResourceBinding::msl_texture>(
         &compilerMsl, mslRes.sampled_images, shaderType)));
 
     // NOTE(hqle): spirv-cross uses exceptions to report error, what should we do here
