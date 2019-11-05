@@ -31,11 +31,13 @@ class TranslatorVulkan : public TCompiler
     bool shouldFlattenPragmaStdglInvariantAll() override;
 
     TIntermBinary *getDriverUniformNegViewportYScaleRef(const TVariable *driverUniforms) const;
-    ANGLE_NO_DISCARD bool preWriting(TIntermBlock *root,
-                                     ShCompileOptions compileOptions,
-                                     PerformanceDiagnostics *perfDiagnostics,
-                                     const TVariable **driverUniformsOut,
-                                     TOutputVulkanGLSL *outputGLSL);
+    // Subclass can call this method to transform the AST before writing the final output.
+    // See TranslatorMetal.cpp.
+    ANGLE_NO_DISCARD bool translateImpl(TIntermBlock *root,
+                                        ShCompileOptions compileOptions,
+                                        PerformanceDiagnostics *perfDiagnostics,
+                                        const TVariable **driverUniformsOut,
+                                        TOutputVulkanGLSL *outputGLSL);
 };
 
 }  // namespace sh

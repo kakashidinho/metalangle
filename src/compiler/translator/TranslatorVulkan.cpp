@@ -656,11 +656,11 @@ TranslatorVulkan::TranslatorVulkan(sh::GLenum type, ShShaderSpec spec)
     : TCompiler(type, spec, SH_GLSL_450_CORE_OUTPUT)
 {}
 
-bool TranslatorVulkan::preWriting(TIntermBlock *root,
-                                  ShCompileOptions compileOptions,
-                                  PerformanceDiagnostics * /*perfDiagnostics*/,
-                                  const TVariable **driverUniformsOut,
-                                  TOutputVulkanGLSL *outputGLSL)
+bool TranslatorVulkan::translateImpl(TIntermBlock *root,
+                                     ShCompileOptions compileOptions,
+                                     PerformanceDiagnostics * /*perfDiagnostics*/,
+                                     const TVariable **driverUniformsOut,
+                                     TOutputVulkanGLSL *outputGLSL)
 {
     TInfoSinkBase &sink = getInfoSink().obj;
 
@@ -956,7 +956,7 @@ bool TranslatorVulkan::translate(TIntermBlock *root,
                                  getNameMap(), &getSymbolTable(), getShaderType(),
                                  getShaderVersion(), getOutputType(), compileOptions);
 
-    if (!preWriting(root, compileOptions, perfDiagnostics, nullptr, &outputGLSL))
+    if (!translateImpl(root, compileOptions, perfDiagnostics, nullptr, &outputGLSL))
     {
         return false;
     }

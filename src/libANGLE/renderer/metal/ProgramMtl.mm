@@ -47,11 +47,14 @@ spv::ExecutionModel ShaderTypeToSpvExecutionModel(gl::ShaderType shaderType)
     }
 }
 
+// Some GLSL variables need 2 binding points in metal. For example,
+// glsl sampler will be converted to 2 metal objects: texture and sampler.
+// Thus we need to set 2 binding points for one glsl sampler variable.
 using BindingField = uint32_t spirv_cross::MSLResourceBinding::*;
 template <BindingField bindingField1, BindingField bindingField2>
-angle::Result BindResources2(spirv_cross::CompilerMSL *compiler,
-                             const spirv_cross::SmallVector<spirv_cross::Resource> &resources,
-                             gl::ShaderType shaderType)
+angle::Result BindResources2Slots(spirv_cross::CompilerMSL *compiler,
+                                  const spirv_cross::SmallVector<spirv_cross::Resource> &resources,
+                                  gl::ShaderType shaderType)
 {
     auto &compilerMsl = *compiler;
 
@@ -96,7 +99,7 @@ angle::Result BindResources2(spirv_cross::CompilerMSL *compiler,
         }
 
         // bindingField can be buffer or texture, which will be translated to [[buffer(d)]] or
-        // [[texture(d)]]
+        // [[texture(d)]] or [[sampler(d)]]
         resBinding.*bindingField1 = bindingPoint;
         if (bindingField1 != bindingField2)
         {
@@ -114,7 +117,7 @@ angle::Result BindResources(spirv_cross::CompilerMSL *compiler,
                             const spirv_cross::SmallVector<spirv_cross::Resource> &resources,
                             gl::ShaderType shaderType)
 {
-    return BindResources2<bindingField, bindingField>(compiler, resources, shaderType);
+    return BindResources2Slots<bindingField, bindingField>(compiler, resources, shaderType);
 }
 
 void InitDefaultUniformBlock(const std::vector<sh::Uniform> &uniforms,
@@ -456,10 +459,9 @@ angle::Result ProgramMtl::convertToMsl(const gl::Context *glContext,
     ANGLE_TRY(BindResources<&spirv_cross::MSLResourceBinding::msl_buffer>(
         &compilerMsl, mslRes.uniform_buffers, shaderType));
 
-    auto bindingErr = BindResources2<&spirv_cross::MSLResourceBinding::msl_sampler,
-                                     &spirv_cross::MSLResourceBinding::msl_texture>(
-        &compilerMsl, mslRes.sampled_images, shaderType);
-    ANGLE_MTL_TRY(contextMtl, !IsError(bindingErr));
+    ANGLE_TRY((BindResources2Slots<&spirv_cross::MSLResourceBinding::msl_sampler,
+                                   &spirv_cross::MSLResourceBinding::msl_texture>(
+        &compilerMsl, mslRes.sampled_images, shaderType)));
 
     // NOTE(hqle): spirv-cross uses exceptions to report error, what should we do here
     // in case of error?
