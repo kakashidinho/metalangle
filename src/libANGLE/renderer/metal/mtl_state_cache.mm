@@ -237,7 +237,7 @@ void StencilDesc::reset()
         MTLStencilOperationKeep;
 
     stencilCompareFunction = MTLCompareFunctionAlways;
-    readMask = writeMask = std::numeric_limits<uint32_t>::max();
+    readMask = writeMask = std::numeric_limits<uint32_t>::max() & mtl::kStencilMaskAll;
 }
 
 // DepthStencilDesc implementation
@@ -345,7 +345,7 @@ void DepthStencilDesc::updateStencilFrontFuncs(const gl::DepthStencilState &dsSt
         return;
     }
     frontFaceStencil.stencilCompareFunction = GetCompareFunc(dsState.stencilFunc);
-    frontFaceStencil.readMask               = dsState.stencilMask;
+    frontFaceStencil.readMask               = dsState.stencilMask & mtl::kStencilMaskAll;
 }
 
 void DepthStencilDesc::updateStencilBackFuncs(const gl::DepthStencilState &dsState)
@@ -355,7 +355,7 @@ void DepthStencilDesc::updateStencilBackFuncs(const gl::DepthStencilState &dsSta
         return;
     }
     backFaceStencil.stencilCompareFunction = GetCompareFunc(dsState.stencilBackFunc);
-    backFaceStencil.readMask               = dsState.stencilBackMask;
+    backFaceStencil.readMask               = dsState.stencilBackMask & mtl::kStencilMaskAll;
 }
 
 void DepthStencilDesc::updateStencilFrontWriteMask(const gl::DepthStencilState &dsState)
@@ -364,7 +364,7 @@ void DepthStencilDesc::updateStencilFrontWriteMask(const gl::DepthStencilState &
     {
         return;
     }
-    frontFaceStencil.writeMask = dsState.stencilWritemask;
+    frontFaceStencil.writeMask = dsState.stencilWritemask & mtl::kStencilMaskAll;
 }
 
 void DepthStencilDesc::updateStencilBackWriteMask(const gl::DepthStencilState &dsState)
@@ -373,7 +373,7 @@ void DepthStencilDesc::updateStencilBackWriteMask(const gl::DepthStencilState &d
     {
         return;
     }
-    backFaceStencil.writeMask = dsState.stencilBackWritemask;
+    backFaceStencil.writeMask = dsState.stencilBackWritemask & mtl::kStencilMaskAll;
 }
 
 size_t DepthStencilDesc::hash() const

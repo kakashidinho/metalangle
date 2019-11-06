@@ -873,7 +873,7 @@ uint32_t ContextMtl::getClearStencilValue() const
 }
 uint32_t ContextMtl::getStencilMask() const
 {
-    return getState().getDepthStencilState().stencilWritemask;
+    return getState().getDepthStencilState().stencilWritemask & mtl::kStencilMaskAll;
 }
 
 bool ContextMtl::isDepthWriteEnabled() const
