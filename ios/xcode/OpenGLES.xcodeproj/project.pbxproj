@@ -2436,29 +2436,29 @@
 		0AA2F9AA2346F0FA00E0B98C /* libglslang.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libglslang.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		0AA2F9B72346F10600E0B98C /* libspirv-cross.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libspirv-cross.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0AA2F9C42346F30C00E0B98C /* libjsoncpp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libjsoncpp.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		0AA2F9CE2346F35900E0B98C /* spirv_cross_parsed_ir.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = spirv_cross_parsed_ir.cpp; path = "../../third_party/spirv-cross/spirv-cross/spirv_cross_parsed_ir.cpp"; sourceTree = "<group>"; };
-		0AA2F9CF2346F35900E0B98C /* spirv_cross_util.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = spirv_cross_util.hpp; path = "../../third_party/spirv-cross/spirv-cross/spirv_cross_util.hpp"; sourceTree = "<group>"; };
-		0AA2F9D02346F35900E0B98C /* spirv_cross_util.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = spirv_cross_util.cpp; path = "../../third_party/spirv-cross/spirv-cross/spirv_cross_util.cpp"; sourceTree = "<group>"; };
-		0AA2F9D12346F35900E0B98C /* spirv_cpp.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = spirv_cpp.hpp; path = "../../third_party/spirv-cross/spirv-cross/spirv_cpp.hpp"; sourceTree = "<group>"; };
-		0AA2F9D22346F35A00E0B98C /* spirv_cross.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = spirv_cross.cpp; path = "../../third_party/spirv-cross/spirv-cross/spirv_cross.cpp"; sourceTree = "<group>"; };
-		0AA2F9D32346F35A00E0B98C /* spirv_reflect.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = spirv_reflect.cpp; path = "../../third_party/spirv-cross/spirv-cross/spirv_reflect.cpp"; sourceTree = "<group>"; };
-		0AA2F9D42346F35A00E0B98C /* spirv_cross_error_handling.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = spirv_cross_error_handling.hpp; path = "../../third_party/spirv-cross/spirv-cross/spirv_cross_error_handling.hpp"; sourceTree = "<group>"; };
-		0AA2F9D52346F35A00E0B98C /* spirv_glsl.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = spirv_glsl.hpp; path = "../../third_party/spirv-cross/spirv-cross/spirv_glsl.hpp"; sourceTree = "<group>"; };
-		0AA2F9D72346F35A00E0B98C /* spirv_cfg.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = spirv_cfg.hpp; path = "../../third_party/spirv-cross/spirv-cross/spirv_cfg.hpp"; sourceTree = "<group>"; };
-		0AA2F9D82346F35A00E0B98C /* spirv.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = spirv.hpp; path = "../../third_party/spirv-cross/spirv-cross/spirv.hpp"; sourceTree = "<group>"; };
-		0AA2F9D92346F35A00E0B98C /* spirv_parser.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = spirv_parser.hpp; path = "../../third_party/spirv-cross/spirv-cross/spirv_parser.hpp"; sourceTree = "<group>"; };
-		0AA2F9DA2346F35A00E0B98C /* spirv_reflect.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = spirv_reflect.hpp; path = "../../third_party/spirv-cross/spirv-cross/spirv_reflect.hpp"; sourceTree = "<group>"; };
-		0AA2F9DB2346F35A00E0B98C /* spirv.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = spirv.h; path = "../../third_party/spirv-cross/spirv-cross/spirv.h"; sourceTree = "<group>"; };
-		0AA2F9DC2346F35A00E0B98C /* spirv_common.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = spirv_common.hpp; path = "../../third_party/spirv-cross/spirv-cross/spirv_common.hpp"; sourceTree = "<group>"; };
-		0AA2F9DE2346F35A00E0B98C /* spirv_cross.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = spirv_cross.hpp; path = "../../third_party/spirv-cross/spirv-cross/spirv_cross.hpp"; sourceTree = "<group>"; };
-		0AA2F9DF2346F35A00E0B98C /* spirv_cfg.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = spirv_cfg.cpp; path = "../../third_party/spirv-cross/spirv-cross/spirv_cfg.cpp"; sourceTree = "<group>"; };
-		0AA2F9E02346F35A00E0B98C /* spirv_msl.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = spirv_msl.hpp; path = "../../third_party/spirv-cross/spirv-cross/spirv_msl.hpp"; sourceTree = "<group>"; };
-		0AA2F9E22346F35A00E0B98C /* spirv_glsl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = spirv_glsl.cpp; path = "../../third_party/spirv-cross/spirv-cross/spirv_glsl.cpp"; sourceTree = "<group>"; };
-		0AA2F9E42346F35B00E0B98C /* spirv_cross_containers.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = spirv_cross_containers.hpp; path = "../../third_party/spirv-cross/spirv-cross/spirv_cross_containers.hpp"; sourceTree = "<group>"; };
-		0AA2F9E52346F35B00E0B98C /* spirv_parser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = spirv_parser.cpp; path = "../../third_party/spirv-cross/spirv-cross/spirv_parser.cpp"; sourceTree = "<group>"; };
-		0AA2F9E62346F35B00E0B98C /* spirv_cpp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = spirv_cpp.cpp; path = "../../third_party/spirv-cross/spirv-cross/spirv_cpp.cpp"; sourceTree = "<group>"; };
-		0AA2F9E72346F35B00E0B98C /* spirv_msl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = spirv_msl.cpp; path = "../../third_party/spirv-cross/spirv-cross/spirv_msl.cpp"; sourceTree = "<group>"; };
-		0AA2F9E82346F35B00E0B98C /* spirv_cross_parsed_ir.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = spirv_cross_parsed_ir.hpp; path = "../../third_party/spirv-cross/spirv-cross/spirv_cross_parsed_ir.hpp"; sourceTree = "<group>"; };
+		0AA2F9CE2346F35900E0B98C /* spirv_cross_parsed_ir.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = spirv_cross_parsed_ir.cpp; path = "../../third_party/spirv-cross/src/spirv_cross_parsed_ir.cpp"; sourceTree = "<group>"; };
+		0AA2F9CF2346F35900E0B98C /* spirv_cross_util.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = spirv_cross_util.hpp; path = "../../third_party/spirv-cross/src/spirv_cross_util.hpp"; sourceTree = "<group>"; };
+		0AA2F9D02346F35900E0B98C /* spirv_cross_util.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = spirv_cross_util.cpp; path = "../../third_party/spirv-cross/src/spirv_cross_util.cpp"; sourceTree = "<group>"; };
+		0AA2F9D12346F35900E0B98C /* spirv_cpp.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = spirv_cpp.hpp; path = "../../third_party/spirv-cross/src/spirv_cpp.hpp"; sourceTree = "<group>"; };
+		0AA2F9D22346F35A00E0B98C /* spirv_cross.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = spirv_cross.cpp; path = "../../third_party/spirv-cross/src/spirv_cross.cpp"; sourceTree = "<group>"; };
+		0AA2F9D32346F35A00E0B98C /* spirv_reflect.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = spirv_reflect.cpp; path = "../../third_party/spirv-cross/src/spirv_reflect.cpp"; sourceTree = "<group>"; };
+		0AA2F9D42346F35A00E0B98C /* spirv_cross_error_handling.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = spirv_cross_error_handling.hpp; path = "../../third_party/spirv-cross/src/spirv_cross_error_handling.hpp"; sourceTree = "<group>"; };
+		0AA2F9D52346F35A00E0B98C /* spirv_glsl.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = spirv_glsl.hpp; path = "../../third_party/spirv-cross/src/spirv_glsl.hpp"; sourceTree = "<group>"; };
+		0AA2F9D72346F35A00E0B98C /* spirv_cfg.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = spirv_cfg.hpp; path = "../../third_party/spirv-cross/src/spirv_cfg.hpp"; sourceTree = "<group>"; };
+		0AA2F9D82346F35A00E0B98C /* spirv.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = spirv.hpp; path = "../../third_party/spirv-cross/src/spirv.hpp"; sourceTree = "<group>"; };
+		0AA2F9D92346F35A00E0B98C /* spirv_parser.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = spirv_parser.hpp; path = "../../third_party/spirv-cross/src/spirv_parser.hpp"; sourceTree = "<group>"; };
+		0AA2F9DA2346F35A00E0B98C /* spirv_reflect.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = spirv_reflect.hpp; path = "../../third_party/spirv-cross/src/spirv_reflect.hpp"; sourceTree = "<group>"; };
+		0AA2F9DB2346F35A00E0B98C /* spirv.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = spirv.h; path = "../../third_party/spirv-cross/src/spirv.h"; sourceTree = "<group>"; };
+		0AA2F9DC2346F35A00E0B98C /* spirv_common.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = spirv_common.hpp; path = "../../third_party/spirv-cross/src/spirv_common.hpp"; sourceTree = "<group>"; };
+		0AA2F9DE2346F35A00E0B98C /* spirv_cross.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = spirv_cross.hpp; path = "../../third_party/spirv-cross/src/spirv_cross.hpp"; sourceTree = "<group>"; };
+		0AA2F9DF2346F35A00E0B98C /* spirv_cfg.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = spirv_cfg.cpp; path = "../../third_party/spirv-cross/src/spirv_cfg.cpp"; sourceTree = "<group>"; };
+		0AA2F9E02346F35A00E0B98C /* spirv_msl.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = spirv_msl.hpp; path = "../../third_party/spirv-cross/src/spirv_msl.hpp"; sourceTree = "<group>"; };
+		0AA2F9E22346F35A00E0B98C /* spirv_glsl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = spirv_glsl.cpp; path = "../../third_party/spirv-cross/src/spirv_glsl.cpp"; sourceTree = "<group>"; };
+		0AA2F9E42346F35B00E0B98C /* spirv_cross_containers.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = spirv_cross_containers.hpp; path = "../../third_party/spirv-cross/src/spirv_cross_containers.hpp"; sourceTree = "<group>"; };
+		0AA2F9E52346F35B00E0B98C /* spirv_parser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = spirv_parser.cpp; path = "../../third_party/spirv-cross/src/spirv_parser.cpp"; sourceTree = "<group>"; };
+		0AA2F9E62346F35B00E0B98C /* spirv_cpp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = spirv_cpp.cpp; path = "../../third_party/spirv-cross/src/spirv_cpp.cpp"; sourceTree = "<group>"; };
+		0AA2F9E72346F35B00E0B98C /* spirv_msl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = spirv_msl.cpp; path = "../../third_party/spirv-cross/src/spirv_msl.cpp"; sourceTree = "<group>"; };
+		0AA2F9E82346F35B00E0B98C /* spirv_cross_parsed_ir.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = spirv_cross_parsed_ir.hpp; path = "../../third_party/spirv-cross/src/spirv_cross_parsed_ir.hpp"; sourceTree = "<group>"; };
 		0AA2F9F62346F4E500E0B98C /* ParseHelper.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ParseHelper.cpp; sourceTree = "<group>"; };
 		0AA2F9F72346F4E500E0B98C /* parseVersions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parseVersions.h; sourceTree = "<group>"; };
 		0AA2F9F82346F4E500E0B98C /* gl_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gl_types.h; sourceTree = "<group>"; };
@@ -6425,7 +6425,7 @@
 					"${PROJECT_DIR}/../../src/common/third_party/base/",
 					"${PROJECT_DIR}/../../include",
 					"${PROJECT_DIR}/../../third_party/glslang/src",
-					"${PROJECT_DIR}/../../third_party/spirv-cross/spirv-cross",
+					"${PROJECT_DIR}/../../third_party/spirv-cross/src",
 					"${PROJECT_DIR}/../../third_party/jsoncpp/overrides/include",
 					"${PROJECT_DIR}/../../third_party/jsoncpp/source/include",
 					"${PROJECT_DIR}/../..",
@@ -6500,7 +6500,7 @@
 					"${PROJECT_DIR}/../../src/common/third_party/base/",
 					"${PROJECT_DIR}/../../include",
 					"${PROJECT_DIR}/../../third_party/glslang/src",
-					"${PROJECT_DIR}/../../third_party/spirv-cross/spirv-cross",
+					"${PROJECT_DIR}/../../third_party/spirv-cross/src",
 					"${PROJECT_DIR}/../../third_party/jsoncpp/overrides/include",
 					"${PROJECT_DIR}/../../third_party/jsoncpp/source/include",
 					"${PROJECT_DIR}/../..",
