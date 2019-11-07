@@ -110,7 +110,8 @@ bool TranslatorMetal::translate(TIntermBlock *root,
                                  getShaderVersion(), getOutputType(), compileOptions);
 
     const TVariable *driverUniforms = nullptr;
-    if (!translateImpl(root, compileOptions, perfDiagnostics, &driverUniforms, &outputGLSL))
+    if (!TranslatorVulkan::translateImpl(root, compileOptions, perfDiagnostics, &driverUniforms,
+                                         &outputGLSL))
     {
         return false;
     }
