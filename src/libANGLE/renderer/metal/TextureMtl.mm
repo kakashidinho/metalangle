@@ -803,6 +803,7 @@ angle::Result TextureMtl::copySubImageWithDraw(const gl::Context *context,
     blitParams.dstColorMask = mTexture->getColorWritableMask();
 
     blitParams.src          = colorReadRT->getTexture();
+    blitParams.srcLevel     = static_cast<uint32_t>(colorReadRT->getLevelIndex());
     blitParams.srcRect      = clippedSourceArea;
     blitParams.srcYFlipped  = framebufferMtl->flipY();
     blitParams.dstLuminance = internalFormat.isLUMA();
@@ -838,7 +839,8 @@ angle::Result TextureMtl::copySubImageCPU(const gl::Context *context,
         PackPixelsParams packParams(srcRowArea, dstFormat, dstRowPitch, false, nullptr, 0);
 
         // Read pixels from framebuffer to memory:
-        ANGLE_TRY(framebufferMtl->readPixelsImpl(context, srcRowArea, packParams,
+        gl::Rectangle flippedSrcRowArea = framebufferMtl->getReadPixelArea(srcRowArea);
+        ANGLE_TRY(framebufferMtl->readPixelsImpl(context, flippedSrcRowArea, packParams,
                                                  framebufferMtl->getColorReadRenderTarget(),
                                                  conversionRow.data()));
 
