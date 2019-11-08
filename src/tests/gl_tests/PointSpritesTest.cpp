@@ -481,7 +481,7 @@ TEST_P(PointSpritesTest, PointSizeAboveMaxIsClamped)
     ANGLE_SKIP_TEST_IF(IsAMD() && IsVulkan());
 
     // TODO(hqle): Metal on macbook also has problem with drawing point outside framebuffer.
-    ANGLE_SKIP_TEST_IF(IsAMD() && IsMetal());
+    ANGLE_SKIP_TEST_IF(IsMetal());
 
     GLfloat pointSizeRange[2] = {};
     glGetFloatv(GL_ALIASED_POINT_SIZE_RANGE, pointSizeRange);
