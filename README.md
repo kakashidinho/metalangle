@@ -7,6 +7,7 @@ to continue operate on Apple platforms by translating OpenGL ES draw calls to Me
 - MetalANGLE is being migrated into official ANGLE repo. So this repo might not get updated for a while.
 - Almost all basic samples has been tested to work fine.
 - __Over 90% of ANGLE end2end tests have been passed__. See [List of failed tests](src/libANGLE/renderer/metal/README.md#Failed-ANGLE-end2end-tests).
+- __96% of GLES 2 conformance tests passed__. See [Khronos VK-GL-CTS](https://github.com/KhronosGroup/VK-GL-CTS).
 - [MGLKit](src/libANGLE/renderer/metal/DevSetup.md#MGLKit) utilities classes have been added. Proving kind of similar functionalies to Apples's GLKit.
 - Urho3D engine's demos have been tested using MetalANGLE without issues. See [Urho3D's MetalANGLE integration testing branch](https://github.com/kakashidinho/Urho3D/tree/angle-metal-backend).
 - ~~No `GL_TRIANGLE_FAN` & `GL_LINE_LOOP` support in draw calls yet.~~
