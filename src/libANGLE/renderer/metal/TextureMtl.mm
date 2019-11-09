@@ -608,13 +608,8 @@ angle::Result TextureMtl::bindVertexShader(const gl::Context *context,
                                            int samplerSlotIndex)
 {
     ASSERT(mActualTexture);
-    // ES 2.0: non power of two texture won't have any mipmap.
-    // We don't support OES_texture_npot atm.
+
     float maxLodClamp = FLT_MAX;
-    if (!mIsPow2)
-    {
-        maxLodClamp = 0;
-    }
 
     cmdEncoder->setVertexTexture(mActualTexture, textureSlotIndex);
     cmdEncoder->setVertexSamplerState(mMetalSamplerState, 0, maxLodClamp, samplerSlotIndex);
@@ -628,13 +623,8 @@ angle::Result TextureMtl::bindFragmentShader(const gl::Context *context,
                                              int samplerSlotIndex)
 {
     ASSERT(mActualTexture);
-    // ES 2.0: non power of two texture won't have any mipmap.
-    // We don't support OES_texture_npot atm.
+
     float maxLodClamp = FLT_MAX;
-    if (!mIsPow2)
-    {
-        maxLodClamp = 0;
-    }
 
     cmdEncoder->setFragmentTexture(mActualTexture, textureSlotIndex);
     cmdEncoder->setFragmentSamplerState(mMetalSamplerState, 0, maxLodClamp, samplerSlotIndex);

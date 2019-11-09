@@ -585,8 +585,7 @@ void DisplayMtl::initializeExtensions() const
     mNativeExtensions.textureFilterAnisotropic = true;
     mNativeExtensions.maxTextureAnisotropy     = 16;
 
-    // NOTE(hqle): Support true NPOT textures.
-    mNativeExtensions.textureNPOT = false;
+    mNativeExtensions.textureNPOT = true;
 
     mNativeExtensions.texture3DOES = false;
 
