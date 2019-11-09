@@ -97,6 +97,23 @@ GLuint GetImageLayerIndex(const gl::ImageIndex &index)
     return 0;
 }
 
+// Given texture type, get texture type of one image at a slice and a level.
+// For example, for texture 2d, one image is also texture 2d.
+// for texture cube, one image is texture 2d.
+// For texture 2d array, one image is texture 2d.
+gl::TextureType GetTextureImageType(gl::TextureType texType)
+{
+    switch (texType)
+    {
+        case gl::TextureType::_2D:
+        case gl::TextureType::CubeMap:
+            return gl::TextureType::_2D;
+        default:
+            UNREACHABLE();
+            return gl::TextureType::InvalidEnum;
+    }
+}
+
 }  // namespace
 
 // TextureMtl implementation
@@ -661,7 +678,7 @@ angle::Result TextureMtl::redefineImage(const gl::Context *context,
     // If actual texture exists, it means the size hasn't been changed, no need to create new image
     if (mActualTexture && image)
     {
-        ASSERT(image && image->textureType() == mtl::GetTextureType(index.getType()) &&
+        ASSERT(image->textureType() == mtl::GetTextureType(GetTextureImageType(index.getType())) &&
                image->pixelFormat() == mFormat.metalFormat && image->size() == size);
     }
     else
