@@ -1227,6 +1227,12 @@ bool IsAdreno()
     return (rendererString.find("Adreno") != std::string::npos);
 }
 
+bool IsIntelRenderer()
+{
+    std::string rendererString(reinterpret_cast<const char *>(glGetString(GL_RENDERER)));
+    return (rendererString.find("Intel") != std::string::npos);
+}
+
 bool IsD3D11()
 {
     std::string rendererString(reinterpret_cast<const char *>(glGetString(GL_RENDERER)));

@@ -578,6 +578,9 @@ bool IsNULL();
 bool IsVulkan();
 bool IsMetal();
 
+// Detect whether GL_RENDERER is Intel
+bool IsIntelRenderer();
+
 // Debug/Release
 bool IsDebug();
 bool IsRelease();
