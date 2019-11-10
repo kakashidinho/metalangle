@@ -15,7 +15,7 @@ Otherwise, a CPU conversion will take place.~~
 
 # Failed ANGLE end2end tests
 - DifferentStencilMasksTest.DrawWithDifferentMask
-- MipmapTest.DefineValidExtraLevelAndUseItLater
+- ~~MipmapTest.DefineValidExtraLevelAndUseItLater~~
 - PointSpritesTest.PointSizeAboveMaxIsClamped (point outside framebuffer won't get drawn)
 - SimpleStateChangeTest.CopyTexSubImageOnTextureBoundToFrambuffer (GL_ANGLE_framebuffer_blit not implemented)
 - ~~WebGLReadOutsideFramebufferTest.*~~
