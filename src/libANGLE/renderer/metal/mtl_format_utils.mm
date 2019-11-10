@@ -34,6 +34,13 @@ bool OverrideTextureCaps(const DisplayMtl *display, angle::FormatID formatId, gl
         case angle::FormatID::R8G8B8A8_UNORM_SRGB:
         case angle::FormatID::B8G8R8A8_UNORM:
         case angle::FormatID::B8G8R8A8_UNORM_SRGB:
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
+        // Only MacOS supports filtering for depth textures
+        case angle::FormatID::D16_UNORM:
+        case angle::FormatID::D24_UNORM_S8_UINT:
+        case angle::FormatID::D32_FLOAT:
+        case angle::FormatID::D32_UNORM:
+#endif
             caps->texturable = caps->filterable = caps->textureAttachment = caps->renderbuffer =
                 true;
             return true;
@@ -78,6 +85,8 @@ void GenerateTextureCapsMap(const FormatTable &formatTable,
     tmpTextureExtensions.textureFloatLinear     = packedDepthStencil24Support;
     tmpTextureExtensions.textureRG              = packedDepthStencil24Support;
     tmpTextureExtensions.textureFormatBGRA8888  = packedDepthStencil24Support;
+    // Only MacOS supports filtering for depth textures
+    tmpTextureExtensions.depthTextureOES = true;
 
     tmpTextureExtensions.textureCompressionDXT3 = true;
     tmpTextureExtensions.textureCompressionDXT5 = true;

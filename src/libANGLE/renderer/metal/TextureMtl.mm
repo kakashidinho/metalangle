@@ -114,6 +114,78 @@ gl::TextureType GetTextureImageType(gl::TextureType texType)
     }
 }
 
+angle::Result UploadTextureContents(const gl::Context *context,
+                                    const mtl::TextureRef &texture,
+                                    const angle::Format &textureAngleFormat,
+                                    MTLRegion region,
+                                    uint32_t mipmapLevel,
+                                    uint32_t slice,
+                                    const uint8_t *data,
+                                    size_t bytesPerRow)
+{
+    ASSERT(texture && texture->valid());
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+
+    if (texture->isCPUAccessible())
+    {
+        // If texture is CPU accessible, just call replaceRegion() directly.
+        texture->replaceRegion(contextMtl, region, mipmapLevel, slice, data, bytesPerRow);
+
+        return angle::Result::Continue;
+    }
+
+    // Texture is not CPU accessible, we need to use staging buffer
+
+    // Compressed texture is not supporte atm
+    ASSERT(!textureAngleFormat.isBlock);
+
+    // Copy data to staging buffer
+    size_t stagingBufferRowPitch    = region.size.width * textureAngleFormat.pixelBytes;
+    size_t stagingBuffer2DImageSize = stagingBufferRowPitch * region.size.height;
+    size_t stagingBufferSize        = stagingBuffer2DImageSize * region.size.depth;
+    mtl::BufferRef stagingBuffer;
+    ANGLE_TRY(mtl::Buffer::MakeBuffer(contextMtl, stagingBufferSize, nullptr, &stagingBuffer));
+
+    uint8_t *pdst       = stagingBuffer->map(contextMtl);
+    const uint8_t *psrc = data;
+
+    for (NSUInteger d = 0; d < region.size.depth; ++d)
+    {
+        for (NSUInteger r = 0; r < region.size.height; ++r)
+        {
+            memcpy(pdst, psrc, stagingBufferRowPitch);
+            pdst += stagingBufferRowPitch;
+            psrc += bytesPerRow;
+        }
+    }
+
+    stagingBuffer->unmap(contextMtl);
+
+    // Copy staging buffer to texture.
+    mtl::BlitCommandEncoder *encoder = contextMtl->getBlitCommandEncoder();
+    if (textureAngleFormat.depthBits && textureAngleFormat.stencilBits)
+    {
+        // This is packed depth stencil
+
+        encoder->copyBufferToTexture(
+            stagingBuffer, 0, stagingBufferRowPitch, stagingBuffer2DImageSize, region.size, texture,
+            slice, mipmapLevel, region.origin, MTLBlitOptionDepthFromDepthStencil);
+        encoder->copyBufferToTexture(
+            stagingBuffer, 0, stagingBufferRowPitch, stagingBuffer2DImageSize, region.size, texture,
+            slice, mipmapLevel, region.origin, MTLBlitOptionStencilFromDepthStencil);
+    }
+    else
+    {
+        encoder->copyBufferToTexture(stagingBuffer, 0, stagingBufferRowPitch,
+                                     stagingBuffer2DImageSize, region.size, texture, slice,
+                                     mipmapLevel, region.origin, MTLBlitOptionNone);
+    }
+
+    contextMtl->flushCommandBufer();
+
+    return angle::Result::Continue;
+}
+
 }  // namespace
 
 // TextureMtl implementation
@@ -509,8 +581,9 @@ angle::Result TextureMtl::generateMipmapCPU(const gl::Context *context)
                                               dstLevelData.get(), dstRowPitch, 0);
 
             // Upload to texture
-            mActualTexture->replaceRegion(contextMtl, MTLRegionMake2D(0, 0, dstWidth, dstHeight),
-                                          mip, layer, dstLevelData.get(), dstRowPitch);
+            ANGLE_TRY(UploadTextureContents(context, mActualTexture, angleFormat,
+                                            MTLRegionMake2D(0, 0, dstWidth, dstHeight), mip, layer,
+                                            dstLevelData.get(), dstRowPitch));
 
             prevLevelWidth    = dstWidth;
             prevLevelHeight   = dstHeight;
@@ -803,7 +876,8 @@ angle::Result TextureMtl::setSubImageImpl(const gl::Context *context,
     }
 
     // Upload to texture
-    image->replaceRegion(contextMtl, mtlRegion, 0, 0, pixels, sourceRowPitch);
+    ANGLE_TRY(UploadTextureContents(context, image, mFormat.actualAngleFormat(), mtlRegion, 0, 0,
+                                    pixels, sourceRowPitch));
 
     return angle::Result::Continue;
 }
@@ -843,7 +917,8 @@ angle::Result TextureMtl::convertAndSetSubImage(const gl::Context *context,
                           false, false, false);
 
         // Upload to texture
-        image->replaceRegion(contextMtl, mtlRow, 0, 0, conversionRow.data(), dstRowPitch);
+        ANGLE_TRY(UploadTextureContents(context, image, dstFormat, mtlRow, 0, 0,
+                                        conversionRow.data(), dstRowPitch));
     }
 
     return angle::Result::Continue;
@@ -1010,7 +1085,8 @@ angle::Result TextureMtl::copySubImageCPU(const gl::Context *context,
                                                  conversionRow.data()));
 
         // Upload to texture
-        image->replaceRegion(contextMtl, mtlDstRowArea, 0, 0, conversionRow.data(), dstRowPitch);
+        ANGLE_TRY(UploadTextureContents(context, image, dstFormat, mtlDstRowArea, 0, 0,
+                                        conversionRow.data(), dstRowPitch));
     }
 
     return angle::Result::Continue;
