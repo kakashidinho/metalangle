@@ -51,7 +51,7 @@ underway, and future plans include compute shader support (ES 3.1) and MacOS sup
 | Windows     |    complete    |    complete    |   complete    |   complete  |   complete  |             |
 | Linux       |                |                |   complete    |             |   complete  |             |
 | Mac OS X    |                |                |   complete    |             |             | in progress |
-| iOS         |                |                |               |             |             |   planned   |
+| iOS         |                |                |               |             |             | in progress |
 | Chrome OS   |                |                |               |   complete  |   planned   |             |
 | Android     |                |                |               |   complete  |   complete  |             |
 | Fuchsia     |                |                |               |             | in progress |             |
