@@ -939,6 +939,12 @@ void ContextMtl::present(const gl::Context *context, id<CAMetalDrawable> present
 
     if (hasStartedRenderPass(mDrawFramebuffer))
     {
+        // Always discard default FBO's depth stencil buffers at the end of the frame:
+        if (mDrawFramebuffer->isDefault())
+        {
+            constexpr GLenum dsAttachments[] = {GL_DEPTH, GL_STENCIL};
+            (void)mDrawFramebuffer->invalidate(context, 2, dsAttachments);
+        }
         mDrawFramebuffer->onFinishedDrawingToFrameBuffer(context, &mRenderEncoder);
     }
 
