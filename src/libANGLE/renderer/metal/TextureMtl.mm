@@ -10,6 +10,7 @@
 
 #include "libANGLE/renderer/metal/TextureMtl.h"
 
+#include "common/Color.h"
 #include "common/MemoryBuffer.h"
 #include "common/debug.h"
 #include "common/mathutil.h"
@@ -114,10 +115,176 @@ gl::TextureType GetTextureImageType(gl::TextureType texType)
     }
 }
 
+angle::Result UploadTextureContentsToStagingBuffer(ContextMtl *contextMtl,
+                                                   const angle::Format &textureAngleFormat,
+                                                   const angle::Format &stagingAngleFormat,
+                                                   const MTLSize &regionSize,
+                                                   const uint8_t *data,
+                                                   size_t bytesPerRow,
+                                                   size_t *bufferRowPitchOut,
+                                                   size_t *buffer2DImageSizeOut,
+                                                   mtl::BufferRef *bufferOut)
+{
+    // NOTE(hqle): 3D textures not supported yet.
+    ASSERT(regionSize.depth == 1);
+
+    size_t stagingBufferRowPitch    = regionSize.width * stagingAngleFormat.pixelBytes;
+    size_t stagingBuffer2DImageSize = stagingBufferRowPitch * regionSize.height;
+    size_t stagingBufferSize        = stagingBuffer2DImageSize * regionSize.depth;
+    mtl::BufferRef stagingBuffer;
+    ANGLE_TRY(mtl::Buffer::MakeBuffer(contextMtl, stagingBufferSize, nullptr, &stagingBuffer));
+
+    uint8_t *pdst = stagingBuffer->map(contextMtl);
+
+    if (textureAngleFormat.id == stagingAngleFormat.id)
+    {
+        const uint8_t *psrc = data;
+        for (NSUInteger r = 0; r < regionSize.height; ++r)
+        {
+            memcpy(pdst, psrc, stagingBufferRowPitch);
+            pdst += stagingBufferRowPitch;
+            psrc += bytesPerRow;
+        }
+    }
+    else
+    {
+        // This is only for depth & stencil case.
+        ASSERT(textureAngleFormat.depthBits || textureAngleFormat.stencilBits);
+        ASSERT(textureAngleFormat.pixelReadFunction && stagingAngleFormat.pixelWriteFunction);
+
+        // cache to store read result of source pixel
+        angle::DepthStencil depthStencilData;
+        auto sourcePixelReadData = reinterpret_cast<uint8_t *>(&depthStencilData);
+        ASSERT(textureAngleFormat.pixelBytes <= sizeof(depthStencilData));
+
+        for (NSUInteger r = 0; r < regionSize.height; ++r)
+        {
+            for (NSUInteger c = 0; c < regionSize.width; ++c)
+            {
+                const uint8_t *sourcePixelData =
+                    data + r * bytesPerRow + c * textureAngleFormat.pixelBytes;
+
+                uint8_t *destPixelData =
+                    pdst + r * stagingBufferRowPitch + c * stagingAngleFormat.pixelBytes;
+
+                textureAngleFormat.pixelReadFunction(sourcePixelData, sourcePixelReadData);
+                stagingAngleFormat.pixelWriteFunction(sourcePixelReadData, destPixelData);
+            }
+        }
+    }
+
+    stagingBuffer->unmap(contextMtl);
+
+    *bufferOut            = stagingBuffer;
+    *bufferRowPitchOut    = stagingBufferRowPitch;
+    *buffer2DImageSizeOut = stagingBuffer2DImageSize;
+
+    return angle::Result::Continue;
+}
+
+angle::Result UploadTextureContentsWithStagingBuffer(ContextMtl *contextMtl,
+                                                     const mtl::TextureRef &texture,
+                                                     const angle::Format &textureAngleFormat,
+                                                     MTLRegion region,
+                                                     uint32_t mipmapLevel,
+                                                     uint32_t slice,
+                                                     const uint8_t *data,
+                                                     size_t bytesPerRow)
+{
+    ASSERT(texture && texture->valid());
+
+    ASSERT(!texture->isCPUAccessible());
+
+    ASSERT(!textureAngleFormat.depthBits || !textureAngleFormat.stencilBits);
+
+    // Compressed texture is not supporte atm
+    ASSERT(!textureAngleFormat.isBlock);
+
+    // Copy data to staging buffer
+    size_t stagingBufferRowPitch;
+    size_t stagingBuffer2DImageSize;
+    mtl::BufferRef stagingBuffer;
+    ANGLE_TRY(UploadTextureContentsToStagingBuffer(
+        contextMtl, textureAngleFormat, textureAngleFormat, region.size, data, bytesPerRow,
+        &stagingBufferRowPitch, &stagingBuffer2DImageSize, &stagingBuffer));
+
+    // Copy staging buffer to texture.
+    mtl::BlitCommandEncoder *encoder = contextMtl->getBlitCommandEncoder();
+    encoder->copyBufferToTexture(stagingBuffer, 0, stagingBufferRowPitch, stagingBuffer2DImageSize,
+                                 region.size, texture, slice, mipmapLevel, region.origin,
+                                 MTLBlitOptionNone);
+
+    return angle::Result::Continue;
+}
+
+// Packed depth stencil upload using staging buffer
+angle::Result UploadPackedDepthStencilTextureContentsWithStagingBuffer(
+    ContextMtl *contextMtl,
+    const mtl::TextureRef &texture,
+    const angle::Format &textureAngleFormat,
+    MTLRegion region,
+    uint32_t mipmapLevel,
+    uint32_t slice,
+    const uint8_t *data,
+    size_t bytesPerRow)
+{
+    ASSERT(texture && texture->valid());
+
+    ASSERT(!texture->isCPUAccessible());
+
+    ASSERT(textureAngleFormat.depthBits && textureAngleFormat.stencilBits);
+
+    // We have to split the depth & stencil data into 2 buffers.
+    angle::FormatID stagingDepthBufferFormatId;
+    angle::FormatID stagingStencilBufferFormatId;
+
+    switch (textureAngleFormat.id)
+    {
+        case angle::FormatID::D24_UNORM_S8_UINT:
+            stagingDepthBufferFormatId   = angle::FormatID::D24_UNORM_X8_UINT;
+            stagingStencilBufferFormatId = angle::FormatID::S8_UINT;
+            break;
+        case angle::FormatID::D32_FLOAT_S8X24_UINT:
+            stagingDepthBufferFormatId   = angle::FormatID::D32_FLOAT;
+            stagingStencilBufferFormatId = angle::FormatID::S8_UINT;
+            break;
+        default:
+            UNREACHABLE();
+            ANGLE_MTL_TRY(contextMtl, false);
+    }
+
+    const angle::Format &angleStagingDepthFormat = angle::Format::Get(stagingDepthBufferFormatId);
+    const angle::Format &angleStagingStencilFormat =
+        angle::Format::Get(stagingStencilBufferFormatId);
+
+    size_t stagingDepthBufferRowPitch, stagingStencilBufferRowPitch;
+    size_t stagingDepthBuffer2DImageSize, stagingStencilBuffer2DImageSize;
+    mtl::BufferRef stagingDepthbuffer, stagingStencilBuffer;
+
+    ANGLE_TRY(UploadTextureContentsToStagingBuffer(
+        contextMtl, textureAngleFormat, angleStagingDepthFormat, region.size, data, bytesPerRow,
+        &stagingDepthBufferRowPitch, &stagingDepthBuffer2DImageSize, &stagingDepthbuffer));
+
+    ANGLE_TRY(UploadTextureContentsToStagingBuffer(
+        contextMtl, textureAngleFormat, angleStagingStencilFormat, region.size, data, bytesPerRow,
+        &stagingStencilBufferRowPitch, &stagingStencilBuffer2DImageSize, &stagingStencilBuffer));
+
+    mtl::BlitCommandEncoder *encoder = contextMtl->getBlitCommandEncoder();
+
+    encoder->copyBufferToTexture(stagingDepthbuffer, 0, stagingDepthBufferRowPitch,
+                                 stagingDepthBuffer2DImageSize, region.size, texture, slice,
+                                 mipmapLevel, region.origin, MTLBlitOptionDepthFromDepthStencil);
+    encoder->copyBufferToTexture(stagingStencilBuffer, 0, stagingStencilBufferRowPitch,
+                                 stagingStencilBuffer2DImageSize, region.size, texture, slice,
+                                 mipmapLevel, region.origin, MTLBlitOptionStencilFromDepthStencil);
+
+    return angle::Result::Continue;
+}
+
 angle::Result UploadTextureContents(const gl::Context *context,
                                     const mtl::TextureRef &texture,
                                     const angle::Format &textureAngleFormat,
-                                    MTLRegion region,
+                                    const MTLRegion &region,
                                     uint32_t mipmapLevel,
                                     uint32_t slice,
                                     const uint8_t *data,
@@ -135,53 +302,18 @@ angle::Result UploadTextureContents(const gl::Context *context,
     }
 
     // Texture is not CPU accessible, we need to use staging buffer
-
-    // Compressed texture is not supporte atm
-    ASSERT(!textureAngleFormat.isBlock);
-
-    // Copy data to staging buffer
-    size_t stagingBufferRowPitch    = region.size.width * textureAngleFormat.pixelBytes;
-    size_t stagingBuffer2DImageSize = stagingBufferRowPitch * region.size.height;
-    size_t stagingBufferSize        = stagingBuffer2DImageSize * region.size.depth;
-    mtl::BufferRef stagingBuffer;
-    ANGLE_TRY(mtl::Buffer::MakeBuffer(contextMtl, stagingBufferSize, nullptr, &stagingBuffer));
-
-    uint8_t *pdst       = stagingBuffer->map(contextMtl);
-    const uint8_t *psrc = data;
-
-    for (NSUInteger d = 0; d < region.size.depth; ++d)
-    {
-        for (NSUInteger r = 0; r < region.size.height; ++r)
-        {
-            memcpy(pdst, psrc, stagingBufferRowPitch);
-            pdst += stagingBufferRowPitch;
-            psrc += bytesPerRow;
-        }
-    }
-
-    stagingBuffer->unmap(contextMtl);
-
-    // Copy staging buffer to texture.
-    mtl::BlitCommandEncoder *encoder = contextMtl->getBlitCommandEncoder();
     if (textureAngleFormat.depthBits && textureAngleFormat.stencilBits)
     {
-        // This is packed depth stencil
-
-        encoder->copyBufferToTexture(
-            stagingBuffer, 0, stagingBufferRowPitch, stagingBuffer2DImageSize, region.size, texture,
-            slice, mipmapLevel, region.origin, MTLBlitOptionDepthFromDepthStencil);
-        encoder->copyBufferToTexture(
-            stagingBuffer, 0, stagingBufferRowPitch, stagingBuffer2DImageSize, region.size, texture,
-            slice, mipmapLevel, region.origin, MTLBlitOptionStencilFromDepthStencil);
+        ANGLE_TRY(UploadPackedDepthStencilTextureContentsWithStagingBuffer(
+            contextMtl, texture, textureAngleFormat, region, mipmapLevel, slice, data,
+            bytesPerRow));
     }
     else
     {
-        encoder->copyBufferToTexture(stagingBuffer, 0, stagingBufferRowPitch,
-                                     stagingBuffer2DImageSize, region.size, texture, slice,
-                                     mipmapLevel, region.origin, MTLBlitOptionNone);
+        ANGLE_TRY(UploadTextureContentsWithStagingBuffer(contextMtl, texture, textureAngleFormat,
+                                                         region, mipmapLevel, slice, data,
+                                                         bytesPerRow));
     }
-
-    contextMtl->flushCommandBufer();
 
     return angle::Result::Continue;
 }

@@ -704,14 +704,14 @@ TEST_P(DepthStencilFormatsTest, VerifyDepthStencilUploadData)
     glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
     glStencilFunc(GL_EQUAL, kStencilRef, 0xFF);
 
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb);
+    glBindFramebuffer(GL_FRAMEBUFFER, fb);
 
     glClear(GL_COLOR_BUFFER_BIT);
 
     drawQuad(program.get(), essl1_shaders::PositionAttrib(), 1.0f);
     ASSERT_GL_NO_ERROR();
 
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, fb);
+    glBindFramebuffer(GL_FRAMEBUFFER, fb);
     EXPECT_PIXEL_RECT_EQ(0, 0, getWindowWidth(), getWindowHeight(), GLColor::red);
     ASSERT_GL_NO_ERROR();
 
