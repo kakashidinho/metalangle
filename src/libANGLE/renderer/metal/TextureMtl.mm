@@ -327,8 +327,6 @@ TextureMtl::~TextureMtl() = default;
 
 void TextureMtl::onDestroy(const gl::Context *context)
 {
-    mMetalSamplerState = nil;
-
     releaseTexture(true);
 }
 
@@ -336,7 +334,8 @@ void TextureMtl::releaseTexture(bool releaseImages)
 {
     mFormat = mtl::Format();
 
-    mActualTexture = nullptr;
+    mActualTexture     = nullptr;
+    mMetalSamplerState = nil;
 
     for (RenderTargetMtl &rt : mLayeredRenderTargets)
     {
@@ -433,6 +432,42 @@ angle::Result TextureMtl::ensureTextureCreated(const gl::Context *context)
             mTexImages[layer][mip] = mActualTexture->createSliceMipView(layer, mip);
         }
     }
+
+    // Create sampler state
+    ANGLE_TRY(ensureSamplerStateCreated(context));
+
+    return angle::Result::Continue;
+}
+
+angle::Result TextureMtl::ensureSamplerStateCreated(const gl::Context *context)
+{
+    if (mMetalSamplerState)
+    {
+        return angle::Result::Continue;
+    }
+
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+    DisplayMtl *diplayMtl  = contextMtl->getDisplay();
+
+    mtl::SamplerDesc samplerDesc(mState.getSamplerState());
+
+    if (mFormat.actualAngleFormat().depthBits)
+    {
+#if !TARGET_OS_OSX && !TARGET_OS_MACCATALYST
+        // Only MacOS supports filtering for depth textures, we need to convert to nearest here.
+        samplerDesc.minFilter = MTLSamplerMinMagFilterNearest;
+        samplerDesc.magFilter = MTLSamplerMinMagFilterNearest;
+        if (samplerDesc.mipFilter != MTLSamplerMipFilterNotMipmapped)
+        {
+            samplerDesc.mipFilter = MTLSamplerMipFilterNearest;
+        }
+
+        samplerDesc.maxAnisotropy = 1;
+#endif
+    }
+
+    mMetalSamplerState =
+        diplayMtl->getStateCache().getSamplerState(diplayMtl->getMetalDevice(), samplerDesc);
 
     return angle::Result::Continue;
 }
@@ -782,27 +817,38 @@ angle::Result TextureMtl::getAttachmentRenderTarget(const gl::Context *context,
 angle::Result TextureMtl::syncState(const gl::Context *context,
                                     const gl::Texture::DirtyBits &dirtyBits)
 {
-    ContextMtl *contextMtl = mtl::GetImpl(context);
-
-    if (dirtyBits.none() && mMetalSamplerState)
+    for (size_t dirtyBit : dirtyBits)
     {
-        return angle::Result::Continue;
-    }
-
-    DisplayMtl *display = contextMtl->getDisplay();
-
-    if (dirtyBits.test(gl::Texture::DIRTY_BIT_SWIZZLE_RED) ||
-        dirtyBits.test(gl::Texture::DIRTY_BIT_SWIZZLE_GREEN) ||
-        dirtyBits.test(gl::Texture::DIRTY_BIT_SWIZZLE_BLUE) ||
-        dirtyBits.test(gl::Texture::DIRTY_BIT_SWIZZLE_ALPHA))
-    {
-        // NOTE(hqle): Metal doesn't support swizzle on many devices. Skip for now.
+        switch (dirtyBit)
+        {
+            case gl::Texture::DIRTY_BIT_MIN_FILTER:
+            case gl::Texture::DIRTY_BIT_MAG_FILTER:
+            case gl::Texture::DIRTY_BIT_WRAP_S:
+            case gl::Texture::DIRTY_BIT_WRAP_T:
+            case gl::Texture::DIRTY_BIT_WRAP_R:
+            case gl::Texture::DIRTY_BIT_MAX_ANISOTROPY:
+            case gl::Texture::DIRTY_BIT_MIN_LOD:
+            case gl::Texture::DIRTY_BIT_MAX_LOD:
+            case gl::Texture::DIRTY_BIT_COMPARE_MODE:
+            case gl::Texture::DIRTY_BIT_COMPARE_FUNC:
+            case gl::Texture::DIRTY_BIT_SRGB_DECODE:
+            case gl::Texture::DIRTY_BIT_BORDER_COLOR:
+                // Recreate sampler state
+                mMetalSamplerState = nil;
+                break;
+            case gl::Texture::DIRTY_BIT_SWIZZLE_RED:
+            case gl::Texture::DIRTY_BIT_SWIZZLE_GREEN:
+            case gl::Texture::DIRTY_BIT_SWIZZLE_BLUE:
+            case gl::Texture::DIRTY_BIT_SWIZZLE_ALPHA:
+                // NOTE(hqle): ES 3.0.
+                break;
+            default:
+                break;
+        }
     }
 
     ANGLE_TRY(ensureTextureCreated(context));
-
-    mMetalSamplerState = display->getStateCache().getSamplerState(
-        display->getMetalDevice(), mtl::SamplerDesc(mState.getSamplerState()));
+    ANGLE_TRY(ensureSamplerStateCreated(context));
 
     return angle::Result::Continue;
 }
