@@ -24,9 +24,7 @@ class SurfaceMtl;
 class FramebufferMtl : public FramebufferImpl
 {
   public:
-    explicit FramebufferMtl(const gl::FramebufferState &state,
-                            bool flipY,
-                            bool alwaysDiscardDepthStencil);
+    explicit FramebufferMtl(const gl::FramebufferState &state, bool flipY, bool defaultFbo);
     ~FramebufferMtl() override;
     void destroy(const gl::Context *context) override;
 
@@ -86,6 +84,7 @@ class FramebufferMtl : public FramebufferImpl
     RenderTargetMtl *getColorReadRenderTarget() const;
 
     bool flipY() const { return mFlipY; }
+    bool isDefault() const { return mIsDefaultFBO; }
 
     gl::Rectangle getCompleteRenderArea() const;
 
@@ -146,7 +145,7 @@ class FramebufferMtl : public FramebufferImpl
     RenderTargetMtl *mStencilRenderTarget = nullptr;
     bool mDiscardStencil                  = false;
     mtl::RenderPassDesc mRenderPassDesc;
-    const bool mAlwaysDiscardDepthStencil;
+    const bool mIsDefaultFBO;
     const bool mFlipY = false;
 };
 }  // namespace rx
