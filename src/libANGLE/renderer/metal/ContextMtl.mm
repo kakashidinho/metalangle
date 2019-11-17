@@ -1371,6 +1371,9 @@ angle::Result ContextMtl::setupDraw(const gl::Context *context,
     {
         switch (bit)
         {
+            case DIRTY_BIT_TEXTURES:
+                // Already handled.
+                break;
             case DIRTY_BIT_DEFAULT_ATTRIBS:
                 ANGLE_TRY(handleDirtyDefaultAttribs(context));
                 break;
@@ -1398,16 +1401,25 @@ angle::Result ContextMtl::setupDraw(const gl::Context *context,
             case DIRTY_BIT_SCISSOR:
                 mRenderEncoder.setScissorRect(mScissorRect);
                 break;
+            case DIRTY_BIT_DRAW_FRAMEBUFFER:
+                // Already handled.
+                break;
             case DIRTY_BIT_CULL_MODE:
                 mRenderEncoder.setCullMode(mCullMode);
                 break;
             case DIRTY_BIT_WINDING:
                 mRenderEncoder.setFrontFacingWinding(mWinding);
                 break;
+            case DIRTY_BIT_RENDER_PIPELINE:
+                // Already handled. See checkIfPipelineChanged().
+                break;
+            default:
+                UNREACHABLE();
+                break;
         }
-
-        mDirtyBits.reset(bit);
     }
+
+    mDirtyBits.reset();
 
     ANGLE_TRY(mProgram->setupDraw(context, &mRenderEncoder, changedPipelineDesc, textureChanged));
 
@@ -1489,7 +1501,6 @@ angle::Result ContextMtl::handleDirtyActiveTextures(const gl::Context *context)
         // The binding of this texture will be done by ProgramMtl.
     }
 
-    mDirtyBits.reset(DIRTY_BIT_TEXTURES);
     return angle::Result::Continue;
 }
 
@@ -1505,7 +1516,6 @@ angle::Result ContextMtl::handleDirtyDefaultAttribs(const gl::Context *context)
     mRenderEncoder.setVertexData(mDefaultAttributes, mtl::kDefaultAttribsBindingIndex);
 
     mDirtyDefaultAttribsMask.reset();
-    mDirtyBits.reset(DIRTY_BIT_DEFAULT_ATTRIBS);
     return angle::Result::Continue;
 }
 
@@ -1536,7 +1546,6 @@ angle::Result ContextMtl::handleDirtyDriverUniforms(const gl::Context *context)
     mRenderEncoder.setFragmentData(mDriverUniforms, mtl::kDriverUniformsBindingIndex);
     mRenderEncoder.setVertexData(mDriverUniforms, mtl::kDriverUniformsBindingIndex);
 
-    mDirtyBits.reset(DIRTY_BIT_DRIVER_UNIFORMS);
     return angle::Result::Continue;
 }
 
@@ -1563,7 +1572,6 @@ angle::Result ContextMtl::handleDirtyDepthStencilState(const gl::Context *contex
     // Apply depth stencil state
     mRenderEncoder.setDepthStencilState(getDisplay()->getDepthStencilState(dsDesc));
 
-    mDirtyBits.reset(DIRTY_BIT_DEPTH_STENCIL_DESC);
     return angle::Result::Continue;
 }
 
@@ -1581,7 +1589,6 @@ angle::Result ContextMtl::handleDirtyDepthBias(const gl::Context *context)
                                     0);
     }
 
-    mDirtyBits.reset(DIRTY_BIT_DEPTH_BIAS);
     return angle::Result::Continue;
 }
 
