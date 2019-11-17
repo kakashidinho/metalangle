@@ -228,7 +228,8 @@ class TextureMtl : public TextureImpl
     using ImagesMipChain = std::map<int, mtl::TextureRef>;
 
     mtl::Format mFormat;
-    mtl::TextureRef mActualTexture;
+    // The real texture used by Metal draw calls.
+    mtl::TextureRef mNativeTexture;
     id<MTLSamplerState> mMetalSamplerState = nil;
 
     std::vector<RenderTargetMtl> mLayeredRenderTargets;
