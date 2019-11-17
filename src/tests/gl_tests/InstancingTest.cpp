@@ -574,8 +574,8 @@ void main()
     }
 
     glClear(GL_COLOR_BUFFER_BIT);
-    glDrawElementsInstancedANGLE(GL_LINE_LOOP, ArraySize(lineloopAsStripIndices) - 1, GL_UNSIGNED_SHORT,
-                                 0, instances);
+    glDrawElementsInstancedANGLE(GL_LINE_LOOP, ArraySize(lineloopAsStripIndices) - 1,
+                                 GL_UNSIGNED_SHORT, 0, instances);
 
     for (int y = 0; y < getWindowHeight(); ++y)
     {
