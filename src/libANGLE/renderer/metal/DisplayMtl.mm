@@ -272,8 +272,13 @@ egl::ConfigSet DisplayMtl::generateConfigs()
 
     config.surfaceType = EGL_WINDOW_BIT;
 
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
+    config.minSwapInterval = 0;
+    config.maxSwapInterval = 1;
+#else
     config.minSwapInterval = 1;
     config.maxSwapInterval = 1;
+#endif
 
     config.renderTargetFormat = GL_RGBA8;
     config.depthStencilFormat = GL_DEPTH24_STENCIL8;
