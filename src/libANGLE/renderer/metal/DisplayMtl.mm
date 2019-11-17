@@ -355,6 +355,7 @@ const gl::Extensions &DisplayMtl::getNativeExtensions() const
 
 const mtl::TextureRef &DisplayMtl::getNullTexture(const gl::Context *context, gl::TextureType type)
 {
+    // TODO(hqle): Use rx::IncompleteTextureSet.
     ContextMtl *contextMtl = mtl::GetImpl(context);
     if (!mNullTextures[type])
     {
