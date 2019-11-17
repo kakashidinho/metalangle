@@ -735,7 +735,7 @@ TEST_P(DepthStencilFormatsTest, VerifyDepthStencilUploadData)
     EXPECT_PIXEL_RECT_EQ(0, 0, getWindowWidth(), getWindowHeight(), GLColor::black);
 }
 
-// Verify that stencil component of depth texture is uploaded
+// Verify that depth texture's data can be uploaded correctly
 TEST_P(DepthStencilFormatsTest, VerifyDepth32UploadData)
 {
     ANGLE_SKIP_TEST_IF(!IsGLExtensionEnabled("GL_OES_depth_texture"));
