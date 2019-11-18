@@ -77,6 +77,11 @@ class GLVertexArray : public GLWrapper
   public:
     GLVertexArray() : GLWrapper(&glGenVertexArrays, &glDeleteVertexArrays) {}
 };
+class GLVertexArrayOES : public GLWrapper
+{
+  public:
+    GLVertexArrayOES() : GLWrapper(&glGenVertexArraysOES, &glDeleteVertexArraysOES) {}
+};
 class GLBuffer : public GLWrapper
 {
   public:
