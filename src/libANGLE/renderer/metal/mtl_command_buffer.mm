@@ -11,6 +11,9 @@
 #include "libANGLE/renderer/metal/mtl_command_buffer.h"
 
 #include <cassert>
+#if ANGLE_MTL_SIMULATE_DISCARD_FRAMEBUFFER
+#    include <random>
+#endif
 
 #include "common/debug.h"
 #include "libANGLE/renderer/metal/mtl_resources.h"
@@ -342,6 +345,11 @@ RenderCommandEncoder::~RenderCommandEncoder() {}
 
 void RenderCommandEncoder::endEncoding()
 {
+    endEncodingImpl(true);
+}
+
+void RenderCommandEncoder::endEncodingImpl(bool considerDiscardSimulation)
+{
     if (!valid())
         return;
 
@@ -385,6 +393,13 @@ void RenderCommandEncoder::endEncoding()
 
     CommandEncoder::endEncoding();
 
+#if ANGLE_MTL_SIMULATE_DISCARD_FRAMEBUFFER
+    if (considerDiscardSimulation)
+    {
+        simulateDiscardFramebuffer();
+    }
+#endif
+
     // reset state
     mRenderPassDesc = RenderPassDesc();
 }
@@ -403,6 +418,60 @@ inline void RenderCommandEncoder::initWriteDependencyAndStoreAction(const Textur
         // Texture is invalid, use don'tcare store action
         *storeActionOut = MTLStoreActionDontCare;
     }
+}
+
+void RenderCommandEncoder::simulateDiscardFramebuffer()
+{
+    // Simulate true framebuffer discard operation by clearing the framebuffer
+#if ANGLE_MTL_SIMULATE_DISCARD_FRAMEBUFFER
+    std::random_device rd;   // Will be used to obtain a seed for the random number engine
+    std::mt19937 gen(rd());  // Standard mersenne_twister_engine seeded with rd()
+    std::uniform_real_distribution<float> dis(0.0, 1.0f);
+    bool hasDiscard = false;
+    for (uint32_t i = 0; i < mRenderPassDesc.numColorAttachments; ++i)
+    {
+        if (mRenderPassDesc.colorAttachments[i].storeAction == MTLStoreActionDontCare)
+        {
+            hasDiscard                                     = true;
+            mRenderPassDesc.colorAttachments[i].loadAction = MTLLoadActionClear;
+            mRenderPassDesc.colorAttachments[i].clearColor =
+                MTLClearColorMake(dis(gen), dis(gen), dis(gen), dis(gen));
+        }
+        else
+        {
+            mRenderPassDesc.colorAttachments[i].loadAction = MTLLoadActionLoad;
+        }
+    }
+
+    if (mRenderPassDesc.depthAttachment.storeAction == MTLStoreActionDontCare)
+    {
+        hasDiscard                                 = true;
+        mRenderPassDesc.depthAttachment.loadAction = MTLLoadActionClear;
+        mRenderPassDesc.depthAttachment.clearDepth = dis(gen);
+    }
+    else
+    {
+        mRenderPassDesc.depthAttachment.loadAction = MTLLoadActionLoad;
+    }
+
+    if (mRenderPassDesc.stencilAttachment.storeAction == MTLStoreActionDontCare)
+    {
+        hasDiscard                                     = true;
+        mRenderPassDesc.stencilAttachment.loadAction   = MTLLoadActionClear;
+        mRenderPassDesc.stencilAttachment.clearStencil = rand();
+    }
+    else
+    {
+        mRenderPassDesc.stencilAttachment.loadAction = MTLLoadActionLoad;
+    }
+
+    if (hasDiscard)
+    {
+        auto tmpDesc = mRenderPassDesc;
+        restart(tmpDesc);
+        endEncodingImpl(false);
+    }
+#endif  // ANGLE_MTL_SIMULATE_DISCARD_FRAMEBUFFER
 }
 
 RenderCommandEncoder &RenderCommandEncoder::restart(const RenderPassDesc &desc)
