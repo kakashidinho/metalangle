@@ -45,8 +45,8 @@ const gl::InternalFormat &GetReadAttachmentInfo(const gl::Context *context,
 }
 
 // FramebufferMtl implementation
-FramebufferMtl::FramebufferMtl(const gl::FramebufferState &state, bool flipY, bool isDefault)
-    : FramebufferImpl(state), mIsDefaultFBO(isDefault), mFlipY(flipY)
+FramebufferMtl::FramebufferMtl(const gl::FramebufferState &state, bool flipY)
+    : FramebufferImpl(state), mFlipY(flipY)
 {
     reset();
 }
@@ -59,12 +59,7 @@ void FramebufferMtl::reset()
     {
         rt = nullptr;
     }
-    for (auto &discardColor : mDiscardColors)
-    {
-        discardColor = false;
-    }
     mDepthRenderTarget = mStencilRenderTarget = nullptr;
-    mDiscardDepth = mDiscardStencil = false;
 }
 
 void FramebufferMtl::destroy(const gl::Context *context)
@@ -340,53 +335,66 @@ const mtl::RenderPassDesc &FramebufferMtl::getRenderPassDesc(ContextMtl *context
     return mRenderPassDesc;
 }
 
-void FramebufferMtl::onFinishedDrawingToFrameBuffer(const gl::Context *context,
-                                                    mtl::RenderCommandEncoder *encoder)
+void FramebufferMtl::onStartedDrawingToFrameBuffer(const gl::Context *context)
 {
-    if (!encoder->valid())
+    // Compute loadOp based on previous storeOp and reset storeOp flags:
+    for (mtl::RenderPassColorAttachmentDesc &colorAttachment : mRenderPassDesc.colorAttachments)
     {
-        return;
-    }
-
-    ContextMtl *contextMtl = mtl::GetImpl(context);
-
-    ASSERT(encoder->renderPassDesc().equalIgnoreLoadStoreOptions(mRenderPassDesc));
-
-    for (uint32_t i = 0; i < mRenderPassDesc.numColorAttachments; ++i)
-    {
-        if (mDiscardColors[i])
+        if (colorAttachment.storeAction == MTLStoreActionDontCare)
         {
-            encoder->setColorStoreAction(MTLStoreActionDontCare, i);
+            // If we previously discarded attachment's content, then don't need to load it.
+            colorAttachment.loadAction = MTLLoadActionDontCare;
         }
+        else
+        {
+            colorAttachment.loadAction = MTLLoadActionLoad;
+        }
+        colorAttachment.storeAction = MTLStoreActionStore;  // Default action is store
     }
-    encoder->setDepthStencilStoreAction(
-        (mDiscardDepth) ? MTLStoreActionDontCare : MTLStoreActionStore,
-        (mDiscardStencil) ? MTLStoreActionDontCare : MTLStoreActionStore);
-
-    contextMtl->endEncoding(encoder);
-
-    // Reset discard flags:
-    for (auto &discardColor : mDiscardColors)
+    // Depth load/store
+    if (mRenderPassDesc.depthAttachment.storeAction == MTLStoreActionDontCare)
     {
-        discardColor = false;
+        mRenderPassDesc.depthAttachment.loadAction = MTLLoadActionDontCare;
     }
-    mDiscardDepth = mDiscardStencil = false;
+    else
+    {
+        mRenderPassDesc.depthAttachment.loadAction = MTLLoadActionLoad;
+    }
+    mRenderPassDesc.depthAttachment.storeAction = MTLStoreActionStore;
+
+    // Stencil load/store
+    if (mRenderPassDesc.stencilAttachment.storeAction == MTLStoreActionDontCare)
+    {
+        mRenderPassDesc.stencilAttachment.loadAction = MTLLoadActionDontCare;
+    }
+    else
+    {
+        mRenderPassDesc.stencilAttachment.loadAction = MTLLoadActionLoad;
+    }
+    mRenderPassDesc.stencilAttachment.storeAction = MTLStoreActionStore;
 }
 
 angle::Result FramebufferMtl::updateColorRenderTarget(const gl::Context *context,
                                                       size_t colorIndexGL)
 {
+    ASSERT(colorIndexGL < mtl::kMaxRenderTargets);
+    // Reset load store action
+    mRenderPassDesc.colorAttachments[colorIndexGL].reset();
     return updateCachedRenderTarget(context, mState.getColorAttachment(colorIndexGL),
                                     &mColorRenderTargets[colorIndexGL]);
 }
 
 angle::Result FramebufferMtl::updateDepthRenderTarget(const gl::Context *context)
 {
+    // Reset load store action
+    mRenderPassDesc.depthAttachment.reset();
     return updateCachedRenderTarget(context, mState.getDepthAttachment(), &mDepthRenderTarget);
 }
 
 angle::Result FramebufferMtl::updateStencilRenderTarget(const gl::Context *context)
 {
+    // Reset load store action
+    mRenderPassDesc.stencilAttachment.reset();
     return updateCachedRenderTarget(context, mState.getStencilAttachment(), &mStencilRenderTarget);
 }
 
@@ -425,19 +433,16 @@ angle::Result FramebufferMtl::prepareRenderPass(const gl::Context *context,
 
         mtl::RenderPassColorAttachmentDesc &colorAttachment =
             desc.colorAttachments[attachmentIdx++];
-        colorAttachment.reset();
         colorRenderTarget->toRenderPassAttachmentDesc(&colorAttachment);
     }
 
     if (mDepthRenderTarget)
     {
-        desc.depthAttachment.reset();
         mDepthRenderTarget->toRenderPassAttachmentDesc(&desc.depthAttachment);
     }
 
     if (mStencilRenderTarget)
     {
-        desc.stencilAttachment.reset();
         mStencilRenderTarget->toRenderPassAttachmentDesc(&desc.stencilAttachment);
     }
 
@@ -480,17 +485,18 @@ angle::Result FramebufferMtl::clearWithLoadOp(const gl::Context *context,
         {
             if (startedRenderPass)
             {
+                // Render pass already started, and we want to clear this buffer,
+                // then discard its content before clearing.
                 encoder->setColorStoreAction(MTLStoreActionDontCare, attachmentIdx);
             }
             colorAttachment.loadAction = MTLLoadActionClear;
             overrideClearColor(texture, clearOpts.clearColor.value(), &colorAttachment.clearColor);
         }
-        else
+        else if (startedRenderPass)
         {
-            if (startedRenderPass)
-            {
-                encoder->setColorStoreAction(MTLStoreActionStore, attachmentIdx);
-            }
+            // If render pass already started and we don't want to clear this buffer,
+            // then store it with current render encoder and load it before clearing step
+            encoder->setColorStoreAction(MTLStoreActionStore, attachmentIdx);
             colorAttachment.loadAction = MTLLoadActionLoad;
         }
     }
@@ -502,8 +508,10 @@ angle::Result FramebufferMtl::clearWithLoadOp(const gl::Context *context,
         tempDesc.depthAttachment.loadAction = MTLLoadActionClear;
         tempDesc.depthAttachment.clearDepth = clearOpts.clearDepth.value();
     }
-    else
+    else if (startedRenderPass)
     {
+        // If render pass already started and we don't want to clear this buffer,
+        // then store it with current render encoder and load it before clearing step
         preClearDethpStoreAction            = MTLStoreActionStore;
         tempDesc.depthAttachment.loadAction = MTLLoadActionLoad;
     }
@@ -514,13 +522,15 @@ angle::Result FramebufferMtl::clearWithLoadOp(const gl::Context *context,
         tempDesc.stencilAttachment.loadAction   = MTLLoadActionClear;
         tempDesc.stencilAttachment.clearStencil = clearOpts.clearStencil.value();
     }
-    else
+    else if (startedRenderPass)
     {
+        // If render pass already started and we don't want to clear this buffer,
+        // then store it with current render encoder and load it before clearing step
         preClearStencilStoreAction            = MTLStoreActionStore;
         tempDesc.stencilAttachment.loadAction = MTLLoadActionLoad;
     }
 
-    // End current render pass.
+    // End current render encoder.
     if (startedRenderPass)
     {
         encoder->setDepthStencilStoreAction(preClearDethpStoreAction, preClearStencilStoreAction);
@@ -539,30 +549,9 @@ angle::Result FramebufferMtl::clearWithDraw(const gl::Context *context,
 {
     ContextMtl *contextMtl = mtl::GetImpl(context);
     DisplayMtl *display    = contextMtl->getDisplay();
-    mtl::RenderPassDesc rpDesc;
-    ANGLE_TRY(prepareRenderPass(context, mState.getEnabledDrawBuffers(), &rpDesc));
 
-    for (uint32_t i = 0, attachmentIdx = 0; i < rpDesc.numColorAttachments; ++i, ++attachmentIdx)
-    {
-        mtl::RenderPassColorAttachmentDesc &colorAttachment =
-            rpDesc.colorAttachments[attachmentIdx];
-
-        // Need to preserve previous content, since we only clear a portion of the framebuffer
-        colorAttachment.loadAction = MTLLoadActionLoad;
-    }
-
-    if (rpDesc.depthAttachment.texture)
-    {
-        rpDesc.depthAttachment.loadAction = MTLLoadActionLoad;
-    }
-
-    if (rpDesc.stencilAttachment.texture)
-    {
-        rpDesc.stencilAttachment.loadAction = MTLLoadActionLoad;
-    }
-
-    // Start new render encoder with loadOp=Load
-    mtl::RenderCommandEncoder *encoder = contextMtl->getRenderCommandEncoder(rpDesc);
+    // Start new render encoder if not already.
+    mtl::RenderCommandEncoder *encoder = contextMtl->getRenderCommandEncoder(mRenderPassDesc);
 
     display->getUtils().clearWithDraw(context, encoder, clearOpts);
 
@@ -651,24 +640,41 @@ angle::Result FramebufferMtl::invalidateImpl(ContextMtl *contextMtl,
     }
 
     // Set the appropriate storeOp for attachments.
-    size_t attachmentIdx = 0;
-    for (size_t colorIndexGL : mState.getEnabledDrawBuffers())
+    // If we already start the render pass, then need to set the store action now.
+    bool renderPassStarted = contextMtl->hasStartedRenderPass(mRenderPassDesc);
+    mtl::RenderCommandEncoder *encoder =
+        renderPassStarted ? contextMtl->getRenderCommandEncoder() : nullptr;
+
+    for (uint32_t i = 0; i < mRenderPassDesc.numColorAttachments; ++i)
     {
-        if (mColorRenderTargets[colorIndexGL] && invalidateColorBuffers.test(colorIndexGL))
+        if (invalidateColorBuffers.test(i))
         {
-            mDiscardColors[attachmentIdx] = true;
+            mtl::RenderPassColorAttachmentDesc &colorAttachment =
+                mRenderPassDesc.colorAttachments[i];
+            colorAttachment.storeAction = MTLStoreActionDontCare;
+            if (renderPassStarted)
+            {
+                encoder->setColorStoreAction(MTLStoreActionDontCare, i);
+            }
         }
-        ++attachmentIdx;
     }
 
     if (invalidateDepthBuffer && mDepthRenderTarget)
     {
-        mDiscardDepth = true;
+        mRenderPassDesc.depthAttachment.storeAction = MTLStoreActionDontCare;
+        if (renderPassStarted)
+        {
+            encoder->setDepthStoreAction(MTLStoreActionDontCare);
+        }
     }
 
     if (invalidateStencilBuffer && mStencilRenderTarget)
     {
-        mDiscardStencil = true;
+        mRenderPassDesc.stencilAttachment.storeAction = MTLStoreActionDontCare;
+        if (renderPassStarted)
+        {
+            encoder->setStencilStoreAction(MTLStoreActionDontCare);
+        }
     }
 
     return angle::Result::Continue;
