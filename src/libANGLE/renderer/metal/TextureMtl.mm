@@ -337,14 +337,17 @@ void TextureMtl::releaseTexture(bool releaseImages)
     mNativeTexture     = nullptr;
     mMetalSamplerState = nil;
 
-    for (RenderTargetMtl &rt : mLayeredRenderTargets)
-    {
-        rt.set(nullptr);
-    }
-
     if (releaseImages)
     {
         mTexImages.clear();
+        // Clear render target cache for each texture's image
+        for (auto &sliceRenderTargets : mTexImageRenderTargets)
+        {
+            for (auto &mipRenderTarget : sliceRenderTargets.second)
+            {
+                mipRenderTarget.set(nullptr);
+            }
+        }
     }
 
     mLayeredTextureViews.clear();
@@ -375,8 +378,6 @@ angle::Result TextureMtl::ensureTextureCreated(const gl::Context *context)
             ANGLE_TRY(mtl::Texture::Make2DTexture(contextMtl, mFormat, desc.size.width,
                                                   desc.size.height, mips, false, true,
                                                   &mNativeTexture));
-            mLayeredRenderTargets.resize(1);
-            mLayeredRenderTargets[0].set(mNativeTexture, 0, 0, mFormat);
             mLayeredTextureViews.resize(1);
             mLayeredTextureViews[0] = mNativeTexture;
             break;
@@ -384,12 +385,10 @@ angle::Result TextureMtl::ensureTextureCreated(const gl::Context *context)
             layers = 6;
             ANGLE_TRY(mtl::Texture::MakeCubeTexture(contextMtl, mFormat, desc.size.width, mips,
                                                     false, true, &mNativeTexture));
-            mLayeredRenderTargets.resize(gl::kCubeFaceCount);
             mLayeredTextureViews.resize(gl::kCubeFaceCount);
             for (uint32_t f = 0; f < gl::kCubeFaceCount; ++f)
             {
                 mLayeredTextureViews[f] = mNativeTexture->createCubeFaceView(f);
-                mLayeredRenderTargets[f].set(mLayeredTextureViews[f], 0, 0, mFormat);
             }
             break;
         default:
@@ -399,13 +398,12 @@ angle::Result TextureMtl::ensureTextureCreated(const gl::Context *context)
     ANGLE_TRY(checkForEmulatedChannels(context, mFormat, mNativeTexture));
 
     // Transfer data from images to actual texture object
-    mtl::BlitCommandEncoder *encoder                = nullptr;
-    std::map<int, ImagesMipChain> &imagesToTransfer = mTexImages;
+    mtl::BlitCommandEncoder *encoder = nullptr;
     for (int layer = 0; layer < layers; ++layer)
     {
         for (GLuint mip = 0; mip < mips; ++mip)
         {
-            mtl::TextureRef &imageToTransfer = imagesToTransfer[layer][mip];
+            mtl::TextureRef &imageToTransfer = mTexImages[layer][mip];
 
             // Only transfer if this mip & slice image has been defined and in correct size &
             // format.
@@ -430,6 +428,8 @@ angle::Result TextureMtl::ensureTextureCreated(const gl::Context *context)
             // So that in future, glTexSubImage* will update the actual texture
             // directly.
             mTexImages[layer][mip] = mNativeTexture->createSliceMipView(layer, mip);
+
+            mTexImageRenderTargets[layer][mip].set(mTexImages[layer][mip], 0, 0, mFormat);
         }
     }
 
@@ -802,10 +802,10 @@ angle::Result TextureMtl::getAttachmentRenderTarget(const gl::Context *context,
     switch (imageIndex.getType())
     {
         case gl::TextureType::_2D:
-            *rtOut = &mLayeredRenderTargets[0];
+            *rtOut = &mTexImageRenderTargets[0][0];
             break;
         case gl::TextureType::CubeMap:
-            *rtOut = &mLayeredRenderTargets[imageIndex.cubeMapFaceIndex()];
+            *rtOut = &mTexImageRenderTargets[imageIndex.cubeMapFaceIndex()][0];
             break;
         default:
             UNREACHABLE();
@@ -915,6 +915,8 @@ angle::Result TextureMtl::redefineImage(const gl::Context *context,
     // Cache last defined image format:
     mFormat                = mtlFormat;
     mtl::TextureRef &image = mTexImages[GetImageLayerIndex(index)][index.getLevelIndex()];
+    RenderTargetMtl &imageRtt =
+        mTexImageRenderTargets[GetImageLayerIndex(index)][index.getLevelIndex()];
 
     // If actual texture exists, it means the size hasn't been changed, no need to create new image
     if (mNativeTexture && image)
@@ -935,6 +937,8 @@ angle::Result TextureMtl::redefineImage(const gl::Context *context,
             default:
                 UNREACHABLE();
         }
+
+        imageRtt.set(image, 0, 0, mtlFormat);
     }
 
     // Make sure emulated channels are properly initialized
@@ -1192,7 +1196,7 @@ angle::Result TextureMtl::copySubImageWithDraw(const gl::Context *context,
     DisplayMtl *displayMtl         = contextMtl->getDisplay();
     FramebufferMtl *framebufferMtl = mtl::GetImpl(source);
 
-    RenderTargetMtl *colorReadRT = framebufferMtl->getColorReadRenderTarget();
+    RenderTargetMtl *colorReadRT = framebufferMtl->getColorReadRenderTarget(context);
 
     if (!colorReadRT || !colorReadRT->getTexture())
     {
@@ -1201,10 +1205,11 @@ angle::Result TextureMtl::copySubImageWithDraw(const gl::Context *context,
     }
 
     mtl::TextureRef &image = mTexImages[GetImageLayerIndex(index)][index.getLevelIndex()];
+    const RenderTargetMtl &imageRtt =
+        mTexImageRenderTargets[GetImageLayerIndex(index)][index.getLevelIndex()];
     ASSERT(image && image->valid());
 
-    mtl::RenderCommandEncoder *cmdEncoder =
-        contextMtl->getRenderCommandEncoder(image, GetImageBaseLevelIndex(image));
+    mtl::RenderCommandEncoder *cmdEncoder = contextMtl->getRenderCommandEncoder(imageRtt);
     mtl::BlitParams blitParams;
 
     blitParams.dstOffset    = modifiedDestOffset;
@@ -1233,7 +1238,7 @@ angle::Result TextureMtl::copySubImageCPU(const gl::Context *context,
 
     ContextMtl *contextMtl         = mtl::GetImpl(context);
     FramebufferMtl *framebufferMtl = mtl::GetImpl(source);
-    RenderTargetMtl *colorReadRT   = framebufferMtl->getColorReadRenderTarget();
+    RenderTargetMtl *colorReadRT   = framebufferMtl->getColorReadRenderTarget(context);
 
     if (!colorReadRT || !colorReadRT->getTexture())
     {
@@ -1257,9 +1262,9 @@ angle::Result TextureMtl::copySubImageCPU(const gl::Context *context,
         PackPixelsParams packParams(srcRowArea, dstFormat, dstRowPitch, false, nullptr, 0);
 
         // Read pixels from framebuffer to memory:
-        gl::Rectangle flippedSrcRowArea = framebufferMtl->getReadPixelArea(srcRowArea);
+        gl::Rectangle flippedSrcRowArea = framebufferMtl->getReadPixelArea(context, srcRowArea);
         ANGLE_TRY(framebufferMtl->readPixelsImpl(context, flippedSrcRowArea, packParams,
-                                                 framebufferMtl->getColorReadRenderTarget(),
+                                                 framebufferMtl->getColorReadRenderTarget(context),
                                                  conversionRow.data()));
 
         // Upload to texture

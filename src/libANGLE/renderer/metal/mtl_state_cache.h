@@ -233,6 +233,15 @@ struct RenderPipelineDesc
     bool rasterizationEnabled;
 };
 
+struct RenderPassAttachmentTextureTargetDesc
+{
+    TextureRef getTextureRef() const { return texture.lock(); }
+
+    TextureWeakRef texture;
+    uint32_t level = 0;
+    uint32_t slice = 0;
+};
+
 struct RenderPassAttachmentDesc
 {
     RenderPassAttachmentDesc();
@@ -242,9 +251,15 @@ struct RenderPassAttachmentDesc
     bool equalIgnoreLoadStoreOptions(const RenderPassAttachmentDesc &other) const;
     bool operator==(const RenderPassAttachmentDesc &other) const;
 
-    TextureRef texture;
-    uint32_t level;
-    uint32_t slice;
+    ANGLE_INLINE TextureRef texture() const
+    {
+        return renderTarget ? renderTarget->getTextureRef() : nullptr;
+    }
+    ANGLE_INLINE uint32_t level() const { return renderTarget ? renderTarget->level : 0; }
+    ANGLE_INLINE uint32_t slice() const { return renderTarget ? renderTarget->slice : 0; }
+
+    // This is shared pointer to avoid crashing when texture deleted after bound to a frame buffer.
+    std::shared_ptr<RenderPassAttachmentTextureTargetDesc> renderTarget;
     MTLLoadAction loadAction;
     MTLStoreAction storeAction;
     MTLStoreActionOptions storeActionOptions;

@@ -71,14 +71,16 @@ class SurfaceMtl : public SurfaceImpl
                                             GLsizei samples,
                                             FramebufferAttachmentRenderTarget **rtOut) override;
 
+    angle::Result ensureCurrentDrawableObtained(const gl::Context *context);
+
   private:
     angle::Result swapImpl(const gl::Context *context);
-    angle::Result ensureRenderTargetsCreated(const gl::Context *context);
     angle::Result obtainNextDrawable(const gl::Context *context);
-    angle::Result ensureDepthStencilSizeCorrect(const gl::Context *context,
-                                                gl::Framebuffer::DirtyBits *fboDirtyBits);
+    angle::Result ensureDepthStencilSizeCorrect(const gl::Context *context);
+
+    CGSize calcExpectedDrawableSize() const;
     // Check if metal layer has been resized.
-    void checkIfLayerResized();
+    angle::Result checkIfLayerResized(const gl::Context *context);
 
     mtl::AutoObjCObj<CAMetalLayer> mMetalLayer = nil;
     CALayer *mLayer;

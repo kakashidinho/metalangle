@@ -9,9 +9,13 @@
 
 #include "libANGLE/renderer/metal/RenderTargetMtl.h"
 
+#include "libANGLE/renderer/metal/mtl_state_cache.h"
+
 namespace rx
 {
-RenderTargetMtl::RenderTargetMtl() {}
+RenderTargetMtl::RenderTargetMtl()
+    : mTextureRenderTargetInfo(std::make_shared<mtl::RenderPassAttachmentTextureTargetDesc>())
+{}
 
 RenderTargetMtl::~RenderTargetMtl()
 {
@@ -19,39 +23,35 @@ RenderTargetMtl::~RenderTargetMtl()
 }
 
 RenderTargetMtl::RenderTargetMtl(RenderTargetMtl &&other)
-    : mTexture(std::move(other.mTexture)),
-      mLevelIndex(other.mLevelIndex),
-      mLayerIndex(other.mLayerIndex)
+    : mTextureRenderTargetInfo(std::move(other.mTextureRenderTargetInfo))
 {}
 
 void RenderTargetMtl::set(const mtl::TextureRef &texture,
-                          size_t level,
-                          size_t layer,
+                          uint32_t level,
+                          uint32_t layer,
                           const mtl::Format &format)
 {
-    mTexture    = texture;
-    mLevelIndex = level;
-    mLayerIndex = layer;
-    mFormat     = &format;
+    mTextureRenderTargetInfo->texture = texture;
+    mTextureRenderTargetInfo->level   = level;
+    mTextureRenderTargetInfo->slice   = layer;
+    mFormat                           = &format;
 }
 
 void RenderTargetMtl::set(const mtl::TextureRef &texture)
 {
-    mTexture = texture;
+    mTextureRenderTargetInfo->texture = texture;
 }
 
 void RenderTargetMtl::reset()
 {
-    mTexture.reset();
-    mLevelIndex = 0;
-    mLayerIndex = 0;
-    mFormat     = nullptr;
+    mTextureRenderTargetInfo->texture.reset();
+    mTextureRenderTargetInfo->level = 0;
+    mTextureRenderTargetInfo->slice = 0;
+    mFormat                         = nullptr;
 }
 
 void RenderTargetMtl::toRenderPassAttachmentDesc(mtl::RenderPassAttachmentDesc *rpaDescOut) const
 {
-    rpaDescOut->texture = mTexture;
-    rpaDescOut->level   = static_cast<uint32_t>(mLevelIndex);
-    rpaDescOut->slice   = static_cast<uint32_t>(mLayerIndex);
+    rpaDescOut->renderTarget = mTextureRenderTargetInfo;
 }
 }
