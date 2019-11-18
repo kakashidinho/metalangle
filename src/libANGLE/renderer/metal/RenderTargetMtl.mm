@@ -9,13 +9,9 @@
 
 #include "libANGLE/renderer/metal/RenderTargetMtl.h"
 
-#include "libANGLE/renderer/metal/mtl_state_cache.h"
-
 namespace rx
 {
-RenderTargetMtl::RenderTargetMtl()
-    : mTextureRenderTargetInfo(std::make_shared<mtl::RenderPassAttachmentTextureTargetDesc>())
-{}
+RenderTargetMtl::RenderTargetMtl() {}
 
 RenderTargetMtl::~RenderTargetMtl()
 {
@@ -23,35 +19,39 @@ RenderTargetMtl::~RenderTargetMtl()
 }
 
 RenderTargetMtl::RenderTargetMtl(RenderTargetMtl &&other)
-    : mTextureRenderTargetInfo(std::move(other.mTextureRenderTargetInfo))
+    : mTexture(std::move(other.mTexture)),
+      mLevelIndex(other.mLevelIndex),
+      mLayerIndex(other.mLayerIndex)
 {}
 
 void RenderTargetMtl::set(const mtl::TextureRef &texture,
-                          uint32_t level,
-                          uint32_t layer,
+                          size_t level,
+                          size_t layer,
                           const mtl::Format &format)
 {
-    mTextureRenderTargetInfo->texture = texture;
-    mTextureRenderTargetInfo->level   = level;
-    mTextureRenderTargetInfo->slice   = layer;
-    mFormat                           = &format;
+    mTexture    = texture;
+    mLevelIndex = level;
+    mLayerIndex = layer;
+    mFormat     = &format;
 }
 
 void RenderTargetMtl::set(const mtl::TextureRef &texture)
 {
-    mTextureRenderTargetInfo->texture = texture;
+    mTexture = texture;
 }
 
 void RenderTargetMtl::reset()
 {
-    mTextureRenderTargetInfo->texture.reset();
-    mTextureRenderTargetInfo->level = 0;
-    mTextureRenderTargetInfo->slice = 0;
-    mFormat                         = nullptr;
+    mTexture.reset();
+    mLevelIndex = 0;
+    mLayerIndex = 0;
+    mFormat     = nullptr;
 }
 
 void RenderTargetMtl::toRenderPassAttachmentDesc(mtl::RenderPassAttachmentDesc *rpaDescOut) const
 {
-    rpaDescOut->renderTarget = mTextureRenderTargetInfo;
+    rpaDescOut->texture = mTexture;
+    rpaDescOut->level   = static_cast<uint32_t>(mLevelIndex);
+    rpaDescOut->slice   = static_cast<uint32_t>(mLayerIndex);
 }
 }

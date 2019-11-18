@@ -432,16 +432,16 @@ RenderCommandEncoder &RenderCommandEncoder::restart(const RenderPassDesc &desc)
         // mask writing dependency
         for (uint32_t i = 0; i < mRenderPassDesc.numColorAttachments; ++i)
         {
-            initWriteDependencyAndStoreAction(mRenderPassDesc.colorAttachments[i].texture(),
+            initWriteDependencyAndStoreAction(mRenderPassDesc.colorAttachments[i].texture,
                                               &mRenderPassDesc.colorAttachments[i].storeAction);
             mColorInitialStoreActions[i] = mRenderPassDesc.colorAttachments[i].storeAction;
         }
 
-        initWriteDependencyAndStoreAction(mRenderPassDesc.depthAttachment.texture(),
+        initWriteDependencyAndStoreAction(mRenderPassDesc.depthAttachment.texture,
                                           &mRenderPassDesc.depthAttachment.storeAction);
         mDepthInitialStoreAction = mRenderPassDesc.depthAttachment.storeAction;
 
-        initWriteDependencyAndStoreAction(mRenderPassDesc.stencilAttachment.texture(),
+        initWriteDependencyAndStoreAction(mRenderPassDesc.stencilAttachment.texture,
                                           &mRenderPassDesc.stencilAttachment.storeAction);
         mStencilInitialStoreAction = mRenderPassDesc.stencilAttachment.storeAction;
 

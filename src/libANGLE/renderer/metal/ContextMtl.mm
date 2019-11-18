@@ -728,7 +728,7 @@ ProgramImpl *ContextMtl::createProgram(const gl::ProgramState &state)
 // Framebuffer creation
 FramebufferImpl *ContextMtl::createFramebuffer(const gl::FramebufferState &state)
 {
-    return new FramebufferMtl(state, false, nullptr);
+    return new FramebufferMtl(state, false, false);
 }
 
 // Texture creation
@@ -1002,7 +1002,7 @@ void ContextMtl::present(const gl::Context *context, id<CAMetalDrawable> present
 {
     ensureCommandBufferValid();
 
-    if (mDrawFramebuffer->renderPassHasStarted(this))
+    if (hasStartedRenderPass(mDrawFramebuffer))
     {
         // Always discard default FBO's depth stencil buffers at the end of the frame:
         if (mDrawFramebuffer->isDefault())
@@ -1036,6 +1036,11 @@ bool ContextMtl::hasStartedRenderPass(const mtl::RenderPassDesc &desc)
            mRenderEncoder.renderPassDesc().equalIgnoreLoadStoreOptions(desc);
 }
 
+bool ContextMtl::hasStartedRenderPass(FramebufferMtl *framebuffer)
+{
+    return framebuffer && hasStartedRenderPass(framebuffer->getRenderPassDesc(this));
+}
+
 // Get current render encoder
 mtl::RenderCommandEncoder *ContextMtl::getRenderCommandEncoder()
 {
@@ -1045,6 +1050,16 @@ mtl::RenderCommandEncoder *ContextMtl::getRenderCommandEncoder()
     }
 
     return &mRenderEncoder;
+}
+
+mtl::RenderCommandEncoder *ContextMtl::getCurrentFramebufferRenderCommandEncoder()
+{
+    if (!mDrawFramebuffer)
+    {
+        return nullptr;
+    }
+
+    return getRenderCommandEncoder(mDrawFramebuffer->getRenderPassDesc(this));
 }
 
 mtl::RenderCommandEncoder *ContextMtl::getRenderCommandEncoder(const mtl::RenderPassDesc &desc)
@@ -1064,31 +1079,36 @@ mtl::RenderCommandEncoder *ContextMtl::getRenderCommandEncoder(const mtl::Render
     return &mRenderEncoder.restart(desc);
 }
 
-// Utilities to quickly create render command encoder to a specific texture:
+// Utilities to quickly create render command enconder to a specific texture:
 // The previous content of texture will be loaded if clearColor is not provided
 mtl::RenderCommandEncoder *ContextMtl::getRenderCommandEncoder(
-    const RenderTargetMtl &renderTarget,
+    const mtl::TextureRef &textureTarget,
+    const gl::ImageIndex &index,
     const Optional<MTLClearColor> &clearColor)
 {
-    ASSERT(renderTarget.getTexture());
+    ASSERT(textureTarget && textureTarget->valid());
 
     mtl::RenderPassDesc rpDesc;
-    renderTarget.toRenderPassAttachmentDesc(&rpDesc.colorAttachments[0]);
-    rpDesc.numColorAttachments              = 1;
+
+    rpDesc.colorAttachments[0].texture = textureTarget;
+    rpDesc.colorAttachments[0].level   = index.getLevelIndex();
+    rpDesc.colorAttachments[0].slice   = index.hasLayer() ? index.getLayerIndex() : 0;
+    rpDesc.numColorAttachments         = 1;
 
     if (clearColor.valid())
     {
         rpDesc.colorAttachments[0].loadAction = MTLLoadActionClear;
-        rpDesc.colorAttachments[0].clearColor = mtl::EmulatedAlphaClearColor(
-            clearColor.value(), renderTarget.getTexture()->getColorWritableMask());
+        rpDesc.colorAttachments[0].clearColor =
+            mtl::EmulatedAlphaClearColor(clearColor.value(), textureTarget->getColorWritableMask());
     }
 
     return getRenderCommandEncoder(rpDesc);
 }
 // The previous content of texture will be loaded
-mtl::RenderCommandEncoder *ContextMtl::getRenderCommandEncoder(const RenderTargetMtl &renderTarget)
+mtl::RenderCommandEncoder *ContextMtl::getRenderCommandEncoder(const mtl::TextureRef &textureTarget,
+                                                               const gl::ImageIndex &index)
 {
-    return getRenderCommandEncoder(renderTarget, Optional<MTLClearColor>());
+    return getRenderCommandEncoder(textureTarget, index, Optional<MTLClearColor>());
 }
 
 mtl::BlitCommandEncoder *ContextMtl::getBlitCommandEncoder()
@@ -1233,7 +1253,7 @@ void ContextMtl::updateDrawFrameBufferBinding(const gl::Context *context)
 
     mDrawFramebuffer = mtl::GetImpl(glState.getDrawFramebuffer());
 
-    if (oldFrameBuffer && oldFrameBuffer->renderPassHasStarted(this))
+    if (oldFrameBuffer && hasStartedRenderPass(oldFrameBuffer->getRenderPassDesc(this)))
     {
         oldFrameBuffer->onFinishedDrawingToFrameBuffer(context, &mRenderEncoder);
     }
@@ -1337,7 +1357,8 @@ angle::Result ContextMtl::setupDraw(const gl::Context *context,
     if (mDirtyBits.test(DIRTY_BIT_DRAW_FRAMEBUFFER))
     {
         // Start new render command encoder
-        ANGLE_MTL_TRY(this, mDrawFramebuffer->ensureRenderPassStarted(context));
+        const mtl::RenderPassDesc &rpDesc = mDrawFramebuffer->getRenderPassDesc(this);
+        ANGLE_MTL_TRY(this, getRenderCommandEncoder(rpDesc));
 
         // re-apply everything
         invalidateState(context);
@@ -1534,15 +1555,15 @@ angle::Result ContextMtl::handleDirtyDepthStencilState(const gl::Context *contex
 
     // Need to handle the case when render pass doesn't have depth/stencil attachment.
     mtl::DepthStencilDesc dsDesc              = mDepthStencilDesc;
-    const mtl::RenderPassDesc &renderPassDesc = mRenderEncoder.renderPassDesc();
+    const mtl::RenderPassDesc &renderPassDesc = mDrawFramebuffer->getRenderPassDesc(this);
 
-    if (!renderPassDesc.depthAttachment.texture())
+    if (!renderPassDesc.depthAttachment.texture)
     {
         dsDesc.depthWriteEnabled    = false;
         dsDesc.depthCompareFunction = MTLCompareFunctionAlways;
     }
 
-    if (!renderPassDesc.stencilAttachment.texture())
+    if (!renderPassDesc.stencilAttachment.texture)
     {
         dsDesc.frontFaceStencil.reset();
         dsDesc.backFaceStencil.reset();
@@ -1588,7 +1609,7 @@ angle::Result ContextMtl::checkIfPipelineChanged(
 
     if (rppChange)
     {
-        const mtl::RenderPassDesc &renderPassDesc = mRenderEncoder.renderPassDesc();
+        const mtl::RenderPassDesc &renderPassDesc = mDrawFramebuffer->getRenderPassDesc(this);
         // Obtain RenderPipelineDesc's output descriptor.
         renderPassDesc.populateRenderPipelineOutputDesc(mBlendDesc,
                                                         &mRenderPipelineDesc.outputDescriptor);

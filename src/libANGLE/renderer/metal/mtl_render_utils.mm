@@ -243,11 +243,11 @@ void RenderUtils::clearWithDraw(const gl::Context *context,
     {
         overridedParams.clearColor.reset();
     }
-    if (!renderPassDesc.depthAttachment.texture())
+    if (!renderPassDesc.depthAttachment.texture)
     {
         overridedParams.clearDepth.reset();
     }
-    if (!renderPassDesc.stencilAttachment.texture())
+    if (!renderPassDesc.stencilAttachment.texture)
     {
         overridedParams.clearStencil.reset();
     }
@@ -312,23 +312,23 @@ void RenderUtils::setupClearWithDraw(const gl::Context *context,
     {
         renderPassAttachment = renderPassDesc.colorAttachments[0];
     }
-    else if (renderPassDesc.depthAttachment.texture())
+    else if (renderPassDesc.depthAttachment.texture)
     {
         renderPassAttachment = renderPassDesc.depthAttachment;
     }
     else
     {
-        ASSERT(renderPassDesc.stencilAttachment.texture());
+        ASSERT(renderPassDesc.stencilAttachment.texture);
         renderPassAttachment = renderPassDesc.stencilAttachment;
     }
 
-    auto texture = renderPassAttachment.texture();
+    auto texture = renderPassAttachment.texture;
 
     viewport =
-        GetViewport(params.clearArea, texture->height(renderPassAttachment.level()), params.flipY);
+        GetViewport(params.clearArea, texture->height(renderPassAttachment.level), params.flipY);
 
-    scissorRect = GetScissorRect(params.clearArea, texture->height(renderPassAttachment.level()),
-                                 params.flipY);
+    scissorRect =
+        GetScissorRect(params.clearArea, texture->height(renderPassAttachment.level), params.flipY);
 
     cmdEncoder->setViewport(viewport);
     cmdEncoder->setScissorRect(scissorRect);
@@ -363,14 +363,14 @@ void RenderUtils::setupBlitWithDraw(const gl::Context *context,
     const RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
     const RenderPassColorAttachmentDesc &renderPassColorAttachment =
         renderPassDesc.colorAttachments[0];
-    auto texture = renderPassColorAttachment.texture();
+    auto texture = renderPassColorAttachment.texture;
 
     gl::Rectangle dstRect(params.dstOffset.x, params.dstOffset.y, params.srcRect.width,
                           params.srcRect.height);
     MTLViewport viewportMtl =
-        GetViewport(dstRect, texture->height(renderPassColorAttachment.level()), params.dstFlipY);
-    MTLScissorRect scissorRectMtl = GetScissorRect(
-        dstRect, texture->height(renderPassColorAttachment.level()), params.dstFlipY);
+        GetViewport(dstRect, texture->height(renderPassColorAttachment.level), params.dstFlipY);
+    MTLScissorRect scissorRectMtl =
+        GetScissorRect(dstRect, texture->height(renderPassColorAttachment.level), params.dstFlipY);
     cmdEncoder->setViewport(viewportMtl);
     cmdEncoder->setScissorRect(scissorRectMtl);
 

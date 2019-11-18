@@ -172,9 +172,9 @@ id<MTLTexture> ToObjC(const TextureRef &texture)
 
 void ToObjC(MTLRenderPassAttachmentDescriptor *dst, const RenderPassAttachmentDesc &src)
 {
-    dst.texture = ToObjC(src.texture());
-    dst.level   = src.level();
-    dst.slice   = src.slice();
+    ANGLE_OBJC_CP_PROPERTY(dst, src, texture);
+    ANGLE_OBJC_CP_PROPERTY(dst, src, level);
+    ANGLE_OBJC_CP_PROPERTY(dst, src, slice);
 
     ANGLE_OBJC_CP_PROPERTY(dst, src, loadAction);
     ANGLE_OBJC_CP_PROPERTY(dst, src, storeAction);
@@ -633,7 +633,9 @@ RenderPassAttachmentDesc::RenderPassAttachmentDesc()
 
 void RenderPassAttachmentDesc::reset()
 {
-    renderTarget       = nullptr;
+    texture.reset();
+    level              = 0;
+    slice              = 0;
     loadAction         = MTLLoadActionLoad;
     storeAction        = MTLStoreActionStore;
     storeActionOptions = MTLStoreActionOptionNone;
@@ -642,8 +644,7 @@ void RenderPassAttachmentDesc::reset()
 bool RenderPassAttachmentDesc::equalIgnoreLoadStoreOptions(
     const RenderPassAttachmentDesc &other) const
 {
-    return renderTarget == other.renderTarget ||
-           (texture() == other.texture() && level() == other.level() && slice() == other.slice());
+    return texture == other.texture && level == other.level && slice == other.slice;
 }
 
 bool RenderPassAttachmentDesc::operator==(const RenderPassAttachmentDesc &other) const
@@ -680,7 +681,7 @@ void RenderPassDesc::populateRenderPipelineOutputDesc(const BlendDesc &blendStat
     for (uint32_t i = 0; i < this->numColorAttachments; ++i)
     {
         auto &renderPassColorAttachment = this->colorAttachments[i];
-        auto texture                    = renderPassColorAttachment.texture();
+        auto texture                    = renderPassColorAttachment.texture;
 
         // Copy parameters from blend state
         outputDescriptor.colorAttachments[i].update(blendState);
@@ -701,11 +702,11 @@ void RenderPassDesc::populateRenderPipelineOutputDesc(const BlendDesc &blendStat
         }
     }
 
-    auto depthTexture = this->depthAttachment.texture();
+    auto depthTexture = this->depthAttachment.texture;
     outputDescriptor.depthAttachmentPixelFormat =
         depthTexture ? depthTexture->pixelFormat() : MTLPixelFormatInvalid;
 
-    auto stencilTexture = this->stencilAttachment.texture();
+    auto stencilTexture = this->stencilAttachment.texture;
     outputDescriptor.stencilAttachmentPixelFormat =
         stencilTexture ? stencilTexture->pixelFormat() : MTLPixelFormatInvalid;
 }
