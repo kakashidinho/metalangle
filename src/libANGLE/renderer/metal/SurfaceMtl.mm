@@ -257,15 +257,15 @@ egl::Error SurfaceMtl::initialize(const egl::Display *display)
         mMetalLayer.get().autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
 #endif
 
+        // ensure drawableSize is set to correct value:
+        mMetalLayer.get().drawableSize = calcExpectedDrawableSize();
+
         if (mMetalLayer.get() != mLayer)
         {
             mMetalLayer.get().contentsScale = mLayer.contentsScale;
 
             [mLayer addSublayer:mMetalLayer.get()];
         }
-
-        // ensure drawableSize is set to correct value:
-        checkIfLayerResized();
     }
 
     return egl::NoError();
@@ -274,23 +274,22 @@ egl::Error SurfaceMtl::initialize(const egl::Display *display)
 FramebufferImpl *SurfaceMtl::createDefaultFramebuffer(const gl::Context *context,
                                                       const gl::FramebufferState &state)
 {
-    auto fbo = new FramebufferMtl(state, /* flipY */ true);
+    auto fbo = new FramebufferMtl(state, /* flipY */ true, /* backbuffer */ this);
 
     return fbo;
 }
 
 egl::Error SurfaceMtl::makeCurrent(const gl::Context *context)
 {
-    angle::Result result = obtainNextDrawable(context);
-    if (result != angle::Result::Continue)
-    {
-        return egl::EglBadCurrentSurface();
-    }
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+    StartFrameCapture(contextMtl);
+
     return egl::NoError();
 }
 
 egl::Error SurfaceMtl::unMakeCurrent(const gl::Context *context)
 {
+    StopFrameCapture();
     return egl::NoError();
 }
 
@@ -360,11 +359,6 @@ void SurfaceMtl::setFixedHeight(EGLint height)
 // width and height can change with client window resizing
 EGLint SurfaceMtl::getWidth() const
 {
-    if (mDrawableTexture)
-    {
-        return static_cast<EGLint>(mDrawableTexture->width());
-    }
-
     if (mMetalLayer)
     {
         return static_cast<EGLint>(mMetalLayer.get().drawableSize.width);
@@ -374,11 +368,6 @@ EGLint SurfaceMtl::getWidth() const
 
 EGLint SurfaceMtl::getHeight() const
 {
-    if (mDrawableTexture)
-    {
-        return static_cast<EGLint>(mDrawableTexture->height());
-    }
-
     if (mMetalLayer)
     {
         return static_cast<EGLint>(mMetalLayer.get().drawableSize.height);
@@ -403,7 +392,8 @@ angle::Result SurfaceMtl::getAttachmentRenderTarget(const gl::Context *context,
                                                     FramebufferAttachmentRenderTarget **rtOut)
 {
     // NOTE(hqle): Support MSAA.
-    ANGLE_TRY(ensureRenderTargetsCreated(context));
+    ANGLE_TRY(ensureCurrentDrawableObtained(context));
+    ANGLE_TRY(ensureDepthStencilSizeCorrect(context));
 
     switch (binding)
     {
@@ -425,9 +415,9 @@ angle::Result SurfaceMtl::getAttachmentRenderTarget(const gl::Context *context,
     return angle::Result::Continue;
 }
 
-angle::Result SurfaceMtl::ensureRenderTargetsCreated(const gl::Context *context)
+angle::Result SurfaceMtl::ensureCurrentDrawableObtained(const gl::Context *context)
 {
-    if (!mDrawableTexture)
+    if (!mCurrentDrawable)
     {
         ANGLE_TRY(obtainNextDrawable(context));
     }
@@ -435,13 +425,13 @@ angle::Result SurfaceMtl::ensureRenderTargetsCreated(const gl::Context *context)
     return angle::Result::Continue;
 }
 
-angle::Result SurfaceMtl::ensureDepthStencilSizeCorrect(const gl::Context *context,
-                                                        gl::Framebuffer::DirtyBits *fboDirtyBits)
+angle::Result SurfaceMtl::ensureDepthStencilSizeCorrect(const gl::Context *context)
 {
-    ASSERT(mDrawableTexture && mDrawableTexture->get());
+    ASSERT(mMetalLayer);
 
     ContextMtl *contextMtl = mtl::GetImpl(context);
-    auto size              = mDrawableTexture->size();
+    gl::Extents size(static_cast<int>(mMetalLayer.get().drawableSize.width),
+                     static_cast<int>(mMetalLayer.get().drawableSize.height), 1);
 
     if (mDepthFormat.valid() && (!mDepthTexture || mDepthTexture->size() != size))
     {
@@ -449,7 +439,6 @@ angle::Result SurfaceMtl::ensureDepthStencilSizeCorrect(const gl::Context *conte
                                               true, false, &mDepthTexture));
 
         mDepthRenderTarget.set(mDepthTexture, 0, 0, mDepthFormat);
-        fboDirtyBits->set(gl::Framebuffer::DIRTY_BIT_DEPTH_ATTACHMENT);
     }
 
     if (mStencilFormat.valid() && (!mStencilTexture || mStencilTexture->size() != size))
@@ -465,45 +454,47 @@ angle::Result SurfaceMtl::ensureDepthStencilSizeCorrect(const gl::Context *conte
         }
 
         mStencilRenderTarget.set(mStencilTexture, 0, 0, mStencilFormat);
-        fboDirtyBits->set(gl::Framebuffer::DIRTY_BIT_STENCIL_ATTACHMENT);
     }
 
     return angle::Result::Continue;
 }
 
-void SurfaceMtl::checkIfLayerResized()
+CGSize SurfaceMtl::calcExpectedDrawableSize() const
 {
-    CGSize currentDrawableSize        = mMetalLayer.get().drawableSize;
     CGSize currentLayerSize           = mMetalLayer.get().bounds.size;
     CGFloat currentLayerContentsScale = mMetalLayer.get().contentsScale;
     CGSize expectedDrawableSize = CGSizeMake(currentLayerSize.width * currentLayerContentsScale,
                                              currentLayerSize.height * currentLayerContentsScale);
+
+    return expectedDrawableSize;
+}
+
+angle::Result SurfaceMtl::checkIfLayerResized(const gl::Context *context)
+{
+    CGSize currentDrawableSize  = mMetalLayer.get().drawableSize;
+    CGSize expectedDrawableSize = calcExpectedDrawableSize();
+
     if (currentDrawableSize.width != expectedDrawableSize.width ||
         currentDrawableSize.height != expectedDrawableSize.height)
     {
         // Resize the internal drawable texture.
         mMetalLayer.get().drawableSize = expectedDrawableSize;
     }
+
+    // Now we have to resize depth stencil buffers if required.
+    ANGLE_TRY(ensureDepthStencilSizeCorrect(context));
+
+    return angle::Result::Continue;
 }
 
 angle::Result SurfaceMtl::obtainNextDrawable(const gl::Context *context)
 {
-    checkIfLayerResized();
-
     ANGLE_MTL_OBJC_SCOPE
     {
         ContextMtl *contextMtl = mtl::GetImpl(context);
 
-        StartFrameCapture(contextMtl);
-
         ANGLE_MTL_TRY(contextMtl, mMetalLayer);
 
-        if (mDrawableTexture)
-        {
-            mDrawableTexture->set(nil);
-        }
-
-        mCurrentDrawable = nil;
         mCurrentDrawable.retainAssign([mMetalLayer nextDrawable]);
         if (!mCurrentDrawable)
         {
@@ -528,38 +519,30 @@ angle::Result SurfaceMtl::obtainNextDrawable(const gl::Context *context)
         ANGLE_MTL_LOG("Current metal drawable size=%d,%d", mDrawableTexture->width(),
                       mDrawableTexture->height());
 
-        gl::Framebuffer::DirtyBits fboDirtyBits;
-        fboDirtyBits.set(gl::Framebuffer::DIRTY_BIT_COLOR_ATTACHMENT_0);
-
-        // Now we have to resize depth stencil buffers if necessary.
-        ANGLE_TRY(ensureDepthStencilSizeCorrect(context, &fboDirtyBits));
-
-        // Need to notify default framebuffer to invalidate its render targets.
-        // Since a new drawable texture has been obtained, also, the depth stencil
-        // buffers might have been resized.
-        gl::Framebuffer *defaultFbo =
-            context->getFramebuffer(gl::Framebuffer::kDefaultDrawFramebufferHandle);
-        if (defaultFbo)
-        {
-            FramebufferMtl *framebufferMtl = mtl::GetImpl(defaultFbo);
-            ANGLE_TRY(framebufferMtl->syncState(context, fboDirtyBits));
-        }
-
         return angle::Result::Continue;
     }
 }
 
 angle::Result SurfaceMtl::swapImpl(const gl::Context *context)
 {
-    ANGLE_TRY(ensureRenderTargetsCreated(context));
+    if (mCurrentDrawable)
+    {
+        ASSERT(mDrawableTexture);
 
-    ContextMtl *contextMtl = mtl::GetImpl(context);
+        ContextMtl *contextMtl = mtl::GetImpl(context);
 
-    contextMtl->present(context, mCurrentDrawable);
+        contextMtl->present(context, mCurrentDrawable);
 
-    StopFrameCapture();
+        StopFrameCapture();
+        StartFrameCapture(contextMtl);
 
-    ANGLE_TRY(obtainNextDrawable(context));
+        // Invalidate current drawable
+        mDrawableTexture->set(nil);
+        mCurrentDrawable = nil;
+    }
+
+    // Check if layer was resized
+    ANGLE_TRY(checkIfLayerResized(context));
 
     return angle::Result::Continue;
 }

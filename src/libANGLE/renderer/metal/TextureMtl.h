@@ -225,19 +225,18 @@ class TextureMtl : public TextureImpl
 
     angle::Result generateMipmapCPU(const gl::Context *context);
 
-    using ImagesMipChain = std::map<int, mtl::TextureRef>;
-
     mtl::Format mFormat;
     // The real texture used by Metal draw calls.
     mtl::TextureRef mNativeTexture;
     id<MTLSamplerState> mMetalSamplerState = nil;
 
-    std::vector<RenderTargetMtl> mLayeredRenderTargets;
+    // Full mipmap views of texture at each slice/cube face:
     std::vector<mtl::TextureRef> mLayeredTextureViews;
 
     // Stored images array defined by glTexImage/glCopy*.
     // Once the images array is complete, they will be transferred to real texture object.
-    std::map<int, ImagesMipChain> mTexImages;
+    std::map<int, gl::TexLevelArray<mtl::TextureRef>> mTexImages;
+    std::map<int, gl::TexLevelArray<RenderTargetMtl>> mTexImageRenderTargets;
 
     bool mIsPow2 = false;
 };
