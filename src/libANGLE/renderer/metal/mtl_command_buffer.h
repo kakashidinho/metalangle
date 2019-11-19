@@ -299,6 +299,7 @@ class BlitCommandEncoder final : public CommandEncoder
 
     BlitCommandEncoder &generateMipmapsForTexture(const TextureRef &texture);
     BlitCommandEncoder &synchronizeResource(const TextureRef &texture);
+    BlitCommandEncoder &synchronizeResource(const BufferRef &buffer);
 
   private:
     id<MTLBlitCommandEncoder> get()
