@@ -940,9 +940,9 @@ uint32_t ContextMtl::getStencilMask() const
     return getState().getDepthStencilState().stencilWritemask & mtl::kStencilMaskAll;
 }
 
-bool ContextMtl::isDepthWriteEnabled() const
+bool ContextMtl::getDepthMask() const
 {
-    return mDepthStencilDesc.depthWriteEnabled;
+    return getState().getDepthStencilState().depthMask;
 }
 
 const mtl::Format &ContextMtl::getPixelFormat(angle::FormatID angleFormatId) const

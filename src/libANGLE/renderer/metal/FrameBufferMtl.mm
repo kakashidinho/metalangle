@@ -632,7 +632,7 @@ angle::Result FramebufferMtl::clearImpl(const gl::Context *context,
 
     MTLColorWriteMask colorMask = contextMtl->getColorMask();
     uint32_t stencilMask        = contextMtl->getStencilMask();
-    if (!contextMtl->isDepthWriteEnabled())
+    if (!contextMtl->getDepthMask())
     {
         // Disable depth clearing, since depth write is disable
         clearOpts.clearDepth.reset();
