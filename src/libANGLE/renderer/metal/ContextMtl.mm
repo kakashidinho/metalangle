@@ -527,11 +527,15 @@ angle::Result ContextMtl::syncState(const gl::Context *context,
                 break;
             case gl::State::DIRTY_BIT_STENCIL_FUNCS_FRONT:
                 mDepthStencilDesc.updateStencilFrontFuncs(glState.getDepthStencilState());
+                mStencilRefFront =
+                    gl::clamp<int, int, int>(glState.getStencilRef(), 0, mtl::kStencilMaskAll);
                 mDirtyBits.set(DIRTY_BIT_DEPTH_STENCIL_DESC);
                 mDirtyBits.set(DIRTY_BIT_STENCIL_REF);
                 break;
             case gl::State::DIRTY_BIT_STENCIL_FUNCS_BACK:
                 mDepthStencilDesc.updateStencilBackFuncs(glState.getDepthStencilState());
+                mStencilRefBack =
+                    gl::clamp<int, int, int>(glState.getStencilBackRef(), 0, mtl::kStencilMaskAll);
                 mDirtyBits.set(DIRTY_BIT_DEPTH_STENCIL_DESC);
                 mDirtyBits.set(DIRTY_BIT_STENCIL_REF);
                 break;
@@ -580,6 +584,7 @@ angle::Result ContextMtl::syncState(const gl::Context *context,
             case gl::State::DIRTY_BIT_CLEAR_DEPTH:
                 break;
             case gl::State::DIRTY_BIT_CLEAR_STENCIL:
+                mClearStencil = glState.getStencilClearValue() & mtl::kStencilMaskAll;
                 break;
             case gl::State::DIRTY_BIT_UNPACK_STATE:
                 // This is a no-op, its only important to use the right unpack state when we do
@@ -933,7 +938,7 @@ float ContextMtl::getClearDepthValue() const
 }
 uint32_t ContextMtl::getClearStencilValue() const
 {
-    return static_cast<uint32_t>(getState().getStencilClearValue());
+    return mClearStencil;
 }
 uint32_t ContextMtl::getStencilMask() const
 {
@@ -1363,8 +1368,8 @@ angle::Result ContextMtl::setupDraw(const gl::Context *context,
                 ANGLE_TRY(handleDirtyDepthBias(context));
                 break;
             case DIRTY_BIT_STENCIL_REF:
-                mRenderEncoder.setStencilRefVals(mState.getStencilRef(),
-                                                 mState.getStencilBackRef());
+                mRenderEncoder.setStencilRefVals(mStencilRefFront,
+                                                 mStencilRefBack);
                 break;
             case DIRTY_BIT_BLEND_COLOR:
                 mRenderEncoder.setBlendColor(
