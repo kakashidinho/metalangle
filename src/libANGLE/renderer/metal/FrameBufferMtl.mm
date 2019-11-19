@@ -546,7 +546,8 @@ angle::Result FramebufferMtl::clearWithLoadOp(const gl::Context *context,
         }
     }
 
-    MTLStoreAction preClearDethpStoreAction, preClearStencilStoreAction;
+    MTLStoreAction preClearDethpStoreAction   = MTLStoreActionStore,
+                   preClearStencilStoreAction = MTLStoreActionStore;
     if (clearOpts.clearDepth.valid())
     {
         preClearDethpStoreAction            = MTLStoreActionDontCare;
