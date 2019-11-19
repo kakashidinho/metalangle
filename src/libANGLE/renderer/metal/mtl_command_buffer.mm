@@ -1051,13 +1051,24 @@ ComputeCommandEncoder &ComputeCommandEncoder::setBuffer(const BufferRef &buffer,
         return *this;
     }
 
-    // NOTE(hqle): Assume compute shader both reads and writes to this buffer for now.
     cmdBuffer().setReadDependency(buffer);
-    cmdBuffer().setWriteDependency(buffer);
 
     [get() setBuffer:(buffer ? buffer->get() : nil) offset:offset atIndex:index];
 
     return *this;
+}
+
+ComputeCommandEncoder &ComputeCommandEncoder::setBufferForWrite(const BufferRef &buffer,
+                                                                uint32_t offset,
+                                                                uint32_t index)
+{
+    if (index >= kMaxShaderBuffers)
+    {
+        return *this;
+    }
+
+    cmdBuffer().setWriteDependency(buffer);
+    return setBuffer(buffer, offset, index);
 }
 
 ComputeCommandEncoder &ComputeCommandEncoder::setBytes(const uint8_t *bytes,
@@ -1095,12 +1106,21 @@ ComputeCommandEncoder &ComputeCommandEncoder::setTexture(const TextureRef &textu
         return *this;
     }
 
-    // NOTE(hqle): Assume compute shader both reads and writes to this texture for now.
     cmdBuffer().setReadDependency(texture);
-    cmdBuffer().setWriteDependency(texture);
     [get() setTexture:(texture ? texture->get() : nil) atIndex:index];
 
     return *this;
+}
+ComputeCommandEncoder &ComputeCommandEncoder::setTextureForWrite(const TextureRef &texture,
+                                                                 uint32_t index)
+{
+    if (index >= kMaxShaderSamplers)
+    {
+        return *this;
+    }
+
+    cmdBuffer().setWriteDependency(texture);
+    return setTexture(texture, index);
 }
 
 ComputeCommandEncoder &ComputeCommandEncoder::dispatch(MTLSize threadGroupsPerGrid,

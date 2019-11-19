@@ -318,6 +318,9 @@ class ComputeCommandEncoder final : public CommandEncoder
     ComputeCommandEncoder &setComputePipelineState(id<MTLComputePipelineState> state);
 
     ComputeCommandEncoder &setBuffer(const BufferRef &buffer, uint32_t offset, uint32_t index);
+    ComputeCommandEncoder &setBufferForWrite(const BufferRef &buffer,
+                                             uint32_t offset,
+                                             uint32_t index);
     ComputeCommandEncoder &setBytes(const uint8_t *bytes, size_t size, uint32_t index);
     template <typename T>
     ComputeCommandEncoder &setData(const T &data, uint32_t index)
@@ -329,6 +332,7 @@ class ComputeCommandEncoder final : public CommandEncoder
                                            float lodMaxClamp,
                                            uint32_t index);
     ComputeCommandEncoder &setTexture(const TextureRef &texture, uint32_t index);
+    ComputeCommandEncoder &setTextureForWrite(const TextureRef &texture, uint32_t index);
 
     ComputeCommandEncoder &dispatch(MTLSize threadGroupsPerGrid, MTLSize threadsPerGroup);
 

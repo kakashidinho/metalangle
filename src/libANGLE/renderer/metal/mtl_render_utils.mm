@@ -724,7 +724,7 @@ angle::Result RenderUtils::convertIndexBuffer(const gl::Context *context,
 
     cmdEncoder->setData(uniform, 0);
     cmdEncoder->setBuffer(srcBuffer, 0, 1);
-    cmdEncoder->setBuffer(dstBuffer, dstOffset, 2);
+    cmdEncoder->setBufferForWrite(dstBuffer, dstOffset, 2);
 
     ANGLE_TRY(dispatchCompute(context, cmdEncoder, pipelineState, indexCount));
 
@@ -756,7 +756,7 @@ angle::Result RenderUtils::generateTriFanBufferFromArrays(const gl::Context *con
     uniform.vertexCountFrom3rd = params.vertexCount - 2;
 
     cmdEncoder->setData(uniform, 0);
-    cmdEncoder->setBuffer(params.dstBuffer, params.dstOffset, 2);
+    cmdEncoder->setBufferForWrite(params.dstBuffer, params.dstOffset, 2);
 
     ANGLE_TRY(dispatchCompute(context, cmdEncoder, mTriFanFromArraysGeneratorPipeline,
                               uniform.vertexCountFrom3rd));
@@ -817,7 +817,7 @@ angle::Result RenderUtils::generateTriFanBufferFromElementsArrayGPU(
 
     cmdEncoder->setData(uniform, 0);
     cmdEncoder->setBuffer(srcBuffer, 0, 1);
-    cmdEncoder->setBuffer(dstBuffer, dstOffset, 2);
+    cmdEncoder->setBufferForWrite(dstBuffer, dstOffset, 2);
 
     ANGLE_TRY(dispatchCompute(context, cmdEncoder, pipelineState, uniform.indexCount));
 
