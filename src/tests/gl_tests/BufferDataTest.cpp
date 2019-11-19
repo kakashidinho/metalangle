@@ -519,6 +519,58 @@ TEST_P(BufferDataTest, MapBufferOES)
     EXPECT_EQ(data, actualData);
 }
 
+// Same as MapBufferOES but using GL_DYNAMIC_DRAW
+TEST_P(BufferDataTest, MapBufferOESDynamic)
+{
+    if (!IsGLExtensionEnabled("GL_EXT_map_buffer_range"))
+    {
+        // Needed for test validation.
+        return;
+    }
+
+    std::vector<uint8_t> data(1024);
+    FillVectorWithRandomUBytes(&data);
+
+    GLBuffer buffer;
+    glBindBuffer(GL_ARRAY_BUFFER, buffer.get());
+    glBufferData(GL_ARRAY_BUFFER, data.size(), nullptr, GL_DYNAMIC_DRAW);
+
+    // Validate that other map flags don't work.
+    void *badMapPtr = glMapBufferOES(GL_ARRAY_BUFFER, GL_MAP_READ_BIT);
+    EXPECT_EQ(nullptr, badMapPtr);
+    EXPECT_GL_ERROR(GL_INVALID_ENUM);
+
+    // Map and write.
+    void *mapPtr = glMapBufferOES(GL_ARRAY_BUFFER, GL_WRITE_ONLY_OES);
+    ASSERT_NE(nullptr, mapPtr);
+    ASSERT_GL_NO_ERROR();
+    memcpy(mapPtr, data.data(), data.size());
+    glUnmapBufferOES(GL_ARRAY_BUFFER);
+
+    // Validate data with EXT_map_buffer_range
+    void *readMapPtr = glMapBufferRangeEXT(GL_ARRAY_BUFFER, 0, data.size(), GL_MAP_READ_BIT_EXT);
+    ASSERT_NE(nullptr, readMapPtr);
+    ASSERT_GL_NO_ERROR();
+    std::vector<uint8_t> actualData(data.size());
+    memcpy(actualData.data(), readMapPtr, data.size());
+    glUnmapBufferOES(GL_ARRAY_BUFFER);
+
+    EXPECT_EQ(data, actualData);
+
+    // Validate again with different data
+    FillVectorWithRandomUBytes(&data);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, data.size(), data.data());
+
+    readMapPtr = glMapBufferRangeEXT(GL_ARRAY_BUFFER, 0, data.size(), GL_MAP_READ_BIT_EXT);
+    ASSERT_NE(nullptr, readMapPtr);
+    ASSERT_GL_NO_ERROR();
+    actualData.resize(data.size());
+    memcpy(actualData.data(), readMapPtr, data.size());
+    glUnmapBufferOES(GL_ARRAY_BUFFER);
+
+    EXPECT_EQ(data, actualData);
+}
+
 // Tests a bug where copying buffer data immediately after creation hit a nullptr in D3D11.
 TEST_P(BufferDataTestES3, NoBufferInitDataCopyBug)
 {

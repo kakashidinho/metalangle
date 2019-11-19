@@ -545,7 +545,7 @@ void DisplayMtl::initializeExtensions() const
     // Enable this for simple buffer readback testing, but some functionality is missing.
     // NOTE(hqle): Support full mapBufferRange extension.
     mNativeExtensions.mapBuffer              = true;
-    mNativeExtensions.mapBufferRange         = false;
+    mNativeExtensions.mapBufferRange         = true;
     mNativeExtensions.textureStorage         = true;
     mNativeExtensions.drawBuffers            = false;
     mNativeExtensions.fragDepth              = true;
