@@ -384,7 +384,7 @@ class ContextMtl : public ContextImpl, public mtl::Context
     // We need this instead of calling mDrawFramebuffer->getState().isDefault() because
     // mDrawFramebuffer might point to a deleted object, ContextMtl only knows about this very late,
     // only during syncState() function call.
-    bool mDrawFramebufferIsDefault   = true;
+    bool mDrawFramebufferIsDefault = true;
 
     using DirtyBits = angle::BitSet<DIRTY_BIT_MAX>;
 

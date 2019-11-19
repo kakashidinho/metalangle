@@ -867,7 +867,7 @@ RenderCommandEncoder &RenderCommandEncoder::setDepthStencilStoreAction(
 RenderCommandEncoder &RenderCommandEncoder::setDepthStoreAction(MTLStoreAction action)
 {
     // We only store the options, will defer the actual setting until the encoder finishes
-    mRenderPassDesc.depthAttachment.storeAction   = action;
+    mRenderPassDesc.depthAttachment.storeAction = action;
 
     return *this;
 }
@@ -875,7 +875,7 @@ RenderCommandEncoder &RenderCommandEncoder::setDepthStoreAction(MTLStoreAction a
 RenderCommandEncoder &RenderCommandEncoder::setStencilStoreAction(MTLStoreAction action)
 {
     // We only store the options, will defer the actual setting until the encoder finishes
-    mRenderPassDesc.stencilAttachment.storeAction   = action;
+    mRenderPassDesc.stencilAttachment.storeAction = action;
 
     return *this;
 }
