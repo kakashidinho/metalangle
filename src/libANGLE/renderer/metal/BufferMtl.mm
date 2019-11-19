@@ -98,28 +98,28 @@ void BufferMtl::destroy(const gl::Context *context)
 angle::Result BufferMtl::setData(const gl::Context *context,
                                  gl::BufferBinding target,
                                  const void *data,
-                                 size_t size,
+                                 size_t originalSize,
                                  gl::BufferUsage usage)
 {
     ContextMtl *contextMtl = mtl::GetImpl(context);
 
-    if (!mShadowCopy.size() || size > static_cast<size_t>(mState.getSize()) ||
+    mFirstBufferUpdate = true;
+
+    if (!mShadowCopy.size() || originalSize > static_cast<size_t>(mState.getSize()) ||
         usage != mState.getUsage())
     {
+        size_t size = originalSize;
         if (size == 0)
         {
             size = 1;
         }
         // Re-create the buffer
-        markConversionBuffersDirty();
+        markDataDirty();
 
+        // Allocate shadow copy
         ANGLE_MTL_CHECK(contextMtl, mShadowCopy.resize(size), GL_OUT_OF_MEMORY);
-        if (data)
-        {
-            auto ptr = static_cast<const uint8_t *>(data);
-            std::copy(ptr, ptr + size, mShadowCopy.data());
-        }
 
+        // Allocate GPU buffers pool
         size_t maxBuffers;
         switch (usage)
         {
@@ -136,13 +136,24 @@ angle::Result BufferMtl::setData(const gl::Context *context,
         }
 
         mBufferPool.initialize(contextMtl, size, 1, maxBuffers);
+        if (data)
+        {
+            // Transfer data to GPU buffer
+            return commitData(context, static_cast<const uint8_t *>(data), 0, originalSize);
+        }
+        else
+        {
+            // Allocate the very first buffer
+            ANGLE_TRY(mBufferPool.allocate(contextMtl, mShadowCopy.size(), nullptr, &mBuffer, nullptr,
+                                           nullptr));
+        }
 
-        return commitShadowCopy(context);
+        return angle::Result::Continue;
     }
     else
     {
         // update data only
-        return setSubData(context, target, data, size, 0);
+        return setSubData(context, target, data, originalSize, 0);
     }
 }
 
@@ -190,9 +201,11 @@ angle::Result BufferMtl::mapRange(const gl::Context *context,
     ASSERT(mShadowCopy.size());
 
     // NOTE(hqle): use access flags
+    uint8_t *ptr;
+    ANGLE_TRY(mapImpl(context, &ptr));
     if (mapPtr)
     {
-        *mapPtr = mShadowCopy.data() + offset;
+        *mapPtr = ptr + offset;
     }
 
     return angle::Result::Continue;
@@ -202,9 +215,9 @@ angle::Result BufferMtl::unmap(const gl::Context *context, GLboolean *result)
 {
     ASSERT(mShadowCopy.size());
 
-    markConversionBuffersDirty();
+    markDataDirty();
 
-    ANGLE_TRY(commitShadowCopy(context));
+    ANGLE_TRY(unmapImpl(context));
 
     return angle::Result::Continue;
 }
@@ -218,7 +231,7 @@ angle::Result BufferMtl::getIndexRange(const gl::Context *context,
 {
     ASSERT(mShadowCopy.size());
 
-    const uint8_t *indices = mShadowCopy.data() + offset;
+    const uint8_t *indices = getClientShadowCopyData(context) + offset;
 
     *outRange = gl::ComputeIndexRange(type, indices, count, primitiveRestartEnabled);
 
@@ -233,7 +246,7 @@ angle::Result BufferMtl::getFirstLastIndices(const gl::Context *context,
 {
     ASSERT(mShadowCopy.size());
 
-    const uint8_t *indices = mShadowCopy.data() + offset;
+    const uint8_t *indices = getClientShadowCopyData(context) + offset;
 
     switch (type)
     {
@@ -253,12 +266,31 @@ angle::Result BufferMtl::getFirstLastIndices(const gl::Context *context,
     return angle::Result::Continue;
 }
 
-const uint8_t *BufferMtl::getClientShadowCopyData(const gl::Context *context)
+const uint8_t *BufferMtl::getClientShadowCopyData(const gl::Context *context) const
 {
-    // NOTE(hqle): Support buffer update from GPU.
-    // Which mean we have to stall the GPU by calling finish and copy
-    // data back to shadow copy.
+    if (mShadowCopyDirty)
+    {
+        // Current buffer=null means the buffer's data hasn't been updated yet.
+        // In that case, ignore the copy step.
+        if (mBuffer)
+        {
+            copyToShadowCopy(context);
+        }
+    }
     return mShadowCopy.data();
+}
+
+void BufferMtl::copyToShadowCopy(const gl::Context *context) const
+{
+    ASSERT(mBuffer);
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+
+    // Copy from GPU buffer to shadow copy buffer.
+    ASSERT(mBuffer->size() == mShadowCopy.size());
+    const uint8_t *bufferData = mBuffer->contents(contextMtl);
+    std::copy(bufferData, bufferData + mShadowCopy.size(), mShadowCopy.data());
+
+    mShadowCopyDirty = false;
 }
 
 ConversionBufferMtl *BufferMtl::getVertexConversionBuffer(const gl::Context *context,
@@ -294,8 +326,10 @@ IndexConversionBufferMtl *BufferMtl::getIndexConversionBuffer(const gl::Context 
     return &mIndexConversionBuffers.back();
 }
 
-void BufferMtl::markConversionBuffersDirty()
+void BufferMtl::markDataDirty()
 {
+    mShadowCopyDirty = true;
+
     for (VertexConversionBuffer &buffer : mVertexConversionBuffers)
     {
         buffer.dirty = true;
@@ -318,36 +352,80 @@ angle::Result BufferMtl::setSubDataImpl(const gl::Context *context,
     {
         return angle::Result::Continue;
     }
-    ContextMtl *contextMtl = mtl::GetImpl(context);
 
     ASSERT(mShadowCopy.size());
 
-    ANGLE_MTL_TRY(contextMtl, offset <= this->size());
+    markDataDirty();
 
-    auto srcPtr     = static_cast<const uint8_t *>(data);
-    auto sizeToCopy = std::min<size_t>(size, this->size() - offset);
-    std::copy(srcPtr, srcPtr + sizeToCopy, mShadowCopy.data() + offset);
+    auto srcPtr = static_cast<const uint8_t *>(data);
 
-    markConversionBuffersDirty();
-
-    ANGLE_TRY(commitShadowCopy(context));
+    ANGLE_TRY(commitData(context, srcPtr, offset, size));
 
     return angle::Result::Continue;
 }
 
-angle::Result BufferMtl::commitShadowCopy(const gl::Context *context)
+angle::Result BufferMtl::commitData(const gl::Context *context,
+                                    const uint8_t *data,
+                                    size_t offset,
+                                    size_t size)
 {
     ContextMtl *contextMtl = mtl::GetImpl(context);
+    ANGLE_MTL_TRY(contextMtl, offset <= this->size());
+
+    size = std::min(size, mShadowCopy.size() - offset);
 
     uint8_t *ptr = nullptr;
-    ANGLE_TRY(
-        mBufferPool.allocate(contextMtl, mShadowCopy.size(), &ptr, &mBuffer, nullptr, nullptr));
+    ANGLE_TRY(mapImpl(context, &ptr));
 
-    std::copy(mShadowCopy.data(), mShadowCopy.data() + mShadowCopy.size(), ptr);
+    std::copy(data, data + size, ptr + offset);
 
-    ANGLE_TRY(mBufferPool.commit(contextMtl));
+    ANGLE_TRY(unmapImpl(context));
 
     return angle::Result::Continue;
+}
+
+angle::Result BufferMtl::mapImpl(const gl::Context *context, uint8_t **mapPtr)
+{
+    if (mMappedPtr)
+    {
+        // If already mapped, return the mapped pointer.
+        *mapPtr = mMappedPtr;
+        return angle::Result::Continue;
+    }
+
+    mtl::BufferRef previousBuffer = mBuffer;
+
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+    ANGLE_TRY(mBufferPool.allocate(contextMtl, mShadowCopy.size(), &mMappedPtr, &mBuffer, nullptr,
+                                   nullptr));
+
+    *mapPtr = mMappedPtr;
+
+    if (!mFirstBufferUpdate && previousBuffer && previousBuffer != mBuffer)
+    {
+        ASSERT(previousBuffer->size() == mBuffer->size());
+        // If this is not first update, transfer previous buffer data to the newly allocated buffer.
+        const uint8_t *oldBufferData = previousBuffer->contents(contextMtl);
+        std::copy(oldBufferData, oldBufferData + mShadowCopy.size(), mMappedPtr);
+    }
+
+    // The subsequent update is not first update anymore.
+    mFirstBufferUpdate = false;
+
+    return angle::Result::Continue;
+}
+
+angle::Result BufferMtl::unmapImpl(const gl::Context *context)
+{
+    if (!mMappedPtr)
+    {
+        return angle::Result::Continue;
+    }
+
+    mMappedPtr = nullptr;
+
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+    return mBufferPool.commit(contextMtl);
 }
 
 // SimpleWeakBufferHolderMtl implementation

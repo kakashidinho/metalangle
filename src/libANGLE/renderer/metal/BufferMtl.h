@@ -117,7 +117,7 @@ class BufferMtl : public BufferImpl, public BufferHolderMtl
                                       size_t count,
                                       std::pair<uint32_t, uint32_t> *outIndices) const;
 
-    const uint8_t *getClientShadowCopyData(const gl::Context *context);
+    const uint8_t *getClientShadowCopyData(const gl::Context *context) const;
 
     ConversionBufferMtl *getVertexConversionBuffer(const gl::Context *context,
                                                    angle::FormatID formatID,
@@ -136,15 +136,26 @@ class BufferMtl : public BufferImpl, public BufferHolderMtl
                                  size_t size,
                                  size_t offset);
 
-    angle::Result commitShadowCopy(const gl::Context *context);
+    angle::Result commitData(const gl::Context *context,
+                             const uint8_t *data,
+                             size_t offset,
+                             size_t size);
 
-    void markConversionBuffersDirty();
+    angle::Result mapImpl(const gl::Context *context, uint8_t **mapPtr);
+    angle::Result unmapImpl(const gl::Context *context);
+
+    void copyToShadowCopy(const gl::Context *context) const;
+
+    void markDataDirty();
 
     // Client side shadow buffer
-    angle::MemoryBuffer mShadowCopy;
+    mutable angle::MemoryBuffer mShadowCopy;
+    mutable bool mShadowCopyDirty = true;
 
     // GPU side buffers pool
     mtl::BufferPool mBufferPool;
+    uint8_t *mMappedPtr     = nullptr;
+    bool mFirstBufferUpdate = false;
 
     struct VertexConversionBuffer : public ConversionBufferMtl
     {
