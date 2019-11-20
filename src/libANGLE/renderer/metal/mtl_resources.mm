@@ -53,37 +53,6 @@ void SetTextureSwizzle(ContextMtl *context,
     }
 #endif
 }
-
-template <typename ResourceType>
-void SyncContentImpl(ContextMtl *context,
-                     mtl::BlitCommandEncoder *blitEncoder,
-                     const ResourceType &resource)
-{
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-    if (blitEncoder)
-    {
-        blitEncoder->synchronizeResource(resource);
-    }
-#endif
-}
-
-template <typename ResourceType>
-void SyncContent(ContextMtl *context, const ResourceType &resource)
-{
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-    // Make sure GPU & CPU contents are synchronized.
-    // NOTE: Only MacOS has separated storage for resource on CPU and GPU and needs explicit
-    // synchronization
-    if (resource->isCPUReadMemDirty())
-    {
-        mtl::BlitCommandEncoder *blitEncoder = context->getBlitCommandEncoder();
-        SyncContentImpl(context, blitEncoder, resource);
-
-        resource->resetCPUReadMemDirty();
-    }
-#endif
-}
-
 }  // namespace
 // Resource implementation
 Resource::Resource() : mUsageRef(std::make_shared<UsageRef>()) {}
@@ -259,9 +228,30 @@ Texture::Texture(Texture *original, MTLTextureType type, NSRange mipmapLevelRang
     }
 }
 
+void Texture::syncContent(ContextMtl *context, mtl::BlitCommandEncoder *blitEncoder)
+{
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
+    if (blitEncoder)
+    {
+        blitEncoder->synchronizeResource(shared_from_this());
+    }
+#endif
+}
+
 void Texture::syncContent(ContextMtl *context)
 {
-    SyncContent(context, shared_from_this());
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
+    // Make sure GPU & CPU contents are synchronized.
+    // NOTE: Only MacOS has separated storage for resource on CPU and GPU and needs explicit
+    // synchronization
+    if (this->isCPUReadMemDirty())
+    {
+        mtl::BlitCommandEncoder *blitEncoder = context->getBlitCommandEncoder();
+        syncContent(context, blitEncoder);
+
+        this->resetCPUReadMemDirty();
+    }
+#endif
 }
 
 bool Texture::isCPUAccessible() const
@@ -469,21 +459,9 @@ angle::Result Buffer::reset(ContextMtl *context, size_t size, const uint8_t *dat
     }
 }
 
-const uint8_t *Buffer::contents(ContextMtl *context)
-{
-    return syncAndGetContentsPtr(context);
-}
-
 uint8_t *Buffer::map(ContextMtl *context)
 {
-    return syncAndGetContentsPtr(context);
-}
-
-uint8_t *Buffer::syncAndGetContentsPtr(ContextMtl *context)
-{
     CommandQueue &cmdQueue = context->cmdQueue();
-
-    SyncContent(context, shared_from_this());
 
     // NOTE(hqle): what if multiple contexts on multiple threads are using this buffer?
     if (this->isBeingUsedByGPU(context))
@@ -491,6 +469,7 @@ uint8_t *Buffer::syncAndGetContentsPtr(ContextMtl *context)
         context->flushCommandBufer();
     }
 
+    // NOTE(hqle): currently not support reading data written by GPU
     cmdQueue.ensureResourceReadyForCPU(this);
 
     return reinterpret_cast<uint8_t *>([get() contents]);

@@ -154,6 +154,9 @@ class Texture final : public Resource,
     // Change the wrapped metal object. Special case for swapchain image
     void set(id<MTLTexture> metalTexture);
 
+    // sync content between CPU and GPU
+    void syncContent(ContextMtl *context, mtl::BlitCommandEncoder *encoder);
+
   private:
     using ParentClass = WrappedObject<id<MTLTexture>>;
 
@@ -168,16 +171,13 @@ class Texture final : public Resource,
     Texture(Texture *original, MTLPixelFormat format);
     Texture(Texture *original, MTLTextureType type, NSRange mipmapLevelRange, uint32_t slice);
 
-    // sync content between CPU and GPU
     void syncContent(ContextMtl *context);
 
     // This property is shared between this object and its views:
     std::shared_ptr<MTLColorWriteMask> mColorWritableMask;
 };
 
-class Buffer final : public Resource,
-                     public WrappedObject<id<MTLBuffer>>,
-                     public std::enable_shared_from_this<Buffer>
+class Buffer final : public Resource, public WrappedObject<id<MTLBuffer>>
 {
   public:
     static angle::Result MakeBuffer(ContextMtl *context,
@@ -187,16 +187,12 @@ class Buffer final : public Resource,
 
     angle::Result reset(ContextMtl *context, size_t size, const uint8_t *data);
 
-    // Get most up to date content.
-    const uint8_t *contents(ContextMtl *context);
-
     uint8_t *map(ContextMtl *context);
     void unmap(ContextMtl *context);
 
     size_t size() const;
 
   private:
-    uint8_t *syncAndGetContentsPtr(ContextMtl *context);
     Buffer(ContextMtl *context, size_t size, const uint8_t *data);
 };
 
