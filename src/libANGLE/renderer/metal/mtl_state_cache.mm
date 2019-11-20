@@ -703,6 +703,12 @@ void RenderPassDesc::populateRenderPipelineOutputDesc(const BlendDesc &blendStat
         }
     }
 
+    // Reset the unused output slots to ensure consistent hash value
+    for (uint32_t i = this->numColorAttachments; i < kMaxRenderTargets; ++i)
+    {
+        outputDescriptor.colorAttachments[i].reset();
+    }
+
     auto depthTexture = this->depthAttachment.texture();
     outputDescriptor.depthAttachmentPixelFormat =
         depthTexture ? depthTexture->pixelFormat() : MTLPixelFormatInvalid;
