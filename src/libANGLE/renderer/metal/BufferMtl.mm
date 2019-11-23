@@ -82,7 +82,8 @@ BufferMtl::VertexConversionBuffer::VertexConversionBuffer(const gl::Context *con
 
 // BufferMtl implementation
 BufferMtl::BufferMtl(const gl::BufferState &state)
-    : BufferImpl(state), mBufferPool(/** alwaysAllocNewBuffer */ true)
+    : BufferImpl(state), mBufferPool(/** alwaysAllocNewBuffer */ true),
+      mSize(0)
 {}
 
 BufferMtl::~BufferMtl() {}
@@ -107,6 +108,10 @@ angle::Result BufferMtl::setData(const gl::Context *context,
 
     // Invalidate conversion buffers
     clearConversionBuffers();
+
+    // We need to cache the actual size of buffer here, since mState.getSize() hasn't been updated
+    // with new buffer size at this point.
+    mSize = size;
 
     if (!mShadowCopy.size() || size > mShadowCopy.size() || usage != mState.getUsage())
     {
@@ -181,7 +186,7 @@ angle::Result BufferMtl::copySubData(const gl::Context *context,
 angle::Result BufferMtl::map(const gl::Context *context, GLenum access, void **mapPtr)
 {
     ASSERT(mShadowCopy.size());
-    return mapRange(context, 0, mState.getSize(), 0, mapPtr);
+    return mapRange(context, 0, size(), 0, mapPtr);
 }
 
 angle::Result BufferMtl::mapRange(const gl::Context *context,
@@ -350,9 +355,9 @@ angle::Result BufferMtl::commitShadowCopy(const gl::Context *context)
 
     uint8_t *ptr = nullptr;
     ANGLE_TRY(
-        mBufferPool.allocate(contextMtl, mShadowCopy.size(), &ptr, &mBuffer, nullptr, nullptr));
+        mBufferPool.allocate(contextMtl, size(), &ptr, &mBuffer, nullptr, nullptr));
 
-    std::copy(mShadowCopy.data(), mShadowCopy.data() + mShadowCopy.size(), ptr);
+    std::copy(mShadowCopy.data(), mShadowCopy.data() + size(), ptr);
 
     ANGLE_TRY(mBufferPool.commit(contextMtl));
 
