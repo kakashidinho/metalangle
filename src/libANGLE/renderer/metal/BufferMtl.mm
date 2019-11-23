@@ -93,6 +93,8 @@ void BufferMtl::destroy(const gl::Context *context)
     mShadowCopy.resize(0);
     mBufferPool.destroy(contextMtl);
     mBuffer = nullptr;
+
+    clearConversionBuffers();
 }
 
 angle::Result BufferMtl::setData(const gl::Context *context,
@@ -103,15 +105,16 @@ angle::Result BufferMtl::setData(const gl::Context *context,
 {
     ContextMtl *contextMtl = mtl::GetImpl(context);
 
-    if (!mShadowCopy.size() || size > static_cast<size_t>(mState.getSize()) ||
-        usage != mState.getUsage())
+    // Invalidate conversion buffers
+    clearConversionBuffers();
+
+    if (!mShadowCopy.size() || size > mShadowCopy.size() || usage != mState.getUsage())
     {
         if (size == 0)
         {
             size = 1;
         }
         // Re-create the buffer
-        markConversionBuffersDirty();
 
         ANGLE_MTL_CHECK(contextMtl, mShadowCopy.resize(size), GL_OUT_OF_MEMORY);
         if (data)
@@ -307,6 +310,12 @@ void BufferMtl::markConversionBuffersDirty()
         buffer.convertedBuffer = nullptr;
         buffer.convertedOffset = 0;
     }
+}
+
+void BufferMtl::clearConversionBuffers()
+{
+    mVertexConversionBuffers.clear();
+    mIndexConversionBuffers.clear();
 }
 
 angle::Result BufferMtl::setSubDataImpl(const gl::Context *context,

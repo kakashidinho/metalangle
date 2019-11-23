@@ -140,6 +140,8 @@ class BufferMtl : public BufferImpl, public BufferHolderMtl
 
     void markConversionBuffersDirty();
 
+    void clearConversionBuffers();
+
     // Client side shadow buffer
     angle::MemoryBuffer mShadowCopy;
 
