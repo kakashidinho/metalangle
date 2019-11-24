@@ -44,7 +44,9 @@ angle::Result GetFirstLastIndices(const IndexType *indices,
 ConversionBufferMtl::ConversionBufferMtl(const gl::Context *context,
                                          size_t initialSize,
                                          size_t alignment)
-    : dirty(true)
+    : dirty(true),
+      convertedBuffer(nullptr),
+      convertedOffset(0)
 {
     ContextMtl *contextMtl = mtl::GetImpl(context);
     data.initialize(contextMtl, initialSize, alignment);
@@ -58,11 +60,9 @@ IndexConversionBufferMtl::IndexConversionBufferMtl(const gl::Context *context,
                                                    size_t offsetIn)
     : ConversionBufferMtl(context,
                           kConvertedElementArrayBufferInitialSize,
-                          mtl::kBufferSettingOffsetAlignment),
+                          mtl::kIndexBufferOffsetAlignment),
       type(typeIn),
-      offset(offsetIn),
-      convertedBuffer(nullptr),
-      convertedOffset(0)
+      offset(offsetIn)
 {}
 
 // BufferMtl::VertexConversionBuffer implementation.
@@ -107,7 +107,14 @@ angle::Result BufferMtl::setData(const gl::Context *context,
     ContextMtl *contextMtl = mtl::GetImpl(context);
 
     // Invalidate conversion buffers
-    clearConversionBuffers();
+    if (mSize != size)
+    {
+        clearConversionBuffers();
+    }
+    else
+    {
+        markConversionBuffersDirty();
+    }
 
     // We need to cache the actual size of buffer here, since mState.getSize() hasn't been updated
     // with new buffer size at this point.
@@ -360,6 +367,13 @@ angle::Result BufferMtl::commitShadowCopy(const gl::Context *context)
     std::copy(mShadowCopy.data(), mShadowCopy.data() + size(), ptr);
 
     ANGLE_TRY(mBufferPool.commit(contextMtl));
+
+#ifndef NDEBUG
+    ANGLE_MTL_OBJC_SCOPE
+    {
+        mBuffer->get().label = [NSString stringWithFormat:@"%p", this];
+    }
+#endif
 
     return angle::Result::Continue;
 }

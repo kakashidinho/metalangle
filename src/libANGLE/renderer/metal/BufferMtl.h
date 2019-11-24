@@ -36,6 +36,10 @@ struct ConversionBufferMtl
 
     // The conversion is stored in a dynamic buffer.
     mtl::BufferPool data;
+
+    // These properties are to be filled by user of this buffer conversion
+    mtl::BufferRef convertedBuffer;
+    size_t convertedOffset;
 };
 
 struct IndexConversionBufferMtl : public ConversionBufferMtl
@@ -46,10 +50,6 @@ struct IndexConversionBufferMtl : public ConversionBufferMtl
 
     const gl::DrawElementsType type;
     const size_t offset;
-
-    // These properties are to be filled by user of this buffer conversion
-    mtl::BufferRef convertedBuffer;
-    size_t convertedOffset;
 };
 
 class BufferHolderMtl
