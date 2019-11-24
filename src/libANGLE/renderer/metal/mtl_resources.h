@@ -151,6 +151,9 @@ class Texture final : public Resource,
     MTLColorWriteMask getColorWritableMask() const { return *mColorWritableMask; }
     void setColorWritableMask(MTLColorWriteMask mask) { *mColorWritableMask = mask; }
 
+    // Get stencil view
+    TextureRef getStencilView();
+
     // Change the wrapped metal object. Special case for swapchain image
     void set(id<MTLTexture> metalTexture);
 
@@ -175,6 +178,8 @@ class Texture final : public Resource,
 
     // This property is shared between this object and its views:
     std::shared_ptr<MTLColorWriteMask> mColorWritableMask;
+
+    TextureRef mStencilView;
 };
 
 class Buffer final : public Resource, public WrappedObject<id<MTLBuffer>>

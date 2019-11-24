@@ -547,9 +547,9 @@ void DisplayMtl::initializeExtensions() const
     mNativeExtensions.mapBuffer              = true;
     mNativeExtensions.mapBufferRange         = true;
     mNativeExtensions.textureStorage         = true;
-    mNativeExtensions.drawBuffers            = false;
+    mNativeExtensions.drawBuffers            = true;
     mNativeExtensions.fragDepth              = true;
-    mNativeExtensions.framebufferBlit        = false;
+    mNativeExtensions.framebufferBlit        = mFeatures.hasStencilOutput.enabled;
     mNativeExtensions.framebufferMultisample = false;
     mNativeExtensions.copyTexture            = false;
     mNativeExtensions.copyCompressedTexture  = false;
@@ -617,6 +617,12 @@ void DisplayMtl::initializeFeatures()
     mFeatures.hasNonUniformDispatch.enabled             = true;
     mFeatures.hasTextureSwizzle.enabled                 = false;
     mFeatures.allowSeparatedDepthStencilBuffers.enabled = false;
+    mFeatures.hasStencilOutput.enabled                  = false;
+
+    if (ANGLE_APPLE_AVAILABLE_XCI(10.14, 13.0, 12.0))
+    {
+        mFeatures.hasStencilOutput.enabled = true;
+    }
 
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
     // Texture swizzle is only supported if macos sdk 10.15 is present

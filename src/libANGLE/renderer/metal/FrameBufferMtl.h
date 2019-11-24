@@ -86,6 +86,8 @@ class FramebufferMtl : public FramebufferImpl
                                     GLfloat *xy) const override;
 
     RenderTargetMtl *getColorReadRenderTarget(const gl::Context *context) const;
+    RenderTargetMtl *getDepthRenderTarget() const { return mDepthRenderTarget; }
+    RenderTargetMtl *getStencilRenderTarget() const { return mStencilRenderTarget; }
 
     bool flipY() const { return mFlipY; }
 
@@ -123,9 +125,7 @@ class FramebufferMtl : public FramebufferImpl
                                 gl::DrawBufferMask clearColorBuffers,
                                 const mtl::ClearRectParams &clearOpts);
 
-    angle::Result prepareRenderPass(const gl::Context *context,
-                                    gl::DrawBufferMask drawColorBuffers,
-                                    mtl::RenderPassDesc *descOut);
+    angle::Result prepareRenderPass(const gl::Context *context, mtl::RenderPassDesc *descOut);
 
     mtl::RenderCommandEncoder *ensureRenderPassStarted(const gl::Context *context,
                                                        const mtl::RenderPassDesc &desc);

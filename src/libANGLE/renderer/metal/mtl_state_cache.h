@@ -191,6 +191,8 @@ struct RenderPipelineOutputDesc
 {
     bool operator==(const RenderPipelineOutputDesc &rhs) const;
 
+    void updateEnabledDrawBuffers(gl::DrawBufferMask enabledBuffers);
+
     RenderPipelineColorAttachmentDesc colorAttachments[kMaxRenderTargets];
     MTLPixelFormat depthAttachmentPixelFormat;
     MTLPixelFormat stencilAttachmentPixelFormat;

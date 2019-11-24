@@ -51,6 +51,44 @@ constant float2 gCorners[6] = {
 
 constant int gTexcoordsIndices[6] = {2, 1, 0, 2, 3, 1};
 
+
+constant uint32_t kNumColorOutputs [[function_constant(0)]];
+constant bool kColorOutputAvailable1 = kNumColorOutputs > 1;
+constant bool kColorOutputAvailable2 = kNumColorOutputs > 2;
+constant bool kColorOutputAvailable3 = kNumColorOutputs > 3;
+constant bool kColorOutputAvailable4 = kNumColorOutputs > 4;
+constant bool kColorOutputAvailable5 = kNumColorOutputs > 5;
+constant bool kColorOutputAvailable6 = kNumColorOutputs > 6;
+constant bool kColorOutputAvailable7 = kNumColorOutputs > 7;
+
+struct MultipleColorOutputs
+{
+    float4 color0 [[color(0)]];
+    float4 color1 [[color(1), function_constant(kColorOutputAvailable1)]];
+    float4 color2 [[color(2), function_constant(kColorOutputAvailable2)]];
+    float4 color3 [[color(3), function_constant(kColorOutputAvailable3)]];
+    float4 color4 [[color(4), function_constant(kColorOutputAvailable4)]];
+    float4 color5 [[color(5), function_constant(kColorOutputAvailable5)]];
+    float4 color6 [[color(6), function_constant(kColorOutputAvailable6)]];
+    float4 color7 [[color(7), function_constant(kColorOutputAvailable7)]];
+};
+# 65 "./common.h"
+MultipleColorOutputs toMultipleColorOutputs(float4 color)
+{
+    MultipleColorOutputs re;
+    re.color0 = color;
+
+    do { if (kColorOutputAvailable1) { re.color1 = color; } } while (0);
+    do { if (kColorOutputAvailable2) { re.color2 = color; } } while (0);
+    do { if (kColorOutputAvailable3) { re.color3 = color; } } while (0);
+    do { if (kColorOutputAvailable4) { re.color4 = color; } } while (0);
+    do { if (kColorOutputAvailable5) { re.color5 = color; } } while (0);
+    do { if (kColorOutputAvailable6) { re.color6 = color; } } while (0);
+    do { if (kColorOutputAvailable7) { re.color7 = color; } } while (0);
+
+    return re;
+}
+
 fragment float4 dummyFS()
 {
     return float4(0, 0, 0, 0);
@@ -69,36 +107,40 @@ vertex float4 clearVS(unsigned int vid [[ vertex_id ]],
     return float4(gCorners[vid], clearParams.clearDepth, 1.0);
 }
 
-fragment float4 clearFS(constant ClearParams &clearParams [[buffer(0)]])
+fragment MultipleColorOutputs clearFS(constant ClearParams &clearParams [[buffer(0)]])
 {
-    return clearParams.clearColor;
+    return toMultipleColorOutputs(clearParams.clearColor);
 }
 # 10 "master_source.metal" 2
 # 1 "./blit.metal" 1
-# 11 "./blit.metal"
+# 10 "./blit.metal"
 struct BlitParams
 {
 
     float2 srcTexCoords[4];
     int srcLevel;
     bool srcLuminance;
+    bool dstFlipViewportX;
     bool dstFlipViewportY;
     bool dstLuminance;
 };
 
 struct BlitVSOut
 {
-    float4 position [[position]];
-    float2 texCoords [[user(locn1)]];
+    float4 position[[position]];
+    float2 texCoords[[user(locn1)]];
 };
 
-vertex BlitVSOut blitVS(unsigned int vid [[ vertex_id ]],
-                         constant BlitParams &options [[buffer(0)]])
+vertex BlitVSOut blitVS(unsigned int vid[[vertex_id]], constant BlitParams &options[[buffer(0)]])
 {
     BlitVSOut output;
     output.position = float4(gCorners[vid], 0.0, 1.0);
     output.texCoords = options.srcTexCoords[gTexcoordsIndices[vid]];
 
+    if (options.dstFlipViewportX)
+    {
+        output.position.x = -output.position.x;
+    }
     if (!options.dstFlipViewportY)
     {
 
@@ -110,11 +152,10 @@ vertex BlitVSOut blitVS(unsigned int vid [[ vertex_id ]],
 }
 
 float4 blitSampleTexture(texture2d<float> srcTexture,
-                     float2 texCoords,
-                     constant BlitParams &options)
+                         sampler textureSampler,
+                         float2 texCoords,
+                         constant BlitParams &options)
 {
-    constexpr sampler textureSampler(mag_filter::linear,
-                                     min_filter::linear);
     float4 output = srcTexture.sample(textureSampler, texCoords, level(options.srcLevel));
 
     if (options.srcLuminance)
@@ -125,7 +166,7 @@ float4 blitSampleTexture(texture2d<float> srcTexture,
     return output;
 }
 
-float4 blitOutput(float4 color, constant BlitParams &options)
+MultipleColorOutputs blitOutput(float4 color, constant BlitParams &options)
 {
     float4 ret = color;
 
@@ -134,50 +175,105 @@ float4 blitOutput(float4 color, constant BlitParams &options)
         ret.r = ret.g = ret.b = color.r;
     }
 
-    return ret;
+    return toMultipleColorOutputs(ret);
 }
 
-fragment float4 blitFS(BlitVSOut input [[stage_in]],
-                       texture2d<float> srcTexture [[texture(0)]],
-                       constant BlitParams &options [[buffer(0)]])
+fragment MultipleColorOutputs blitFS(BlitVSOut input[[stage_in]],
+                                     texture2d<float> srcTexture[[texture(0)]],
+                                     sampler textureSampler[[sampler(0)]],
+                                     constant BlitParams &options[[buffer(0)]])
 {
-    return blitOutput(blitSampleTexture(srcTexture, input.texCoords, options), options);
+    return blitOutput(blitSampleTexture(srcTexture, textureSampler, input.texCoords, options),
+                      options);
 }
 
-fragment float4 blitPremultiplyAlphaFS(BlitVSOut input [[stage_in]],
-                                       texture2d<float> srcTexture [[texture(0)]],
-                                       constant BlitParams &options [[buffer(0)]])
+fragment MultipleColorOutputs blitPremultiplyAlphaFS(BlitVSOut input[[stage_in]],
+                                                     texture2d<float> srcTexture[[texture(0)]],
+                                                     sampler textureSampler[[sampler(0)]],
+                                                     constant BlitParams &options[[buffer(0)]])
 {
-    float4 output = blitSampleTexture(srcTexture, input.texCoords, options);
+    float4 output = blitSampleTexture(srcTexture, textureSampler, input.texCoords, options);
     output.xyz *= output.a;
     return blitOutput(output, options);
 }
 
-fragment float4 blitUnmultiplyAlphaFS(BlitVSOut input [[stage_in]],
-                                      texture2d<float> srcTexture [[texture(0)]],
-                                      constant BlitParams &options [[buffer(0)]])
+fragment MultipleColorOutputs blitUnmultiplyAlphaFS(BlitVSOut input[[stage_in]],
+                                                    texture2d<float> srcTexture[[texture(0)]],
+                                                    sampler textureSampler[[sampler(0)]],
+                                                    constant BlitParams &options[[buffer(0)]])
 {
-    float4 output = blitSampleTexture(srcTexture, input.texCoords, options);
+    float4 output = blitSampleTexture(srcTexture, textureSampler, input.texCoords, options);
     if (output.a != 0.0)
     {
         output.xyz *= 1.0 / output.a;
     }
     return blitOutput(output, options);
 }
+
+
+template <typename T>
+T blitSampleDepthOrStencil(texture2d<T> srcTexture,
+                           float2 texCoords,
+                           constant BlitParams &options)
+{
+    constexpr sampler textureSampler(mag_filter::nearest, min_filter::nearest);
+    T output = srcTexture.sample(textureSampler, texCoords, level(options.srcLevel)).r;
+
+    return output;
+}
+
+struct FragmentDepthOut
+{
+    float depth[[depth(any)]];
+};
+
+fragment FragmentDepthOut blitDepthFS(BlitVSOut input[[stage_in]],
+                                      texture2d<float> srcTexture[[texture(0)]],
+                                      constant BlitParams &options[[buffer(0)]])
+{
+    FragmentDepthOut re;
+    re.depth = blitSampleDepthOrStencil(srcTexture, input.texCoords, options);
+    return re;
+}
+
+
+struct FragmentStencilOut
+{
+    uint32_t stencil[[stencil]];
+};
+
+struct FragmentDepthStencilOut
+{
+    float depth[[depth(any)]];
+    uint32_t stencil[[stencil]];
+};
+
+fragment FragmentStencilOut blitStencilFS(BlitVSOut input[[stage_in]],
+                                          texture2d<uint32_t> srcTexture[[texture(1)]],
+                                          constant BlitParams &options[[buffer(0)]])
+{
+    FragmentStencilOut re;
+    re.stencil = blitSampleDepthOrStencil(srcTexture, input.texCoords, options);
+    return re;
+}
+fragment FragmentDepthStencilOut
+blitDepthDepthFS(BlitVSOut input[[stage_in]],
+                 texture2d<float> srcDepthTexture[[texture(0)]],
+                 texture2d<uint32_t> srcStencilTexture[[texture(1)]],
+                 constant BlitParams &options[[buffer(0)]])
+{
+    FragmentDepthStencilOut re;
+    re.depth = blitSampleDepthOrStencil(srcDepthTexture, input.texCoords, options);
+    re.stencil = blitSampleDepthOrStencil(srcStencilTexture, input.texCoords, options);
+    return re;
+}
 # 11 "master_source.metal" 2
 # 1 "./gen_indices.metal" 1
-
-
-
-
-
-
-
-
-constant bool kSourceBufferAligned[[function_constant(0)]];
-constant bool kSourceIndexIsU8[[function_constant(1)]];
-constant bool kSourceIndexIsU16[[function_constant(2)]];
-constant bool kSourceIndexIsU32[[function_constant(3)]];
+# 10 "./gen_indices.metal"
+constant bool kSourceBufferAligned[[function_constant(1)]];
+constant bool kSourceIndexIsU8[[function_constant(2)]];
+constant bool kSourceIndexIsU16[[function_constant(3)]];
+constant bool kSourceIndexIsU32[[function_constant(4)]];
 constant bool kSourceBufferUnaligned = !kSourceBufferAligned;
 constant bool kUseSourceBufferU8 = kSourceIndexIsU8 || kSourceBufferUnaligned;
 constant bool kUseSourceBufferU16 = kSourceIndexIsU16 && kSourceBufferAligned;

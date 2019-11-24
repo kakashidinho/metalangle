@@ -25,8 +25,13 @@ class DisplayMtl;
 
 namespace mtl
 {
+
 struct ClearRectParams : public ClearOptions
 {
+    gl::Extents dstTextureSize;
+
+    // Only clear enabled buffers
+    gl::DrawBufferMask enabledBuffers;
     gl::Rectangle clearArea;
 
     bool flipY = false;
@@ -34,23 +39,38 @@ struct ClearRectParams : public ClearOptions
 
 struct BlitParams
 {
-    gl::Offset dstOffset;
+    gl::Extents dstTextureSize;
+    gl::Rectangle dstRect;
+    gl::Rectangle dstScissorRect;
     // Destination texture needs to have viewport Y flipped?
     // The difference between this param and unpackFlipY is that unpackFlipY is from
     // glCopyImageCHROMIUM(), and dstFlipY controls whether the final viewport needs to be
     // flipped when drawing to destination texture.
     bool dstFlipY = false;
-
-    MTLColorWriteMask dstColorMask = MTLColorWriteMaskAll;
+    bool dstFlipX = false;
 
     TextureRef src;
     uint32_t srcLevel = 0;
     gl::Rectangle srcRect;
-    bool srcYFlipped            = false;  // source texture has data flipped in Y direction
-    bool unpackFlipY            = false;  // flip texture data copying process in Y direction
+    bool srcYFlipped = false;  // source texture has data flipped in Y direction
+    bool unpackFlipX = false;  // flip texture data copying process in X direction
+    bool unpackFlipY = false;  // flip texture data copying process in Y direction
+};
+
+struct ColorBlitParams : public BlitParams
+{
+    MTLColorWriteMask blitColorMask = MTLColorWriteMaskAll;
+    gl::DrawBufferMask enabledBuffers;
+    GLenum filter               = GL_NEAREST;
     bool unpackPremultiplyAlpha = false;
     bool unpackUnmultiplyAlpha  = false;
     bool dstLuminance           = false;
+};
+
+struct DepthStencilBlitParams : public BlitParams
+{
+    TextureRef srcStencil;
+    uint32_t srcStencilLevel = 0;
 };
 
 struct TriFanFromArrayParams
@@ -85,9 +105,13 @@ class RenderUtils : public Context, angle::NonCopyable
                        RenderCommandEncoder *cmdEncoder,
                        const ClearRectParams &params);
     // Blit texture data to current framebuffer
-    void blitWithDraw(const gl::Context *context,
-                      RenderCommandEncoder *cmdEncoder,
-                      const BlitParams &params);
+    void blitColorWithDraw(const gl::Context *context,
+                           RenderCommandEncoder *cmdEncoder,
+                           const ColorBlitParams &params);
+
+    void blitDepthStencilWithDraw(const gl::Context *context,
+                                  RenderCommandEncoder *cmdEncoder,
+                                  const DepthStencilBlitParams &params);
 
     angle::Result convertIndexBuffer(const gl::Context *context,
                                      gl::DrawElementsType srcType,
@@ -133,18 +157,31 @@ class RenderUtils : public Context, angle::NonCopyable
     void setupClearWithDraw(const gl::Context *context,
                             RenderCommandEncoder *cmdEncoder,
                             const ClearRectParams &params);
-    void setupBlitWithDraw(const gl::Context *context,
-                           RenderCommandEncoder *cmdEncoder,
-                           const BlitParams &params);
+    void setupCommonBlitWithDraw(const gl::Context *context,
+                                 RenderCommandEncoder *cmdEncoder,
+                                 const BlitParams &params,
+                                 bool isColorBlit);
+    void setupColorBlitWithDraw(const gl::Context *context,
+                                RenderCommandEncoder *cmdEncoder,
+                                const ColorBlitParams &params);
+    void setupDepthStencilBlitWithDraw(const gl::Context *context,
+                                       RenderCommandEncoder *cmdEncoder,
+                                       const DepthStencilBlitParams &params);
     id<MTLDepthStencilState> getClearDepthStencilState(const gl::Context *context,
                                                        const ClearRectParams &params);
     id<MTLRenderPipelineState> getClearRenderPipelineState(const gl::Context *context,
                                                            RenderCommandEncoder *cmdEncoder,
                                                            const ClearRectParams &params);
-    id<MTLRenderPipelineState> getBlitRenderPipelineState(const gl::Context *context,
-                                                          RenderCommandEncoder *cmdEncoder,
-                                                          const BlitParams &params);
-    void setupBlitWithDrawUniformData(RenderCommandEncoder *cmdEncoder, const BlitParams &params);
+    id<MTLRenderPipelineState> getColorBlitRenderPipelineState(const gl::Context *context,
+                                                               RenderCommandEncoder *cmdEncoder,
+                                                               const ColorBlitParams &params);
+    id<MTLRenderPipelineState> getDepthStencilBlitRenderPipelineState(
+        const gl::Context *context,
+        RenderCommandEncoder *cmdEncoder,
+        const DepthStencilBlitParams &params);
+    void setupBlitWithDrawUniformData(RenderCommandEncoder *cmdEncoder,
+                                      const BlitParams &params,
+                                      bool isColorBlit);
 
     void setupDrawCommonStates(RenderCommandEncoder *cmdEncoder);
 
@@ -173,10 +210,14 @@ class RenderUtils : public Context, angle::NonCopyable
         const IndexGenerationParams &params);
 
     AutoObjCPtr<id<MTLLibrary>> mDefaultShaders = nil;
-    RenderPipelineCache mClearRenderPipelineCache;
-    RenderPipelineCache mBlitRenderPipelineCache;
-    RenderPipelineCache mBlitPremultiplyAlphaRenderPipelineCache;
-    RenderPipelineCache mBlitUnmultiplyAlphaRenderPipelineCache;
+    RenderPipelineCache mClearRenderPipelineCache[kMaxRenderTargets];
+    RenderPipelineCache mBlitRenderPipelineCache[kMaxRenderTargets];
+    RenderPipelineCache mBlitPremultiplyAlphaRenderPipelineCache[kMaxRenderTargets];
+    RenderPipelineCache mBlitUnmultiplyAlphaRenderPipelineCache[kMaxRenderTargets];
+
+    RenderPipelineCache mDepthBlitRenderPipelineCache;
+    RenderPipelineCache mStencilBlitRenderPipelineCache;
+    RenderPipelineCache mDepthStencilBlitRenderPipelineCache;
 
     struct IndexConvesionPipelineCacheKey
     {

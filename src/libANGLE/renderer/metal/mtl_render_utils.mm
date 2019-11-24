@@ -27,6 +27,7 @@ namespace mtl
 namespace
 {
 
+#define NUM_COLOR_OUTPUTS_CONSTANT_NAME @"kNumColorOutputs"
 #define SOURCE_BUFFER_ALIGNED_CONSTANT_NAME @"kSourceBufferAligned"
 #define SOURCE_IDX_IS_U8_CONSTANT_NAME @"kSourceIndexIsU8"
 #define SOURCE_IDX_IS_U16_CONSTANT_NAME @"kSourceIndexIsU16"
@@ -45,9 +46,9 @@ struct BlitParamsUniform
     float srcTexCoords[4][2];
     int srcLevel         = 0;
     uint8_t srcLuminance = 0;  // source texture is luminance texture
+    uint8_t dstFlipX     = 0;
     uint8_t dstFlipY     = 0;
     uint8_t dstLuminance = 0;  // dest texture is luminace
-    uint8_t padding1;
     float padding2[2];
 };
 
@@ -141,10 +142,13 @@ void RenderUtils::onDestroy()
 {
     mDefaultShaders = nil;
 
-    mClearRenderPipelineCache.clear();
-    mBlitRenderPipelineCache.clear();
-    mBlitPremultiplyAlphaRenderPipelineCache.clear();
-    mBlitUnmultiplyAlphaRenderPipelineCache.clear();
+    for (uint32_t i = 0; i < kMaxRenderTargets; ++i)
+    {
+        mClearRenderPipelineCache[i].clear();
+        mBlitRenderPipelineCache[i].clear();
+        mBlitPremultiplyAlphaRenderPipelineCache[i].clear();
+        mBlitUnmultiplyAlphaRenderPipelineCache[i].clear();
+    }
 
     mIndexConversionPipelineCaches.clear();
     mTriFanFromElemArrayGeneratorPipelineCaches.clear();
@@ -184,9 +188,22 @@ angle::Result RenderUtils::initShaderLibrary()
     mDefaultShaders = CreateShaderLibrary(getDisplay()->getMetalDevice(), default_metallib_src,
                                           sizeof(default_metallib_src), &err);
 #else
-    mDefaultShaders =
-        CreateShaderLibraryFromBinary(getDisplay()->getMetalDevice(), compiled_default_metallib,
-                                      compiled_default_metallib_len, &err);
+    const uint8_t *compiled_shader_binary;
+    size_t compiled_shader_binary_len;
+
+    if (getDisplay()->getFeatures().hasStencilOutput.enabled)
+    {
+        compiled_shader_binary     = compiled_default_metallib_2_1;
+        compiled_shader_binary_len = compiled_default_metallib_2_1_len;
+    }
+    else
+    {
+        compiled_shader_binary     = compiled_default_metallib;
+        compiled_shader_binary_len = compiled_default_metallib_len;
+    }
+
+    mDefaultShaders = CreateShaderLibraryFromBinary(
+        getDisplay()->getMetalDevice(), compiled_shader_binary, compiled_shader_binary_len, &err);
 #endif
 
     if (err && !mDefaultShaders)
@@ -202,11 +219,30 @@ void RenderUtils::initClearResources()
 {
     ANGLE_MTL_OBJC_SCOPE
     {
-        // Shader pipeline
-        mClearRenderPipelineCache.setVertexShader(
-            this, [[mDefaultShaders.get() newFunctionWithName:@"clearVS"] ANGLE_MTL_AUTORELEASE]);
-        mClearRenderPipelineCache.setFragmentShader(
-            this, [[mDefaultShaders.get() newFunctionWithName:@"clearFS"] ANGLE_MTL_AUTORELEASE]);
+        NSError *err       = nil;
+        auto shaderLib     = mDefaultShaders.get();
+        auto vertexShader  = [[shaderLib newFunctionWithName:@"clearVS"] ANGLE_MTL_AUTORELEASE];
+        auto funcConstants = [[[MTLFunctionConstantValues alloc] init] ANGLE_MTL_AUTORELEASE];
+
+        // Create clear shader pipeline cache for each number of color outputs.
+        // So clear k color outputs will use mClearRenderPipelineCache[k-1] for example:
+        for (uint32_t i = 0; i < kMaxRenderTargets; ++i)
+        {
+            RenderPipelineCache &cache = mClearRenderPipelineCache[i];
+            uint32_t numOutputs        = i + 1;
+
+            [funcConstants setConstantValue:&numOutputs
+                                       type:MTLDataTypeUInt
+                                   withName:NUM_COLOR_OUTPUTS_CONSTANT_NAME];
+
+            auto fragmentShader = [[shaderLib newFunctionWithName:@"clearFS"
+                                                   constantValues:funcConstants
+                                                            error:&err] ANGLE_MTL_AUTORELEASE];
+            ASSERT(fragmentShader);
+
+            cache.setVertexShader(this, vertexShader);
+            cache.setFragmentShader(this, fragmentShader);
+        }
     }
 }
 
@@ -214,21 +250,62 @@ void RenderUtils::initBlitResources()
 {
     ANGLE_MTL_OBJC_SCOPE
     {
-        auto shaderLib    = mDefaultShaders.get();
-        auto vertexShader = [[shaderLib newFunctionWithName:@"blitVS"] ANGLE_MTL_AUTORELEASE];
+        NSError *err       = nil;
+        auto shaderLib     = mDefaultShaders.get();
+        auto vertexShader  = [[shaderLib newFunctionWithName:@"blitVS"] ANGLE_MTL_AUTORELEASE];
+        auto funcConstants = [[[MTLFunctionConstantValues alloc] init] ANGLE_MTL_AUTORELEASE];
 
-        mBlitRenderPipelineCache.setVertexShader(this, vertexShader);
-        mBlitRenderPipelineCache.setFragmentShader(
-            this, [[shaderLib newFunctionWithName:@"blitFS"] ANGLE_MTL_AUTORELEASE]);
+        // Create blit shader pipeline cache for each number of color outputs.
+        // So blit k color outputs will use mBlitRenderPipelineCache[k-1] for example:
+        for (uint32_t i = 0; i < kMaxRenderTargets; ++i)
+        {
+            uint32_t numOutputs = i + 1;
 
-        mBlitPremultiplyAlphaRenderPipelineCache.setVertexShader(this, vertexShader);
-        mBlitPremultiplyAlphaRenderPipelineCache.setFragmentShader(
-            this,
-            [[shaderLib newFunctionWithName:@"blitPremultiplyAlphaFS"] ANGLE_MTL_AUTORELEASE]);
+            [funcConstants setConstantValue:&numOutputs
+                                       type:MTLDataTypeUInt
+                                   withName:NUM_COLOR_OUTPUTS_CONSTANT_NAME];
 
-        mBlitUnmultiplyAlphaRenderPipelineCache.setVertexShader(this, vertexShader);
-        mBlitUnmultiplyAlphaRenderPipelineCache.setFragmentShader(
-            this, [[shaderLib newFunctionWithName:@"blitUnmultiplyAlphaFS"] ANGLE_MTL_AUTORELEASE]);
+            // Normal blit
+            auto fragmentShader = [[shaderLib newFunctionWithName:@"blitFS"
+                                                   constantValues:funcConstants
+                                                            error:&err] ANGLE_MTL_AUTORELEASE];
+            ASSERT(fragmentShader);
+            mBlitRenderPipelineCache[i].setVertexShader(this, vertexShader);
+            mBlitRenderPipelineCache[i].setFragmentShader(this, fragmentShader);
+
+            // Blit premultiply-alpha
+            fragmentShader = [[shaderLib newFunctionWithName:@"blitPremultiplyAlphaFS"
+                                              constantValues:funcConstants
+                                                       error:&err] ANGLE_MTL_AUTORELEASE];
+            ASSERT(fragmentShader);
+            mBlitPremultiplyAlphaRenderPipelineCache[i].setVertexShader(this, vertexShader);
+            mBlitPremultiplyAlphaRenderPipelineCache[i].setFragmentShader(this, fragmentShader);
+
+            // Blit unmultiply alpha
+            fragmentShader = [[shaderLib newFunctionWithName:@"blitUnmultiplyAlphaFS"
+                                              constantValues:funcConstants
+                                                       error:&err] ANGLE_MTL_AUTORELEASE];
+            ASSERT(fragmentShader);
+            mBlitUnmultiplyAlphaRenderPipelineCache[i].setVertexShader(this, vertexShader);
+            mBlitUnmultiplyAlphaRenderPipelineCache[i].setFragmentShader(this, fragmentShader);
+        }
+
+        // Depth & stencil blit
+        mDepthBlitRenderPipelineCache.setVertexShader(this, vertexShader);
+        mDepthBlitRenderPipelineCache.setFragmentShader(
+            this, [[shaderLib newFunctionWithName:@"blitDepthFS"] ANGLE_MTL_AUTORELEASE]);
+
+        if (getDisplay()->getFeatures().hasStencilOutput.enabled)
+        {
+            mStencilBlitRenderPipelineCache.setVertexShader(this, vertexShader);
+            mStencilBlitRenderPipelineCache.setFragmentShader(
+                this, [[shaderLib newFunctionWithName:@"blitStencilFS"] ANGLE_MTL_AUTORELEASE]);
+
+            mDepthStencilBlitRenderPipelineCache.setVertexShader(this, vertexShader);
+            mDepthStencilBlitRenderPipelineCache.setFragmentShader(
+                this,
+                [[shaderLib newFunctionWithName:@"blitDepthStencilFS"] ANGLE_MTL_AUTORELEASE]);
+        }
     }
 }
 
@@ -268,15 +345,33 @@ void RenderUtils::clearWithDraw(const gl::Context *context,
     contextMtl->invalidateState(context);
 }
 
-void RenderUtils::blitWithDraw(const gl::Context *context,
-                               RenderCommandEncoder *cmdEncoder,
-                               const BlitParams &params)
+void RenderUtils::blitColorWithDraw(const gl::Context *context,
+                                    RenderCommandEncoder *cmdEncoder,
+                                    const ColorBlitParams &params)
 {
     if (!params.src)
     {
         return;
     }
-    setupBlitWithDraw(context, cmdEncoder, params);
+    setupColorBlitWithDraw(context, cmdEncoder, params);
+
+    // Draw the screen aligned quad
+    cmdEncoder->draw(MTLPrimitiveTypeTriangle, 0, 6);
+
+    // Invalidate current context's state
+    ContextMtl *contextMtl = GetImpl(context);
+    contextMtl->invalidateState(context);
+}
+
+void RenderUtils::blitDepthStencilWithDraw(const gl::Context *context,
+                                           RenderCommandEncoder *cmdEncoder,
+                                           const DepthStencilBlitParams &params)
+{
+    if (!params.src && !params.srcStencil)
+    {
+        return;
+    }
+    setupDepthStencilBlitWithDraw(context, cmdEncoder, params);
 
     // Draw the screen aligned quad
     cmdEncoder->draw(MTLPrimitiveTypeTriangle, 0, 6);
@@ -301,34 +396,12 @@ void RenderUtils::setupClearWithDraw(const gl::Context *context,
     cmdEncoder->setDepthStencilState(dsState).setStencilRefVal(params.clearStencil.value());
 
     // Viewports
-    const RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
-
     MTLViewport viewport;
     MTLScissorRect scissorRect;
 
-    RenderPassAttachmentDesc renderPassAttachment;
+    viewport = GetViewport(params.clearArea, params.dstTextureSize.height, params.flipY);
 
-    if (renderPassDesc.numColorAttachments)
-    {
-        renderPassAttachment = renderPassDesc.colorAttachments[0];
-    }
-    else if (renderPassDesc.depthAttachment.texture())
-    {
-        renderPassAttachment = renderPassDesc.depthAttachment;
-    }
-    else
-    {
-        ASSERT(renderPassDesc.stencilAttachment.texture());
-        renderPassAttachment = renderPassDesc.stencilAttachment;
-    }
-
-    auto texture = renderPassAttachment.texture();
-
-    viewport =
-        GetViewport(params.clearArea, texture->height(renderPassAttachment.level()), params.flipY);
-
-    scissorRect = GetScissorRect(params.clearArea, texture->height(renderPassAttachment.level()),
-                                 params.flipY);
+    scissorRect = GetScissorRect(params.clearArea, params.dstTextureSize.height, params.flipY);
 
     cmdEncoder->setViewport(viewport);
     cmdEncoder->setScissorRect(scissorRect);
@@ -345,39 +418,104 @@ void RenderUtils::setupClearWithDraw(const gl::Context *context,
     cmdEncoder->setFragmentData(uniformParams, 0);
 }
 
-void RenderUtils::setupBlitWithDraw(const gl::Context *context,
-                                    RenderCommandEncoder *cmdEncoder,
-                                    const BlitParams &params)
+void RenderUtils::setupCommonBlitWithDraw(const gl::Context *context,
+                                          RenderCommandEncoder *cmdEncoder,
+                                          const BlitParams &params,
+                                          bool isColorBlit)
 {
-    ASSERT(cmdEncoder->renderPassDesc().numColorAttachments == 1 && params.src);
-
-    // Generate render pipeline state
-    auto renderPipelineState = getBlitRenderPipelineState(context, cmdEncoder, params);
-    ASSERT(renderPipelineState);
     // Setup states
     setupDrawCommonStates(cmdEncoder);
-    cmdEncoder->setRenderPipelineState(renderPipelineState);
-    cmdEncoder->setDepthStencilState(getDisplay()->getStateCache().getNullDepthStencilState(this));
 
     // Viewport
-    const RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
-    const RenderPassColorAttachmentDesc &renderPassColorAttachment =
-        renderPassDesc.colorAttachments[0];
-    auto texture = renderPassColorAttachment.texture();
-
-    gl::Rectangle dstRect(params.dstOffset.x, params.dstOffset.y, params.srcRect.width,
-                          params.srcRect.height);
     MTLViewport viewportMtl =
-        GetViewport(dstRect, texture->height(renderPassColorAttachment.level()), params.dstFlipY);
-    MTLScissorRect scissorRectMtl = GetScissorRect(
-        dstRect, texture->height(renderPassColorAttachment.level()), params.dstFlipY);
+        GetViewport(params.dstRect, params.dstTextureSize.height, params.dstFlipY);
+    MTLScissorRect scissorRectMtl =
+        GetScissorRect(params.dstScissorRect, params.dstTextureSize.height, params.dstFlipY);
     cmdEncoder->setViewport(viewportMtl);
     cmdEncoder->setScissorRect(scissorRectMtl);
 
-    cmdEncoder->setFragmentTexture(params.src, 0);
+    if (params.src)
+    {
+        cmdEncoder->setFragmentTexture(params.src, 0);
+    }
 
     // Uniform
-    setupBlitWithDrawUniformData(cmdEncoder, params);
+    setupBlitWithDrawUniformData(cmdEncoder, params, isColorBlit);
+}
+
+void RenderUtils::setupColorBlitWithDraw(const gl::Context *context,
+                                         RenderCommandEncoder *cmdEncoder,
+                                         const ColorBlitParams &params)
+{
+    ASSERT(cmdEncoder->renderPassDesc().numColorAttachments >= 1 && params.src);
+
+    // Generate render pipeline state
+    auto renderPipelineState = getColorBlitRenderPipelineState(context, cmdEncoder, params);
+    ASSERT(renderPipelineState);
+    // Setup states
+    cmdEncoder->setRenderPipelineState(renderPipelineState);
+    cmdEncoder->setDepthStencilState(getDisplay()->getStateCache().getNullDepthStencilState(this));
+
+    setupCommonBlitWithDraw(context, cmdEncoder, params, true);
+
+    // Set sampler state
+    SamplerDesc samplerDesc;
+    samplerDesc.reset();
+    samplerDesc.minFilter = samplerDesc.magFilter = GetFilter(params.filter);
+
+    cmdEncoder->setFragmentSamplerState(
+        getDisplay()->getStateCache().getSamplerState(getMetalDevice(), samplerDesc), 0, FLT_MAX,
+        0);
+}
+
+void RenderUtils::setupDepthStencilBlitWithDraw(const gl::Context *context,
+                                                RenderCommandEncoder *cmdEncoder,
+                                                const DepthStencilBlitParams &params)
+{
+    ASSERT(params.src || params.srcStencil);
+    ASSERT(!params.srcStencil || getDisplay()->getFeatures().hasStencilOutput.enabled);
+
+    setupCommonBlitWithDraw(context, cmdEncoder, params, false);
+
+    // Generate render pipeline state
+    auto renderPipelineState = getDepthStencilBlitRenderPipelineState(context, cmdEncoder, params);
+    ASSERT(renderPipelineState);
+    // Setup states
+    cmdEncoder->setRenderPipelineState(renderPipelineState);
+
+    // Depth stencil state
+    mtl::DepthStencilDesc dsStateDesc;
+    dsStateDesc.reset();
+    dsStateDesc.depthCompareFunction = MTLCompareFunctionAlways;
+
+    if (params.src)
+    {
+        // Enable depth write
+        dsStateDesc.depthWriteEnabled = true;
+    }
+    else
+    {
+        // Disable depth write
+        dsStateDesc.depthWriteEnabled = false;
+    }
+
+    if (params.srcStencil)
+    {
+        cmdEncoder->setFragmentTexture(params.srcStencil, 1);
+
+        // Enable stencil write
+        dsStateDesc.frontFaceStencil.stencilCompareFunction = MTLCompareFunctionAlways;
+        dsStateDesc.backFaceStencil.stencilCompareFunction  = MTLCompareFunctionAlways;
+
+        dsStateDesc.frontFaceStencil.depthStencilPassOperation = MTLStencilOperationReplace;
+        dsStateDesc.backFaceStencil.depthStencilPassOperation  = MTLStencilOperationReplace;
+
+        dsStateDesc.frontFaceStencil.writeMask = kStencilMaskAll;
+        dsStateDesc.backFaceStencil.writeMask  = kStencilMaskAll;
+    }
+
+    cmdEncoder->setDepthStencilState(
+        getDisplay()->getStateCache().getDepthStencilState(getMetalDevice(), dsStateDesc));
 }
 
 void RenderUtils::setupDrawCommonStates(RenderCommandEncoder *cmdEncoder)
@@ -428,64 +566,134 @@ id<MTLRenderPipelineState> RenderUtils::getClearRenderPipelineState(
     RenderCommandEncoder *cmdEncoder,
     const ClearRectParams &params)
 {
-    ContextMtl *contextMtl      = GetImpl(context);
-    MTLColorWriteMask colorMask = contextMtl->getColorMask();
+    ContextMtl *contextMtl = GetImpl(context);
+    // The color mask to be applied to every color attachment:
+    MTLColorWriteMask globalColorMask = contextMtl->getColorMask();
     if (!params.clearColor.valid())
     {
-        colorMask = MTLColorWriteMaskNone;
+        globalColorMask = MTLColorWriteMaskNone;
     }
 
     RenderPipelineDesc pipelineDesc;
     const RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
 
-    renderPassDesc.populateRenderPipelineOutputDesc(colorMask, &pipelineDesc.outputDescriptor);
+    renderPassDesc.populateRenderPipelineOutputDesc(globalColorMask,
+                                                    &pipelineDesc.outputDescriptor);
+
+    // Disable clear for some outputs that are not enabled
+    pipelineDesc.outputDescriptor.updateEnabledDrawBuffers(params.enabledBuffers);
 
     pipelineDesc.inputPrimitiveTopology = kPrimitiveTopologyClassTriangle;
 
-    return mClearRenderPipelineCache.getRenderPipelineState(contextMtl, pipelineDesc);
+    RenderPipelineCache &cache = mClearRenderPipelineCache[renderPassDesc.numColorAttachments - 1];
+
+    return cache.getRenderPipelineState(contextMtl, pipelineDesc);
 }
 
-id<MTLRenderPipelineState> RenderUtils::getBlitRenderPipelineState(const gl::Context *context,
-                                                                   RenderCommandEncoder *cmdEncoder,
-                                                                   const BlitParams &params)
+id<MTLRenderPipelineState> RenderUtils::getColorBlitRenderPipelineState(
+    const gl::Context *context,
+    RenderCommandEncoder *cmdEncoder,
+    const ColorBlitParams &params)
 {
     ContextMtl *contextMtl = GetImpl(context);
     RenderPipelineDesc pipelineDesc;
     const RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
 
-    renderPassDesc.populateRenderPipelineOutputDesc(params.dstColorMask,
+    renderPassDesc.populateRenderPipelineOutputDesc(params.blitColorMask,
                                                     &pipelineDesc.outputDescriptor);
+
+    // Disable blit for some outputs that are not enabled
+    pipelineDesc.outputDescriptor.updateEnabledDrawBuffers(params.enabledBuffers);
 
     pipelineDesc.inputPrimitiveTopology = kPrimitiveTopologyClassTriangle;
 
     RenderPipelineCache *pipelineCache;
+    uint32_t cacheIndex = renderPassDesc.numColorAttachments - 1;
     if (params.unpackPremultiplyAlpha == params.unpackUnmultiplyAlpha)
     {
-        pipelineCache = &mBlitRenderPipelineCache;
+        pipelineCache = &mBlitRenderPipelineCache[cacheIndex];
     }
     else if (params.unpackPremultiplyAlpha)
     {
-        pipelineCache = &mBlitPremultiplyAlphaRenderPipelineCache;
+        pipelineCache = &mBlitPremultiplyAlphaRenderPipelineCache[cacheIndex];
     }
     else
     {
-        pipelineCache = &mBlitUnmultiplyAlphaRenderPipelineCache;
+        pipelineCache = &mBlitUnmultiplyAlphaRenderPipelineCache[cacheIndex];
+    }
+
+    return pipelineCache->getRenderPipelineState(contextMtl, pipelineDesc);
+}
+
+id<MTLRenderPipelineState> RenderUtils::getDepthStencilBlitRenderPipelineState(
+    const gl::Context *context,
+    RenderCommandEncoder *cmdEncoder,
+    const DepthStencilBlitParams &params)
+{
+    ContextMtl *contextMtl = GetImpl(context);
+    RenderPipelineDesc pipelineDesc;
+    const RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
+
+    renderPassDesc.populateRenderPipelineOutputDesc(&pipelineDesc.outputDescriptor);
+
+    // Disable all color outputs
+    pipelineDesc.outputDescriptor.updateEnabledDrawBuffers(gl::DrawBufferMask());
+
+    pipelineDesc.inputPrimitiveTopology = kPrimitiveTopologyClassTriangle;
+
+    RenderPipelineCache *pipelineCache;
+
+    if (params.src && params.srcStencil)
+    {
+        pipelineCache = &mDepthStencilBlitRenderPipelineCache;
+    }
+    else if (params.src)
+    {
+        // Only depth blit
+        pipelineCache = &mDepthBlitRenderPipelineCache;
+    }
+    else
+    {
+        // Only stencil blit
+        pipelineCache = &mStencilBlitRenderPipelineCache;
     }
 
     return pipelineCache->getRenderPipelineState(contextMtl, pipelineDesc);
 }
 
 void RenderUtils::setupBlitWithDrawUniformData(RenderCommandEncoder *cmdEncoder,
-                                               const BlitParams &params)
+                                               const BlitParams &params,
+                                               bool isColorBlit)
 {
+
     BlitParamsUniform uniformParams;
-    uniformParams.dstFlipY     = params.dstFlipY ? 1 : 0;
-    uniformParams.srcLevel     = params.srcLevel;
-    uniformParams.dstLuminance = params.dstLuminance ? 1 : 0;
+    uniformParams.dstFlipX = params.dstFlipX ? 1 : 0;
+    uniformParams.dstFlipY = params.dstFlipY ? 1 : 0;
+    uniformParams.srcLevel = params.srcLevel;
+    if (isColorBlit)
+    {
+        const ColorBlitParams *colorParams = static_cast<const ColorBlitParams *>(&params);
+        uniformParams.dstLuminance         = colorParams->dstLuminance ? 1 : 0;
+    }
 
     // Compute source texCoords
-    auto srcWidth  = params.src->width(params.srcLevel);
-    auto srcHeight = params.src->height(params.srcLevel);
+    uint32_t srcWidth = 0, srcHeight = 0;
+    if (params.src)
+    {
+        srcWidth  = params.src->width(params.srcLevel);
+        srcHeight = params.src->height(params.srcLevel);
+    }
+    else if (!isColorBlit)
+    {
+        const DepthStencilBlitParams *dsParams =
+            static_cast<const DepthStencilBlitParams *>(&params);
+        srcWidth  = dsParams->srcStencil->width(params.srcLevel);
+        srcHeight = dsParams->srcStencil->height(params.srcLevel);
+    }
+    else
+    {
+        UNREACHABLE();
+    }
 
     int x0 = params.srcRect.x0();  // left
     int x1 = params.srcRect.x1();  // right
@@ -498,6 +706,11 @@ void RenderUtils::setupBlitWithDrawUniformData(RenderCommandEncoder *cmdEncoder,
         y0 = srcHeight - y1;
         y1 = y0 + params.srcRect.height;
         std::swap(y0, y1);
+    }
+
+    if (params.unpackFlipX)
+    {
+        std::swap(x0, x1);
     }
 
     if (params.unpackFlipY)

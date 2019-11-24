@@ -7,30 +7,33 @@
 
 #include "common.h"
 
-
 struct BlitParams
 {
     // 0: lower left, 1: lower right, 2: upper left, 3: upper right
     float2 srcTexCoords[4];
     int srcLevel;
-    bool srcLuminance; // source texture is luminance texture
+    bool srcLuminance;  // source texture is luminance texture. Unused by depth & stencil blitting.
+    bool dstFlipViewportX;
     bool dstFlipViewportY;
-    bool dstLuminance; // destination texture is luminance;
+    bool dstLuminance;  // destination texture is luminance. Unused by depth & stencil blitting.
 };
 
 struct BlitVSOut
 {
-    float4 position [[position]];
-    float2 texCoords [[user(locn1)]];
+    float4 position[[position]];
+    float2 texCoords[[user(locn1)]];
 };
 
-vertex BlitVSOut blitVS(unsigned int vid [[ vertex_id ]],
-                         constant BlitParams &options [[buffer(0)]])
+vertex BlitVSOut blitVS(unsigned int vid[[vertex_id]], constant BlitParams &options[[buffer(0)]])
 {
     BlitVSOut output;
-    output.position = float4(gCorners[vid], 0.0, 1.0);
+    output.position  = float4(gCorners[vid], 0.0, 1.0);
     output.texCoords = options.srcTexCoords[gTexcoordsIndices[vid]];
 
+    if (options.dstFlipViewportX)
+    {
+        output.position.x = -output.position.x;
+    }
     if (!options.dstFlipViewportY)
     {
         // If viewport is not flipped, we have to flip Y in normalized device coordinates.
@@ -42,11 +45,10 @@ vertex BlitVSOut blitVS(unsigned int vid [[ vertex_id ]],
 }
 
 float4 blitSampleTexture(texture2d<float> srcTexture,
-                     float2 texCoords,
-                     constant BlitParams &options)
+                         sampler textureSampler,
+                         float2 texCoords,
+                         constant BlitParams &options)
 {
-    constexpr sampler textureSampler(mag_filter::linear,
-                                     min_filter::linear);
     float4 output = srcTexture.sample(textureSampler, texCoords, level(options.srcLevel));
 
     if (options.srcLuminance)
@@ -57,7 +59,7 @@ float4 blitSampleTexture(texture2d<float> srcTexture,
     return output;
 }
 
-float4 blitOutput(float4 color, constant BlitParams &options)
+MultipleColorOutputs blitOutput(float4 color, constant BlitParams &options)
 {
     float4 ret = color;
 
@@ -66,33 +68,96 @@ float4 blitOutput(float4 color, constant BlitParams &options)
         ret.r = ret.g = ret.b = color.r;
     }
 
-    return ret;
+    return toMultipleColorOutputs(ret);
 }
 
-fragment float4 blitFS(BlitVSOut input [[stage_in]],
-                       texture2d<float> srcTexture [[texture(0)]],
-                       constant BlitParams &options [[buffer(0)]])
+fragment MultipleColorOutputs blitFS(BlitVSOut input[[stage_in]],
+                                     texture2d<float> srcTexture[[texture(0)]],
+                                     sampler textureSampler[[sampler(0)]],
+                                     constant BlitParams &options[[buffer(0)]])
 {
-    return blitOutput(blitSampleTexture(srcTexture, input.texCoords, options), options);
+    return blitOutput(blitSampleTexture(srcTexture, textureSampler, input.texCoords, options),
+                      options);
 }
 
-fragment float4 blitPremultiplyAlphaFS(BlitVSOut input [[stage_in]],
-                                       texture2d<float> srcTexture [[texture(0)]],
-                                       constant BlitParams &options [[buffer(0)]])
+fragment MultipleColorOutputs blitPremultiplyAlphaFS(BlitVSOut input[[stage_in]],
+                                                     texture2d<float> srcTexture[[texture(0)]],
+                                                     sampler textureSampler[[sampler(0)]],
+                                                     constant BlitParams &options[[buffer(0)]])
 {
-    float4 output = blitSampleTexture(srcTexture, input.texCoords, options);
+    float4 output = blitSampleTexture(srcTexture, textureSampler, input.texCoords, options);
     output.xyz *= output.a;
     return blitOutput(output, options);
 }
 
-fragment float4 blitUnmultiplyAlphaFS(BlitVSOut input [[stage_in]],
-                                      texture2d<float> srcTexture [[texture(0)]],
-                                      constant BlitParams &options [[buffer(0)]])
+fragment MultipleColorOutputs blitUnmultiplyAlphaFS(BlitVSOut input[[stage_in]],
+                                                    texture2d<float> srcTexture[[texture(0)]],
+                                                    sampler textureSampler[[sampler(0)]],
+                                                    constant BlitParams &options[[buffer(0)]])
 {
-    float4 output = blitSampleTexture(srcTexture, input.texCoords, options);
+    float4 output = blitSampleTexture(srcTexture, textureSampler, input.texCoords, options);
     if (output.a != 0.0)
     {
         output.xyz *= 1.0 / output.a;
     }
     return blitOutput(output, options);
 }
+
+// Depth & stencil blitting
+template <typename T>
+T blitSampleDepthOrStencil(texture2d<T> srcTexture,
+                           float2 texCoords,
+                           constant BlitParams &options)
+{
+    constexpr sampler textureSampler(mag_filter::nearest, min_filter::nearest);
+    T output = srcTexture.sample(textureSampler, texCoords, level(options.srcLevel)).r;
+
+    return output;
+}
+
+struct FragmentDepthOut
+{
+    float depth[[depth(any)]];
+};
+
+fragment FragmentDepthOut blitDepthFS(BlitVSOut input[[stage_in]],
+                                      texture2d<float> srcTexture[[texture(0)]],
+                                      constant BlitParams &options[[buffer(0)]])
+{
+    FragmentDepthOut re;
+    re.depth = blitSampleDepthOrStencil(srcTexture, input.texCoords, options);
+    return re;
+}
+
+#if __METAL_VERSION__ >= 210 || defined GENERATE_SOURCE_STRING
+struct FragmentStencilOut
+{
+    uint32_t stencil[[stencil]];
+};
+
+struct FragmentDepthStencilOut
+{
+    float depth[[depth(any)]];
+    uint32_t stencil[[stencil]];
+};
+
+fragment FragmentStencilOut blitStencilFS(BlitVSOut input[[stage_in]],
+                                          texture2d<uint32_t> srcTexture[[texture(1)]],
+                                          constant BlitParams &options[[buffer(0)]])
+{
+    FragmentStencilOut re;
+    re.stencil = blitSampleDepthOrStencil(srcTexture, input.texCoords, options);
+    return re;
+}
+fragment FragmentDepthStencilOut
+blitDepthDepthFS(BlitVSOut input[[stage_in]],
+                 texture2d<float> srcDepthTexture[[texture(0)]],
+                 texture2d<uint32_t> srcStencilTexture[[texture(1)]],
+                 constant BlitParams &options[[buffer(0)]])
+{
+    FragmentDepthStencilOut re;
+    re.depth   = blitSampleDepthOrStencil(srcDepthTexture, input.texCoords, options);
+    re.stencil = blitSampleDepthOrStencil(srcStencilTexture, input.texCoords, options);
+    return re;
+}
+#endif

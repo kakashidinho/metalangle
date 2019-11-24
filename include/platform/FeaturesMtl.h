@@ -35,6 +35,11 @@ struct FeaturesMtl : FeatureSetBase
         "Some Apple platforms such as iOS allows separate depth & stencil buffers, "
         "whereas others such as macOS don't",
         &members};
+
+    // fragment stencil output support
+    Feature hasStencilOutput = {"has_stencil_output", FeatureCategory::MetalFeatures,
+                                "The renderer supports stencil output from fragment shader",
+                                &members};
 };
 
 }  // namespace angle

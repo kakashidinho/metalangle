@@ -1210,10 +1210,14 @@ angle::Result TextureMtl::copySubImageWithDraw(const gl::Context *context,
     ASSERT(image && image->valid());
 
     mtl::RenderCommandEncoder *cmdEncoder = contextMtl->getRenderCommandEncoder(imageRtt);
-    mtl::BlitParams blitParams;
+    mtl::ColorBlitParams blitParams;
 
-    blitParams.dstOffset    = modifiedDestOffset;
-    blitParams.dstColorMask = image->getColorWritableMask();
+    blitParams.dstTextureSize = imageRtt.getTexture()->size(imageRtt.getLevelIndex());
+    blitParams.dstRect        = gl::Rectangle(modifiedDestOffset.x, modifiedDestOffset.y,
+                                       clippedSourceArea.width, clippedSourceArea.height);
+    blitParams.dstScissorRect = blitParams.dstRect;
+
+    blitParams.enabledBuffers.set(0);
 
     blitParams.src          = colorReadRT->getTexture();
     blitParams.srcLevel     = static_cast<uint32_t>(colorReadRT->getLevelIndex());
@@ -1221,7 +1225,7 @@ angle::Result TextureMtl::copySubImageWithDraw(const gl::Context *context,
     blitParams.srcYFlipped  = framebufferMtl->flipY();
     blitParams.dstLuminance = internalFormat.isLUMA();
 
-    displayMtl->getUtils().blitWithDraw(context, cmdEncoder, blitParams);
+    displayMtl->getUtils().blitColorWithDraw(context, cmdEncoder, blitParams);
 
     return angle::Result::Continue;
 }

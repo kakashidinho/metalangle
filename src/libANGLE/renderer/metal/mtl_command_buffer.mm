@@ -498,7 +498,7 @@ RenderCommandEncoder &RenderCommandEncoder::restart(const RenderPassDesc &desc)
 
     ANGLE_MTL_OBJC_SCOPE
     {
-        // mask writing dependency
+        // mask writing dependency & set load & store options
         for (uint32_t i = 0; i < mRenderPassDesc.numColorAttachments; ++i)
         {
             initWriteDependencyAndStoreAction(mRenderPassDesc.colorAttachments[i].texture(),
