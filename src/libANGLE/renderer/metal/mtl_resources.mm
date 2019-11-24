@@ -415,11 +415,15 @@ TextureRef Texture::getStencilView()
     {
         case MTLPixelFormatStencil8:
         case MTLPixelFormatX32_Stencil8:
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case MTLPixelFormatX24_Stencil8:
+#endif
             return mStencilView = shared_from_this();
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case MTLPixelFormatDepth24Unorm_Stencil8:
             mStencilView = createViewWithDifferentFormat(MTLPixelFormatX24_Stencil8);
             break;
+#endif
         case MTLPixelFormatDepth32Float_Stencil8:
             mStencilView = createViewWithDifferentFormat(MTLPixelFormatX32_Stencil8);
             break;
