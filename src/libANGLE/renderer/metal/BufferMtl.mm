@@ -44,9 +44,7 @@ angle::Result GetFirstLastIndices(const IndexType *indices,
 ConversionBufferMtl::ConversionBufferMtl(const gl::Context *context,
                                          size_t initialSize,
                                          size_t alignment)
-    : dirty(true),
-      convertedBuffer(nullptr),
-      convertedOffset(0)
+    : dirty(true), convertedBuffer(nullptr), convertedOffset(0)
 {
     ContextMtl *contextMtl = mtl::GetImpl(context);
     data.initialize(contextMtl, initialSize, alignment);
@@ -82,8 +80,7 @@ BufferMtl::VertexConversionBuffer::VertexConversionBuffer(const gl::Context *con
 
 // BufferMtl implementation
 BufferMtl::BufferMtl(const gl::BufferState &state)
-    : BufferImpl(state), mBufferPool(/** alwaysAllocNewBuffer */ true),
-      mSize(0)
+    : BufferImpl(state), mBufferPool(/** alwaysAllocNewBuffer */ true), mSize(0)
 {}
 
 BufferMtl::~BufferMtl() {}
@@ -361,18 +358,14 @@ angle::Result BufferMtl::commitShadowCopy(const gl::Context *context)
     ContextMtl *contextMtl = mtl::GetImpl(context);
 
     uint8_t *ptr = nullptr;
-    ANGLE_TRY(
-        mBufferPool.allocate(contextMtl, size(), &ptr, &mBuffer, nullptr, nullptr));
+    ANGLE_TRY(mBufferPool.allocate(contextMtl, size(), &ptr, &mBuffer, nullptr, nullptr));
 
     std::copy(mShadowCopy.data(), mShadowCopy.data() + size(), ptr);
 
     ANGLE_TRY(mBufferPool.commit(contextMtl));
 
 #ifndef NDEBUG
-    ANGLE_MTL_OBJC_SCOPE
-    {
-        mBuffer->get().label = [NSString stringWithFormat:@"%p", this];
-    }
+    ANGLE_MTL_OBJC_SCOPE { mBuffer->get().label = [NSString stringWithFormat:@"%p", this]; }
 #endif
 
     return angle::Result::Continue;

@@ -1376,8 +1376,7 @@ angle::Result ContextMtl::setupDraw(const gl::Context *context,
                 ANGLE_TRY(handleDirtyDepthBias(context));
                 break;
             case DIRTY_BIT_STENCIL_REF:
-                mRenderEncoder.setStencilRefVals(mStencilRefFront,
-                                                 mStencilRefBack);
+                mRenderEncoder.setStencilRefVals(mStencilRefFront, mStencilRefBack);
                 break;
             case DIRTY_BIT_BLEND_COLOR:
                 mRenderEncoder.setBlendColor(
