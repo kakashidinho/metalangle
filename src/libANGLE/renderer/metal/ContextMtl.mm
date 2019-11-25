@@ -85,6 +85,11 @@ angle::Result AllocateTriangleFanBufferFromPool(ContextMtl *context,
 
     return angle::Result::Continue;
 }
+
+bool NeedToInvertDepthRange(float near, float far)
+{
+    return near > far;
+}
 }  // namespace
 
 ContextMtl::ContextMtl(const gl::State &state, gl::ErrorSet *errorSet, DisplayMtl *display)
@@ -1149,9 +1154,9 @@ void ContextMtl::updateViewport(FramebufferMtl *framebufferMtl,
 
 void ContextMtl::updateDepthRange(float nearPlane, float farPlane)
 {
-    if (nearPlane > farPlane)
+    if (NeedToInvertDepthRange(nearPlane, farPlane))
     {
-        // We also need to inverse the depth in shader later by using scale value stored in driver
+        // We also need to invert the depth in shader later by using scale value stored in driver
         // uniform depthRange.reserved
         std::swap(nearPlane, farPlane);
     }
@@ -1528,7 +1533,7 @@ angle::Result ContextMtl::handleDirtyDriverUniforms(const gl::Context *context)
     mDriverUniforms.depthRange[0] = depthRangeNear;
     mDriverUniforms.depthRange[1] = depthRangeFar;
     mDriverUniforms.depthRange[2] = depthRangeDiff;
-    mDriverUniforms.depthRange[3] = depthRangeNear > depthRangeFar ? -1 : 1;
+    mDriverUniforms.depthRange[3] = NeedToInvertDepthRange(depthRangeNear, depthRangeFar) ? -1 : 1;
 
     ASSERT(mRenderEncoder.valid());
     mRenderEncoder.setFragmentData(mDriverUniforms, mtl::kDriverUniformsBindingIndex);
