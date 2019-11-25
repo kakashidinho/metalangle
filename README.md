@@ -1,4 +1,7 @@
 # MetalANGLE - OpenGL ES to Apple Metal API Translation Layer
+
+[![Build Status](https://travis-ci.com/kakashidinho/metalangle.svg)](https://travis-ci.com/kakashidinho/metalangle)
+
 This is a fork of Goolge's [ANGLE project](https://chromium.googlesource.com/angle/angle). It adds Metal API backend support.
 Apple announced OpenGL (ES) deprecation in 2018. So the purpose of MetalANGLE is to allow OpenGL ES applications
 to continue operate on Apple platforms by translating OpenGL ES draw calls to Metal draw calls under the hood.

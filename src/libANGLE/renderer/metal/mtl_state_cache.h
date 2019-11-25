@@ -201,7 +201,8 @@ struct RenderPipelineOutputDesc
 };
 
 // Some SDK levels don't declare MTLPrimitiveTopologyClass. Needs to do compile time check here:
-#if !(TARGET_OS_OSX || TARGET_OS_MACCATALYST) && ANGLE_IOS_DEPLOY_TARGET < __IPHONE_12_0
+#if !(TARGET_OS_OSX || TARGET_OS_MACCATALYST) && \
+    (!defined(__IPHONE_12_0) || ANGLE_IOS_DEPLOY_TARGET < __IPHONE_12_0)
 #    define ANGLE_MTL_PRIMITIVE_TOPOLOGY_CLASS_AVAILABLE 0
 using PrimitiveTopologyClass                                     = uint32_t;
 constexpr PrimitiveTopologyClass kPrimitiveTopologyClassTriangle = 0;
