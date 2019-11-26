@@ -1,10 +1,17 @@
 os: osx
 
+cache:
+  directories:
+    - third_party
+    - build
+    - buildtools
+    - $HOME/depot_tools
+
 before_install:
-  - git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+  - git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git $HOME/depot_tools
 
 before_script:
-  - export PATH=$PATH:depot_tools
+  - export PATH=$PATH:$HOME/depot_tools
   - python scripts/bootstrap.py
   - gclient sync
   - gn gen out/release --args="angle_enable_gl=false is_debug=false"
@@ -13,19 +20,19 @@ jobs:
   include:
   - name: "ios xcode 9.4"
     python: "3.5"
-    env: CMD="xcodebuild -project ios/xcode/OpenGLES.xcodeproj -target MetalANGLE -configuration Release"
+    env: CMD="ios/xcode/travis_build.sh Release"
     osx_image: xcode9.4
   - name: "ios xcode 11.2"
     python: "3.5"
-    env: CMD="xcodebuild -project ios/xcode/OpenGLES.xcodeproj -target MetalANGLE -configuration Release"
+    env: CMD="ios/xcode/travis_build.sh Release"
     osx_image: xcode11.2
   - name: "macos xcode 9.4"
     python: "3.5"
-    env: CMD="ninja -j 2 -C out/release hello_triangle"
+    env: CMD="ninja -j 2 -C out/release angle_end2end_tests angle_deqp_gles2_tests"
     osx_image: xcode9.4
   - name: "macos xcode 11.2"
     python: "3.5"
-    env: CMD="ninja -j 2 -C out/release hello_triangle"
+    env: CMD="ninja -j 2 -C out/release angle_end2end_tests angle_deqp_gles2_tests"
     osx_image: xcode11.2
 
 script:
