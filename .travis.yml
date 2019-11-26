@@ -1,12 +1,5 @@
 os: osx
 
-cache:
-  directories:
-    - third_party
-    - build
-    - buildtools
-    - $HOME/depot_tools
-
 before_install:
   - git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git $HOME/depot_tools
 
