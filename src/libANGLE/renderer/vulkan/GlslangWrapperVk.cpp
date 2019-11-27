@@ -30,6 +30,7 @@ GlslangSourceOptions CreateSourceOptions()
     options.shaderResourceDescriptorSetIndex = kShaderResourceDescriptorSetIndex;
     options.driverUniformsDescriptorSetIndex = kDriverUniformsDescriptorSetIndex;
     options.xfbBindingIndexStart             = kXfbBindingIndexStart;
+    options.lineRasterEmulationConstantIndex = kLineRasterEmulationConstantIndex;
     return options;
 }
 }  // namespace
@@ -47,12 +48,11 @@ void GlslangWrapperVk::GetShaderSource(bool useOldRewriteStructSamplers,
 // static
 angle::Result GlslangWrapperVk::GetShaderCode(vk::Context *context,
                                               const gl::Caps &glCaps,
-                                              bool enableLineRasterEmulation,
                                               const gl::ShaderMap<std::string> &shaderSources,
                                               gl::ShaderMap<std::vector<uint32_t>> *shaderCodeOut)
 {
     return GlslangGetShaderSpirvCode(
         [context](GlslangError error) { return ErrorHandler(context, error); }, glCaps,
-        enableLineRasterEmulation, shaderSources, shaderCodeOut);
+        shaderSources, shaderCodeOut);
 }
 }  // namespace rx

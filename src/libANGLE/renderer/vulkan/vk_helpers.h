@@ -1205,6 +1205,7 @@ class ShaderProgramHelper : angle::NonCopyable
         const GraphicsPipelineDesc &pipelineDesc,
         const gl::AttributesMask &activeAttribLocationsMask,
         const gl::ComponentTypeMask &programAttribsTypeMask,
+        bool enableLineRasterEmulation,
         const GraphicsPipelineDesc **descPtrOut,
         PipelineHelper **pipelineOut)
     {
@@ -1222,10 +1223,13 @@ class ShaderProgramHelper : angle::NonCopyable
                                            ? &mShaders[gl::ShaderType::Geometry].get().get()
                                            : nullptr;
 
-        return mGraphicsPipelines.getPipeline(
+        GraphicsPipelineCache &cache =
+            enableLineRasterEmulation ? mGraphicsPipelines[1] : mGraphicsPipelines[0];
+
+        return cache.getPipeline(
             contextVk, pipelineCache, *compatibleRenderPass, pipelineLayout,
             activeAttribLocationsMask, programAttribsTypeMask, vertexShader, fragmentShader,
-            geometryShader, pipelineDesc, descPtrOut, pipelineOut);
+            geometryShader, enableLineRasterEmulation, pipelineDesc, descPtrOut, pipelineOut);
     }
 
     angle::Result getComputePipeline(Context *context,
@@ -1234,7 +1238,8 @@ class ShaderProgramHelper : angle::NonCopyable
 
   private:
     gl::ShaderMap<BindingPointer<ShaderAndSerial>> mShaders;
-    GraphicsPipelineCache mGraphicsPipelines;
+    // One for line raster emulation, one without line raster emulation
+    GraphicsPipelineCache mGraphicsPipelines[2];
 
     // We should probably use PipelineHelper here so we can remove PipelineAndSerial.
     PipelineAndSerial mComputePipeline;
