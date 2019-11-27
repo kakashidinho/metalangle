@@ -365,14 +365,13 @@ ProgramVk::ShaderInfo::ShaderInfo() {}
 ProgramVk::ShaderInfo::~ShaderInfo() = default;
 
 angle::Result ProgramVk::ShaderInfo::initShaders(ContextVk *contextVk,
-                                                 const gl::ShaderMap<std::string> &shaderSources,
-                                                 bool enableLineRasterEmulation)
+                                                 const gl::ShaderMap<std::string> &shaderSources)
 {
     ASSERT(!valid());
 
     gl::ShaderMap<std::vector<uint32_t>> shaderCodes;
     ANGLE_TRY(GlslangWrapperVk::GetShaderCode(
-        contextVk, contextVk->getCaps(), enableLineRasterEmulation, shaderSources, &shaderCodes));
+        contextVk, contextVk->getCaps(), shaderSources, &shaderCodes));
 
     for (const gl::ShaderType shaderType : gl::AllShaderTypes())
     {
@@ -455,8 +454,7 @@ void ProgramVk::reset(ContextVk *contextVk)
         uniformBlock.storage.release(renderer);
     }
 
-    mDefaultShaderInfo.release(contextVk);
-    mLineRasterShaderInfo.release(contextVk);
+    mShaderInfo.release(contextVk);
 
     mEmptyBuffer.release(renderer);
 
@@ -728,7 +726,10 @@ angle::Result ProgramVk::linkImpl(const gl::Context *glContext, gl::InfoLog &inf
     emptyBufferInfo.pQueueFamilyIndices   = nullptr;
 
     constexpr VkMemoryPropertyFlags kMemoryType = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    return mEmptyBuffer.init(contextVk, emptyBufferInfo, kMemoryType);
+    ANGLE_TRY(mEmptyBuffer.init(contextVk, emptyBufferInfo, kMemoryType));
+
+    // Convert shader sources to SPIR-V
+    return mShaderInfo.initShaders(contextVk, mShaderSources);
 }
 
 void ProgramVk::updateBindingOffsets()

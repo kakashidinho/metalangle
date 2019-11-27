@@ -33,6 +33,9 @@ struct GlslangSourceOptions
 
     // Binding index start for transform feedback buffers:
     uint32_t xfbBindingIndexStart = 16;
+
+    // Index of the specialization constant indicating the line raster emulation is enabled or not
+    uint32_t lineRasterEmulationConstantIndex = 0;
 };
 
 using GlslangErrorCallback = std::function<angle::Result(GlslangError)>;
@@ -53,7 +56,6 @@ void GlslangGetShaderSource(const GlslangSourceOptions &options,
 
 angle::Result GlslangGetShaderSpirvCode(GlslangErrorCallback callback,
                                         const gl::Caps &glCaps,
-                                        bool enableLineRasterEmulation,
                                         const gl::ShaderMap<std::string> &shaderSources,
                                         gl::ShaderMap<std::vector<uint32_t>> *shaderCodesOut);
 

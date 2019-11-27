@@ -161,6 +161,8 @@ constexpr ImmutableString kFlippedFragCoordName     = ImmutableString("flippedFr
 constexpr ImmutableString kEmulatedDepthRangeParams = ImmutableString("ANGLEDepthRangeParams");
 constexpr ImmutableString kUniformsBlockName        = ImmutableString("ANGLEUniformBlock");
 constexpr ImmutableString kUniformsVarName          = ImmutableString("ANGLEUniforms");
+constexpr ImmutableString kLineRasterEnableConstName =
+    ImmutableString("ANGLEEnableLineSegmentRaster");
 
 constexpr const char kViewport[]             = "viewport";
 constexpr const char kHalfRenderAreaHeight[] = "halfRenderAreaHeight";
@@ -419,15 +421,16 @@ const TVariable *AddComputeDriverUniformsToShader(TIntermBlock *root, TSymbolTab
                                  kUniformsVarName);
 }
 
-TIntermPreprocessorDirective *GenerateLineRasterIfDef()
+const TVariable *CreateLineRasterConditionVariable(TIntermBlock *root, TSymbolTable *symbolTable)
 {
-    return new TIntermPreprocessorDirective(
-        PreprocessorDirective::Ifdef, ImmutableString("ANGLE_ENABLE_LINE_SEGMENT_RASTERIZATION"));
-}
+    TType *boolType = new TType(EbtBool);
+    boolType->setQualifier(EvqConst);
+    TVariable *constVariablle =
+        new TVariable(symbolTable, kLineRasterEnableConstName, boolType, SymbolType::AngleInternal);
 
-TIntermPreprocessorDirective *GenerateEndIf()
-{
-    return new TIntermPreprocessorDirective(PreprocessorDirective::Endif, kEmptyImmutableString);
+    // We don't actually insert this variable declaration into the tree.
+    // Inside translateImpl(), its declaration string will be inserted manually into the sink.
+    return constVariablle;
 }
 
 TVariable *AddANGLEPositionVaryingDeclaration(TIntermBlock *root,
@@ -435,8 +438,6 @@ TVariable *AddANGLEPositionVaryingDeclaration(TIntermBlock *root,
                                               TQualifier qualifier)
 {
     TIntermSequence *insertSequence = new TIntermSequence;
-
-    insertSequence->push_back(GenerateLineRasterIfDef());
 
     // Define a driver varying vec2 "ANGLEPosition".
     TType *varyingType               = new TType(EbtFloat, EbpMedium, qualifier, 2);
@@ -446,8 +447,6 @@ TVariable *AddANGLEPositionVaryingDeclaration(TIntermBlock *root,
     TIntermDeclaration *varyingDecl  = new TIntermDeclaration;
     varyingDecl->appendDeclarator(varyingDeclarator);
     insertSequence->push_back(varyingDecl);
-
-    insertSequence->push_back(GenerateEndIf());
 
     // Insert the declarations before Main.
     size_t mainIndex = FindMainIndex(root);
@@ -459,7 +458,8 @@ TVariable *AddANGLEPositionVaryingDeclaration(TIntermBlock *root,
 ANGLE_NO_DISCARD bool AddBresenhamEmulationVS(TCompiler *compiler,
                                               TIntermBlock *root,
                                               TSymbolTable *symbolTable,
-                                              const TVariable *driverUniforms)
+                                              const TVariable *driverUniforms,
+                                              const TVariable *lineRasterConditionVar)
 {
     TVariable *anglePosition = AddANGLEPositionVaryingDeclaration(root, symbolTable, EvqVaryingOut);
 
@@ -513,14 +513,21 @@ ANGLE_NO_DISCARD bool AddBresenhamEmulationVS(TCompiler *compiler,
     TIntermBinary *varyingAssign = new TIntermBinary(EOpAssign, varyingRef, clampedNDC);
 
     // Ensure the statements run at the end of the main() function.
-    TIntermFunctionDefinition *main = FindMain(root);
-    TIntermBlock *mainBody          = main->getBody();
-    mainBody->appendStatement(GenerateLineRasterIfDef());
-    mainBody->appendStatement(ndcDecl);
-    mainBody->appendStatement(windowDecl);
-    mainBody->appendStatement(clampedDecl);
-    mainBody->appendStatement(varyingAssign);
-    mainBody->appendStatement(GenerateEndIf());
+    TIntermFunctionDefinition *main  = FindMain(root);
+    TIntermBlock *mainBody           = main->getBody();
+    TIntermBlock *varyingAssignBlock = new TIntermBlock;
+    TIntermSymbol *lineRasterEnabled = new TIntermSymbol(lineRasterConditionVar);
+
+    // if (ANGLEEnableLineSegmentRaster)
+    TIntermIfElse *ifStatement = new TIntermIfElse(lineRasterEnabled, varyingAssignBlock, nullptr);
+    // {
+    varyingAssignBlock->appendStatement(ndcDecl);
+    varyingAssignBlock->appendStatement(windowDecl);
+    varyingAssignBlock->appendStatement(clampedDecl);
+    varyingAssignBlock->appendStatement(varyingAssign);
+    // }
+
+    mainBody->appendStatement(ifStatement);
     return compiler->validateAST(root);
 }
 
@@ -553,17 +560,20 @@ ANGLE_NO_DISCARD bool InsertFragCoordCorrection(TCompiler *compiler,
 //
 // void main()
 // {
-//    vec2 p  = (((((ANGLEPosition.xy) * 0.5) + 0.5) * viewport.zw) + viewport.xy);
-//    vec2 d  = dFdx(p) + dFdy(p);
-//    vec2 f  = gl_FragCoord.xy;
-//    vec2 p_ = p.yx;
-//    vec2 d_ = d.yx;
-//    vec2 f_ = f.yx;
+//    if (ANGLEEnableLineSegmentRaster)
+//    {
+//        vec2 p  = (((((ANGLEPosition.xy) * 0.5) + 0.5) * viewport.zw) + viewport.xy);
+//        vec2 d  = dFdx(p) + dFdy(p);
+//        vec2 f  = gl_FragCoord.xy;
+//        vec2 p_ = p.yx;
+//        vec2 d_ = d.yx;
+//        vec2 f_ = f.yx;
 //
-//    vec2 i = abs(p - f + (d / d_) * (f_ - p_));
+//        vec2 i = abs(p - f + (d / d_) * (f_ - p_));
 //
-//    if (i.x > (0.5 + e) && i.y > (0.5 + e))
-//        discard;
+//        if (i.x > (0.5 + e) && i.y > (0.5 + e))
+//            discard;
+//    }
 //     <otherwise run fragment shader main>
 // }
 //
@@ -574,6 +584,7 @@ ANGLE_NO_DISCARD bool AddBresenhamEmulationFS(TCompiler *compiler,
                                               TIntermBlock *root,
                                               TSymbolTable *symbolTable,
                                               const TVariable *driverUniforms,
+                                              const TVariable *lineRasterConditionVar,
                                               bool usesFragCoord)
 {
     TVariable *anglePosition = AddANGLEPositionVaryingDeclaration(root, symbolTable, EvqVaryingIn);
@@ -655,20 +666,31 @@ ANGLE_NO_DISCARD bool AddBresenhamEmulationFS(TCompiler *compiler,
     TIntermSequence *mainSequence   = main->getBody()->getSequence();
     ASSERT(mainSequence);
 
+    TIntermSymbol *lineRasterEnabled             = new TIntermSymbol(lineRasterConditionVar);
+    TIntermSequence *lineDiscardCheckingSequence = new TIntermSequence;
+    // if (ANGLEEnableLineSegmentRaster)
+    TIntermIfElse *ifLineDiscardEnabledBlock =
+        new TIntermIfElse(lineRasterEnabled, lineDiscardCheckingSequence, nullptr);
+    // {
     std::array<TIntermNode *, 9> nodes = {
-        {pDecl, dDecl, fDecl, p_decl, d_decl, f_decl, iDecl, ifStatement, GenerateEndIf()}};
-    mainSequence->insert(mainSequence->begin(), nodes.begin(), nodes.end());
+        {pDecl, dDecl, fDecl, p_decl, d_decl, f_decl, iDecl, ifStatement}};
+    lineDiscardCheckingSequence->insert(lineDiscardCheckingSequence->begin(), nodes.begin(),
+                                        nodes.end());
+    // }
 
-    // If the shader does not use frag coord, we should insert it inside the ifdef.
+    // If the shader does not use frag coord, we should insert it inside the if block (at the
+    // beginning of the block).
     if (!usesFragCoord)
     {
-        if (!InsertFragCoordCorrection(compiler, root, mainSequence, symbolTable, driverUniforms))
+        if (!InsertFragCoordCorrection(compiler, root, lineDiscardCheckingSequence, symbolTable,
+                                       driverUniforms))
         {
             return false;
         }
     }
 
-    mainSequence->insert(mainSequence->begin(), GenerateLineRasterIfDef());
+    // Insert the if block at the start of main()
+    mainSequence->insert(mainSequence->begin(), ifLineDiscardEnabledBlock);
     return compiler->validateAST(root);
 }
 
@@ -801,6 +823,7 @@ bool TranslatorVulkan::translateImpl(TIntermBlock *root,
     }
 
     const TVariable *driverUniforms;
+    const TVariable *lineRasterEnableConstVar = nullptr;
     if (getShaderType() == GL_COMPUTE_SHADER)
     {
         driverUniforms = AddComputeDriverUniformsToShader(root, &getSymbolTable());
@@ -808,6 +831,11 @@ bool TranslatorVulkan::translateImpl(TIntermBlock *root,
     else
     {
         driverUniforms = AddGraphicsDriverUniformsToShader(root, &getSymbolTable());
+
+        // Insert line raster emulation enable flag
+        sink << "@@ LAYOUT-lineRasterEnableConstant @@ const bool " << kLineRasterEnableConstName;
+        sink << " = false;\n";
+        lineRasterEnableConstVar = CreateLineRasterConditionVariable(root, &getSymbolTable());
     }
 
     if (atomicCounterCount > 0)
@@ -859,7 +887,7 @@ bool TranslatorVulkan::translateImpl(TIntermBlock *root,
         }
 
         if (!AddBresenhamEmulationFS(this, sink, root, &getSymbolTable(), driverUniforms,
-                                     usesFragCoord))
+                                     lineRasterEnableConstVar, usesFragCoord))
         {
             return false;
         }
@@ -924,7 +952,8 @@ bool TranslatorVulkan::translateImpl(TIntermBlock *root,
     }
     else if (getShaderType() == GL_VERTEX_SHADER)
     {
-        if (!AddBresenhamEmulationVS(this, root, &getSymbolTable(), driverUniforms))
+        if (!AddBresenhamEmulationVS(this, root, &getSymbolTable(), driverUniforms,
+                                     lineRasterEnableConstVar))
         {
             return false;
         }

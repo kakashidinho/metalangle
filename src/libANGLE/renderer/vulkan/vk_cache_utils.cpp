@@ -188,12 +188,21 @@ void SetPipelineShaderStageInfo(const VkStructureType type,
                                 const VkShaderModule module,
                                 VkPipelineShaderStageCreateInfo *shaderStage)
 {
+    SetPipelineShaderStageInfo(type, stage, module, shaderStage, nullptr);
+}
+
+void SetPipelineShaderStageInfo(const VkStructureType type,
+                                const VkShaderStageFlagBits stage,
+                                const VkShaderModule module,
+                                VkPipelineShaderStageCreateInfo *shaderStage,
+                                const VkSpecializationInfo *constants)
+{
     shaderStage->sType               = type;
     shaderStage->flags               = 0;
     shaderStage->stage               = stage;
     shaderStage->module              = module;
     shaderStage->pName               = "main";
-    shaderStage->pSpecializationInfo = nullptr;
+    shaderStage->pSpecializationInfo = constants;
 }
 
 angle::Result InitializeRenderPassFromDesc(vk::Context *context,
@@ -617,6 +626,7 @@ angle::Result GraphicsPipelineDesc::initializePipeline(
     const ShaderModule *vertexModule,
     const ShaderModule *fragmentModule,
     const ShaderModule *geometryModule,
+    bool enableLineRasterEmulation,
     Pipeline *pipelineOut) const
 {
     angle::FixedVector<VkPipelineShaderStageCreateInfo, 3> shaderStages;
@@ -628,14 +638,32 @@ angle::Result GraphicsPipelineDesc::initializePipeline(
     VkPipelineDepthStencilStateCreateInfo depthStencilState   = {};
     std::array<VkPipelineColorBlendAttachmentState, gl::IMPLEMENTATION_MAX_DRAW_BUFFERS>
         blendAttachmentState;
-    VkPipelineColorBlendStateCreateInfo blendState = {};
-    VkGraphicsPipelineCreateInfo createInfo        = {};
+    VkPipelineColorBlendStateCreateInfo blendState         = {};
+    VkGraphicsPipelineCreateInfo createInfo                = {};
+    VkSpecializationInfo constants                         = {};
+    VkSpecializationMapEntry lineRasterEnableConstantEntry = {};
+    VkBool32 lineRasterEnableConstant                      = VK_FALSE;
+
+    if (emulateLineRasterization)
+    {
+        lineRasterEnableConstantEntry.constantID = kLineRasterEmulationConstantIndex;
+        lineRasterEnableConstantEntry.offset     = 0;
+        lineRasterEnableConstantEntry.size       = sizeof(VkBool32);
+
+        lineRasterEnableConstant = VK_TRUE;  // value of line raster emulation constant
+
+        constants.mapEntryCount = 1;
+        constants.entries       = &lineRasterEnableConstantEntry;
+        constants.dataSize      = sizeof(lineRasterEnableConstant);
+        constants.pData         = &lineRasterEnableConstant;
+    }  // if (emulateLineRasterization)
 
     // Vertex shader is always expected to be present.
     ASSERT(vertexModule != nullptr);
     VkPipelineShaderStageCreateInfo vertexStage = {};
     SetPipelineShaderStageInfo(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-                               VK_SHADER_STAGE_VERTEX_BIT, vertexModule->getHandle(), &vertexStage);
+                               VK_SHADER_STAGE_VERTEX_BIT, vertexModule->getHandle(), &vertexStage,
+                               &constants);
     shaderStages.push_back(vertexStage);
 
     if (geometryModule)
@@ -654,7 +682,7 @@ angle::Result GraphicsPipelineDesc::initializePipeline(
         VkPipelineShaderStageCreateInfo fragmentStage = {};
         SetPipelineShaderStageInfo(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
                                    VK_SHADER_STAGE_FRAGMENT_BIT, fragmentModule->getHandle(),
-                                   &fragmentStage);
+                                   &fragmentStage, &constants);
         shaderStages.push_back(fragmentStage);
     }
 
@@ -1741,6 +1769,7 @@ angle::Result GraphicsPipelineCache::insertPipeline(
     const vk::ShaderModule *vertexModule,
     const vk::ShaderModule *fragmentModule,
     const vk::ShaderModule *geometryModule,
+    bool enableLineRasterEmulation,
     const vk::GraphicsPipelineDesc &desc,
     const vk::GraphicsPipelineDesc **descPtrOut,
     vk::PipelineHelper **pipelineOut)
@@ -1754,7 +1783,7 @@ angle::Result GraphicsPipelineCache::insertPipeline(
         ANGLE_TRY(desc.initializePipeline(contextVk, pipelineCacheVk, compatibleRenderPass,
                                           pipelineLayout, activeAttribLocationsMask,
                                           programAttribsTypeMask, vertexModule, fragmentModule,
-                                          geometryModule, &newPipeline));
+                                          geometryModule, enableLineRasterEmulation, &newPipeline));
     }
 
     // The Serial will be updated outside of this query.

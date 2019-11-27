@@ -659,6 +659,22 @@ void AssignVaryingLocations(const gl::ProgramState &programState,
     inStageSource->insertQualifierSpecifier(kVaryingName, "in");
 }
 
+void AssignSpecializationConstantBindings(const GlslangSourceOptions &options,
+                           gl::ShaderMap<IntermediateShaderSource> *shaderSources)
+{
+    // Bind the index for the line raster enabling constant.
+    constexpr char kLineRasterEnableConstant[] = "lineRasterEnableConstant";
+    for (IntermediateShaderSource &shaderSource : *shaderSources)
+    {
+        if (!shaderSource.empty())
+        {
+            std::string binding = "constant_id = " + Str(options.lineRasterEmulationConstantIndex);
+
+            shaderSource.insertLayoutSpecifier(kLineRasterEnableConstant, binding);
+        }
+    }
+}
+
 void AssignUniformBindings(const GlslangSourceOptions &options,
                            gl::ShaderMap<IntermediateShaderSource> *shaderSources)
 {
@@ -928,11 +944,24 @@ constexpr gl::ShaderMap<EShLanguage> kShLanguageMap = {
     {gl::ShaderType::Fragment, EShLangFragment},
     {gl::ShaderType::Compute, EShLangCompute},
 };
+}  // anonymous namespace
 
-angle::Result GetShaderSpirvCode(GlslangErrorCallback callback,
-                                 const gl::Caps &glCaps,
-                                 const gl::ShaderMap<std::string> &shaderSources,
-                                 gl::ShaderMap<std::vector<uint32_t>> *shaderCodeOut)
+void GlslangInitialize()
+{
+    int result = ShInitialize();
+    ASSERT(result != 0);
+}
+
+void GlslangRelease()
+{
+    int result = ShFinalize();
+    ASSERT(result != 0);
+}
+
+angle::Result GlslangGetShaderSpirvCode(GlslangErrorCallback callback,
+                                        const gl::Caps &glCaps,
+                                        const gl::ShaderMap<std::string> &shaderSources,
+                                        gl::ShaderMap<std::vector<uint32_t>> *shaderCodeOut)
 {
     // Enable SPIR-V and Vulkan rules when parsing GLSL
     EShMessages messages = static_cast<EShMessages>(EShMsgSpvRules | EShMsgVulkanRules);
@@ -998,19 +1027,6 @@ angle::Result GetShaderSpirvCode(GlslangErrorCallback callback,
     }
 
     return angle::Result::Continue;
-}
-}  // anonymous namespace
-
-void GlslangInitialize()
-{
-    int result = ShInitialize();
-    ASSERT(result != 0);
-}
-
-void GlslangRelease()
-{
-    int result = ShFinalize();
-    ASSERT(result != 0);
 }
 
 std::string GlslangGetMappedSamplerName(const std::string &originalName)
@@ -1086,6 +1102,7 @@ void GlslangGetShaderSource(const GlslangSourceOptions &options,
         AssignOutputLocations(programState, fragmentSource);
         AssignVaryingLocations(programState, resources, vertexSource, fragmentSource);
     }
+    AssignSpecializationConstantBindings(options, &intermediateSources);
     AssignUniformBindings(options, &intermediateSources);
     AssignTextureBindings(options, useOldRewriteStructSamplers, programState, &intermediateSources);
     AssignNonTextureBindings(options, programState, &intermediateSources);
@@ -1116,41 +1133,4 @@ void GlslangGetShaderSource(const GlslangSourceOptions &options,
     }
 }
 
-angle::Result GlslangGetShaderSpirvCode(GlslangErrorCallback callback,
-                                        const gl::Caps &glCaps,
-                                        bool enableLineRasterEmulation,
-                                        const gl::ShaderMap<std::string> &shaderSources,
-                                        gl::ShaderMap<std::vector<uint32_t>> *shaderCodeOut)
-{
-    if (enableLineRasterEmulation)
-    {
-        ASSERT(shaderSources[gl::ShaderType::Compute].empty());
-
-        gl::ShaderMap<std::string> patchedSources = shaderSources;
-
-        // #defines must come after the #version directive.
-        ANGLE_GLSLANG_CHECK(callback,
-                            angle::ReplaceSubstring(&patchedSources[gl::ShaderType::Vertex],
-                                                    kVersionDefine, kLineRasterDefine),
-                            GlslangError::InvalidShader);
-        ANGLE_GLSLANG_CHECK(callback,
-                            angle::ReplaceSubstring(&patchedSources[gl::ShaderType::Fragment],
-                                                    kVersionDefine, kLineRasterDefine),
-                            GlslangError::InvalidShader);
-
-        if (!shaderSources[gl::ShaderType::Geometry].empty())
-        {
-            ANGLE_GLSLANG_CHECK(callback,
-                                angle::ReplaceSubstring(&patchedSources[gl::ShaderType::Geometry],
-                                                        kVersionDefine, kLineRasterDefine),
-                                GlslangError::InvalidShader);
-        }
-
-        return GetShaderSpirvCode(callback, glCaps, patchedSources, shaderCodeOut);
-    }
-    else
-    {
-        return GetShaderSpirvCode(callback, glCaps, shaderSources, shaderCodeOut);
-    }
-}
 }  // namespace rx

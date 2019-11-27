@@ -138,8 +138,10 @@ class ProgramVk : public ProgramImpl
                                       const vk::GraphicsPipelineDesc **descPtrOut,
                                       vk::PipelineHelper **pipelineOut)
     {
-        vk::ShaderProgramHelper *shaderProgram;
-        ANGLE_TRY(initGraphicsShaders(contextVk, mode, &shaderProgram));
+        ASSERT(mShaderInfo.valid());
+        vk::ShaderProgramHelper *shaderProgram = mShaderInfo.getShaderProgram();
+        bool enableLineRasterEmulation         = UseLineRaster(contextVk, mode);
+
         ASSERT(shaderProgram->isGraphicsProgram());
         RendererVk *renderer             = contextVk->getRenderer();
         vk::PipelineCache *pipelineCache = nullptr;
@@ -147,13 +149,13 @@ class ProgramVk : public ProgramImpl
         return shaderProgram->getGraphicsPipeline(
             contextVk, &contextVk->getRenderPassCache(), *pipelineCache,
             contextVk->getCurrentQueueSerial(), mPipelineLayout.get(), desc, activeAttribLocations,
-            mState.getAttributesTypeMask(), descPtrOut, pipelineOut);
+            mState.getAttributesTypeMask(), enableLineRasterEmulation, descPtrOut, pipelineOut);
     }
 
     angle::Result getComputePipeline(ContextVk *contextVk, vk::PipelineAndSerial **pipelineOut)
     {
-        vk::ShaderProgramHelper *shaderProgram;
-        ANGLE_TRY(initComputeShader(contextVk, &shaderProgram));
+        ASSERT(mShaderInfo.valid());
+        vk::ShaderProgramHelper *shaderProgram = mShaderInfo.getShaderProgram();
         ASSERT(!shaderProgram->isGraphicsProgram());
         return shaderProgram->getComputePipeline(contextVk, mPipelineLayout.get(), pipelineOut);
     }
@@ -211,42 +213,6 @@ class ProgramVk : public ProgramImpl
     }
     uint32_t getImageBindingsOffset() const { return mImageBindingsOffset; }
 
-    class ShaderInfo;
-    ANGLE_INLINE angle::Result initShaders(ContextVk *contextVk,
-                                           bool enableLineRasterEmulation,
-                                           ShaderInfo *shaderInfo,
-                                           vk::ShaderProgramHelper **shaderProgramOut)
-    {
-        if (!shaderInfo->valid())
-        {
-            ANGLE_TRY(
-                shaderInfo->initShaders(contextVk, mShaderSources, enableLineRasterEmulation));
-        }
-
-        ASSERT(shaderInfo->valid());
-        *shaderProgramOut = &shaderInfo->getShaderProgram();
-
-        return angle::Result::Continue;
-    }
-
-    ANGLE_INLINE angle::Result initGraphicsShaders(ContextVk *contextVk,
-                                                   gl::PrimitiveMode mode,
-                                                   vk::ShaderProgramHelper **shaderProgramOut)
-    {
-        bool enableLineRasterEmulation = UseLineRaster(contextVk, mode);
-
-        ShaderInfo &shaderInfo =
-            enableLineRasterEmulation ? mLineRasterShaderInfo : mDefaultShaderInfo;
-
-        return initShaders(contextVk, enableLineRasterEmulation, &shaderInfo, shaderProgramOut);
-    }
-
-    ANGLE_INLINE angle::Result initComputeShader(ContextVk *contextVk,
-                                                 vk::ShaderProgramHelper **shaderProgramOut)
-    {
-        return initShaders(contextVk, false, &mDefaultShaderInfo, shaderProgramOut);
-    }
-
     // Save and load implementation for GLES Program Binary support.
     angle::Result loadShaderSource(ContextVk *contextVk, gl::BinaryInputStream *stream);
     void saveShaderSource(gl::BinaryOutputStream *stream);
@@ -302,8 +268,7 @@ class ProgramVk : public ProgramImpl
         ~ShaderInfo();
 
         angle::Result initShaders(ContextVk *contextVk,
-                                  const gl::ShaderMap<std::string> &shaderSources,
-                                  bool enableLineRasterEmulation);
+                                  const gl::ShaderMap<std::string> &shaderSources);
         void release(ContextVk *contextVk);
 
         ANGLE_INLINE bool valid() const
@@ -319,8 +284,7 @@ class ProgramVk : public ProgramImpl
         gl::ShaderMap<vk::RefCounted<vk::ShaderAndSerial>> mShaders;
     };
 
-    ShaderInfo mDefaultShaderInfo;
-    ShaderInfo mLineRasterShaderInfo;
+    ShaderInfo mShaderInfo;
 
     // We keep the translated linked shader sources to use with shader draw call patching.
     gl::ShaderMap<std::string> mShaderSources;
