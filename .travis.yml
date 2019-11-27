@@ -1,0 +1,13 @@
+os: linux
+
+before_install:
+  - git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git $HOME/depot_tools
+
+before_script:
+  - export PATH=$PATH:$HOME/depot_tools
+  - python scripts/bootstrap.py
+  - gclient sync
+  - gn gen out/debug --args="angle_enable_gl=false angle_enable_vulkan=true is_debug=true"
+
+script:
+  - ninja -j 2 -C out/debug angle_end2end_tests
