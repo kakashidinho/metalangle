@@ -289,13 +289,6 @@ class ContextMtl : public ContextImpl, public mtl::Context
                             GLsizei instanceCount,
                             gl::DrawElementsType indexTypeOrNone,
                             const void *indices);
-    angle::Result genLineLoopLastSegment(const gl::Context *context,
-                                         GLint firstVertex,
-                                         GLsizei vertexOrIndexCount,
-                                         GLsizei instanceCount,
-                                         gl::DrawElementsType indexTypeOrNone,
-                                         const void *indices,
-                                         mtl::BufferRef *lastSegmentIndexBufferOut);
 
     angle::Result drawTriFanArrays(const gl::Context *context,
                                    GLint first,
