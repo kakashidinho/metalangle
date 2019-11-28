@@ -11,11 +11,13 @@
 
 #include <TargetConditionals.h>
 
+#include <regex>
 #include <sstream>
 
 #include <spirv_msl.hpp>
 
 #include "common/debug.h"
+#include "compiler/translator/TranslatorVulkan.h"
 #include "libANGLE/Context.h"
 #include "libANGLE/ProgramLinkedResources.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
@@ -110,6 +112,26 @@ angle::Result BindResources(spirv_cross::CompilerMSL *compiler,
     }
 
     return angle::Result::Continue;
+}
+
+std::string PostProcessTranslatedMsl(const std::string &translatedSource)
+{
+    std::string regexStr =
+        sh::TranslatorVulkan::GetLineRasterPositionVaryingName() + R"(\s*\[\s*\[([^\]]+)\]\s*\])";
+
+    std::string replaceStr = sh::TranslatorVulkan::GetLineRasterPositionVaryingName() +
+                             " [[$1, function_constant(" +
+                             sh::TranslatorVulkan::GetLineRasterEnableConstVariableName() + ")]]";
+    // Add function_constant attribute to ANGLEPosition.
+    // Even though this varying is only used when ANGLEEnableLineSegmentRaster is true,
+    // the spirv-cross doesn't assign function_constant attribute to it. Thus it won't be dead-code
+    // removed when ANGLEEnableLineSegmentRaster=false.
+
+    // This replaces "ANGLEPosition [[semantic]]"
+    //          with "ANGLEPosition [[semantic, function_constant(ANGLEEnableLineSegmentRaster)]]"
+    std::regex lineFragmentPositionVaryingDeclareRegex(regexStr);
+    return std::regex_replace(translatedSource, lineFragmentPositionVaryingDeclareRegex,
+                              replaceStr);
 }
 
 void InitDefaultUniformBlock(const std::vector<sh::Uniform> &uniforms,
@@ -259,7 +281,15 @@ void ProgramMtl::reset(ContextMtl *context)
         block.uniformLayout.clear();
     }
 
-    mMetalRenderPipelineCache.clear();
+    for (mtl::AutoObjCPtr<id<MTLLibrary>> &lib : mShaderLibrary)
+    {
+        lib.reset();
+    }
+
+    for (mtl::RenderPipelineCache &cache : mMetalRenderPipelineCache)
+    {
+        cache.clear();
+    }
 }
 
 std::unique_ptr<rx::LinkEvent> ProgramMtl::load(const gl::Context *context,
@@ -312,8 +342,8 @@ angle::Result ProgramMtl::linkImpl(const gl::Context *glContext, gl::InfoLog &in
 
     // Convert GLSL to spirv code
     gl::ShaderMap<std::vector<uint32_t>> shaderCodes;
-    ANGLE_TRY(mtl::GlslangGetShaderSpirvCode(contextMtl, contextMtl->getCaps(),
-                                             mShaderSource, &shaderCodes));
+    ANGLE_TRY(mtl::GlslangGetShaderSpirvCode(contextMtl, contextMtl->getCaps(), mShaderSource,
+                                             &shaderCodes));
 
     // Convert spirv code to MSL
     ANGLE_TRY(convertToMsl(glContext, gl::ShaderType::Vertex, infoLog,
@@ -462,16 +492,18 @@ angle::Result ProgramMtl::convertToMsl(const gl::Context *glContext,
         ANGLE_MTL_CHECK(contextMtl, false, GL_INVALID_OPERATION);
     }
 
+    std::string postprocessedMsl = PostProcessTranslatedMsl(translatedMsl);
+
     // Create actual Metal shader
-    ANGLE_TRY(createMslShader(glContext, shaderType, infoLog, translatedMsl));
+    ANGLE_TRY(createMslShaderLib(glContext, shaderType, infoLog, postprocessedMsl));
 
     return angle::Result::Continue;
 }
 
-angle::Result ProgramMtl::createMslShader(const gl::Context *glContext,
-                                          gl::ShaderType shaderType,
-                                          gl::InfoLog &infoLog,
-                                          const std::string &translatedMsl)
+angle::Result ProgramMtl::createMslShaderLib(const gl::Context *glContext,
+                                             gl::ShaderType shaderType,
+                                             gl::InfoLog &infoLog,
+                                             const std::string &translatedMsl)
 {
     ANGLE_MTL_OBJC_SCOPE
     {
@@ -496,20 +528,73 @@ angle::Result ProgramMtl::createMslShader(const gl::Context *glContext,
             ANGLE_MTL_CHECK(contextMtl, false, GL_INVALID_OPERATION);
         }
 
-        auto mtlShader = [mtlShaderLib.get() newFunctionWithName:SHADER_ENTRY_NAME];
-        [mtlShader ANGLE_MTL_AUTORELEASE];
-        ASSERT(mtlShader);
-        if (shaderType == gl::ShaderType::Vertex)
-        {
-            mMetalRenderPipelineCache.setVertexShader(contextMtl, mtlShader);
-        }
-        else if (shaderType == gl::ShaderType::Fragment)
-        {
-            mMetalRenderPipelineCache.setFragmentShader(contextMtl, mtlShader);
-        }
+        mShaderLibrary[shaderType] = mtlShaderLib;
 
         return angle::Result::Continue;
     }
+}
+
+angle::Result ProgramMtl::getRenderPipelineState(
+    const gl::Context *glContext,
+    const mtl::RenderPipelineDesc &desc,
+    bool renderLine,
+    mtl::AutoObjCPtr<id<MTLRenderPipelineState>> *stateOut)
+{
+    ContextMtl *contextMtl = mtl::GetImpl(glContext);
+
+    mtl::RenderPipelineCache &cache =
+        renderLine ? mMetalRenderPipelineCache[1] : mMetalRenderPipelineCache[0];
+    if (!cache.getVertexShader() || !cache.getFragmentShader())
+    {
+        // Vertex or fragment shader hasn't been created yet, create it now:
+        ANGLE_MTL_OBJC_SCOPE
+        {
+            // Create a specialized shader based on rendering in line mode or not.
+            auto funcConstants = [[[MTLFunctionConstantValues alloc] init] ANGLE_MTL_AUTORELEASE];
+            [funcConstants setConstantValue:&renderLine
+                                       type:MTLDataTypeBool
+                                    atIndex:mtl::kLineRasterEmulationConstantIndex];
+
+            for (gl::ShaderType shaderType : gl::AllGLES2ShaderTypes())
+            {
+                auto shaderLib = mShaderLibrary[shaderType].get();
+                if (!shaderLib)
+                {
+                    continue;
+                }
+
+                NSError *err           = nil;
+                id<MTLFunction> shader = [shaderLib newFunctionWithName:SHADER_ENTRY_NAME
+                                                         constantValues:funcConstants
+                                                                  error:&err];
+                if (err && !shader)
+                {
+                    ERR() << "Internal error: " << err.localizedDescription.UTF8String << "\n";
+                    ANGLE_MTL_TRY(contextMtl, false);
+                }
+
+                [shader ANGLE_MTL_AUTORELEASE];
+
+                if (shaderType == gl::ShaderType::Vertex)
+                {
+                    cache.setVertexShader(contextMtl, shader);
+                }
+                else if (shaderType == gl::ShaderType::Fragment)
+                {
+                    cache.setFragmentShader(contextMtl, shader);
+                }
+            }
+        }  // ANGLE_MTL_OBJC_SCOPE
+    }      // if (!cache.getVertexShader() || !cache.getFragmentShader())
+
+    *stateOut = cache.getRenderPipelineState(contextMtl, desc);
+    if (!*stateOut)
+    {
+        // Error already logged inside getRenderPipelineState()
+        return angle::Result::Stop;
+    }
+
+    return angle::Result::Continue;
 }
 
 GLboolean ProgramMtl::validate(const gl::Caps &caps, gl::InfoLog *infoLog)
@@ -803,6 +888,7 @@ void ProgramMtl::getUniformuiv(const gl::Context *context, GLint location, GLuin
 angle::Result ProgramMtl::setupDraw(const gl::Context *glContext,
                                     mtl::RenderCommandEncoder *cmdEncoder,
                                     const Optional<mtl::RenderPipelineDesc> &changedPipelineDescOpt,
+                                    bool drawingLine,
                                     bool forceTexturesSetting)
 {
     ContextMtl *context = mtl::GetImpl(glContext);
@@ -810,13 +896,10 @@ angle::Result ProgramMtl::setupDraw(const gl::Context *glContext,
     {
         const auto &changedPipelineDesc = changedPipelineDescOpt.value();
         // Render pipeline state needs to be changed
-        id<MTLRenderPipelineState> pipelineState =
-            mMetalRenderPipelineCache.getRenderPipelineState(context, changedPipelineDesc);
-        if (!pipelineState)
-        {
-            // Error already logged inside getRenderPipelineState()
-            return angle::Result::Stop;
-        }
+        mtl::AutoObjCPtr<id<MTLRenderPipelineState>> pipelineState;
+        ANGLE_TRY(
+            getRenderPipelineState(glContext, changedPipelineDesc, drawingLine, &pipelineState));
+
         cmdEncoder->setRenderPipelineState(pipelineState);
 
         // We need to rebind uniform buffers & textures also

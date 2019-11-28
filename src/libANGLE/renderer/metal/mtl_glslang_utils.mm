@@ -34,6 +34,8 @@ GlslangSourceOptions CreateSourceOptions()
     options.shaderResourceDescriptorSetIndex = -1;
     options.xfbBindingIndexStart             = -1;
 
+    options.lineRasterEmulationConstantIndex = kLineRasterEmulationConstantIndex;
+
     static_assert(kDefaultUniformsBindingIndex != 0, "kDefaultUniformsBindingIndex must not be 0");
     static_assert(kDriverUniformsBindingIndex != 0, "kDriverUniformsBindingIndex must not be 0");
 

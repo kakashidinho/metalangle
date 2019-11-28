@@ -57,11 +57,6 @@ constexpr char kUniformQualifier[]          = "uniform";
 constexpr char kSSBOQualifier[]             = "buffer";
 constexpr char kUnusedBlockSubstitution[]   = "struct";
 constexpr char kUnusedUniformSubstitution[] = "// ";
-constexpr char kVersionDefine[]             = "#version 450 core\n";
-constexpr char kLineRasterDefine[]          = R"(#version 450 core
-
-#define ANGLE_ENABLE_LINE_SEGMENT_RASTERIZATION
-)";
 
 template <size_t N>
 constexpr size_t ConstStrLen(const char (&)[N])
@@ -660,7 +655,7 @@ void AssignVaryingLocations(const gl::ProgramState &programState,
 }
 
 void AssignSpecializationConstantBindings(const GlslangSourceOptions &options,
-                           gl::ShaderMap<IntermediateShaderSource> *shaderSources)
+                                          gl::ShaderMap<IntermediateShaderSource> *shaderSources)
 {
     // Bind the index for the line raster enabling constant.
     constexpr char kLineRasterEnableConstant[] = "lineRasterEnableConstant";

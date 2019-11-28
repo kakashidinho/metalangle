@@ -22,6 +22,9 @@ class TOutputVulkanGLSL;
 class TranslatorVulkan : public TCompiler
 {
   public:
+    static std::string GetLineRasterEnableConstVariableName();
+    static std::string GetLineRasterPositionVaryingName();
+
     TranslatorVulkan(sh::GLenum type, ShShaderSpec spec);
 
   protected:

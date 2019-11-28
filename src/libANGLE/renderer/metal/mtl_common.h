@@ -122,6 +122,8 @@ constexpr uint32_t kDefaultAttribsBindingIndex = kVboBindingIndexStart + kMaxVer
 constexpr uint32_t kDriverUniformsBindingIndex = kDefaultAttribsBindingIndex + 1;
 // Binding index for default uniforms:
 constexpr uint32_t kDefaultUniformsBindingIndex = kDefaultAttribsBindingIndex + 3;
+// Binding index for line raster emulation constant
+constexpr uint32_t kLineRasterEmulationConstantIndex = 0;
 
 constexpr uint32_t kStencilMaskAll = 0xff;  // Only 8 bits stencil is supported
 
