@@ -103,11 +103,13 @@ class ProgramMtl : public ProgramImpl
                                  GLint components,
                                  const GLfloat *coeffs) override;
 
-    // Calls this before drawing, changedPipelineDesc is passed when vertex attributes desc and/or
-    // shader program changed.
+    // Calls this before drawing.
+    // changedPipelineDesc must be passed when vertex attributes desc and/or
+    // shader program changed or render mode changed (between line & non-line)
     angle::Result setupDraw(const gl::Context *glContext,
                             mtl::RenderCommandEncoder *cmdEncoder,
                             const Optional<mtl::RenderPipelineDesc> &changedPipelineDesc,
+                            bool drawingLine,
                             bool forceTexturesSetting);
 
   private:
@@ -137,10 +139,15 @@ class ProgramMtl : public ProgramImpl
                                gl::InfoLog &infoLog,
                                std::vector<uint32_t> *sprivCode);
 
-    angle::Result createMslShader(const gl::Context *glContext,
-                                  gl::ShaderType shaderType,
-                                  gl::InfoLog &infoLog,
-                                  const std::string &translatedSource);
+    angle::Result createMslShaderLib(const gl::Context *glContext,
+                                     gl::ShaderType shaderType,
+                                     gl::InfoLog &infoLog,
+                                     const std::string &translatedSource);
+
+    angle::Result getRenderPipelineState(const gl::Context *glContext,
+                                         const mtl::RenderPipelineDesc &desc,
+                                         bool renderLine,
+                                         mtl::AutoObjCPtr<id<MTLRenderPipelineState>> *stateOut);
 
     // State for the default uniform blocks.
     struct DefaultUniformBlock final : private angle::NonCopyable
@@ -162,8 +169,10 @@ class ProgramMtl : public ProgramImpl
 
     // We keep the translated linked shader sources to use with shader draw call patching.
     gl::ShaderMap<std::string> mShaderSource;
+    gl::ShaderMap<mtl::AutoObjCPtr<id<MTLLibrary>>> mShaderLibrary;
 
-    mtl::RenderPipelineCache mMetalRenderPipelineCache;
+    // One for line rendering, one for normal rendering
+    mtl::RenderPipelineCache mMetalRenderPipelineCache[2];
 };
 
 }  // namespace rx

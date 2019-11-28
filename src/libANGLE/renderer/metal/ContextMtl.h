@@ -419,6 +419,7 @@ class ContextMtl : public ContextImpl, public mtl::Context
     MTLWinding mWinding;
     MTLCullMode mCullMode;
     bool mCullAllPolygons = false;
+    bool mDrawingLine     = false;
 
     // Lineloop and TriFan index buffer
     mtl::BufferPool mLineLoopIndexBuffer;

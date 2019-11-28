@@ -193,6 +193,8 @@ angle::Result ContextMtl::initialize()
                                     kMaxTriFanLineLoopBuffersPerFrame);
     mLineLoopIndexBuffer.setAlwaysAllocateNewBuffer(true);
 
+    mDrawingLine = false;
+
     return angle::Result::Continue;
 }
 
@@ -1544,7 +1546,8 @@ angle::Result ContextMtl::setupDraw(const gl::Context *context,
 
     mDirtyBits.reset();
 
-    ANGLE_TRY(mProgram->setupDraw(context, &mRenderEncoder, changedPipelineDesc, textureChanged));
+    ANGLE_TRY(mProgram->setupDraw(context, &mRenderEncoder, changedPipelineDesc, mDrawingLine,
+                                  textureChanged));
 
     return angle::Result::Continue;
 }
@@ -1673,8 +1676,10 @@ angle::Result ContextMtl::checkIfPipelineChanged(
     ASSERT(mRenderEncoder.valid());
     mtl::PrimitiveTopologyClass topologyClass = mtl::GetPrimitiveTopologyClass(primitiveMode);
 
-    bool rppChange = mDirtyBits.test(DIRTY_BIT_RENDER_PIPELINE) ||
-                     topologyClass != mRenderPipelineDesc.inputPrimitiveTopology;
+    bool isDrawingLine = IsLineMode(primitiveMode);
+    bool rppChange     = mDirtyBits.test(DIRTY_BIT_RENDER_PIPELINE) ||
+                     topologyClass != mRenderPipelineDesc.inputPrimitiveTopology ||
+                     mDrawingLine != isDrawingLine;
 
     // Obtain RenderPipelineDesc's vertex array descriptor.
     ANGLE_TRY(mVertexArray->setupDraw(context, &mRenderEncoder, &rppChange,
@@ -1691,6 +1696,10 @@ angle::Result ContextMtl::checkIfPipelineChanged(
 
         *changedPipelineDesc = mRenderPipelineDesc;
     }
+
+    // Cache the current rendering mode, so in next draw call, if the mode is different, we
+    // need to change render pipeline state.
+    mDrawingLine = isDrawingLine;
 
     return angle::Result::Continue;
 }
