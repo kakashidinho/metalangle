@@ -667,10 +667,11 @@ ANGLE_NO_DISCARD bool AddBresenhamEmulationFS(TCompiler *compiler,
     ASSERT(mainSequence);
 
     TIntermSymbol *lineRasterEnabled             = new TIntermSymbol(lineRasterConditionVar);
-    TIntermSequence *lineDiscardCheckingSequence = new TIntermSequence;
+    TIntermBlock *lineDiscardCheckingBlock       = new TIntermBlock;
+    TIntermSequence *lineDiscardCheckingSequence = lineDiscardCheckingBlock->getSequence();
     // if (ANGLEEnableLineSegmentRaster)
     TIntermIfElse *ifLineDiscardEnabledBlock =
-        new TIntermIfElse(lineRasterEnabled, lineDiscardCheckingSequence, nullptr);
+        new TIntermIfElse(lineRasterEnabled, lineDiscardCheckingBlock, nullptr);
     // {
     std::array<TIntermNode *, 9> nodes = {
         {pDecl, dDecl, fDecl, p_decl, d_decl, f_decl, iDecl, ifStatement}};
