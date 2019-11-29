@@ -18,25 +18,25 @@ fi
 
 cd $SCRIPT_DIR
 
-xcodebuild build \
-           -project MGLKitSamples.xcodeproj \
-           -scheme MGLKitSampleApp  \
-           -sdk $SDK \
-           -configuration $CONFIGURATION \
-           CODE_SIGN_IDENTITY="" \
-           CODE_SIGN_ENTITLEMENTS="" \
-           CODE_SIGNING_REQUIRED=NO \
-           CODE_SIGNING_ALLOWED=NO
+invoke_xcodebuild()
+{
+    TARGET=$1
 
-xcodebuild build \
-           -project MGLKitSamples.xcodeproj \
-           -scheme MGLPaint  \
-           -sdk $SDK \
-           -configuration $CONFIGURATION \
-           CODE_SIGN_IDENTITY="" \
-           CODE_SIGN_ENTITLEMENTS="" \
-           CODE_SIGNING_REQUIRED=NO \
-           CODE_SIGNING_ALLOWED=NO
+    xcodebuild build \
+               -project MGLKitSamples.xcodeproj \
+               -scheme $TARGET  \
+               -sdk $SDK \
+               -configuration $CONFIGURATION \
+               CODE_SIGN_IDENTITY="" \
+               CODE_SIGN_ENTITLEMENTS="" \
+               CODE_SIGNING_REQUIRED=NO \
+               CODE_SIGNING_ALLOWED=NO
+}
+
+invoke_xcodebuild MGLKitSampleApp
+invoke_xcodebuild MGLPaint
+invoke_xcodebuild MGLKitSampleApp_ios9.0
+invoke_xcodebuild hello_triangle
 
 cd $CURRENR_DIR
 
