@@ -6,6 +6,8 @@
 
 #import "MGLKViewController.h"
 
+#include <common/apple_platform_utils.h>
+
 @interface MGLKViewController () {
     __weak MGLKView *_glView;
     CADisplayLink *_displayLink;
@@ -91,7 +93,14 @@
     _preferredFramesPerSecond = preferredFramesPerSecond;
     if (_displayLink)
     {
-        _displayLink.preferredFramesPerSecond = _preferredFramesPerSecond;
+        if (ANGLE_APPLE_AVAILABLE_CI(13.0, 10.0))
+        {
+            _displayLink.preferredFramesPerSecond = _preferredFramesPerSecond;
+        }
+        else
+        {
+            _displayLink.frameInterval = 60 / _preferredFramesPerSecond;
+        }
     }
     [self pause];
     [self resume];
@@ -129,7 +138,14 @@
     if (!_displayLink)
     {
         _displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(frameStep)];
-        _displayLink.preferredFramesPerSecond = _preferredFramesPerSecond;
+        if (ANGLE_APPLE_AVAILABLE_CI(13.0, 10.0))
+        {
+            _displayLink.preferredFramesPerSecond = _preferredFramesPerSecond;
+        }
+        else
+        {
+            _displayLink.frameInterval = 60 / _preferredFramesPerSecond;
+        }
     }
 
     if (_glView)
