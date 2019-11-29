@@ -7,6 +7,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 CURRENR_DIR=$PWD
 CONFIGURATION=$1
 SDK=$2
+QUIET=$3
 
 if [ "$CONFIGURATION" = "" ]; then
     CONFIGURATION=Debug
@@ -30,7 +31,9 @@ invoke_xcodebuild()
                CODE_SIGN_IDENTITY="" \
                CODE_SIGN_ENTITLEMENTS="" \
                CODE_SIGNING_REQUIRED=NO \
-               CODE_SIGNING_ALLOWED=NO
+               CODE_SIGNING_ALLOWED=NO \
+               $QUIET \
+               | xcpretty
 }
 
 invoke_xcodebuild MGLKitSampleApp
