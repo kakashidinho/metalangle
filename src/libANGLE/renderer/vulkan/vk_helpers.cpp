@@ -3523,7 +3523,10 @@ bool ShaderProgramHelper::valid() const
 
 void ShaderProgramHelper::destroy(VkDevice device)
 {
-    mGraphicsPipelines.destroy(device);
+    for (GraphicsPipelineCache &cache : mGraphicsPipelines)
+    {
+        cache.destroy(device);
+    }
     mComputePipeline.destroy(device);
     for (BindingPointer<ShaderAndSerial> &shader : mShaders)
     {
@@ -3533,7 +3536,10 @@ void ShaderProgramHelper::destroy(VkDevice device)
 
 void ShaderProgramHelper::release(ContextVk *contextVk)
 {
-    mGraphicsPipelines.release(contextVk);
+    for (GraphicsPipelineCache &cache : mGraphicsPipelines)
+    {
+        cache.release(contextVk);
+    }
     contextVk->addGarbage(&mComputePipeline.get());
     for (BindingPointer<ShaderAndSerial> &shader : mShaders)
     {

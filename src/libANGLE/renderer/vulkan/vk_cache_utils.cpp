@@ -186,14 +186,6 @@ void UnpackBlendAttachmentState(const vk::PackedColorBlendAttachmentState &packe
 void SetPipelineShaderStageInfo(const VkStructureType type,
                                 const VkShaderStageFlagBits stage,
                                 const VkShaderModule module,
-                                VkPipelineShaderStageCreateInfo *shaderStage)
-{
-    SetPipelineShaderStageInfo(type, stage, module, shaderStage, nullptr);
-}
-
-void SetPipelineShaderStageInfo(const VkStructureType type,
-                                const VkShaderStageFlagBits stage,
-                                const VkShaderModule module,
                                 VkPipelineShaderStageCreateInfo *shaderStage,
                                 const VkSpecializationInfo *constants)
 {
@@ -203,6 +195,14 @@ void SetPipelineShaderStageInfo(const VkStructureType type,
     shaderStage->module              = module;
     shaderStage->pName               = "main";
     shaderStage->pSpecializationInfo = constants;
+}
+
+void SetPipelineShaderStageInfo(const VkStructureType type,
+                                const VkShaderStageFlagBits stage,
+                                const VkShaderModule module,
+                                VkPipelineShaderStageCreateInfo *shaderStage)
+{
+    SetPipelineShaderStageInfo(type, stage, module, shaderStage, nullptr);
 }
 
 angle::Result InitializeRenderPassFromDesc(vk::Context *context,
@@ -644,7 +644,7 @@ angle::Result GraphicsPipelineDesc::initializePipeline(
     VkSpecializationMapEntry lineRasterEnableConstantEntry = {};
     VkBool32 lineRasterEnableConstant                      = VK_FALSE;
 
-    if (emulateLineRasterization)
+    if (enableLineRasterEmulation)
     {
         lineRasterEnableConstantEntry.constantID = kLineRasterEmulationConstantIndex;
         lineRasterEnableConstantEntry.offset     = 0;
@@ -653,7 +653,7 @@ angle::Result GraphicsPipelineDesc::initializePipeline(
         lineRasterEnableConstant = VK_TRUE;  // value of line raster emulation constant
 
         constants.mapEntryCount = 1;
-        constants.entries       = &lineRasterEnableConstantEntry;
+        constants.pMapEntries   = &lineRasterEnableConstantEntry;
         constants.dataSize      = sizeof(lineRasterEnableConstant);
         constants.pData         = &lineRasterEnableConstant;
     }  // if (emulateLineRasterization)

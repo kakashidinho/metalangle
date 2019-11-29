@@ -844,7 +844,8 @@ class GraphicsPipelineCache final : angle::NonCopyable
 
         return insertPipeline(contextVk, pipelineCacheVk, compatibleRenderPass, pipelineLayout,
                               activeAttribLocationsMask, programAttribsTypeMask, vertexModule,
-                              fragmentModule, geometryModule, desc, descPtrOut, pipelineOut);
+                              fragmentModule, geometryModule, enableLineRasterEmulation, desc,
+                              descPtrOut, pipelineOut);
     }
 
   private:

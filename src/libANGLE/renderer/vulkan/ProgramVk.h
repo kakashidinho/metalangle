@@ -139,7 +139,7 @@ class ProgramVk : public ProgramImpl
                                       vk::PipelineHelper **pipelineOut)
     {
         ASSERT(mShaderInfo.valid());
-        vk::ShaderProgramHelper *shaderProgram = mShaderInfo.getShaderProgram();
+        vk::ShaderProgramHelper *shaderProgram = &mShaderInfo.getShaderProgram();
         bool enableLineRasterEmulation         = UseLineRaster(contextVk, mode);
 
         ASSERT(shaderProgram->isGraphicsProgram());
@@ -155,7 +155,7 @@ class ProgramVk : public ProgramImpl
     angle::Result getComputePipeline(ContextVk *contextVk, vk::PipelineAndSerial **pipelineOut)
     {
         ASSERT(mShaderInfo.valid());
-        vk::ShaderProgramHelper *shaderProgram = mShaderInfo.getShaderProgram();
+        vk::ShaderProgramHelper *shaderProgram = &mShaderInfo.getShaderProgram();
         ASSERT(!shaderProgram->isGraphicsProgram());
         return shaderProgram->getComputePipeline(contextVk, mPipelineLayout.get(), pipelineOut);
     }
