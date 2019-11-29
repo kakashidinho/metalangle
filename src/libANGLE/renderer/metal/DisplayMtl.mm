@@ -25,7 +25,11 @@ namespace rx
 bool IsMetalDisplayAvailable()
 {
     // We only support macos 10.13+ and 11 for now. Since they are requirements for Metal 2.0.
+#if TARGET_OS_SIMULATOR
+    if (ANGLE_APPLE_AVAILABLE_XCI(10.13, 13.0, 13))
+#else
     if (ANGLE_APPLE_AVAILABLE_XCI(10.13, 13.0, 11))
+#endif
     {
         return true;
     }

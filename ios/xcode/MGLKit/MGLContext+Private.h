@@ -15,7 +15,7 @@
 @interface MGLContext () {
     // ANGLE won't allow context to be current without surface.
     // Create a dummy surface for it using this dummy layer.
-    CAMetalLayer *_dummyLayer;
+    CALayer *_dummyLayer;
     EGLSurface _dummySurface;
     MGLRenderingAPI _renderingApi;
     MGLDisplay *_display;

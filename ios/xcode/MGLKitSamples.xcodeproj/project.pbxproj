@@ -37,6 +37,22 @@
 		0A28CD83235789B20081BB84 /* Particle.png in Resources */ = {isa = PBXBuildFile; fileRef = 0A28CD7F235789B20081BB84 /* Particle.png */; };
 		0A28CD88235789DF0081BB84 /* PaintingView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A28CD86235789DE0081BB84 /* PaintingView.mm */; };
 		0A28CD89235789DF0081BB84 /* SoundEffect.m in Sources */ = {isa = PBXBuildFile; fileRef = 0A28CD87235789DE0081BB84 /* SoundEffect.m */; };
+		0A9A6BAD2391283B006A152A /* CC3Kazmath.c in Sources */ = {isa = PBXBuildFile; fileRef = 0AD9E48C2355DEA5006F5642 /* CC3Kazmath.c */; };
+		0A9A6BAE2391283B006A152A /* GLViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AAF414F2354FAE8000E3CC8 /* GLViewController.m */; };
+		0A9A6BAF2391283B006A152A /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AAF41492354FAE8000E3CC8 /* AppDelegate.m */; };
+		0A9A6BB02391283B006A152A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AAF415A2354FAE9000E3CC8 /* main.m */; };
+		0A9A6BB12391283B006A152A /* CC3GLMatrix.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AD9E4912355DEA5006F5642 /* CC3GLMatrix.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		0A9A6BB22391283B006A152A /* CC3Foundation.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AD9E48B2355DEA5006F5642 /* CC3Foundation.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		0A9A6BB32391283B006A152A /* CC3Math.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AD9E4922355DEA5006F5642 /* CC3Math.m */; };
+		0A9A6BB52391283B006A152A /* MetalANGLE.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AAF40CA2354CB64000E3CC8 /* MetalANGLE.framework */; };
+		0A9A6BB72391283B006A152A /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0AAF41562354FAE9000E3CC8 /* LaunchScreen.storyboard */; };
+		0A9A6BB82391283B006A152A /* tile_floor.png in Resources */ = {isa = PBXBuildFile; fileRef = 0AD9E49A2355DECC006F5642 /* tile_floor.png */; };
+		0A9A6BB92391283B006A152A /* SimpleFragment.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 0AD9E49E2355DEDF006F5642 /* SimpleFragment.glsl */; };
+		0A9A6BBA2391283B006A152A /* item_powerup_fish.png in Resources */ = {isa = PBXBuildFile; fileRef = 0AD9E4992355DECC006F5642 /* item_powerup_fish.png */; };
+		0A9A6BBB2391283B006A152A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0AAF41542354FAE9000E3CC8 /* Assets.xcassets */; };
+		0A9A6BBC2391283B006A152A /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0AAF41512354FAE8000E3CC8 /* Main.storyboard */; };
+		0A9A6BBD2391283B006A152A /* SimpleVertex.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 0AD9E49D2355DEDF006F5642 /* SimpleVertex.glsl */; };
+		0A9A6BBF2391283B006A152A /* MetalANGLE.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0AAF40CA2354CB64000E3CC8 /* MetalANGLE.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		0AAF414A2354FAE8000E3CC8 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AAF41492354FAE8000E3CC8 /* AppDelegate.m */; };
 		0AAF41502354FAE8000E3CC8 /* GLViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AAF414F2354FAE8000E3CC8 /* GLViewController.m */; };
 		0AAF41532354FAE8000E3CC8 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0AAF41512354FAE8000E3CC8 /* Main.storyboard */; };
@@ -56,6 +72,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		0A9A6BDC2391283C006A152A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0A9A6AAA23911BBB006A152A;
+			remoteInfo = angle_gl_backend;
+		};
 		0AAF40C92354CB64000E3CC8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
@@ -216,6 +239,16 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		0A9A6BBE2391283B006A152A /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				0A9A6BBF2391283B006A152A /* MetalANGLE.framework in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		0AD9E4A12355F265006F5642 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -268,6 +301,7 @@
 		0A28CD87235789DE0081BB84 /* SoundEffect.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SoundEffect.m; sourceTree = "<group>"; };
 		0A28CD8B235795BF0081BB84 /* MGLPaint.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MGLPaint.entitlements; sourceTree = "<group>"; };
 		0A946A30235700930027DFE1 /* MGLKitSampleApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MGLKitSampleApp.entitlements; sourceTree = "<group>"; };
+		0A9A6BC32391283B006A152A /* MGLKitSampleApp_ios9.0.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MGLKitSampleApp_ios9.0.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = OpenGLES.xcodeproj; sourceTree = "<group>"; };
 		0AAF41462354FAE8000E3CC8 /* MGLKitSampleApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MGLKitSampleApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0AAF41482354FAE8000E3CC8 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
@@ -301,6 +335,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				0A28CD5A235788EF0081BB84 /* MetalANGLE.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0A9A6BB42391283B006A152A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0A9A6BB52391283B006A152A /* MetalANGLE.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -407,6 +449,7 @@
 			children = (
 				0AAF41462354FAE8000E3CC8 /* MGLKitSampleApp.app */,
 				0A28CD22235787370081BB84 /* MGLPaint.app */,
+				0A9A6BC32391283B006A152A /* MGLKitSampleApp_ios9.0.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -416,6 +459,7 @@
 			children = (
 				0AAF40CA2354CB64000E3CC8 /* MetalANGLE.framework */,
 				0AAF40CC2354CB64000E3CC8 /* libangle_metal_backend.a */,
+				0A9A6BDD2391283C006A152A /* libangle_gl_backend.a */,
 				0AAF40CE2354CB64000E3CC8 /* libangle_image_util.a */,
 				0AAF40D02354CB64000E3CC8 /* libglslang.a */,
 				0AAF40D22354CB64000E3CC8 /* libspirv-cross.a */,
@@ -514,6 +558,24 @@
 			productReference = 0A28CD22235787370081BB84 /* MGLPaint.app */;
 			productType = "com.apple.product-type.application";
 		};
+		0A9A6BAB2391283B006A152A /* MGLKitSampleApp_ios9.0 */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0A9A6BC02391283B006A152A /* Build configuration list for PBXNativeTarget "MGLKitSampleApp_ios9.0" */;
+			buildPhases = (
+				0A9A6BAC2391283B006A152A /* Sources */,
+				0A9A6BB42391283B006A152A /* Frameworks */,
+				0A9A6BB62391283B006A152A /* Resources */,
+				0A9A6BBE2391283B006A152A /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MGLKitSampleApp_ios9.0;
+			productName = MGLKitSampleApp;
+			productReference = 0A9A6BC32391283B006A152A /* MGLKitSampleApp_ios9.0.app */;
+			productType = "com.apple.product-type.application";
+		};
 		0AAF41452354FAE8000E3CC8 /* MGLKitSampleApp */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 0AAF415C2354FAE9000E3CC8 /* Build configuration list for PBXNativeTarget "MGLKitSampleApp" */;
@@ -570,11 +632,19 @@
 			targets = (
 				0AAF41452354FAE8000E3CC8 /* MGLKitSampleApp */,
 				0A28CD21235787370081BB84 /* MGLPaint */,
+				0A9A6BAB2391283B006A152A /* MGLKitSampleApp_ios9.0 */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXReferenceProxy section */
+		0A9A6BDD2391283C006A152A /* libangle_gl_backend.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libangle_gl_backend.a;
+			remoteRef = 0A9A6BDC2391283C006A152A /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
 		0AAF40CA2354CB64000E3CC8 /* MetalANGLE.framework */ = {
 			isa = PBXReferenceProxy;
 			fileType = wrapper.framework;
@@ -753,6 +823,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		0A9A6BB62391283B006A152A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0A9A6BB72391283B006A152A /* LaunchScreen.storyboard in Resources */,
+				0A9A6BB82391283B006A152A /* tile_floor.png in Resources */,
+				0A9A6BB92391283B006A152A /* SimpleFragment.glsl in Resources */,
+				0A9A6BBA2391283B006A152A /* item_powerup_fish.png in Resources */,
+				0A9A6BBB2391283B006A152A /* Assets.xcassets in Resources */,
+				0A9A6BBC2391283B006A152A /* Main.storyboard in Resources */,
+				0A9A6BBD2391283B006A152A /* SimpleVertex.glsl in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		0AAF41442354FAE8000E3CC8 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -781,6 +865,20 @@
 				0A28CD59235788D50081BB84 /* shaderUtil.c in Sources */,
 				0A28CD372357873A0081BB84 /* main.m in Sources */,
 				0A28CD58235788D50081BB84 /* fileUtil.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0A9A6BAC2391283B006A152A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0A9A6BAD2391283B006A152A /* CC3Kazmath.c in Sources */,
+				0A9A6BAE2391283B006A152A /* GLViewController.m in Sources */,
+				0A9A6BAF2391283B006A152A /* AppDelegate.m in Sources */,
+				0A9A6BB02391283B006A152A /* main.m in Sources */,
+				0A9A6BB12391283B006A152A /* CC3GLMatrix.m in Sources */,
+				0A9A6BB22391283B006A152A /* CC3Foundation.m in Sources */,
+				0A9A6BB32391283B006A152A /* CC3Math.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -877,6 +975,52 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.hqgame.angle.samples.MGLPaint;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		0A9A6BC12391283B006A152A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = MGLKitSampleApp/MGLKitSampleApp.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
+				INFOPLIST_FILE = MGLKitSampleApp/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				OTHER_CFLAGS = "-Wno-strict-prototypes";
+				PRODUCT_BUNDLE_IDENTIFIER = com.hqgame.angle.samples.MGLKitSampleApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTS_MACCATALYST = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		0A9A6BC22391283B006A152A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = MGLKitSampleApp/MGLKitSampleApp.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
+				INFOPLIST_FILE = MGLKitSampleApp/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				OTHER_CFLAGS = "-Wno-strict-prototypes";
+				PRODUCT_BUNDLE_IDENTIFIER = com.hqgame.angle.samples.MGLKitSampleApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTS_MACCATALYST = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -1056,6 +1200,15 @@
 			buildConfigurations = (
 				0A28CD382357873A0081BB84 /* Debug */,
 				0A28CD392357873A0081BB84 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		0A9A6BC02391283B006A152A /* Build configuration list for PBXNativeTarget "MGLKitSampleApp_ios9.0" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0A9A6BC12391283B006A152A /* Debug */,
+				0A9A6BC22391283B006A152A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

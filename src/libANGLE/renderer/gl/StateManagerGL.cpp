@@ -2156,6 +2156,13 @@ void StateManagerGL::validateState() const
                 continue;
             }
         }
+        if (bindingType == gl::BufferBinding::DrawIndirect)
+        {
+            if (!nativegl::SupportsDrawIndirect(mFunctions))
+            {
+                continue;
+            }
+        }
         GLenum bindingTypeGL  = nativegl::GetBufferBindingQuery(bindingType);
         std::string localName = "mBuffers[" + ToString(bindingType) + "]";
         ValidateStateHelper(mFunctions, mBuffers[bindingType], bindingTypeGL, localName.c_str(),

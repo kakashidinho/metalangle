@@ -610,6 +610,51 @@
 		0A97E5A52348750D007CA616 /* sample_util.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0A97E493234867E9007CA616 /* sample_util.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		0A97E5A623487563007CA616 /* MipMap2D.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A97E56123487467007CA616 /* MipMap2D.cpp */; };
 		0A97E5A723487567007CA616 /* StencilOperations.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A97E56323487467007CA616 /* StencilOperations.cpp */; };
+		0A9A6AB523911C23006A152A /* libangle_gl_backend.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A9A6AAA23911BBB006A152A /* libangle_gl_backend.a */; };
+		0A9A6B5C23911CB4006A152A /* PathGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6AB823911CAC006A152A /* PathGL.cpp */; };
+		0A9A6B5D23911CB4006A152A /* SyncGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6ABC23911CAD006A152A /* SyncGL.cpp */; };
+		0A9A6B5E23911CB4006A152A /* DispatchTableGL_autogen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6ABD23911CAD006A152A /* DispatchTableGL_autogen.cpp */; };
+		0A9A6B5F23911CB4006A152A /* renderergl_utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6ABE23911CAD006A152A /* renderergl_utils.cpp */; };
+		0A9A6B6023911CB4006A152A /* ImageGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6ABF23911CAD006A152A /* ImageGL.cpp */; };
+		0A9A6B6123911CB4006A152A /* ClearMultiviewGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6AC223911CAD006A152A /* ClearMultiviewGL.cpp */; };
+		0A9A6B6223911CB4006A152A /* RendererGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6AC423911CAD006A152A /* RendererGL.cpp */; };
+		0A9A6B6323911CB4006A152A /* formatutilsgl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6AC723911CAE006A152A /* formatutilsgl.cpp */; };
+		0A9A6B6423911CB4006A152A /* null_functions.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6AC923911CAE006A152A /* null_functions.cpp */; };
+		0A9A6B6523911CB4006A152A /* TransformFeedbackGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6ACB23911CAE006A152A /* TransformFeedbackGL.cpp */; };
+		0A9A6B6623911CB4006A152A /* BufferGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6ACD23911CAE006A152A /* BufferGL.cpp */; };
+		0A9A6B6723911CB4006A152A /* ShaderGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6ACF23911CAE006A152A /* ShaderGL.cpp */; };
+		0A9A6B6823911CB4006A152A /* FenceNVGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6AD123911CAF006A152A /* FenceNVGL.cpp */; };
+		0A9A6B7223911CB4006A152A /* RenderbufferGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6AEA23911CAF006A152A /* RenderbufferGL.cpp */; };
+		0A9A6B7323911CB4006A152A /* BlitGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6AED23911CB0006A152A /* BlitGL.cpp */; };
+		0A9A6B7423911CB4006A152A /* SurfaceGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6AEE23911CB0006A152A /* SurfaceGL.cpp */; };
+		0A9A6B7523911CB4006A152A /* FunctionsGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6AF023911CB0006A152A /* FunctionsGL.cpp */; };
+		0A9A6B7623911CB4006A152A /* CompilerGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6AF223911CB0006A152A /* CompilerGL.cpp */; };
+		0A9A6B7723911CB4006A152A /* VertexArrayGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6AF423911CB0006A152A /* VertexArrayGL.cpp */; };
+		0A9A6B7823911CB4006A152A /* SamplerGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6AF623911CB0006A152A /* SamplerGL.cpp */; };
+		0A9A6B7923911CB4006A152A /* StateManagerGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6AF723911CB1006A152A /* StateManagerGL.cpp */; };
+		0A9A6B7A23911CB4006A152A /* ContextGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6AF823911CB1006A152A /* ContextGL.cpp */; };
+		0A9A6B7B23911CB4006A152A /* WindowSurfaceEAGL.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6AFA23911CB1006A152A /* WindowSurfaceEAGL.mm */; };
+		0A9A6B7C23911CB4006A152A /* DisplayEAGL.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6AFC23911CB1006A152A /* DisplayEAGL.mm */; };
+		0A9A6B7D23911CB4006A152A /* PbufferSurfaceEAGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6AFD23911CB1006A152A /* PbufferSurfaceEAGL.cpp */; };
+		0A9A6B7E23911CB4006A152A /* DeviceEAGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6AFE23911CB1006A152A /* DeviceEAGL.cpp */; };
+		0A9A6B7F23911CB4006A152A /* ContextEAGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6AFF23911CB1006A152A /* ContextEAGL.cpp */; };
+		0A9A6B8023911CB4006A152A /* RendererEAGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6B0123911CB1006A152A /* RendererEAGL.cpp */; };
+		0A9A6B8123911CB4006A152A /* IOSurfaceSurfaceEAGL.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6B0523911CB1006A152A /* IOSurfaceSurfaceEAGL.mm */; };
+		0A9A6B8923911CB4006A152A /* SemaphoreGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6B1A23911CB1006A152A /* SemaphoreGL.cpp */; };
+		0A9A6B8A23911CB4006A152A /* TextureGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6B1E23911CB2006A152A /* TextureGL.cpp */; };
+		0A9A6B8B23911CB4006A152A /* DisplayGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6B2123911CB2006A152A /* DisplayGL.cpp */; };
+		0A9A6B8C23911CB4006A152A /* ProgramGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6B2223911CB2006A152A /* ProgramGL.cpp */; };
+		0A9A6B9C23911CB4006A152A /* ProgramPipelineGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6B4723911CB3006A152A /* ProgramPipelineGL.cpp */; };
+		0A9A6BA223911CB4006A152A /* MemoryObjectGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6B5723911CB3006A152A /* MemoryObjectGL.cpp */; };
+		0A9A6BA323911CB4006A152A /* QueryGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6B5923911CB3006A152A /* QueryGL.cpp */; };
+		0A9A6BA423911CB4006A152A /* FramebufferGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6B5A23911CB3006A152A /* FramebufferGL.cpp */; };
+		0A9A6BA7239124FA006A152A /* libangle_gl_backend.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A9A6AAA23911BBB006A152A /* libangle_gl_backend.a */; };
+		0A9A6BA9239126DB006A152A /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A9A6BA8239126DB006A152A /* CoreGraphics.framework */; };
+		0A9A6BAA239126ED006A152A /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A9A6BA8239126DB006A152A /* CoreGraphics.framework */; };
+		0A9A6BE0239132E8006A152A /* TranslatorESSL.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A9A6BDE239132E8006A152A /* TranslatorESSL.h */; };
+		0A9A6BE1239132E8006A152A /* TranslatorESSL.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A9A6BDE239132E8006A152A /* TranslatorESSL.h */; };
+		0A9A6BE2239132E8006A152A /* TranslatorESSL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6BDF239132E8006A152A /* TranslatorESSL.cpp */; };
+		0A9A6BE3239132E8006A152A /* TranslatorESSL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9A6BDF239132E8006A152A /* TranslatorESSL.cpp */; };
 		0A9B83E5234CCDF6008BF16F /* crash_handler_posix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9B83E4234CCDF6008BF16F /* crash_handler_posix.cpp */; };
 		0A9B83E7234CCE1B008BF16F /* Timer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9B83E6234CCE1B008BF16F /* Timer.cpp */; };
 		0A9B83F8234CD0C2008BF16F /* json_reader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9B83F6234CD0C2008BF16F /* json_reader.cpp */; };
@@ -1374,6 +1419,20 @@
 			remoteGlobalIDString = 0A97E5AB234879AD007CA616;
 			remoteInfo = angle_commit_id;
 		};
+		0A9A6AB323911C14006A152A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0A60524A23464F51005CEA98 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0A9A6AA923911BBB006A152A;
+			remoteInfo = angle_gl_backend;
+		};
+		0A9A6BA5239124EA006A152A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0A60524A23464F51005CEA98 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0A9A6AA923911BBB006A152A;
+			remoteInfo = angle_gl_backend;
+		};
 		0AA2004823473BFA00E0B98C /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 0A60524A23464F51005CEA98 /* Project object */;
@@ -1575,6 +1634,15 @@
 			files = (
 				0A97E5A42348750D007CA616 /* MetalANGLE.framework in CopyFiles */,
 				0A97E5A52348750D007CA616 /* sample_util.framework in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0A9A6AA823911BBB006A152A /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "include/$(PRODUCT_NAME)";
+			dstSubfolderSpec = 16;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2263,6 +2331,87 @@
 		0A97E589234874E2007CA616 /* stencil_operations.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = stencil_operations.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A97E5AA234878FD007CA616 /* commit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = commit.h; sourceTree = "<group>"; };
 		0A99BDEB236349C900BD36CC /* DisplayMtl_api.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = DisplayMtl_api.h; path = ../../src/libANGLE/renderer/metal/DisplayMtl_api.h; sourceTree = "<group>"; };
+		0A9A6AAA23911BBB006A152A /* libangle_gl_backend.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libangle_gl_backend.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		0A9A6AB623911CAC006A152A /* ProgramPipelineGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ProgramPipelineGL.h; path = ../../src/libANGLE/renderer/gl/ProgramPipelineGL.h; sourceTree = "<group>"; };
+		0A9A6AB723911CAC006A152A /* formatutilsgl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = formatutilsgl.h; path = ../../src/libANGLE/renderer/gl/formatutilsgl.h; sourceTree = "<group>"; };
+		0A9A6AB823911CAC006A152A /* PathGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PathGL.cpp; path = ../../src/libANGLE/renderer/gl/PathGL.cpp; sourceTree = "<group>"; };
+		0A9A6AB923911CAC006A152A /* null_functions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = null_functions.h; path = ../../src/libANGLE/renderer/gl/null_functions.h; sourceTree = "<group>"; };
+		0A9A6ABA23911CAC006A152A /* QueryGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = QueryGL.h; path = ../../src/libANGLE/renderer/gl/QueryGL.h; sourceTree = "<group>"; };
+		0A9A6ABB23911CAD006A152A /* DispatchTableGL_autogen.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = DispatchTableGL_autogen.h; path = ../../src/libANGLE/renderer/gl/DispatchTableGL_autogen.h; sourceTree = "<group>"; };
+		0A9A6ABC23911CAD006A152A /* SyncGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SyncGL.cpp; path = ../../src/libANGLE/renderer/gl/SyncGL.cpp; sourceTree = "<group>"; };
+		0A9A6ABD23911CAD006A152A /* DispatchTableGL_autogen.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = DispatchTableGL_autogen.cpp; path = ../../src/libANGLE/renderer/gl/DispatchTableGL_autogen.cpp; sourceTree = "<group>"; };
+		0A9A6ABE23911CAD006A152A /* renderergl_utils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = renderergl_utils.cpp; path = ../../src/libANGLE/renderer/gl/renderergl_utils.cpp; sourceTree = "<group>"; };
+		0A9A6ABF23911CAD006A152A /* ImageGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ImageGL.cpp; path = ../../src/libANGLE/renderer/gl/ImageGL.cpp; sourceTree = "<group>"; };
+		0A9A6AC023911CAD006A152A /* MemoryObjectGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MemoryObjectGL.h; path = ../../src/libANGLE/renderer/gl/MemoryObjectGL.h; sourceTree = "<group>"; };
+		0A9A6AC123911CAD006A152A /* ContextGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ContextGL.h; path = ../../src/libANGLE/renderer/gl/ContextGL.h; sourceTree = "<group>"; };
+		0A9A6AC223911CAD006A152A /* ClearMultiviewGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ClearMultiviewGL.cpp; path = ../../src/libANGLE/renderer/gl/ClearMultiviewGL.cpp; sourceTree = "<group>"; };
+		0A9A6AC323911CAD006A152A /* PathGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PathGL.h; path = ../../src/libANGLE/renderer/gl/PathGL.h; sourceTree = "<group>"; };
+		0A9A6AC423911CAD006A152A /* RendererGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = RendererGL.cpp; path = ../../src/libANGLE/renderer/gl/RendererGL.cpp; sourceTree = "<group>"; };
+		0A9A6AC523911CAD006A152A /* StateManagerGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = StateManagerGL.h; path = ../../src/libANGLE/renderer/gl/StateManagerGL.h; sourceTree = "<group>"; };
+		0A9A6AC623911CAD006A152A /* SurfaceGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SurfaceGL.h; path = ../../src/libANGLE/renderer/gl/SurfaceGL.h; sourceTree = "<group>"; };
+		0A9A6AC723911CAE006A152A /* formatutilsgl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = formatutilsgl.cpp; path = ../../src/libANGLE/renderer/gl/formatutilsgl.cpp; sourceTree = "<group>"; };
+		0A9A6AC823911CAE006A152A /* DisplayGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = DisplayGL.h; path = ../../src/libANGLE/renderer/gl/DisplayGL.h; sourceTree = "<group>"; };
+		0A9A6AC923911CAE006A152A /* null_functions.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = null_functions.cpp; path = ../../src/libANGLE/renderer/gl/null_functions.cpp; sourceTree = "<group>"; };
+		0A9A6ACA23911CAE006A152A /* ShaderGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ShaderGL.h; path = ../../src/libANGLE/renderer/gl/ShaderGL.h; sourceTree = "<group>"; };
+		0A9A6ACB23911CAE006A152A /* TransformFeedbackGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TransformFeedbackGL.cpp; path = ../../src/libANGLE/renderer/gl/TransformFeedbackGL.cpp; sourceTree = "<group>"; };
+		0A9A6ACC23911CAE006A152A /* FunctionsGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FunctionsGL.h; path = ../../src/libANGLE/renderer/gl/FunctionsGL.h; sourceTree = "<group>"; };
+		0A9A6ACD23911CAE006A152A /* BufferGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = BufferGL.cpp; path = ../../src/libANGLE/renderer/gl/BufferGL.cpp; sourceTree = "<group>"; };
+		0A9A6ACE23911CAE006A152A /* TransformFeedbackGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TransformFeedbackGL.h; path = ../../src/libANGLE/renderer/gl/TransformFeedbackGL.h; sourceTree = "<group>"; };
+		0A9A6ACF23911CAE006A152A /* ShaderGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ShaderGL.cpp; path = ../../src/libANGLE/renderer/gl/ShaderGL.cpp; sourceTree = "<group>"; };
+		0A9A6AD023911CAF006A152A /* VertexArrayGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VertexArrayGL.h; path = ../../src/libANGLE/renderer/gl/VertexArrayGL.h; sourceTree = "<group>"; };
+		0A9A6AD123911CAF006A152A /* FenceNVGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = FenceNVGL.cpp; path = ../../src/libANGLE/renderer/gl/FenceNVGL.cpp; sourceTree = "<group>"; };
+		0A9A6AD223911CAF006A152A /* SemaphoreGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SemaphoreGL.h; path = ../../src/libANGLE/renderer/gl/SemaphoreGL.h; sourceTree = "<group>"; };
+		0A9A6AE923911CAF006A152A /* TextureGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TextureGL.h; path = ../../src/libANGLE/renderer/gl/TextureGL.h; sourceTree = "<group>"; };
+		0A9A6AEA23911CAF006A152A /* RenderbufferGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = RenderbufferGL.cpp; path = ../../src/libANGLE/renderer/gl/RenderbufferGL.cpp; sourceTree = "<group>"; };
+		0A9A6AEB23911CAF006A152A /* BufferGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BufferGL.h; path = ../../src/libANGLE/renderer/gl/BufferGL.h; sourceTree = "<group>"; };
+		0A9A6AEC23911CAF006A152A /* ClearMultiviewGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ClearMultiviewGL.h; path = ../../src/libANGLE/renderer/gl/ClearMultiviewGL.h; sourceTree = "<group>"; };
+		0A9A6AED23911CB0006A152A /* BlitGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = BlitGL.cpp; path = ../../src/libANGLE/renderer/gl/BlitGL.cpp; sourceTree = "<group>"; };
+		0A9A6AEE23911CB0006A152A /* SurfaceGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SurfaceGL.cpp; path = ../../src/libANGLE/renderer/gl/SurfaceGL.cpp; sourceTree = "<group>"; };
+		0A9A6AEF23911CB0006A152A /* SyncGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SyncGL.h; path = ../../src/libANGLE/renderer/gl/SyncGL.h; sourceTree = "<group>"; };
+		0A9A6AF023911CB0006A152A /* FunctionsGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = FunctionsGL.cpp; path = ../../src/libANGLE/renderer/gl/FunctionsGL.cpp; sourceTree = "<group>"; };
+		0A9A6AF123911CB0006A152A /* functionsgl_typedefs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = functionsgl_typedefs.h; path = ../../src/libANGLE/renderer/gl/functionsgl_typedefs.h; sourceTree = "<group>"; };
+		0A9A6AF223911CB0006A152A /* CompilerGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CompilerGL.cpp; path = ../../src/libANGLE/renderer/gl/CompilerGL.cpp; sourceTree = "<group>"; };
+		0A9A6AF323911CB0006A152A /* FramebufferGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FramebufferGL.h; path = ../../src/libANGLE/renderer/gl/FramebufferGL.h; sourceTree = "<group>"; };
+		0A9A6AF423911CB0006A152A /* VertexArrayGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = VertexArrayGL.cpp; path = ../../src/libANGLE/renderer/gl/VertexArrayGL.cpp; sourceTree = "<group>"; };
+		0A9A6AF623911CB0006A152A /* SamplerGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SamplerGL.cpp; path = ../../src/libANGLE/renderer/gl/SamplerGL.cpp; sourceTree = "<group>"; };
+		0A9A6AF723911CB1006A152A /* StateManagerGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = StateManagerGL.cpp; path = ../../src/libANGLE/renderer/gl/StateManagerGL.cpp; sourceTree = "<group>"; };
+		0A9A6AF823911CB1006A152A /* ContextGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ContextGL.cpp; path = ../../src/libANGLE/renderer/gl/ContextGL.cpp; sourceTree = "<group>"; };
+		0A9A6AFA23911CB1006A152A /* WindowSurfaceEAGL.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = WindowSurfaceEAGL.mm; sourceTree = "<group>"; };
+		0A9A6AFB23911CB1006A152A /* WindowSurfaceEAGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WindowSurfaceEAGL.h; sourceTree = "<group>"; };
+		0A9A6AFC23911CB1006A152A /* DisplayEAGL.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = DisplayEAGL.mm; sourceTree = "<group>"; };
+		0A9A6AFD23911CB1006A152A /* PbufferSurfaceEAGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PbufferSurfaceEAGL.cpp; sourceTree = "<group>"; };
+		0A9A6AFE23911CB1006A152A /* DeviceEAGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DeviceEAGL.cpp; sourceTree = "<group>"; };
+		0A9A6AFF23911CB1006A152A /* ContextEAGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ContextEAGL.cpp; sourceTree = "<group>"; };
+		0A9A6B0023911CB1006A152A /* DisplayEAGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DisplayEAGL.h; sourceTree = "<group>"; };
+		0A9A6B0123911CB1006A152A /* RendererEAGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RendererEAGL.cpp; sourceTree = "<group>"; };
+		0A9A6B0223911CB1006A152A /* PbufferSurfaceEAGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PbufferSurfaceEAGL.h; sourceTree = "<group>"; };
+		0A9A6B0323911CB1006A152A /* ContextEAGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ContextEAGL.h; sourceTree = "<group>"; };
+		0A9A6B0423911CB1006A152A /* RendererEAGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RendererEAGL.h; sourceTree = "<group>"; };
+		0A9A6B0523911CB1006A152A /* IOSurfaceSurfaceEAGL.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = IOSurfaceSurfaceEAGL.mm; sourceTree = "<group>"; };
+		0A9A6B0623911CB1006A152A /* IOSurfaceSurfaceEAGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IOSurfaceSurfaceEAGL.h; sourceTree = "<group>"; };
+		0A9A6B0723911CB1006A152A /* DeviceEAGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DeviceEAGL.h; sourceTree = "<group>"; };
+		0A9A6B0823911CB1006A152A /* renderergl_utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = renderergl_utils.h; path = ../../src/libANGLE/renderer/gl/renderergl_utils.h; sourceTree = "<group>"; };
+		0A9A6B1823911CB1006A152A /* BlitGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BlitGL.h; path = ../../src/libANGLE/renderer/gl/BlitGL.h; sourceTree = "<group>"; };
+		0A9A6B1A23911CB1006A152A /* SemaphoreGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SemaphoreGL.cpp; path = ../../src/libANGLE/renderer/gl/SemaphoreGL.cpp; sourceTree = "<group>"; };
+		0A9A6B1B23911CB2006A152A /* ImageGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ImageGL.h; path = ../../src/libANGLE/renderer/gl/ImageGL.h; sourceTree = "<group>"; };
+		0A9A6B1C23911CB2006A152A /* FenceNVGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FenceNVGL.h; path = ../../src/libANGLE/renderer/gl/FenceNVGL.h; sourceTree = "<group>"; };
+		0A9A6B1D23911CB2006A152A /* ProgramGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ProgramGL.h; path = ../../src/libANGLE/renderer/gl/ProgramGL.h; sourceTree = "<group>"; };
+		0A9A6B1E23911CB2006A152A /* TextureGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TextureGL.cpp; path = ../../src/libANGLE/renderer/gl/TextureGL.cpp; sourceTree = "<group>"; };
+		0A9A6B1F23911CB2006A152A /* CompilerGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CompilerGL.h; path = ../../src/libANGLE/renderer/gl/CompilerGL.h; sourceTree = "<group>"; };
+		0A9A6B2023911CB2006A152A /* SamplerGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SamplerGL.h; path = ../../src/libANGLE/renderer/gl/SamplerGL.h; sourceTree = "<group>"; };
+		0A9A6B2123911CB2006A152A /* DisplayGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = DisplayGL.cpp; path = ../../src/libANGLE/renderer/gl/DisplayGL.cpp; sourceTree = "<group>"; };
+		0A9A6B2223911CB2006A152A /* ProgramGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ProgramGL.cpp; path = ../../src/libANGLE/renderer/gl/ProgramGL.cpp; sourceTree = "<group>"; };
+		0A9A6B4623911CB3006A152A /* RendererGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RendererGL.h; path = ../../src/libANGLE/renderer/gl/RendererGL.h; sourceTree = "<group>"; };
+		0A9A6B4723911CB3006A152A /* ProgramPipelineGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ProgramPipelineGL.cpp; path = ../../src/libANGLE/renderer/gl/ProgramPipelineGL.cpp; sourceTree = "<group>"; };
+		0A9A6B5723911CB3006A152A /* MemoryObjectGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MemoryObjectGL.cpp; path = ../../src/libANGLE/renderer/gl/MemoryObjectGL.cpp; sourceTree = "<group>"; };
+		0A9A6B5823911CB3006A152A /* RenderbufferGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RenderbufferGL.h; path = ../../src/libANGLE/renderer/gl/RenderbufferGL.h; sourceTree = "<group>"; };
+		0A9A6B5923911CB3006A152A /* QueryGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = QueryGL.cpp; path = ../../src/libANGLE/renderer/gl/QueryGL.cpp; sourceTree = "<group>"; };
+		0A9A6B5A23911CB3006A152A /* FramebufferGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = FramebufferGL.cpp; path = ../../src/libANGLE/renderer/gl/FramebufferGL.cpp; sourceTree = "<group>"; };
+		0A9A6B5B23911CB4006A152A /* functionsgl_enums.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = functionsgl_enums.h; path = ../../src/libANGLE/renderer/gl/functionsgl_enums.h; sourceTree = "<group>"; };
+		0A9A6BA8239126DB006A152A /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk/System/Library/Frameworks/CoreGraphics.framework; sourceTree = DEVELOPER_DIR; };
+		0A9A6BDE239132E8006A152A /* TranslatorESSL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TranslatorESSL.h; sourceTree = "<group>"; };
+		0A9A6BDF239132E8006A152A /* TranslatorESSL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TranslatorESSL.cpp; sourceTree = "<group>"; };
+		0A9A6BE423916BFB006A152A /* IOSurface.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOSurface.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk/System/Library/Frameworks/IOSurface.framework; sourceTree = DEVELOPER_DIR; };
 		0A9B83E4234CCDF6008BF16F /* crash_handler_posix.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = crash_handler_posix.cpp; sourceTree = "<group>"; };
 		0A9B83E6234CCE1B008BF16F /* Timer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Timer.cpp; path = ../../util/Timer.cpp; sourceTree = "<group>"; };
 		0A9B83E8234CCEBC008BF16F /* system_utils_mac.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = system_utils_mac.cpp; path = ../../src/common/system_utils_mac.cpp; sourceTree = "<group>"; };
@@ -2579,6 +2728,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0A9A6AB523911C23006A152A /* libangle_gl_backend.a in Frameworks */,
 				0AA2004A23473C0000E0B98C /* libangle_common.a in Frameworks */,
 				0AA2FA972346F84200E0B98C /* libglslang.a in Frameworks */,
 				0AA2FA982346F84200E0B98C /* libjsoncpp.a in Frameworks */,
@@ -2590,6 +2740,7 @@
 				0AC2A5222346714A0045B949 /* Foundation.framework in Frameworks */,
 				0AC2A5232346714A0045B949 /* CoreFoundation.framework in Frameworks */,
 				0AAF41102354CE9B000E3CC8 /* UIKit.framework in Frameworks */,
+				0A9A6BA9239126DB006A152A /* CoreGraphics.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2689,6 +2840,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		0A9A6AA723911BBB006A152A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		0AA2003C23473BDD00E0B98C /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -2734,6 +2892,7 @@
 			files = (
 				0AA2004B23473C0500E0B98C /* libangle_common.a in Frameworks */,
 				0AA2FFD3234727EF00E0B98C /* libangle_metal_backend_ios_13.0.a in Frameworks */,
+				0A9A6BA7239124FA006A152A /* libangle_gl_backend.a in Frameworks */,
 				0AA2FF9E2347260000E0B98C /* libglslang.a in Frameworks */,
 				0AA2FF9F2347260000E0B98C /* libjsoncpp.a in Frameworks */,
 				0AA2FFA02347260000E0B98C /* libspirv-cross.a in Frameworks */,
@@ -2743,6 +2902,7 @@
 				0AA2FFA32347260000E0B98C /* CoreFoundation.framework in Frameworks */,
 				0AA2FFAE2347273200E0B98C /* QuartzCore.framework in Frameworks */,
 				0AAF41112354CEA7000E3CC8 /* UIKit.framework in Frameworks */,
+				0A9A6BAA239126ED006A152A /* CoreGraphics.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2785,6 +2945,7 @@
 				0A60603323466F29005CEA98 /* angle_image_util */,
 				0A60525523464F51005CEA98 /* angle */,
 				0A6055CC234655A3005CEA98 /* angle_metal_backend */,
+				0A9A6AA523911B28006A152A /* angle_gl_backend */,
 				0A60525423464F51005CEA98 /* Products */,
 				0A60565F23465AED005CEA98 /* Frameworks */,
 				0A60525723464F51005CEA98 /* Info.plist */,
@@ -2815,6 +2976,7 @@
 				0A97E5682348749C007CA616 /* mip_map_2d.app */,
 				0A97E589234874E2007CA616 /* stencil_operations.app */,
 				0ABF407C235340FE0051488C /* tri_fan_microbench.app */,
+				0A9A6AAA23911BBB006A152A /* libangle_gl_backend.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -2962,6 +3124,8 @@
 				0A6053C1234651CB005CEA98 /* SymbolTable.h */,
 				0A6053C0234651CB005CEA98 /* SymbolUniqueId.cpp */,
 				0A605370234651CB005CEA98 /* SymbolUniqueId.h */,
+				0A9A6BDF239132E8006A152A /* TranslatorESSL.cpp */,
+				0A9A6BDE239132E8006A152A /* TranslatorESSL.h */,
 				0A60536E234651CB005CEA98 /* TranslatorGLSL.cpp */,
 				0A60545F234651CB005CEA98 /* TranslatorGLSL.h */,
 				0A6053A9234651CB005CEA98 /* TranslatorMetal.cpp */,
@@ -3257,6 +3421,8 @@
 		0A60565F23465AED005CEA98 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				0A9A6BE423916BFB006A152A /* IOSurface.framework */,
+				0A9A6BA8239126DB006A152A /* CoreGraphics.framework */,
 				0AA2015323474DBD00E0B98C /* QuartzCore.framework */,
 				0AA2015023474D9700E0B98C /* UIKit.framework */,
 				0AA2014C23474A9000E0B98C /* OpenGLES.framework */,
@@ -3633,6 +3799,98 @@
 			name = id;
 			path = gen/id;
 			sourceTree = "<group>";
+		};
+		0A9A6AA523911B28006A152A /* angle_gl_backend */ = {
+			isa = PBXGroup;
+			children = (
+				0A9A6AF923911CB1006A152A /* eagl */,
+				0A9A6AED23911CB0006A152A /* BlitGL.cpp */,
+				0A9A6B1823911CB1006A152A /* BlitGL.h */,
+				0A9A6ACD23911CAE006A152A /* BufferGL.cpp */,
+				0A9A6AEB23911CAF006A152A /* BufferGL.h */,
+				0A9A6AC223911CAD006A152A /* ClearMultiviewGL.cpp */,
+				0A9A6AEC23911CAF006A152A /* ClearMultiviewGL.h */,
+				0A9A6AF223911CB0006A152A /* CompilerGL.cpp */,
+				0A9A6B1F23911CB2006A152A /* CompilerGL.h */,
+				0A9A6AF823911CB1006A152A /* ContextGL.cpp */,
+				0A9A6AC123911CAD006A152A /* ContextGL.h */,
+				0A9A6ABD23911CAD006A152A /* DispatchTableGL_autogen.cpp */,
+				0A9A6ABB23911CAD006A152A /* DispatchTableGL_autogen.h */,
+				0A9A6B2123911CB2006A152A /* DisplayGL.cpp */,
+				0A9A6AC823911CAE006A152A /* DisplayGL.h */,
+				0A9A6AD123911CAF006A152A /* FenceNVGL.cpp */,
+				0A9A6B1C23911CB2006A152A /* FenceNVGL.h */,
+				0A9A6AC723911CAE006A152A /* formatutilsgl.cpp */,
+				0A9A6AB723911CAC006A152A /* formatutilsgl.h */,
+				0A9A6B5A23911CB3006A152A /* FramebufferGL.cpp */,
+				0A9A6AF323911CB0006A152A /* FramebufferGL.h */,
+				0A9A6B5B23911CB4006A152A /* functionsgl_enums.h */,
+				0A9A6AF123911CB0006A152A /* functionsgl_typedefs.h */,
+				0A9A6AF023911CB0006A152A /* FunctionsGL.cpp */,
+				0A9A6ACC23911CAE006A152A /* FunctionsGL.h */,
+				0A9A6ABF23911CAD006A152A /* ImageGL.cpp */,
+				0A9A6B1B23911CB2006A152A /* ImageGL.h */,
+				0A9A6B5723911CB3006A152A /* MemoryObjectGL.cpp */,
+				0A9A6AC023911CAD006A152A /* MemoryObjectGL.h */,
+				0A9A6AC923911CAE006A152A /* null_functions.cpp */,
+				0A9A6AB923911CAC006A152A /* null_functions.h */,
+				0A9A6AB823911CAC006A152A /* PathGL.cpp */,
+				0A9A6AC323911CAD006A152A /* PathGL.h */,
+				0A9A6B2223911CB2006A152A /* ProgramGL.cpp */,
+				0A9A6B1D23911CB2006A152A /* ProgramGL.h */,
+				0A9A6B4723911CB3006A152A /* ProgramPipelineGL.cpp */,
+				0A9A6AB623911CAC006A152A /* ProgramPipelineGL.h */,
+				0A9A6B5923911CB3006A152A /* QueryGL.cpp */,
+				0A9A6ABA23911CAC006A152A /* QueryGL.h */,
+				0A9A6AEA23911CAF006A152A /* RenderbufferGL.cpp */,
+				0A9A6B5823911CB3006A152A /* RenderbufferGL.h */,
+				0A9A6ABE23911CAD006A152A /* renderergl_utils.cpp */,
+				0A9A6B0823911CB1006A152A /* renderergl_utils.h */,
+				0A9A6AC423911CAD006A152A /* RendererGL.cpp */,
+				0A9A6B4623911CB3006A152A /* RendererGL.h */,
+				0A9A6AF623911CB0006A152A /* SamplerGL.cpp */,
+				0A9A6B2023911CB2006A152A /* SamplerGL.h */,
+				0A9A6B1A23911CB1006A152A /* SemaphoreGL.cpp */,
+				0A9A6AD223911CAF006A152A /* SemaphoreGL.h */,
+				0A9A6ACF23911CAE006A152A /* ShaderGL.cpp */,
+				0A9A6ACA23911CAE006A152A /* ShaderGL.h */,
+				0A9A6AF723911CB1006A152A /* StateManagerGL.cpp */,
+				0A9A6AC523911CAD006A152A /* StateManagerGL.h */,
+				0A9A6AEE23911CB0006A152A /* SurfaceGL.cpp */,
+				0A9A6AC623911CAD006A152A /* SurfaceGL.h */,
+				0A9A6ABC23911CAD006A152A /* SyncGL.cpp */,
+				0A9A6AEF23911CB0006A152A /* SyncGL.h */,
+				0A9A6B1E23911CB2006A152A /* TextureGL.cpp */,
+				0A9A6AE923911CAF006A152A /* TextureGL.h */,
+				0A9A6ACB23911CAE006A152A /* TransformFeedbackGL.cpp */,
+				0A9A6ACE23911CAE006A152A /* TransformFeedbackGL.h */,
+				0A9A6AF423911CB0006A152A /* VertexArrayGL.cpp */,
+				0A9A6AD023911CAF006A152A /* VertexArrayGL.h */,
+			);
+			name = angle_gl_backend;
+			sourceTree = "<group>";
+		};
+		0A9A6AF923911CB1006A152A /* eagl */ = {
+			isa = PBXGroup;
+			children = (
+				0A9A6AFA23911CB1006A152A /* WindowSurfaceEAGL.mm */,
+				0A9A6AFB23911CB1006A152A /* WindowSurfaceEAGL.h */,
+				0A9A6AFC23911CB1006A152A /* DisplayEAGL.mm */,
+				0A9A6AFD23911CB1006A152A /* PbufferSurfaceEAGL.cpp */,
+				0A9A6AFE23911CB1006A152A /* DeviceEAGL.cpp */,
+				0A9A6AFF23911CB1006A152A /* ContextEAGL.cpp */,
+				0A9A6B0023911CB1006A152A /* DisplayEAGL.h */,
+				0A9A6B0123911CB1006A152A /* RendererEAGL.cpp */,
+				0A9A6B0223911CB1006A152A /* PbufferSurfaceEAGL.h */,
+				0A9A6B0323911CB1006A152A /* ContextEAGL.h */,
+				0A9A6B0423911CB1006A152A /* RendererEAGL.h */,
+				0A9A6B0523911CB1006A152A /* IOSurfaceSurfaceEAGL.mm */,
+				0A9A6B0623911CB1006A152A /* IOSurfaceSurfaceEAGL.h */,
+				0A9A6B0723911CB1006A152A /* DeviceEAGL.h */,
+			);
+			name = eagl;
+			path = ../../src/libANGLE/renderer/gl/eagl;
+			sourceTree = SOURCE_ROOT;
 		};
 		0A9B83E9234CD075008BF16F /* include */ = {
 			isa = PBXGroup;
@@ -4432,6 +4690,7 @@
 				0A605FD7234667CE005CEA98 /* Image.h in Headers */,
 				0A605FB3234667CD005CEA98 /* VertexArray.h in Headers */,
 				0A605557234651CC005CEA98 /* BuiltInFunctionEmulator.h in Headers */,
+				0A9A6BE0239132E8006A152A /* TranslatorESSL.h in Headers */,
 				0A605FE2234667CE005CEA98 /* Context_gl_3_1_autogen.h in Headers */,
 				0A605F2C234667CC005CEA98 /* Version.h in Headers */,
 				0A605BAF234667C5005CEA98 /* SemaphoreImpl.h in Headers */,
@@ -4744,6 +5003,7 @@
 				0AA2FE042347260000E0B98C /* Image.h in Headers */,
 				0AA2FE052347260000E0B98C /* VertexArray.h in Headers */,
 				0AA2FE062347260000E0B98C /* BuiltInFunctionEmulator.h in Headers */,
+				0A9A6BE1239132E8006A152A /* TranslatorESSL.h in Headers */,
 				0AA2FE072347260000E0B98C /* Context_gl_3_1_autogen.h in Headers */,
 				0AA2FE092347260000E0B98C /* Version.h in Headers */,
 				0AA2FE0A2347260000E0B98C /* SemaphoreImpl.h in Headers */,
@@ -4906,6 +5166,7 @@
 				0AA2FA922346F82800E0B98C /* PBXTargetDependency */,
 				0A60604723466F59005CEA98 /* PBXTargetDependency */,
 				0A60566323465BEF005CEA98 /* PBXTargetDependency */,
+				0A9A6AB423911C14006A152A /* PBXTargetDependency */,
 			);
 			name = MetalANGLE;
 			productName = OpenGLES;
@@ -5111,6 +5372,23 @@
 			productReference = 0A97E589234874E2007CA616 /* stencil_operations.app */;
 			productType = "com.apple.product-type.application";
 		};
+		0A9A6AA923911BBB006A152A /* angle_gl_backend */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0A9A6AB023911BBB006A152A /* Build configuration list for PBXNativeTarget "angle_gl_backend" */;
+			buildPhases = (
+				0A9A6AA623911BBB006A152A /* Sources */,
+				0A9A6AA723911BBB006A152A /* Frameworks */,
+				0A9A6AA823911BBB006A152A /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = angle_gl_backend;
+			productName = angle_gl_backend;
+			productReference = 0A9A6AAA23911BBB006A152A /* libangle_gl_backend.a */;
+			productType = "com.apple.product-type.library.static";
+		};
 		0AA2003E23473BDD00E0B98C /* angle_common */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 0AA2004523473BDD00E0B98C /* Build configuration list for PBXNativeTarget "angle_common" */;
@@ -5213,6 +5491,7 @@
 				0A97E5B123487E1D007CA616 /* PBXTargetDependency */,
 				0AA2004D23473C0A00E0B98C /* PBXTargetDependency */,
 				0AA2FFD2234727E500E0B98C /* PBXTargetDependency */,
+				0A9A6BA6239124EA006A152A /* PBXTargetDependency */,
 				0AA2FD3A2347260000E0B98C /* PBXTargetDependency */,
 				0AA2FD3C2347260000E0B98C /* PBXTargetDependency */,
 				0AA2FD3E2347260000E0B98C /* PBXTargetDependency */,
@@ -5323,6 +5602,9 @@
 					0A97E5AB234879AD007CA616 = {
 						CreatedOnToolsVersion = 11.0;
 					};
+					0A9A6AA923911BBB006A152A = {
+						CreatedOnToolsVersion = 11.1;
+					};
 					0AA2003E23473BDD00E0B98C = {
 						CreatedOnToolsVersion = 11.0;
 					};
@@ -5358,6 +5640,7 @@
 			targets = (
 				0A60525223464F51005CEA98 /* MetalANGLE */,
 				0A6055C023465399005CEA98 /* angle_metal_backend */,
+				0A9A6AA923911BBB006A152A /* angle_gl_backend */,
 				0A60602923466F1C005CEA98 /* angle_image_util */,
 				0AA2F9A92346F0FA00E0B98C /* glslang */,
 				0AA2F9B62346F10600E0B98C /* spirv-cross */,
@@ -5711,6 +5994,7 @@
 				0A6054BE234651CB005CEA98 /* emulated_builtin_functions_hlsl_autogen.cpp in Sources */,
 				0A6054E8234651CC005CEA98 /* PoolAlloc.cpp in Sources */,
 				0A605F4B234667CC005CEA98 /* ProgramPipeline.cpp in Sources */,
+				0A9A6BE2239132E8006A152A /* TranslatorESSL.cpp in Sources */,
 				0A605F52234667CD005CEA98 /* validationGL1.cpp in Sources */,
 				0A6054C5234651CB005CEA98 /* Initialize.cpp in Sources */,
 				0A9B841E234CD587008BF16F /* RewriteAtomicCounters.cpp in Sources */,
@@ -5857,6 +6141,50 @@
 			buildActionMask = 2147483647;
 			files = (
 				0A97E5A723487567007CA616 /* StencilOperations.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0A9A6AA623911BBB006A152A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0A9A6B6623911CB4006A152A /* BufferGL.cpp in Sources */,
+				0A9A6BA223911CB4006A152A /* MemoryObjectGL.cpp in Sources */,
+				0A9A6B8923911CB4006A152A /* SemaphoreGL.cpp in Sources */,
+				0A9A6B6223911CB4006A152A /* RendererGL.cpp in Sources */,
+				0A9A6B7F23911CB4006A152A /* ContextEAGL.cpp in Sources */,
+				0A9A6B7723911CB4006A152A /* VertexArrayGL.cpp in Sources */,
+				0A9A6B8B23911CB4006A152A /* DisplayGL.cpp in Sources */,
+				0A9A6B6023911CB4006A152A /* ImageGL.cpp in Sources */,
+				0A9A6B6723911CB4006A152A /* ShaderGL.cpp in Sources */,
+				0A9A6B6823911CB4006A152A /* FenceNVGL.cpp in Sources */,
+				0A9A6B6423911CB4006A152A /* null_functions.cpp in Sources */,
+				0A9A6B5E23911CB4006A152A /* DispatchTableGL_autogen.cpp in Sources */,
+				0A9A6B7623911CB4006A152A /* CompilerGL.cpp in Sources */,
+				0A9A6B7C23911CB4006A152A /* DisplayEAGL.mm in Sources */,
+				0A9A6B7E23911CB4006A152A /* DeviceEAGL.cpp in Sources */,
+				0A9A6B7323911CB4006A152A /* BlitGL.cpp in Sources */,
+				0A9A6B5C23911CB4006A152A /* PathGL.cpp in Sources */,
+				0A9A6B8A23911CB4006A152A /* TextureGL.cpp in Sources */,
+				0A9A6B5D23911CB4006A152A /* SyncGL.cpp in Sources */,
+				0A9A6BA423911CB4006A152A /* FramebufferGL.cpp in Sources */,
+				0A9A6B7223911CB4006A152A /* RenderbufferGL.cpp in Sources */,
+				0A9A6B7523911CB4006A152A /* FunctionsGL.cpp in Sources */,
+				0A9A6B8123911CB4006A152A /* IOSurfaceSurfaceEAGL.mm in Sources */,
+				0A9A6B5F23911CB4006A152A /* renderergl_utils.cpp in Sources */,
+				0A9A6B8023911CB4006A152A /* RendererEAGL.cpp in Sources */,
+				0A9A6B7A23911CB4006A152A /* ContextGL.cpp in Sources */,
+				0A9A6B7B23911CB4006A152A /* WindowSurfaceEAGL.mm in Sources */,
+				0A9A6B6123911CB4006A152A /* ClearMultiviewGL.cpp in Sources */,
+				0A9A6B9C23911CB4006A152A /* ProgramPipelineGL.cpp in Sources */,
+				0A9A6B7923911CB4006A152A /* StateManagerGL.cpp in Sources */,
+				0A9A6B7D23911CB4006A152A /* PbufferSurfaceEAGL.cpp in Sources */,
+				0A9A6B7423911CB4006A152A /* SurfaceGL.cpp in Sources */,
+				0A9A6BA323911CB4006A152A /* QueryGL.cpp in Sources */,
+				0A9A6B6523911CB4006A152A /* TransformFeedbackGL.cpp in Sources */,
+				0A9A6B6323911CB4006A152A /* formatutilsgl.cpp in Sources */,
+				0A9A6B8C23911CB4006A152A /* ProgramGL.cpp in Sources */,
+				0A9A6B7823911CB4006A152A /* SamplerGL.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -6182,6 +6510,7 @@
 				0AA2FF7E2347260000E0B98C /* emulated_builtin_functions_hlsl_autogen.cpp in Sources */,
 				0AA2FF7F2347260000E0B98C /* PoolAlloc.cpp in Sources */,
 				0AA2FF802347260000E0B98C /* ProgramPipeline.cpp in Sources */,
+				0A9A6BE3239132E8006A152A /* TranslatorESSL.cpp in Sources */,
 				0AA2FF832347260000E0B98C /* validationGL1.cpp in Sources */,
 				0AA2FF842347260000E0B98C /* Initialize.cpp in Sources */,
 				0A9B841F234CD587008BF16F /* RewriteAtomicCounters.cpp in Sources */,
@@ -6311,6 +6640,16 @@
 			target = 0A97E5AB234879AD007CA616 /* angle_commit_id */;
 			targetProxy = 0A97E5B223487E5E007CA616 /* PBXContainerItemProxy */;
 		};
+		0A9A6AB423911C14006A152A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0A9A6AA923911BBB006A152A /* angle_gl_backend */;
+			targetProxy = 0A9A6AB323911C14006A152A /* PBXContainerItemProxy */;
+		};
+		0A9A6BA6239124EA006A152A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0A9A6AA923911BBB006A152A /* angle_gl_backend */;
+			targetProxy = 0A9A6BA5239124EA006A152A /* PBXContainerItemProxy */;
+		};
 		0AA2004923473BFA00E0B98C /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 0AA2003E23473BDD00E0B98C /* angle_common */;
@@ -6409,6 +6748,8 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					ANGLE_GENERATE_SHADER_DEBUG_INFO,
+					ANGLE_ENABLE_ESSL,
+					ANGLE_ENABLE_OPENGL,
 					ANGLE_ENABLE_METAL,
 					"JSON_USE_EXCEPTION=0",
 				);
@@ -6430,7 +6771,7 @@
 					"${PROJECT_DIR}/../../third_party/jsoncpp/source/include",
 					"${PROJECT_DIR}/../..",
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -6484,6 +6825,8 @@
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					ANGLE_GENERATE_SHADER_DEBUG_INFO,
+					ANGLE_ENABLE_ESSL,
+					ANGLE_ENABLE_OPENGL,
 					ANGLE_ENABLE_METAL,
 					"JSON_USE_EXCEPTION=0",
 				);
@@ -6505,7 +6848,7 @@
 					"${PROJECT_DIR}/../../third_party/jsoncpp/source/include",
 					"${PROJECT_DIR}/../..",
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
@@ -6544,10 +6887,21 @@
 				);
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"-weak_framework",
+					OpenGLES,
+					"-weak_framework",
+					IOSurface,
+				);
+				"OTHER_LDFLAGS[sdk=macosx*]" = (
+					"-weak_framework",
+					IOSurface,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.google.OpenGLES;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
@@ -6583,10 +6937,21 @@
 				);
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"-weak_framework",
+					OpenGLES,
+					"-weak_framework",
+					IOSurface,
+				);
+				"OTHER_LDFLAGS[sdk=macosx*]" = (
+					"-weak_framework",
+					IOSurface,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.google.OpenGLES;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
@@ -6604,6 +6969,7 @@
 					SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS,
 					"$(inherited)",
 				);
+				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				OTHER_CFLAGS = (
 					"-Wno-nullability-completeness",
 					"$(inherited)",
@@ -6624,6 +6990,7 @@
 					SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS,
 					"$(inherited)",
 				);
+				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				OTHER_CFLAGS = (
 					"-Wno-nullability-completeness",
 					"$(inherited)",
@@ -6644,6 +7011,7 @@
 					"$(inherited)",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -6656,6 +7024,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -6677,7 +7046,7 @@
 					"${inherited}",
 				);
 				INFOPLIST_FILE = samples/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -6703,7 +7072,7 @@
 					"${inherited}",
 				);
 				INFOPLIST_FILE = samples/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -6732,7 +7101,7 @@
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -6763,7 +7132,7 @@
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -6791,7 +7160,7 @@
 					"${inherited}",
 				);
 				INFOPLIST_FILE = samples/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -6817,7 +7186,7 @@
 					"${inherited}",
 				);
 				INFOPLIST_FILE = samples/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -6843,7 +7212,7 @@
 					"${inherited}",
 				);
 				INFOPLIST_FILE = samples/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -6869,7 +7238,7 @@
 					"${inherited}",
 				);
 				INFOPLIST_FILE = samples/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -6895,7 +7264,7 @@
 					"${inherited}",
 				);
 				INFOPLIST_FILE = samples/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -6921,7 +7290,7 @@
 					"${inherited}",
 				);
 				INFOPLIST_FILE = samples/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -6947,7 +7316,7 @@
 					"${inherited}",
 				);
 				INFOPLIST_FILE = samples/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -6973,7 +7342,7 @@
 					"${inherited}",
 				);
 				INFOPLIST_FILE = samples/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -6999,7 +7368,7 @@
 					"${inherited}",
 				);
 				INFOPLIST_FILE = samples/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -7025,7 +7394,7 @@
 					"${inherited}",
 				);
 				INFOPLIST_FILE = samples/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -7051,7 +7420,7 @@
 					"${inherited}",
 				);
 				INFOPLIST_FILE = samples/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -7077,7 +7446,7 @@
 					"${inherited}",
 				);
 				INFOPLIST_FILE = samples/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -7103,7 +7472,7 @@
 					"${inherited}",
 				);
 				INFOPLIST_FILE = samples/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -7129,7 +7498,7 @@
 					"${inherited}",
 				);
 				INFOPLIST_FILE = samples/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -7157,6 +7526,40 @@
 			};
 			name = Release;
 		};
+		0A9A6AB123911BBB006A152A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_ARC = NO;
+				CODE_SIGN_STYLE = Automatic;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					ANGLE_ENABLE_OPENGL_NULL,
+					"${inherited}",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		0A9A6AB223911BBB006A152A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_ARC = NO;
+				CODE_SIGN_STYLE = Automatic;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					ANGLE_ENABLE_OPENGL_NULL,
+					"${inherited}",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		0AA2004623473BDD00E0B98C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -7166,7 +7569,7 @@
 					"$(inherited)",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -7179,7 +7582,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -7202,7 +7605,7 @@
 					"${inherited}",
 				);
 				INFOPLIST_FILE = samples/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -7229,7 +7632,7 @@
 					"${inherited}",
 				);
 				INFOPLIST_FILE = samples/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -7249,7 +7652,7 @@
 					GLSLANG_OSINCLUDE_UNIX,
 					"$(inherited)",
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -7265,7 +7668,7 @@
 					GLSLANG_OSINCLUDE_UNIX,
 					"$(inherited)",
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -7281,7 +7684,7 @@
 					"DEBUG=1",
 					"$(inherited)",
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -7293,7 +7696,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -7314,7 +7717,7 @@
 					"${PROJECT_DIR}/../../third_party/jsoncpp/source/src/lib_json",
 					"${inherited}",
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -7331,7 +7734,7 @@
 					"${PROJECT_DIR}/../../third_party/jsoncpp/source/src/lib_json",
 					"${inherited}",
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -7374,6 +7777,16 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
+				OTHER_LDFLAGS = (
+					"-weak_framework",
+					OpenGLES,
+					"-weak_framework",
+					IOSurface,
+				);
+				"OTHER_LDFLAGS[sdk=macosx*]" = (
+					"-weak_framework",
+					IOSurface,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.google.OpenGLES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -7414,6 +7827,16 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"-weak_framework",
+					OpenGLES,
+					"-weak_framework",
+					IOSurface,
+				);
+				"OTHER_LDFLAGS[sdk=macosx*]" = (
+					"-weak_framework",
+					IOSurface,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.google.OpenGLES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -7478,7 +7901,7 @@
 					"${inherited}",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -7498,7 +7921,7 @@
 					"${inherited}",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -7520,7 +7943,7 @@
 					"${inherited}",
 				);
 				INFOPLIST_FILE = samples/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -7546,7 +7969,7 @@
 					"${inherited}",
 				);
 				INFOPLIST_FILE = samples/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -7683,6 +8106,15 @@
 			buildConfigurations = (
 				0A97E5AD234879AD007CA616 /* Debug */,
 				0A97E5AE234879AD007CA616 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		0A9A6AB023911BBB006A152A /* Build configuration list for PBXNativeTarget "angle_gl_backend" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0A9A6AB123911BBB006A152A /* Debug */,
+				0A9A6AB223911BBB006A152A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

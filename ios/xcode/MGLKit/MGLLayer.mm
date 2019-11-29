@@ -13,6 +13,7 @@
 #include <EGL/eglext_angle.h>
 #include <EGL/eglplatform.h>
 #include <common/debug.h>
+#include <libANGLE/renderer/metal/DisplayMtl_api.h>
 #include <libGLESv2/entry_points_gles_2_0_autogen.h>
 #include <libGLESv2/entry_points_gles_ext_autogen.h>
 #import "MGLContext+Private.h"
@@ -279,9 +280,12 @@ GLint LinkProgram(GLuint program)
 
     _eglSurface = EGL_NO_SURFACE;
 
-    _metalLayer       = [[CAMetalLayer alloc] init];
-    _metalLayer.frame = self.bounds;
-    [self addSublayer:_metalLayer];
+    if (rx::IsMetalDisplayAvailable())
+    {
+        _metalLayer       = [[CAMetalLayer alloc] init];
+        _metalLayer.frame = self.bounds;
+        [self addSublayer:_metalLayer];
+    }
 }
 
 - (void)dealloc
@@ -294,12 +298,21 @@ GLint LinkProgram(GLuint program)
 - (void)setContentsScale:(CGFloat)contentsScale
 {
     [super setContentsScale:contentsScale];
-    _metalLayer.contentsScale = contentsScale;
+
+    if (rx::IsMetalDisplayAvailable())
+    {
+        _metalLayer.contentsScale = contentsScale;
+    }
 }
 
 - (CGSize)drawableSize
 {
-    return _metalLayer.drawableSize;
+    if (rx::IsMetalDisplayAvailable())
+    {
+        return _metalLayer.drawableSize;
+    }
+
+    return self.bounds.size;
 }
 
 - (BOOL)setCurrentContext:(MGLContext *)context
@@ -461,11 +474,14 @@ GLint LinkProgram(GLuint program)
 
 - (void)checkLayerSize
 {
-    // Resize the metal layer
-    _metalLayer.frame = self.bounds;
-    _metalLayer.drawableSize =
-        CGSizeMake(_metalLayer.bounds.size.width * _metalLayer.contentsScale,
-                   _metalLayer.bounds.size.height * _metalLayer.contentsScale);
+    if (rx::IsMetalDisplayAvailable())
+    {
+        // Resize the metal layer
+        _metalLayer.frame = self.bounds;
+        _metalLayer.drawableSize =
+            CGSizeMake(_metalLayer.bounds.size.width * _metalLayer.contentsScale,
+                       _metalLayer.bounds.size.height * _metalLayer.contentsScale);
+    }
 }
 
 - (void)ensureSurfaceCreated
@@ -516,8 +532,20 @@ GLint LinkProgram(GLuint program)
     EGLint creationAttribs[] = {EGL_FLEXIBLE_SURFACE_COMPATIBILITY_SUPPORTED_ANGLE, EGL_TRUE,
                                 EGL_NONE};
 
-    _eglSurface = eglCreateWindowSurface(
-        _display.eglDisplay, config, (__bridge EGLNativeWindowType)_metalLayer, creationAttribs);
+    EGLNativeWindowType nativeWindowPtr;
+
+    if (rx::IsMetalDisplayAvailable())
+    {
+        // If metal layer is available, use it directly
+        nativeWindowPtr = (__bridge EGLNativeWindowType)_metalLayer;
+    }
+    else
+    {
+        nativeWindowPtr = (__bridge EGLNativeWindowType)self;
+    }
+
+    _eglSurface =
+        eglCreateWindowSurface(_display.eglDisplay, config, nativeWindowPtr, creationAttribs);
     if (_eglSurface == EGL_NO_SURFACE)
     {
         Throw(@"Failed to call eglCreateWindowSurface()");
@@ -663,23 +691,38 @@ GLint LinkProgram(GLuint program)
 
     ScopedTextureBind bindTexture(_offscreenTexture);
 
+    GLenum textureSizedFormat;
     GLenum textureFormat;
+    GLenum type;
     switch (_drawableColorFormat)
     {
         case MGLDrawableColorFormatRGBA8888:
-            textureFormat = GL_RGBA8_OES;
+            textureSizedFormat = GL_RGBA8_OES;
+            textureFormat      = GL_RGBA;
+            type               = GL_UNSIGNED_BYTE;
             break;
         case MGLDrawableColorFormatRGB565:
-            textureFormat = GL_RGB8_OES;
+            textureSizedFormat = GL_RGB8_OES;
+            textureFormat      = GL_RGB;
+            type               = GL_UNSIGNED_SHORT_5_6_5;
             break;
         default:
             UNREACHABLE();
             break;
     }
 
-    gl::TexStorage2DEXT(GL_TEXTURE_2D, 1, textureFormat,
-                        static_cast<GLsizei>(_offscreenFBOSize.width),
-                        static_cast<GLsizei>(_offscreenFBOSize.height));
+    if (rx::IsMetalDisplayAvailable())
+    {
+        gl::TexStorage2DEXT(GL_TEXTURE_2D, 1, textureSizedFormat,
+                            static_cast<GLsizei>(_offscreenFBOSize.width),
+                            static_cast<GLsizei>(_offscreenFBOSize.height));
+    }
+    else
+    {
+        gl::TexImage2D(
+            GL_TEXTURE_2D, 0, textureFormat, static_cast<GLsizei>(_offscreenFBOSize.width),
+            static_cast<GLsizei>(_offscreenFBOSize.height), 0, textureFormat, type, nullptr);
+    }
 
     gl::TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     gl::TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);

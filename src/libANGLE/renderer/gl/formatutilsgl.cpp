@@ -617,7 +617,7 @@ static GLenum GetNativeType(const FunctionsGL *functions,
         // functions. It should not be possible to get here by a normal glTexImage2D call.
         if (type == GL_HALF_FLOAT)
         {
-            ASSERT(functions->hasGLExtension("GL_OES_texture_half_float"));
+            ASSERT(functions->hasGLESExtension("GL_OES_texture_half_float"));
             result = GL_HALF_FLOAT_OES;
         }
     }

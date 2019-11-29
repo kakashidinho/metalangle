@@ -9,8 +9,6 @@
 #import "MGLContext.h"
 #import "MGLContext+Private.h"
 
-#import <QuartzCore/CAMetalLayer.h>
-
 #include <vector>
 
 #include <EGL/egl.h>
@@ -126,7 +124,7 @@ void Throw(NSString *msg)
     }
 
     // Create dummy surface
-    _dummyLayer       = [[CAMetalLayer alloc] init];
+    _dummyLayer       = [[CALayer alloc] init];
     _dummyLayer.frame = CGRectMake(0, 0, 1, 1);
 
     _dummySurface = eglCreateWindowSurface(_display.eglDisplay, config,

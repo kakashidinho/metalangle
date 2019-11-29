@@ -108,4 +108,22 @@
 #    endif  // defined(__GNUC__) || defined(__clang__)
 #endif      // !defined(ANGLE_LIKELY) || !defined(ANGLE_UNLIKELY)
 
+#if defined(ANGLE_PLATFORM_APPLE)
+#    include <TargetConditionals.h>
+#    if TARGET_OS_OSX
+#        define ANGLE_PLATFORM_MACOS 1
+#    elif TARGET_OS_IPHONE
+#        define ANGLE_PLATFORM_IOS 1
+#        if defined(ANGLE_ENABLE_OPENGL)
+#            define GLES_SILENCE_DEPRECATION
+#        endif
+#        if TARGET_OS_SIMULATOR
+#            define ANGLE_PLATFORM_IOS_SIMULATOR 1
+#        endif
+#        if TARGET_OS_MACCATALYST
+#            define ANGLE_PLATFORM_MACCATALYST
+#        endif
+#    endif
+#endif
+
 #endif  // COMMON_PLATFORM_H_
