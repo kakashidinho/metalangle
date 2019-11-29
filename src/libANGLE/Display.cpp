@@ -223,6 +223,16 @@ rx::DisplayImpl *CreateDisplayFromAttribs(const AttributeMap &attribMap, const D
     EGLAttrib displayType =
         attribMap.get(EGL_PLATFORM_ANGLE_TYPE_ANGLE, EGL_PLATFORM_ANGLE_TYPE_DEFAULT_ANGLE);
 
+#if defined(ANGLE_ENABLE_METAL)
+    if (displayType == EGL_PLATFORM_ANGLE_TYPE_METAL_ANGLE && !rx::IsMetalDisplayAvailable())
+    {
+        // Fallback to default type
+        displayType = EGL_PLATFORM_ANGLE_TYPE_DEFAULT_ANGLE;
+        WARN() << "EGL_PLATFORM_ANGLE_TYPE_METAL_ANGLE is not available, fallback to "
+                  "EGL_PLATFORM_ANGLE_TYPE_DEFAULT_ANGLE";
+    }
+#endif
+
     if (displayType == EGL_PLATFORM_ANGLE_TYPE_DEFAULT_ANGLE)
     {
         displayType = GetDisplayTypeFromEnvironment();
@@ -306,11 +316,9 @@ rx::DisplayImpl *CreateDisplayFromAttribs(const AttributeMap &attribMap, const D
             break;
         case EGL_PLATFORM_ANGLE_TYPE_METAL_ANGLE:
 #if defined(ANGLE_ENABLE_METAL)
-            if (rx::IsMetalDisplayAvailable())
-            {
-                impl = rx::CreateMetalDisplay(state);
-                break;
-            }
+            ASSERT(rx::IsMetalDisplayAvailable());
+            impl = rx::CreateMetalDisplay(state);
+            break;
 #endif
             // No display available
             UNREACHABLE();
