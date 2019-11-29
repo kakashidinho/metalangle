@@ -36,7 +36,8 @@
 namespace angle
 {
 
-#if defined(ANGLE_PLATFORM_ANDROID) || defined(ANGLE_PLATFORM_FUCHSIA)
+#if defined(ANGLE_PLATFORM_ANDROID) || defined(ANGLE_PLATFORM_FUCHSIA) || \
+    defined(ANGLE_PLATFORM_IOS)
 
 void PrintStackBacktrace()
 {
