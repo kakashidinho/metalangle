@@ -9,8 +9,9 @@ to continue operate on Apple platforms by translating OpenGL ES draw calls to Me
 ### Current Metal backend implementation status
 - MetalANGLE is being migrated into official ANGLE repo. So this repo might not get updated for a while.
 - Almost all basic samples has been tested to work fine.
+- __OpenGL ES 2.0__ functionalities are 100% completed.
 - __Almost all of ANGLE end2end tests have been passed__. See [List of failed tests](src/libANGLE/renderer/metal/README.md#Failed-ANGLE-end2end-tests).
-- __97.7% of GLES 2 conformance tests passed__. See [Khronos VK-GL-CTS](https://github.com/KhronosGroup/VK-GL-CTS).
+- __97.7% of OpenGL ES 2.0 conformance tests passed__. See [Khronos VK-GL-CTS](https://github.com/KhronosGroup/VK-GL-CTS).
 - [MGLKit](src/libANGLE/renderer/metal/DevSetup.md#MGLKit) utilities classes have been added. Providing kind of similar functionalies to Apples's GLKit.
 - [EXT_instanced_arrays](https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_instanced_arrays.txt)/[ANGLE_instanced_arrays](https://www.khronos.org/registry/OpenGL/extensions/ANGLE/ANGLE_instanced_arrays.txt) support has been added, giving instanced draw capabilities to MetalANGLE.
 - [OES_depth_texture](https://www.khronos.org/registry/OpenGL/extensions/OES/OES_depth_texture.txt) support has been added.
@@ -19,9 +20,14 @@ to continue operate on Apple platforms by translating OpenGL ES draw calls to Me
 - Metal doesn't allow buffer offset not being multiple of 4 bytes. Hence, draw calls that use unsupported offsets, strides,
 and vertex formats will force MetalANGLE to do software conversions on CPU.
 - MSAA is not supported yet.
-- MetalANGLE only supports __MacOS 10.13+__ and __iOS 11.0+__.
+- __Platforms supports__:
+  - MetalANGLE only supports __MacOS 10.13+__ for Mac.
+  - For iOS, the min supported version is __iOS 9.0__. However, Metal acceleration is only available for __iOS 11.0+__,
+  any version prior to that will fall back to use native OpenGL ES instead of Metal.
+  - iPhone 5 and below are not supported.
+  - __MacCatalyst 13.0+__ is supported.
 #### TODO lists
-- Make sure it passes all ANGLE's unit tests.
+- Make sure it passes all ANGLE's tests.
 - ~~Support `GL_TRIANGLE_FAN` & `GL_LINE_LOOP` by generating index buffer on the fly using Metal compute shader.~~
 - Use compute shader to convert unsupported offsets, strides & vertex formats.
 - Support MSAA.
