@@ -2,12 +2,13 @@ os: osx
 
 before_install:
   - git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git $HOME/depot_tools
+  - gem install xcpretty
 
 before_script:
   - export PATH=$PATH:$HOME/depot_tools
   - python scripts/bootstrap.py
   - gclient sync
-  - gn gen out/release --args="angle_enable_gl=false is_debug=false"
+  - gn gen out/release --args="angle_enable_gl=false is_debug=false strip_absolute_paths_from_debug_symbols=true"
 
 jobs:
   include:
@@ -21,12 +22,8 @@ jobs:
     osx_image: xcode11.2
   - name: "macos xcode 9.4"
     python: "3.5"
-    env: CMD="ninja -j 2 -C out/release angle_end2end_tests angle_deqp_gles2_tests"
+    env: CMD="ninja -j 2 -C out/release angle_end2end_tests angle_deqp_gles2_tests hello_triangle"
     osx_image: xcode9.4
-  - name: "macos xcode 11.2"
-    python: "3.5"
-    env: CMD="ninja -j 2 -C out/release angle_end2end_tests angle_deqp_gles2_tests"
-    osx_image: xcode11.2
 
 script:
   - $CMD

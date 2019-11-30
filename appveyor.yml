@@ -1,0 +1,17 @@
+image: macOS
+
+install:
+  - git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git $HOME/depot_tools
+  - PATH="${PATH}:$HOME/depot_tools"
+  - python scripts/bootstrap.py
+  - gclient sync
+
+before_build:
+  - gn gen out/release --args="angle_enable_gl=false is_debug=false strip_absolute_paths_from_debug_symbols=true"
+
+build_script:
+  - SUPPORTS_MACCATALYST=YES ios/xcode/travis_build.sh Release macosx
+  - ninja -C out/release angle_end2end_tests angle_deqp_gles2_tests hello_triangle
+
+test: off
+deploy: off
