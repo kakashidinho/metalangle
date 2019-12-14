@@ -324,7 +324,7 @@ class Context : public ErrorHandler
 
 #define ANGLE_MTL_UNREACHABLE(context) \
     UNREACHABLE();                     \
-    ANGLE_MTL_TRY(context, false);
+    ANGLE_MTL_TRY(context, false)
 
 }  // namespace mtl
 }  // namespace rx
