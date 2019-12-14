@@ -618,11 +618,11 @@ void DisplayMtl::initializeFeatures()
 {
     // default values:
     mFeatures.hasBaseVertexInstancedDraw.enabled        = true;
+    mFeatures.hasDepthTextureFiltering.enabled          = false;
     mFeatures.hasNonUniformDispatch.enabled             = true;
+    mFeatures.hasStencilOutput.enabled                  = false;
     mFeatures.hasTextureSwizzle.enabled                 = false;
     mFeatures.allowSeparatedDepthStencilBuffers.enabled = false;
-    mFeatures.hasStencilOutput.enabled                  = false;
-    mFeatures.hasDepthTextureFiltering.enabled          = false;
 
     if (ANGLE_APPLE_AVAILABLE_XCI(10.14, 13.0, 12.0))
     {

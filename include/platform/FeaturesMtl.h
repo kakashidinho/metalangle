@@ -20,10 +20,22 @@ struct FeaturesMtl : FeatureSetBase
     Feature hasBaseVertexInstancedDraw = {
         "has_base_vertex_instanced_draw", FeatureCategory::MetalFeatures,
         "The renderer supports base vertex instanced draw", &members};
+
+    // Support depth texture filtering
+    Feature hasDepthTextureFiltering = {
+        "has_depth_texture_filtering", FeatureCategory::MetalFeatures,
+        "The renderer supports depth texture's filtering other than nearest", &members};
+
     // Non-uniform compute shader dispatch support, i.e. Group size is not necessarily to be fixed:
     Feature hasNonUniformDispatch = {
         "has_non_uniform_dispatch", FeatureCategory::MetalFeatures,
         "The renderer supports non uniform compute shader dispatch's group size", &members};
+
+    // fragment stencil output support
+    Feature hasStencilOutput = {"has_stencil_output", FeatureCategory::MetalFeatures,
+                                "The renderer supports stencil output from fragment shader",
+                                &members};
+
     // Texture swizzle support:
     Feature hasTextureSwizzle = {"has_texture_swizzle", FeatureCategory::MetalFeatures,
                                  "The renderer supports texture swizzle", &members};
@@ -35,16 +47,6 @@ struct FeaturesMtl : FeatureSetBase
         "Some Apple platforms such as iOS allows separate depth & stencil buffers, "
         "whereas others such as macOS don't",
         &members};
-
-    // fragment stencil output support
-    Feature hasStencilOutput = {"has_stencil_output", FeatureCategory::MetalFeatures,
-                                "The renderer supports stencil output from fragment shader",
-                                &members};
-
-    // Support depth texture filtering
-    Feature hasDepthTextureFiltering = {
-        "has_depth_texture_filtering", FeatureCategory::MetalFeatures,
-        "The renderer supports depth texture's filtering other than nearest", &members};
 };
 
 }  // namespace angle
