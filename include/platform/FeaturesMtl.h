@@ -40,6 +40,11 @@ struct FeaturesMtl : FeatureSetBase
     Feature hasStencilOutput = {"has_stencil_output", FeatureCategory::MetalFeatures,
                                 "The renderer supports stencil output from fragment shader",
                                 &members};
+
+    // Support depth texture filtering
+    Feature hasDepthTextureFiltering = {
+        "has_depth_texture_filtering", FeatureCategory::MetalFeatures,
+        "The renderer supports depth texture's filtering other than nearest", &members};
 };
 
 }  // namespace angle

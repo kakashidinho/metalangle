@@ -808,6 +808,7 @@ TEST_P(DepthStencilFormatsTest, VerifyDepth32UploadData)
     ASSERT_GL_NO_ERROR();
 }
 
+// Verify that 16 bits depth texture's data can be uploaded correctly
 TEST_P(DepthStencilFormatsTest, VerifyDepth16UploadData)
 {
     ANGLE_SKIP_TEST_IF(!IsGLExtensionEnabled("GL_OES_depth_texture"));
