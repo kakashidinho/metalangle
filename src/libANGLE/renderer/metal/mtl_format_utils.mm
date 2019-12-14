@@ -120,12 +120,13 @@ void GenerateTextureCapsMap(const FormatTable &formatTable,
         tmpTextureExtensions.compressedTexturePVRTCsRGB       = true;
     }
 #endif
-    tmpTextureExtensions.sRGB            = true;
-    tmpTextureExtensions.depth32         = true;
-    tmpTextureExtensions.depth24OES      = true;
-    tmpTextureExtensions.rgb8rgba8       = true;
-    tmpTextureExtensions.textureStorage  = true;
-    tmpTextureExtensions.depthTextureOES = true;
+    tmpTextureExtensions.sRGB              = true;
+    tmpTextureExtensions.depth32           = true;
+    tmpTextureExtensions.depth24OES        = true;
+    tmpTextureExtensions.rgb8rgba8         = true;
+    tmpTextureExtensions.textureStorage    = true;
+    tmpTextureExtensions.depthTextureOES   = true;
+    tmpTextureExtensions.depthTextureANGLE = true;
 
     auto formatVerifier = [&](const gl::InternalFormat &internalFormatInfo) {
         angle::FormatID angleFormatId =
