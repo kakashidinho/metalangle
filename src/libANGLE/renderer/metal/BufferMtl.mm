@@ -80,7 +80,7 @@ BufferMtl::VertexConversionBuffer::VertexConversionBuffer(const gl::Context *con
 
 // BufferMtl implementation
 BufferMtl::BufferMtl(const gl::BufferState &state)
-    : BufferImpl(state), mBufferPool(/** alwaysAllocNewBuffer */ true), mSize(0)
+    : BufferImpl(state), mBufferPool(/** alwaysAllocNewBuffer */ true)
 {}
 
 BufferMtl::~BufferMtl() {}
@@ -98,13 +98,13 @@ void BufferMtl::destroy(const gl::Context *context)
 angle::Result BufferMtl::setData(const gl::Context *context,
                                  gl::BufferBinding target,
                                  const void *data,
-                                 size_t size,
+                                 size_t intendedSize,
                                  gl::BufferUsage usage)
 {
     ContextMtl *contextMtl = mtl::GetImpl(context);
 
     // Invalidate conversion buffers
-    if (mSize != size)
+    if (mState.getSize() != static_cast<GLint64>(intendedSize))
     {
         clearConversionBuffers();
     }
@@ -113,24 +113,12 @@ angle::Result BufferMtl::setData(const gl::Context *context,
         markConversionBuffersDirty();
     }
 
-    // We need to cache the actual size of buffer here, since mState.getSize() hasn't been updated
-    // with new buffer size at this point.
-    mSize = size;
+    size_t adjustedSize = std::max<size_t>(1, intendedSize);
 
-    if (!mShadowCopy.size() || size > mShadowCopy.size() || usage != mState.getUsage())
+    if (!mShadowCopy.size() || intendedSize > mShadowCopy.size() || usage != mState.getUsage())
     {
-        if (size == 0)
-        {
-            size = 1;
-        }
         // Re-create the buffer
-
-        ANGLE_MTL_CHECK(contextMtl, mShadowCopy.resize(size), GL_OUT_OF_MEMORY);
-        if (data)
-        {
-            auto ptr = static_cast<const uint8_t *>(data);
-            std::copy(ptr, ptr + size, mShadowCopy.data());
-        }
+        ANGLE_MTL_CHECK(contextMtl, mShadowCopy.resize(adjustedSize), GL_OUT_OF_MEMORY);
 
         size_t maxBuffers;
         switch (usage)
@@ -147,15 +135,18 @@ angle::Result BufferMtl::setData(const gl::Context *context,
                 break;
         }
 
-        mBufferPool.initialize(contextMtl, size, 1, maxBuffers);
+        mBufferPool.initialize(contextMtl, adjustedSize, 1, maxBuffers);
+    }
 
-        return commitShadowCopy(context);
-    }
-    else
+    // Transfer data to shadow copy buffer
+    if (data)
     {
-        // update data only
-        return setSubData(context, target, data, size, 0);
+        auto ptr = static_cast<const uint8_t *>(data);
+        std::copy(ptr, ptr + intendedSize, mShadowCopy.data());
     }
+
+    // Transfer data from shadow copy buffer to GPU buffer.
+    return commitShadowCopy(context, adjustedSize);
 }
 
 angle::Result BufferMtl::setSubData(const gl::Context *context,
@@ -355,12 +346,17 @@ angle::Result BufferMtl::setSubDataImpl(const gl::Context *context,
 
 angle::Result BufferMtl::commitShadowCopy(const gl::Context *context)
 {
+    return commitShadowCopy(context, size());
+}
+
+angle::Result BufferMtl::commitShadowCopy(const gl::Context *context, size_t size)
+{
     ContextMtl *contextMtl = mtl::GetImpl(context);
 
     uint8_t *ptr = nullptr;
-    ANGLE_TRY(mBufferPool.allocate(contextMtl, size(), &ptr, &mBuffer, nullptr, nullptr));
+    ANGLE_TRY(mBufferPool.allocate(contextMtl, size, &ptr, &mBuffer, nullptr, nullptr));
 
-    std::copy(mShadowCopy.data(), mShadowCopy.data() + size(), ptr);
+    std::copy(mShadowCopy.data(), mShadowCopy.data() + size, ptr);
 
     ANGLE_TRY(mBufferPool.commit(contextMtl));
 

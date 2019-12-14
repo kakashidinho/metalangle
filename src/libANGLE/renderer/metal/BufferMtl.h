@@ -128,7 +128,7 @@ class BufferMtl : public BufferImpl, public BufferHolderMtl
                                                        gl::DrawElementsType type,
                                                        size_t offset);
 
-    size_t size() const { return mSize; }
+    size_t size() const { return static_cast<size_t>(mState.getSize()); }
 
   private:
     angle::Result setSubDataImpl(const gl::Context *context,
@@ -137,6 +137,7 @@ class BufferMtl : public BufferImpl, public BufferHolderMtl
                                  size_t offset);
 
     angle::Result commitShadowCopy(const gl::Context *context);
+    angle::Result commitShadowCopy(const gl::Context *context, size_t size);
 
     void markConversionBuffersDirty();
 
@@ -147,8 +148,6 @@ class BufferMtl : public BufferImpl, public BufferHolderMtl
 
     // GPU side buffers pool
     mtl::BufferPool mBufferPool;
-
-    size_t mSize;
 
     struct VertexConversionBuffer : public ConversionBufferMtl
     {
