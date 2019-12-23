@@ -52,7 +52,7 @@ def gen_precompiled_shaders(mac_version, ios_version, variable_name):
 
     print('Compiling ios {0} simulator version of default shaders ...'.format(ios_version))
     os.system(
-        'xcrun -sdk iphonesimulator metal master_source.metal -mios-version-min={0} -c -o compiled/default.ios_sim.{0}.air'
+        'xcrun -sdk iphonesimulator metal master_source.metal -c -o compiled/default.ios_sim.{0}.air'
         .format(ios_version))
     os.system(
         'xcrun -sdk iphonesimulator metallib compiled/default.ios_sim.{0}.air -o compiled/default.ios_sim.{0}.metallib'
