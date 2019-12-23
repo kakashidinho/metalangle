@@ -32,9 +32,9 @@
 
 #ifdef __OBJC__
 @class EAGLContext;
-typedef EAGLContext* EAGLContextObj;
+typedef EAGLContext *EAGLContextObj;
 #else
-typedef void* EAGLContextObj;
+typedef void *EAGLContextObj;
 #endif
 @class CALayer;
 @class CAEAGLLayer;
@@ -54,9 +54,9 @@ class WindowSurfaceEAGL : public SurfaceGL
 {
   public:
     WindowSurfaceEAGL(const egl::SurfaceState &state,
-                     RendererGL *renderer,
-                     EGLNativeWindowType layer,
-                     EAGLContextObj context);
+                      RendererGL *renderer,
+                      EGLNativeWindowType layer,
+                      EAGLContextObj context);
     ~WindowSurfaceEAGL() override;
 
     egl::Error initialize(const egl::Display *display) override;

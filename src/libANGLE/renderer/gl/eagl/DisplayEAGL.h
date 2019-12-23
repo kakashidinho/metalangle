@@ -32,9 +32,9 @@
 
 #ifdef __OBJC__
 @class EAGLContext;
-typedef EAGLContext* EAGLContextObj;
+typedef EAGLContext *EAGLContextObj;
 #else
-typedef void* EAGLContextObj;
+typedef void *EAGLContextObj;
 #endif
 
 namespace rx

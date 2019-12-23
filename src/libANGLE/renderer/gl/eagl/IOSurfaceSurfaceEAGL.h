@@ -48,9 +48,9 @@ class IOSurfaceSurfaceEAGL : public SurfaceGL
 {
   public:
     IOSurfaceSurfaceEAGL(const egl::SurfaceState &state,
-                        EAGLContextObj cglContext,
-                        EGLClientBuffer buffer,
-                        const egl::AttributeMap &attribs);
+                         EAGLContextObj cglContext,
+                         EGLClientBuffer buffer,
+                         const egl::AttributeMap &attribs);
     ~IOSurfaceSurfaceEAGL() override;
 
     egl::Error initialize(const egl::Display *display) override;

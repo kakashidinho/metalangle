@@ -42,9 +42,9 @@ class PbufferSurfaceEAGL : public SurfaceGL
 {
   public:
     PbufferSurfaceEAGL(const egl::SurfaceState &state,
-                      RendererGL *renderer,
-                      EGLint width,
-                      EGLint height);
+                       RendererGL *renderer,
+                       EGLint width,
+                       EGLint height);
     ~PbufferSurfaceEAGL() override;
 
     egl::Error initialize(const egl::Display *display) override;

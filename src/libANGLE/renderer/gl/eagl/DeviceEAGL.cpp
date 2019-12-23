@@ -29,11 +29,11 @@
 
 #if defined(ANGLE_PLATFORM_IOS)
 
-#include "libANGLE/renderer/gl/eagl/DeviceEAGL.h"
+#    include "libANGLE/renderer/gl/eagl/DeviceEAGL.h"
 
-#include "libANGLE/renderer/gl/eagl/DisplayEAGL.h"
+#    include "libANGLE/renderer/gl/eagl/DisplayEAGL.h"
 
-#include <EGL/eglext.h>
+#    include <EGL/eglext.h>
 
 namespace rx
 {
@@ -63,9 +63,7 @@ EGLint DeviceEAGL::getType()
     return 0;
 }
 
-void DeviceEAGL::generateExtensions(egl::DeviceExtensions *outExtensions) const
-{
-}
+void DeviceEAGL::generateExtensions(egl::DeviceExtensions *outExtensions) const {}
 
 }  // namespace rx
 

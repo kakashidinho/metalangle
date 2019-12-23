@@ -39,8 +39,8 @@ class ContextEAGL : public ContextGL
 {
   public:
     ContextEAGL(const gl::State &state,
-               gl::ErrorSet *errorSet,
-               const std::shared_ptr<RendererGL> &renderer);
+                gl::ErrorSet *errorSet,
+                const std::shared_ptr<RendererGL> &renderer);
 };
 
 }  // namespace rx

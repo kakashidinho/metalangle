@@ -29,25 +29,25 @@
 
 #if defined(ANGLE_PLATFORM_IOS) && !defined(ANGLE_PLATFORM_MACCATALYST)
 
-#import "libANGLE/renderer/gl/eagl/WindowSurfaceEAGL.h"
+#    import "libANGLE/renderer/gl/eagl/WindowSurfaceEAGL.h"
 
-#import "common/debug.h"
-#import "libANGLE/Context.h"
-#import "libANGLE/renderer/gl/FramebufferGL.h"
-#import "libANGLE/renderer/gl/RendererGL.h"
-#import "libANGLE/renderer/gl/StateManagerGL.h"
-#import "libANGLE/renderer/gl/eagl/DisplayEAGL.h"
+#    import "common/debug.h"
+#    import "libANGLE/Context.h"
+#    import "libANGLE/renderer/gl/FramebufferGL.h"
+#    import "libANGLE/renderer/gl/RendererGL.h"
+#    import "libANGLE/renderer/gl/StateManagerGL.h"
+#    import "libANGLE/renderer/gl/eagl/DisplayEAGL.h"
 
-#import <OpenGLES/EAGL.h>
-#import <QuartzCore/QuartzCore.h>
+#    import <OpenGLES/EAGL.h>
+#    import <QuartzCore/QuartzCore.h>
 
 namespace rx
 {
 
 WindowSurfaceEAGL::WindowSurfaceEAGL(const egl::SurfaceState &state,
-                                   RendererGL *renderer,
-                                   EGLNativeWindowType layer,
-                                   EAGLContextObj context)
+                                     RendererGL *renderer,
+                                     EGLNativeWindowType layer,
+                                     EAGLContextObj context)
     : SurfaceGL(state),
       mSwapLayer(nil),
       mLayer(reinterpret_cast<CALayer *>(layer)),
@@ -58,8 +58,7 @@ WindowSurfaceEAGL::WindowSurfaceEAGL(const egl::SurfaceState &state,
       mDSRenderbuffer(0),
       mDSBufferWidth(0),
       mDSBufferHeight(0)
-{
-}
+{}
 
 WindowSurfaceEAGL::~WindowSurfaceEAGL()
 {
@@ -84,10 +83,10 @@ WindowSurfaceEAGL::~WindowSurfaceEAGL()
 
 egl::Error WindowSurfaceEAGL::initialize(const egl::Display *display)
 {
-    unsigned width  = mDSBufferWidth = getWidth();
+    unsigned width = mDSBufferWidth = getWidth();
     unsigned height = mDSBufferHeight = getHeight();
 
-    mSwapLayer = [[CAEAGLLayer alloc] init];
+    mSwapLayer       = [[CAEAGLLayer alloc] init];
     mSwapLayer.frame = mLayer.frame;
     [mLayer addSublayer:mSwapLayer];
 
@@ -143,10 +142,10 @@ egl::Error WindowSurfaceEAGL::swap(const gl::Context *context)
 }
 
 egl::Error WindowSurfaceEAGL::postSubBuffer(const gl::Context *context,
-                                           EGLint x,
-                                           EGLint y,
-                                           EGLint width,
-                                           EGLint height)
+                                            EGLint x,
+                                            EGLint y,
+                                            EGLint width,
+                                            EGLint height)
 {
     UNIMPLEMENTED();
     return egl::Error(EGL_SUCCESS);
@@ -159,8 +158,8 @@ egl::Error WindowSurfaceEAGL::querySurfacePointerANGLE(EGLint attribute, void **
 }
 
 egl::Error WindowSurfaceEAGL::bindTexImage(const gl::Context *context,
-                                          gl::Texture *texture,
-                                          EGLint buffer)
+                                           gl::Texture *texture,
+                                           EGLint buffer)
 {
     UNIMPLEMENTED();
     return egl::Error(EGL_SUCCESS);
@@ -199,7 +198,7 @@ EGLint WindowSurfaceEAGL::getSwapBehavior() const
 }
 
 FramebufferImpl *WindowSurfaceEAGL::createDefaultFramebuffer(const gl::Context *context,
-                                                            const gl::FramebufferState &state)
+                                                             const gl::FramebufferState &state)
 {
     const FunctionsGL *functions = GetFunctionsGL(context);
     StateManagerGL *stateManager = GetStateManagerGL(context);

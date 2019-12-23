@@ -30,21 +30,21 @@
 
 #if defined(ANGLE_PLATFORM_IOS) && !defined(ANGLE_PLATFORM_MACCATALYST)
 
-#include "libANGLE/renderer/gl/eagl/PbufferSurfaceEAGL.h"
+#    include "libANGLE/renderer/gl/eagl/PbufferSurfaceEAGL.h"
 
-#include "common/debug.h"
-#include "libANGLE/renderer/gl/FunctionsGL.h"
-#include "libANGLE/renderer/gl/FramebufferGL.h"
-#include "libANGLE/renderer/gl/RendererGL.h"
-#include "libANGLE/renderer/gl/StateManagerGL.h"
+#    include "common/debug.h"
+#    include "libANGLE/renderer/gl/FramebufferGL.h"
+#    include "libANGLE/renderer/gl/FunctionsGL.h"
+#    include "libANGLE/renderer/gl/RendererGL.h"
+#    include "libANGLE/renderer/gl/StateManagerGL.h"
 
 namespace rx
 {
 
 PbufferSurfaceEAGL::PbufferSurfaceEAGL(const egl::SurfaceState &state,
-                                     RendererGL *renderer,
-                                     EGLint width,
-                                     EGLint height)
+                                       RendererGL *renderer,
+                                       EGLint width,
+                                       EGLint height)
     : SurfaceGL(state),
       mWidth(width),
       mHeight(height),
@@ -52,8 +52,7 @@ PbufferSurfaceEAGL::PbufferSurfaceEAGL(const egl::SurfaceState &state,
       mStateManager(renderer->getStateManager()),
       mColorRenderbuffer(0),
       mDSRenderbuffer(0)
-{
-}
+{}
 
 PbufferSurfaceEAGL::~PbufferSurfaceEAGL()
 {
@@ -93,10 +92,10 @@ egl::Error PbufferSurfaceEAGL::swap(const gl::Context *context)
 }
 
 egl::Error PbufferSurfaceEAGL::postSubBuffer(const gl::Context *context,
-                                            EGLint x,
-                                            EGLint y,
-                                            EGLint width,
-                                            EGLint height)
+                                             EGLint x,
+                                             EGLint y,
+                                             EGLint width,
+                                             EGLint height)
 {
     return egl::NoError();
 }
@@ -108,8 +107,8 @@ egl::Error PbufferSurfaceEAGL::querySurfacePointerANGLE(EGLint attribute, void *
 }
 
 egl::Error PbufferSurfaceEAGL::bindTexImage(const gl::Context *context,
-                                           gl::Texture *texture,
-                                           EGLint buffer)
+                                            gl::Texture *texture,
+                                            EGLint buffer)
 {
     ERR() << "PbufferSurfaceEAGL::bindTexImage";
     UNIMPLEMENTED();
@@ -122,9 +121,7 @@ egl::Error PbufferSurfaceEAGL::releaseTexImage(const gl::Context *context, EGLin
     return egl::NoError();
 }
 
-void PbufferSurfaceEAGL::setSwapInterval(EGLint interval)
-{
-}
+void PbufferSurfaceEAGL::setSwapInterval(EGLint interval) {}
 
 EGLint PbufferSurfaceEAGL::getWidth() const
 {
@@ -148,7 +145,7 @@ EGLint PbufferSurfaceEAGL::getSwapBehavior() const
 }
 
 FramebufferImpl *PbufferSurfaceEAGL::createDefaultFramebuffer(const gl::Context *context,
-                                                             const gl::FramebufferState &state)
+                                                              const gl::FramebufferState &state)
 {
     const FunctionsGL *functions = GetFunctionsGL(context);
     StateManagerGL *stateManager = GetStateManagerGL(context);

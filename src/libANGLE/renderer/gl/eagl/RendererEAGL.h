@@ -39,8 +39,8 @@ class RendererEAGL : public RendererGL
 {
   public:
     RendererEAGL(std::unique_ptr<FunctionsGL> functions,
-                const egl::AttributeMap &attribMap,
-                DisplayEAGL *display);
+                 const egl::AttributeMap &attribMap,
+                 DisplayEAGL *display);
     ~RendererEAGL() override;
 
   private:

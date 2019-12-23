@@ -374,7 +374,8 @@ void WorkerContextEAGL::unmakeCurrent()
 
 WorkerContext *DisplayEAGL::createWorkerContext(std::string *infoLog)
 {
-    @autoreleasepool {
+    @autoreleasepool
+    {
         ASSERT(mContext);
         EAGLContextObj context = nullptr;
         context = [[EAGLContext alloc] initWithAPI:kGLESAPI sharegroup:mContext.sharegroup];
