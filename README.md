@@ -17,6 +17,7 @@ to continue operate on Apple platforms by translating OpenGL ES draw calls to Me
 - [EXT_instanced_arrays](https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_instanced_arrays.txt)/[ANGLE_instanced_arrays](https://www.khronos.org/registry/OpenGL/extensions/ANGLE/ANGLE_instanced_arrays.txt) support has been added, giving instanced draw capabilities to MetalANGLE.
 - [OES_depth_texture](https://www.khronos.org/registry/OpenGL/extensions/OES/OES_depth_texture.txt) support has been added.
 - Urho3D engine's demos have been tested using MetalANGLE without issues. See [Urho3D's MetalANGLE integration testing branch](https://github.com/kakashidinho/Urho3D/tree/angle-metal-backend).
+- Irrlicht Engine's integration with MetalANGLE sample: [https://github.com/kakashidinho/irrlicht](https://github.com/kakashidinho/irrlicht).
 - ~~No `GL_TRIANGLE_FAN` & `GL_LINE_LOOP` support in draw calls yet.~~
 - Metal doesn't allow buffer offset not being multiple of 4 bytes. Hence, draw calls that use unsupported offsets, strides,
 and vertex formats will force MetalANGLE to do software conversions on CPU.
