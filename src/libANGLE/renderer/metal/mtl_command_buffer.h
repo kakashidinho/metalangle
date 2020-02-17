@@ -104,9 +104,11 @@ class CommandBuffer final : public WrappedObject<id<MTLCommandBuffer>>, angle::N
 
     CommandQueue &cmdQueue() { return mCmdQueue; }
 
+    // Private use only
     void setActiveCommandEncoder(CommandEncoder *encoder);
     void invalidateActiveCommandEncoder(CommandEncoder *encoder);
 
+    id<MTLRenderCommandEncoder> makeMetalRenderCommandEncoder(const RenderPassDesc &desc);
   private:
     void set(id<MTLCommandBuffer> metalBuffer);
     void cleanup();
@@ -119,6 +121,9 @@ class CommandBuffer final : public WrappedObject<id<MTLCommandBuffer>>, angle::N
     CommandQueue &mCmdQueue;
 
     std::atomic<CommandEncoder *> mActiveCommandEncoder{nullptr};
+
+    // Cached Objective-C render pass desc to avoid re-allocate every frame.
+    mtl::AutoObjCObj<MTLRenderPassDescriptor> mCachedRenderPassDescObjC;
 
     uint64_t mQueueSerial = 0;
 

@@ -308,11 +308,18 @@ struct RenderPassStencilAttachmentDesc : public RenderPassAttachmentDesc
     uint32_t clearStencil = 0;
 };
 
+//
+// This is C++ equivalent of Objective-C MTLRenderPassDescriptor.
+// We could use MTLRenderPassDescriptor directly, however, using C++ struct has benefits of fast
+// copy, stack allocation, inlined comparing function, etc.
+//
 struct RenderPassDesc
 {
     RenderPassColorAttachmentDesc colorAttachments[kMaxRenderTargets];
     RenderPassDepthAttachmentDesc depthAttachment;
     RenderPassStencilAttachmentDesc stencilAttachment;
+
+    void convertToMetalDesc(MTLRenderPassDescriptor *objCDesc) const;
 
     // This will populate the RenderPipelineOutputDesc with default blend state and
     // MTLColorWriteMaskAll
@@ -332,8 +339,6 @@ struct RenderPassDesc
     uint32_t numColorAttachments = 0;
 };
 
-// convert to Metal object
-AutoObjCObj<MTLRenderPassDescriptor> ToMetalObj(const RenderPassDesc &desc);
 }  // namespace mtl
 }  // namespace rx
 

@@ -159,7 +159,13 @@ void CommandQueue::onCommandBufferCompleted(id<MTLCommandBuffer> buf, uint64_t s
 }
 
 // CommandBuffer implementation
-CommandBuffer::CommandBuffer(CommandQueue *cmdQueue) : mCmdQueue(*cmdQueue) {}
+CommandBuffer::CommandBuffer(CommandQueue *cmdQueue) : mCmdQueue(*cmdQueue)
+{
+    ANGLE_MTL_OBJC_SCOPE
+    {
+        mCachedRenderPassDescObjC = [MTLRenderPassDescriptor renderPassDescriptor];
+    }
+}
 
 CommandBuffer::~CommandBuffer()
 {
@@ -253,6 +259,18 @@ void CommandBuffer::setActiveCommandEncoder(CommandEncoder *encoder)
 void CommandBuffer::invalidateActiveCommandEncoder(CommandEncoder *encoder)
 {
     mActiveCommandEncoder.compare_exchange_strong(encoder, nullptr);
+}
+
+id<MTLRenderCommandEncoder> CommandBuffer::makeMetalRenderCommandEncoder(const RenderPassDesc &desc)
+{
+    desc.convertToMetalDesc(mCachedRenderPassDescObjC);
+
+    ANGLE_MTL_LOG("Creating new render command encoder with desc: %@", mCachedRenderPassDescObjC);
+
+    id<MTLRenderCommandEncoder> metalCmdEncoder =
+        [get() renderCommandEncoderWithDescriptor:mCachedRenderPassDescObjC];
+
+    return metalCmdEncoder;
 }
 
 void CommandBuffer::cleanup()
@@ -498,7 +516,7 @@ RenderCommandEncoder &RenderCommandEncoder::restart(const RenderPassDesc &desc)
 
     ANGLE_MTL_OBJC_SCOPE
     {
-        // mask writing dependency & set load & store options
+        // mask writing dependency & set appropriate store options
         for (uint32_t i = 0; i < mRenderPassDesc.numColorAttachments; ++i)
         {
             initWriteDependencyAndStoreAction(mRenderPassDesc.colorAttachments[i].texture(),
@@ -514,13 +532,8 @@ RenderCommandEncoder &RenderCommandEncoder::restart(const RenderPassDesc &desc)
                                           &mRenderPassDesc.stencilAttachment.storeAction);
         mStencilInitialStoreAction = mRenderPassDesc.stencilAttachment.storeAction;
 
-        // Create objective C object
-        mtl::AutoObjCObj<MTLRenderPassDescriptor> objCDesc = ToMetalObj(mRenderPassDesc);
-
-        ANGLE_MTL_LOG("Creating new render command encoder with desc: %@", objCDesc.get());
-
         id<MTLRenderCommandEncoder> metalCmdEncoder =
-            [cmdBuffer().get() renderCommandEncoderWithDescriptor:objCDesc];
+            cmdBuffer().makeMetalRenderCommandEncoder(mRenderPassDesc);
 
         set(metalCmdEncoder);
 
