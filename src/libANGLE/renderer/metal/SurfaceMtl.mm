@@ -226,7 +226,11 @@ void SurfaceMtl::destroy(const egl::Display *display)
     mDepthTexture    = nullptr;
     mStencilTexture  = nullptr;
     mCurrentDrawable = nil;
-    mMetalLayer      = nil;
+    if (mMetalLayer)
+    {
+        [mMetalLayer.get() removeFromSuperlayer];
+        mMetalLayer      = nil;
+    }
 }
 
 egl::Error SurfaceMtl::initialize(const egl::Display *display)
