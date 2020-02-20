@@ -5,6 +5,7 @@
 //
 
 #import "MGLKView.h"
+#include <GLES2/gl2.h>
 
 namespace
 {
@@ -123,6 +124,51 @@ void Throw(NSString *msg)
         Throw(@"Failed to present framebuffer");
     }
     _drawing = NO;
+}
+
+- (UIImage *) snapshot
+{
+    int s = 1;
+    UIScreen* screen = [UIScreen mainScreen];
+    if ([screen respondsToSelector:@selector(scale)]) {
+        s = (int) [screen scale];
+    }
+
+    GLint viewport[4];
+    glGetIntegerv(GL_VIEWPORT, viewport);
+
+
+    int width = viewport[2];
+    int height = viewport[3];
+
+    int myDataLength = width * height * 4;
+    GLubyte *buffer = (GLubyte *) malloc(myDataLength);
+    GLubyte *buffer2 = (GLubyte *) malloc(myDataLength);
+    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+    for(int y1 = 0; y1 < height; y1++) {
+        for(int x1 = 0; x1 <width * 4; x1++) {
+            buffer2[(height - 1 - y1) * width * 4 + x1] = buffer[y1 * 4 * width + x1];
+        }
+    }
+    free(buffer);
+
+    CGDataProviderRef provider = CGDataProviderCreateWithData(NULL, buffer2, myDataLength, releaseData);
+    int bitsPerComponent = 8;
+    int bitsPerPixel = 32;
+    int bytesPerRow = 4 * width;
+    CGColorSpaceRef colorSpaceRef = CGColorSpaceCreateDeviceRGB();
+    CGBitmapInfo bitmapInfo = kCGBitmapByteOrderDefault;
+    CGColorRenderingIntent renderingIntent = kCGRenderingIntentDefault;
+    CGImageRef imageRef = CGImageCreate(width, height, bitsPerComponent, bitsPerPixel, bytesPerRow, colorSpaceRef, bitmapInfo, provider, NULL, NO, renderingIntent);
+    CGColorSpaceRelease(colorSpaceRef);
+    CGDataProviderRelease(provider);
+    UIImage *image = [ UIImage imageWithCGImage:imageRef scale:s orientation:UIImageOrientationUp ];
+    return image;
+}
+
+void releaseData(void *info, const void *data, size_t size)
+{
+    free((void*)data);
 }
 
 @end

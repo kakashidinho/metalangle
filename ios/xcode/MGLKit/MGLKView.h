@@ -39,6 +39,9 @@
 // Redraw the view's contents immediately.
 - (void)display;
 
+// Snapshot
+- (UIImage *) snapshot;
+
 @end
 
 #endif /* MLKView_h */
