@@ -245,6 +245,29 @@ void CommandBuffer::restart()
     ASSERT(metalCmdBuffer);
 }
 
+void CommandBuffer::insertDebugSign(const std::string &marker)
+{
+    mtl::CommandEncoder *currentEncoder = mActiveCommandEncoder.load(std::memory_order_relaxed);
+    if (currentEncoder)
+    {
+        currentEncoder->insertDebugSign(marker);
+    }
+    else
+    {
+        mPendingDebugSigns.push_back(marker);
+    }
+}
+
+void CommandBuffer::pushDebugGroup(const std::string &marker)
+{
+    // NOTE(hqle): to implement this
+}
+
+void CommandBuffer::popDebugGroup()
+{
+    // NOTE(hqle): to implement this
+}
+
 /** private use only */
 void CommandBuffer::set(id<MTLCommandBuffer> metalBuffer)
 {
@@ -254,6 +277,11 @@ void CommandBuffer::set(id<MTLCommandBuffer> metalBuffer)
 void CommandBuffer::setActiveCommandEncoder(CommandEncoder *encoder)
 {
     mActiveCommandEncoder = encoder;
+    for (auto &marker : mPendingDebugSigns)
+    {
+        encoder->insertDebugSign(marker);
+    }
+    mPendingDebugSigns.clear();
 }
 
 void CommandBuffer::invalidateActiveCommandEncoder(CommandEncoder *encoder)
@@ -353,6 +381,15 @@ CommandEncoder &CommandEncoder::markResourceBeingWrittenByGPU(const TextureRef &
 {
     cmdBuffer().setWriteDependency(texture);
     return *this;
+}
+
+void CommandEncoder::insertDebugSign(const std::string &marker)
+{
+    ANGLE_MTL_OBJC_SCOPE
+    {
+        auto label = [NSString stringWithUTF8String:marker.c_str()];
+        [get() insertDebugSignpost:label];
+    }
 }
 
 // RenderCommandEncoder implemtation

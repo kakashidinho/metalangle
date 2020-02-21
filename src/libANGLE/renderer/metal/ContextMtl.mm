@@ -91,6 +91,20 @@ bool NeedToInvertDepthRange(float near, float far)
     return near > far;
 }
 
+std::string ConvertMarkerToCpp(GLsizei length, const char *marker)
+{
+    std::string cppString;
+    if (length == 0)
+    {
+        cppString = marker;
+    }
+    else
+    {
+        cppString.assign(marker, length);
+    }
+    return cppString;
+}
+
 // This class constructs line loop buffer inside begin() method
 // and perform the draw of the line loop's last segment inside destructor
 class LineLoopHelper
@@ -531,11 +545,18 @@ std::string ContextMtl::getRendererDescription() const
 }
 
 // EXT_debug_marker
-void ContextMtl::insertEventMarker(GLsizei length, const char *marker) {}
-void ContextMtl::pushGroupMarker(GLsizei length, const char *marker) {}
+void ContextMtl::insertEventMarker(GLsizei length, const char *marker)
+{
+    mCmdBuffer.insertDebugSign(ConvertMarkerToCpp(length, marker));
+}
+
+void ContextMtl::pushGroupMarker(GLsizei length, const char *marker)
+{
+    mCmdBuffer.pushDebugGroup(ConvertMarkerToCpp(length, marker));
+}
 void ContextMtl::popGroupMarker()
 {
-    // TODO(hqle
+    mCmdBuffer.popDebugGroup();
 }
 
 // KHR_debug

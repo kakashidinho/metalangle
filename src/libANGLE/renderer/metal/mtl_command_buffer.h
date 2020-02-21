@@ -102,6 +102,10 @@ class CommandBuffer final : public WrappedObject<id<MTLCommandBuffer>>, angle::N
     void setWriteDependency(const ResourceRef &resource);
     void setReadDependency(const ResourceRef &resource);
 
+    void insertDebugSign(const std::string &marker);
+    void pushDebugGroup(const std::string &marker);
+    void popDebugGroup();
+
     CommandQueue &cmdQueue() { return mCmdQueue; }
 
     // Private use only
@@ -130,6 +134,8 @@ class CommandBuffer final : public WrappedObject<id<MTLCommandBuffer>>, angle::N
 
     mutable std::mutex mLock;
 
+    std::vector<std::string> mPendingDebugSigns;
+
     bool mCommitted = false;
 };
 
@@ -152,6 +158,8 @@ class CommandEncoder : public WrappedObject<id<MTLCommandEncoder>>, angle::NonCo
 
     CommandEncoder &markResourceBeingWrittenByGPU(const BufferRef &buffer);
     CommandEncoder &markResourceBeingWrittenByGPU(const TextureRef &texture);
+
+    void insertDebugSign(const std::string &marker);
 
   protected:
     using ParentClass = WrappedObject<id<MTLCommandEncoder>>;
