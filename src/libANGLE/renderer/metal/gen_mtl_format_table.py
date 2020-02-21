@@ -144,7 +144,7 @@ def get_vertex_copy_function_mtl(src_format, dst_format):
         elif 'A32_FLOAT' in dst_format:
             default_alpha = 'gl::Float32One'
         elif 'NORM' in dst_format:
-            default_alpha = '0xffffffff'
+            default_alpha = 'std::numeric_limits<%s>::max()' % (src_gl_type)
 
         return 'CopyNativeVertexData<%s, %d, %d, %s>' % (src_gl_type, num_channel, dst_num_channel,
                                                          default_alpha)

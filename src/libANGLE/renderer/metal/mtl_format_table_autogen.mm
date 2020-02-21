@@ -715,9 +715,10 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
         case angle::FormatID::R16G16B16_SNORM:
             if (tightlyPacked)
             {
-                this->metalFormat        = MTLVertexFormatShort4Normalized;
-                this->actualFormatId     = angle::FormatID::R16G16B16A16_SNORM;
-                this->vertexLoadFunction = CopyNativeVertexData<GLshort, 3, 4, 0xffffffff>;
+                this->metalFormat    = MTLVertexFormatShort4Normalized;
+                this->actualFormatId = angle::FormatID::R16G16B16A16_SNORM;
+                this->vertexLoadFunction =
+                    CopyNativeVertexData<GLshort, 3, 4, std::numeric_limits<GLshort>::max()>;
             }
             else
             {
@@ -760,9 +761,10 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
         case angle::FormatID::R16G16B16_UNORM:
             if (tightlyPacked)
             {
-                this->metalFormat        = MTLVertexFormatUShort4Normalized;
-                this->actualFormatId     = angle::FormatID::R16G16B16A16_UNORM;
-                this->vertexLoadFunction = CopyNativeVertexData<GLushort, 3, 4, 0xffffffff>;
+                this->metalFormat    = MTLVertexFormatUShort4Normalized;
+                this->actualFormatId = angle::FormatID::R16G16B16A16_UNORM;
+                this->vertexLoadFunction =
+                    CopyNativeVertexData<GLushort, 3, 4, std::numeric_limits<GLushort>::max()>;
             }
             else
             {
@@ -1012,9 +1014,10 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
         case angle::FormatID::R8G8B8_SNORM:
             if (tightlyPacked)
             {
-                this->metalFormat        = MTLVertexFormatChar4Normalized;
-                this->actualFormatId     = angle::FormatID::R8G8B8A8_SNORM;
-                this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 3, 4, 0xffffffff>;
+                this->metalFormat    = MTLVertexFormatChar4Normalized;
+                this->actualFormatId = angle::FormatID::R8G8B8A8_SNORM;
+                this->vertexLoadFunction =
+                    CopyNativeVertexData<GLbyte, 3, 4, std::numeric_limits<GLbyte>::max()>;
             }
             else
             {
@@ -1057,9 +1060,10 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
         case angle::FormatID::R8G8B8_UNORM:
             if (tightlyPacked)
             {
-                this->metalFormat        = MTLVertexFormatUChar4Normalized;
-                this->actualFormatId     = angle::FormatID::R8G8B8A8_UNORM;
-                this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 3, 4, 0xffffffff>;
+                this->metalFormat    = MTLVertexFormatUChar4Normalized;
+                this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM;
+                this->vertexLoadFunction =
+                    CopyNativeVertexData<GLubyte, 3, 4, std::numeric_limits<GLubyte>::max()>;
             }
             else
             {
@@ -1102,9 +1106,10 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
         case angle::FormatID::R8G8_SNORM:
             if (tightlyPacked)
             {
-                this->metalFormat        = MTLVertexFormatChar4Normalized;
-                this->actualFormatId     = angle::FormatID::R8G8B8A8_SNORM;
-                this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 2, 4, 0xffffffff>;
+                this->metalFormat    = MTLVertexFormatChar4Normalized;
+                this->actualFormatId = angle::FormatID::R8G8B8A8_SNORM;
+                this->vertexLoadFunction =
+                    CopyNativeVertexData<GLbyte, 2, 4, std::numeric_limits<GLbyte>::max()>;
             }
             else
             {
@@ -1147,9 +1152,10 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
         case angle::FormatID::R8G8_UNORM:
             if (tightlyPacked)
             {
-                this->metalFormat        = MTLVertexFormatUChar4Normalized;
-                this->actualFormatId     = angle::FormatID::R8G8B8A8_UNORM;
-                this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 2, 4, 0xffffffff>;
+                this->metalFormat    = MTLVertexFormatUChar4Normalized;
+                this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM;
+                this->vertexLoadFunction =
+                    CopyNativeVertexData<GLubyte, 2, 4, std::numeric_limits<GLubyte>::max()>;
             }
             else
             {
@@ -1192,9 +1198,10 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
         case angle::FormatID::R8_SNORM:
             if (tightlyPacked)
             {
-                this->metalFormat        = MTLVertexFormatChar4Normalized;
-                this->actualFormatId     = angle::FormatID::R8G8B8A8_SNORM;
-                this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 1, 4, 0xffffffff>;
+                this->metalFormat    = MTLVertexFormatChar4Normalized;
+                this->actualFormatId = angle::FormatID::R8G8B8A8_SNORM;
+                this->vertexLoadFunction =
+                    CopyNativeVertexData<GLbyte, 1, 4, std::numeric_limits<GLbyte>::max()>;
             }
             else
             {
@@ -1237,9 +1244,10 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
         case angle::FormatID::R8_UNORM:
             if (tightlyPacked)
             {
-                this->metalFormat        = MTLVertexFormatUChar4Normalized;
-                this->actualFormatId     = angle::FormatID::R8G8B8A8_UNORM;
-                this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 1, 4, 0xffffffff>;
+                this->metalFormat    = MTLVertexFormatUChar4Normalized;
+                this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM;
+                this->vertexLoadFunction =
+                    CopyNativeVertexData<GLubyte, 1, 4, std::numeric_limits<GLubyte>::max()>;
             }
             else
             {
