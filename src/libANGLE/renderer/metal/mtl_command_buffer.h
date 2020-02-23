@@ -112,8 +112,6 @@ class CommandBuffer final : public WrappedObject<id<MTLCommandBuffer>>, angle::N
     void setActiveCommandEncoder(CommandEncoder *encoder);
     void invalidateActiveCommandEncoder(CommandEncoder *encoder);
 
-    id<MTLRenderCommandEncoder> makeMetalRenderCommandEncoder(const RenderPassDesc &desc);
-
   private:
     void set(id<MTLCommandBuffer> metalBuffer);
     void cleanup();
@@ -126,9 +124,6 @@ class CommandBuffer final : public WrappedObject<id<MTLCommandBuffer>>, angle::N
     CommandQueue &mCmdQueue;
 
     std::atomic<CommandEncoder *> mActiveCommandEncoder{nullptr};
-
-    // Cached Objective-C render pass desc to avoid re-allocate every frame.
-    mtl::AutoObjCObj<MTLRenderPassDescriptor> mCachedRenderPassDescObjC;
 
     uint64_t mQueueSerial = 0;
 
@@ -153,7 +148,7 @@ class CommandEncoder : public WrappedObject<id<MTLCommandEncoder>>, angle::NonCo
 
     virtual void endEncoding();
 
-    void reset();
+    virtual void reset();
     Type getType() const { return mType; }
 
     CommandEncoder &markResourceBeingWrittenByGPU(const BufferRef &buffer);
@@ -171,9 +166,74 @@ class CommandEncoder : public WrappedObject<id<MTLCommandEncoder>>, angle::NonCo
 
     void set(id<MTLCommandEncoder> metalCmdEncoder);
 
+    virtual void insertDebugSignImpl(NSString *marker);
+
   private:
     const Type mType;
     CommandBuffer &mCmdBuffer;
+};
+
+// Stream to store commands before encoding them into the real MTLCommandEncoder
+class IntermediateCommandStream
+{
+  public:
+    template <typename T>
+    inline IntermediateCommandStream &push(const T &val)
+    {
+        auto ptr = reinterpret_cast<const uint8_t *>(&val);
+        mBuffer.insert(mBuffer.end(), ptr, ptr + sizeof(T));
+        return *this;
+    }
+
+    inline IntermediateCommandStream &push(const uint8_t *bytes, size_t len)
+    {
+        mBuffer.insert(mBuffer.end(), bytes, bytes + len);
+        return *this;
+    }
+
+    template <typename T>
+    inline T peek()
+    {
+        ASSERT(mReadPtr <= mBuffer.size() - sizeof(T));
+        T re;
+        auto ptr = reinterpret_cast<uint8_t *>(&re);
+        std::copy(mBuffer.data() + mReadPtr, mBuffer.data() + mReadPtr + sizeof(T), ptr);
+        return re;
+    }
+
+    template <typename T>
+    inline T fetch()
+    {
+        auto re = peek<T>();
+        mReadPtr += sizeof(T);
+        return re;
+    }
+
+    inline const uint8_t *fetch(size_t bytes)
+    {
+        ASSERT(mReadPtr <= mBuffer.size() - bytes);
+        auto cur = mReadPtr;
+        mReadPtr += bytes;
+        return mBuffer.data() + cur;
+    }
+
+    inline void clear()
+    {
+        mBuffer.clear();
+        mReadPtr = 0;
+    }
+
+    inline void resetReadPtr(size_t readPtr)
+    {
+        ASSERT(readPtr <= mBuffer.size());
+        mReadPtr = readPtr;
+    }
+
+    inline bool good() const { return mReadPtr < mBuffer.size(); }
+
+  private:
+    std::vector<uint8_t> mBuffer;
+    size_t mReadPtr = 0;
 };
 
 class RenderCommandEncoder final : public CommandEncoder
@@ -182,6 +242,9 @@ class RenderCommandEncoder final : public CommandEncoder
     RenderCommandEncoder(CommandBuffer *cmdBuffer);
     ~RenderCommandEncoder() override;
 
+    // override CommandEncoder
+    bool valid() const { return mRecording; }
+    void reset() override;
     void endEncoding() override;
 
     RenderCommandEncoder &restart(const RenderPassDesc &desc);
@@ -267,19 +330,25 @@ class RenderCommandEncoder final : public CommandEncoder
     const RenderPassDesc &renderPassDesc() const { return mRenderPassDesc; }
 
   private:
+    // Override CommandEncoder
     id<MTLRenderCommandEncoder> get()
     {
         return static_cast<id<MTLRenderCommandEncoder>>(CommandEncoder::get());
     }
+    void insertDebugSignImpl(NSString *label) override;
+
     void initWriteDependencyAndStoreAction(const TextureRef &texture,
                                            MTLStoreAction *storeActionOut);
+    void encodeMetalEncoder();
     void simulateDiscardFramebuffer();
     void endEncodingImpl(bool considerDiscardSimulation);
 
     RenderPassDesc mRenderPassDesc;
-    MTLStoreAction mColorInitialStoreActions[kMaxRenderTargets];
-    MTLStoreAction mDepthInitialStoreAction;
-    MTLStoreAction mStencilInitialStoreAction;
+    // Cached Objective-C render pass desc to avoid re-allocate every frame.
+    mtl::AutoObjCObj<MTLRenderPassDescriptor> mCachedRenderPassDescObjC;
+
+    bool mRecording = false;
+    IntermediateCommandStream mCommands;
 };
 
 class BlitCommandEncoder final : public CommandEncoder
