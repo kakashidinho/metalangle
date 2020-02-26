@@ -15,27 +15,28 @@ jobs:
   include:
   - name: "ios xcode 11.2"
     python: "3.5"
-    env: CMD="ios/xcode/travis_build_ios.sh Release"
+    script:
+      - ios/xcode/travis_build_ios.sh Release
     osx_image: xcode11.2
   - name: "macos xcode project 11.2"
     python: "3.5"
-    env: CMD="mac/xcode/travis_build_mac.sh Release"
+    script:
+      - mac/xcode/travis_build_mac.sh Release
     osx_image: xcode11.2
   - name: "macos gn xcode 9.4"
     python: "3.5"
-    env: CMD="ninja -j 2 -C out/release angle_end2end_tests angle_deqp_gles2_tests hello_triangle"
+    script: ninja -j 2 -C out/release angle_end2end_tests angle_deqp_gles2_tests hello_triangle
     osx_image: xcode9.4
   - name: "ios xcode 9.4"
     python: "3.5"
-    env: CMD="ios/xcode/travis_build_ios.sh Release"
+    script:
+      - ios/xcode/travis_build_ios.sh Release
     osx_image: xcode9.4
   - name: "macos xcode project 9.4"
     python: "3.5"
-    env: CMD="mac/xcode/travis_build_mac.sh Release"
+    script:
+      - mac/xcode/travis_build_mac.sh Release
     osx_image: xcode9.4
-
-script:
-  - $CMD
 
 env:
   global:
