@@ -560,7 +560,7 @@
 		0A90F6B124065A95005BA9A8 /* debug.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA200A823473CBB00E0B98C /* debug.cpp */; };
 		0A90F6B324065A95005BA9A8 /* matrix_utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA2009023473CB900E0B98C /* matrix_utils.cpp */; };
 		0A90F6B424065A95005BA9A8 /* PackedEnums.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA2004F23473CB600E0B98C /* PackedEnums.cpp */; };
-		0A90F6B524065A95005BA9A8 /* system_utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA200B623473CBC00E0B98C /* system_utils.cpp */; };
+		0A90F6B524065A95005BA9A8 /* system_utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA200B623473CBC00E0B98C /* system_utils.cpp */; settings = {COMPILER_FLAGS = "-fvisibility=default"; }; };
 		0A90F6B624065A95005BA9A8 /* PackedGLEnums_autogen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA2007C23473CB700E0B98C /* PackedGLEnums_autogen.cpp */; };
 		0A90F6BF24065AA6005BA9A8 /* Matrix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA20002234734F400E0B98C /* Matrix.cpp */; };
 		0A90F6C024065AA6005BA9A8 /* egl_loader_autogen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA2015723474EBF00E0B98C /* egl_loader_autogen.cpp */; };
@@ -1268,7 +1268,7 @@
 		0A90FA3024068473005BA9A8 /* OpenGLES.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AA2014C23474A9000E0B98C /* OpenGLES.framework */; platformFilter = ios; settings = {ATTRIBUTES = (Weak, ); }; };
 		0A90FB422406D025005BA9A8 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A90FA2A2406831B005BA9A8 /* OpenGL.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		0A90FB452406D141005BA9A8 /* samples_env_setup.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A97E48C23485F69007CA616 /* samples_env_setup.mm */; };
-		0A90FB482406D56D005BA9A8 /* system_utils_cocoa.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AA2007923473CB600E0B98C /* system_utils_cocoa.mm */; };
+		0A90FB482406D56D005BA9A8 /* system_utils_cocoa.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AA2007923473CB600E0B98C /* system_utils_cocoa.mm */; settings = {COMPILER_FLAGS = "-fvisibility=default"; }; };
 		0A90FB632406DA8B005BA9A8 /* HelloTriangle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA20108234745E800E0B98C /* HelloTriangle.cpp */; };
 		0A90FB642406DAA4005BA9A8 /* sample_util_mac.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A90FA0124065F4B005BA9A8 /* sample_util_mac.framework */; };
 		0A90FB662406DAB6005BA9A8 /* MetalANGLE.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0A90F9BD24065C0C005BA9A8 /* MetalANGLE.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -1507,7 +1507,7 @@
 		0AA200BF23473CBD00E0B98C /* xxhash.c in Sources */ = {isa = PBXBuildFile; fileRef = 0AA2005D23473CB600E0B98C /* xxhash.c */; };
 		0AA200C023473CBD00E0B98C /* PMurHash.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA2006323473CB600E0B98C /* PMurHash.cpp */; };
 		0AA200C223473CBD00E0B98C /* sha1.cc in Sources */ = {isa = PBXBuildFile; fileRef = 0AA2007023473CB600E0B98C /* sha1.cc */; };
-		0AA200C323473CBD00E0B98C /* system_utils_cocoa.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AA2007923473CB600E0B98C /* system_utils_cocoa.mm */; };
+		0AA200C323473CBD00E0B98C /* system_utils_cocoa.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AA2007923473CB600E0B98C /* system_utils_cocoa.mm */; settings = {COMPILER_FLAGS = "-fvisibility=default"; }; };
 		0AA200C423473CBD00E0B98C /* PackedGLEnums_autogen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA2007C23473CB700E0B98C /* PackedGLEnums_autogen.cpp */; };
 		0AA200C823473CBD00E0B98C /* mathutil.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA2008423473CB700E0B98C /* mathutil.cpp */; };
 		0AA200C923473CBD00E0B98C /* Float16ToFloat32.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA2008523473CB800E0B98C /* Float16ToFloat32.cpp */; };
@@ -1522,7 +1522,7 @@
 		0AA200DF23473CBD00E0B98C /* tls.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA200AE23473CBB00E0B98C /* tls.cpp */; };
 		0AA200E023473CBD00E0B98C /* angleutils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA200AF23473CBC00E0B98C /* angleutils.cpp */; };
 		0AA200E123473CBD00E0B98C /* android_util.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA200B023473CBC00E0B98C /* android_util.cpp */; };
-		0AA200E423473CBD00E0B98C /* system_utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA200B623473CBC00E0B98C /* system_utils.cpp */; };
+		0AA200E423473CBD00E0B98C /* system_utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA200B623473CBC00E0B98C /* system_utils.cpp */; settings = {COMPILER_FLAGS = "-fvisibility=default"; }; };
 		0AA200E523473CBD00E0B98C /* MemoryBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA200B723473CBC00E0B98C /* MemoryBuffer.cpp */; };
 		0AA200FB234742E900E0B98C /* libEGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA200F3234742E900E0B98C /* libEGL.cpp */; };
 		0AA200FC234742E900E0B98C /* libEGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA200F3234742E900E0B98C /* libEGL.cpp */; };
@@ -9900,13 +9900,10 @@
 				GCC_ENABLE_CPP_RTTI = "${inherited}";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					LIBEGL_IMPLEMENTATION,
-					"EGLAPI=__attribute__((visibility(\\\"default\\\")))",
 					LIBGLESV2_IMPLEMENTATION,
 					LIBANGLE_IMPLEMENTATION,
 					ANGLE_ENABLE_DEBUG_ANNOTATIONS,
 					SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS,
-					"GL_APICALL=__attribute__((visibility(\\\"default\\\")))",
-					"GL_API=__attribute__((visibility(\\\"default\\\")))",
 					"GL_GLES_PROTOTYPES=1",
 					"EGL_EGL_PROTOTYPES=1",
 					GL_GLEXT_PROTOTYPES,
@@ -9942,12 +9939,9 @@
 				GCC_ENABLE_CPP_RTTI = "${inherited}";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					LIBEGL_IMPLEMENTATION,
-					"EGLAPI=__attribute__((visibility(\\\"default\\\")))",
 					LIBGLESV2_IMPLEMENTATION,
 					LIBANGLE_IMPLEMENTATION,
 					SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS,
-					"GL_APICALL=__attribute__((visibility(\\\"default\\\")))",
-					"GL_API=__attribute__((visibility(\\\"default\\\")))",
 					"GL_GLES_PROTOTYPES=1",
 					"EGL_EGL_PROTOTYPES=1",
 					GL_GLEXT_PROTOTYPES,
@@ -10051,7 +10045,7 @@
 					"DEBUG=1",
 					"$(inherited)",
 				);
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				OTHER_LDFLAGS = "-ObjC";
@@ -10067,7 +10061,7 @@
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				OTHER_LDFLAGS = "-ObjC";
@@ -10085,12 +10079,13 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				GCC_PREPROCESSOR_DEFINITIONS = (
+					LIBANGLE_UTIL_IMPLEMENTATION,
 					ANGLE_USE_UTIL_LOADER,
 					"GL_GLES_PROTOTYPES=0",
 					"EGL_EGL_PROTOTYPES=0",
 					"${inherited}",
 				);
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				OTHER_LDFLAGS = "-ObjC";
@@ -10108,12 +10103,13 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				GCC_PREPROCESSOR_DEFINITIONS = (
+					LIBANGLE_UTIL_IMPLEMENTATION,
 					ANGLE_USE_UTIL_LOADER,
 					"GL_GLES_PROTOTYPES=0",
 					"EGL_EGL_PROTOTYPES=0",
 					"${inherited}",
 				);
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				OTHER_LDFLAGS = "-ObjC";
@@ -10377,13 +10373,10 @@
 				GCC_ENABLE_CPP_RTTI = "${inherited}";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					LIBEGL_IMPLEMENTATION,
-					"EGLAPI=__attribute__((visibility(\\\"default\\\")))",
 					LIBGLESV2_IMPLEMENTATION,
 					LIBANGLE_IMPLEMENTATION,
 					ANGLE_ENABLE_DEBUG_ANNOTATIONS,
 					SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS,
-					"GL_APICALL=__attribute__((visibility(\\\"default\\\")))",
-					"GL_API=__attribute__((visibility(\\\"default\\\")))",
 					"GL_GLES_PROTOTYPES=1",
 					"EGL_EGL_PROTOTYPES=1",
 					GL_GLEXT_PROTOTYPES,
@@ -10422,12 +10415,9 @@
 				GCC_ENABLE_CPP_RTTI = "${inherited}";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					LIBEGL_IMPLEMENTATION,
-					"EGLAPI=__attribute__((visibility(\\\"default\\\")))",
 					LIBGLESV2_IMPLEMENTATION,
 					LIBANGLE_IMPLEMENTATION,
 					SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS,
-					"GL_APICALL=__attribute__((visibility(\\\"default\\\")))",
-					"GL_API=__attribute__((visibility(\\\"default\\\")))",
 					"GL_GLES_PROTOTYPES=1",
 					"EGL_EGL_PROTOTYPES=1",
 					GL_GLEXT_PROTOTYPES,
@@ -11577,7 +11567,7 @@
 					"DEBUG=1",
 					"$(inherited)",
 				);
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -11590,7 +11580,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -11765,13 +11755,10 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"ANGLE_IOS_DEPLOY_TARGET=__IPHONE_13_0",
 					LIBEGL_IMPLEMENTATION,
-					"EGLAPI=__attribute__((visibility(\\\"default\\\")))",
 					LIBGLESV2_IMPLEMENTATION,
 					LIBANGLE_IMPLEMENTATION,
 					ANGLE_ENABLE_DEBUG_ANNOTATIONS,
 					SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS,
-					"GL_APICALL=__attribute__((visibility(\\\"default\\\")))",
-					"GL_API=__attribute__((visibility(\\\"default\\\")))",
 					"GL_GLES_PROTOTYPES=1",
 					"EGL_EGL_PROTOTYPES=1",
 					GL_GLEXT_PROTOTYPES,
@@ -11808,12 +11795,9 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"ANGLE_IOS_DEPLOY_TARGET=__IPHONE_13_0",
 					LIBEGL_IMPLEMENTATION,
-					"EGLAPI=__attribute__((visibility(\\\"default\\\")))",
 					LIBGLESV2_IMPLEMENTATION,
 					LIBANGLE_IMPLEMENTATION,
 					SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS,
-					"GL_APICALL=__attribute__((visibility(\\\"default\\\")))",
-					"GL_API=__attribute__((visibility(\\\"default\\\")))",
 					"GL_GLES_PROTOTYPES=1",
 					"EGL_EGL_PROTOTYPES=1",
 					GL_GLEXT_PROTOTYPES,
@@ -11886,12 +11870,13 @@
 				CLANG_ENABLE_OBJC_ARC = NO;
 				CODE_SIGN_STYLE = Automatic;
 				GCC_PREPROCESSOR_DEFINITIONS = (
+					LIBANGLE_UTIL_IMPLEMENTATION,
 					ANGLE_USE_UTIL_LOADER,
 					"GL_GLES_PROTOTYPES=0",
 					"EGL_EGL_PROTOTYPES=0",
 					"${inherited}",
 				);
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -11906,12 +11891,13 @@
 				CLANG_ENABLE_OBJC_ARC = NO;
 				CODE_SIGN_STYLE = Automatic;
 				GCC_PREPROCESSOR_DEFINITIONS = (
+					LIBANGLE_UTIL_IMPLEMENTATION,
 					ANGLE_USE_UTIL_LOADER,
 					"GL_GLES_PROTOTYPES=0",
 					"EGL_EGL_PROTOTYPES=0",
 					"${inherited}",
 				);
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
