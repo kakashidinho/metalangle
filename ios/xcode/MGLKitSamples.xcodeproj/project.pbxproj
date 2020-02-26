@@ -37,6 +37,20 @@
 		0A28CD83235789B20081BB84 /* Particle.png in Resources */ = {isa = PBXBuildFile; fileRef = 0A28CD7F235789B20081BB84 /* Particle.png */; };
 		0A28CD88235789DF0081BB84 /* PaintingView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A28CD86235789DE0081BB84 /* PaintingView.mm */; };
 		0A28CD89235789DF0081BB84 /* SoundEffect.m in Sources */ = {isa = PBXBuildFile; fileRef = 0A28CD87235789DE0081BB84 /* SoundEffect.m */; };
+		0A90FA822406896B005BA9A8 /* Main_mac.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0A90FA802406896B005BA9A8 /* Main_mac.storyboard */; };
+		0A90FA8324068A8C005BA9A8 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AAF41492354FAE8000E3CC8 /* AppDelegate.m */; };
+		0A90FA8424068A8E005BA9A8 /* GLViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AAF414F2354FAE8000E3CC8 /* GLViewController.m */; };
+		0A90FA8524068A91005BA9A8 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AAF415A2354FAE9000E3CC8 /* main.m */; };
+		0A90FA8624068B4E005BA9A8 /* SimpleFragment.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 0AD9E49E2355DEDF006F5642 /* SimpleFragment.glsl */; };
+		0A90FA8724068B51005BA9A8 /* SimpleVertex.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 0AD9E49D2355DEDF006F5642 /* SimpleVertex.glsl */; };
+		0A90FA8824068DFD005BA9A8 /* item_powerup_fish.png in Resources */ = {isa = PBXBuildFile; fileRef = 0AD9E4992355DECC006F5642 /* item_powerup_fish.png */; };
+		0A90FA8924068E01005BA9A8 /* tile_floor.png in Resources */ = {isa = PBXBuildFile; fileRef = 0AD9E49A2355DECC006F5642 /* tile_floor.png */; };
+		0A90FA8A24068E0D005BA9A8 /* CC3Foundation.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AD9E48B2355DEA5006F5642 /* CC3Foundation.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		0A90FA8B24068E10005BA9A8 /* CC3GLMatrix.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AD9E4912355DEA5006F5642 /* CC3GLMatrix.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		0A90FA8C24068E14005BA9A8 /* CC3Kazmath.c in Sources */ = {isa = PBXBuildFile; fileRef = 0AD9E48C2355DEA5006F5642 /* CC3Kazmath.c */; };
+		0A90FA8D24068E17005BA9A8 /* CC3Math.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AD9E4922355DEA5006F5642 /* CC3Math.m */; };
+		0A90FA8E24068EFE005BA9A8 /* MetalANGLE.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A90FA6A24068856005BA9A8 /* MetalANGLE.framework */; };
+		0A90FA9024068F18005BA9A8 /* MetalANGLE.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0A90FA6A24068856005BA9A8 /* MetalANGLE.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		0A9A6BAD2391283B006A152A /* CC3Kazmath.c in Sources */ = {isa = PBXBuildFile; fileRef = 0AD9E48C2355DEA5006F5642 /* CC3Kazmath.c */; };
 		0A9A6BAE2391283B006A152A /* GLViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AAF414F2354FAE8000E3CC8 /* GLViewController.m */; };
 		0A9A6BAF2391283B006A152A /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AAF41492354FAE8000E3CC8 /* AppDelegate.m */; };
@@ -72,6 +86,174 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		0A8BCF682406EF0A00600A41 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 0A60525223464F51005CEA98;
+			remoteInfo = MetalANGLE;
+		};
+		0A8BCF952406EF0A00600A41 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0A90FB4F2406D93C005BA9A8;
+			remoteInfo = hello_triangle_mac;
+		};
+		0A8BCF972406EF0A00600A41 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0A90FB742406DB53005BA9A8;
+			remoteInfo = multi_texture_mac;
+		};
+		0A8BCF992406EF0A00600A41 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0A90FB822406DB66005BA9A8;
+			remoteInfo = particle_system_mac;
+		};
+		0A8BCF9B2406EF0A00600A41 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0A90FB902406DB72005BA9A8;
+			remoteInfo = simple_texture_2d_mac;
+		};
+		0A8BCF9D2406EF0A00600A41 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0A90FB9E2406DB80005BA9A8;
+			remoteInfo = simple_texture_cubemap_mac;
+		};
+		0A8BCF9F2406EF0A00600A41 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0A90FBAC2406DB8C005BA9A8;
+			remoteInfo = simple_vertex_shader_mac;
+		};
+		0A8BCFA12406EF0A00600A41 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0A90FBBA2406DB99005BA9A8;
+			remoteInfo = texture_wrap_mac;
+		};
+		0A8BCFA32406EF0A00600A41 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0A90FBC82406DBA9005BA9A8;
+			remoteInfo = mip_map_2d_mac;
+		};
+		0A8BCFA52406EF0A00600A41 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0A90FBD62406DBB9005BA9A8;
+			remoteInfo = stencil_operations_mac;
+		};
+		0A8BCFA72406EF0A00600A41 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0A90FBE42406DBC8005BA9A8;
+			remoteInfo = tri_fan_microbench_mac;
+		};
+		0A8BCFA92406EF0E00600A41 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 0A60525223464F51005CEA98;
+			remoteInfo = MetalANGLE;
+		};
+		0A8BCFAB2406EF1200600A41 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 0A60525223464F51005CEA98;
+			remoteInfo = MetalANGLE;
+		};
+		0A8BCFAD2406EF1600600A41 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 0A90F77824065C0C005BA9A8;
+			remoteInfo = MetalANGLE_mac;
+		};
+		0A90FA6924068856005BA9A8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0A90F9BD24065C0C005BA9A8;
+			remoteInfo = MetalANGLE_mac;
+		};
+		0A90FA6B24068856005BA9A8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0A90F77724065B06005BA9A8;
+			remoteInfo = angle_metal_backend_mac;
+		};
+		0A90FA6D24068856005BA9A8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0A90F75824065AF8005BA9A8;
+			remoteInfo = angle_gl_backend_mac;
+		};
+		0A90FA6F24068856005BA9A8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0A90F72B24065ADE005BA9A8;
+			remoteInfo = angle_image_util_mac;
+		};
+		0A90FA7124068856005BA9A8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0A90F71F24065ACE005BA9A8;
+			remoteInfo = glslang_mac;
+		};
+		0A90FA7324068856005BA9A8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0A90F6ED24065AC0005BA9A8;
+			remoteInfo = "spirv-cross_mac";
+		};
+		0A90FA7524068856005BA9A8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0A90F6DC24065AB5005BA9A8;
+			remoteInfo = jsoncpp_mac;
+		};
+		0A90FA7724068856005BA9A8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0A90F6D124065AA6005BA9A8;
+			remoteInfo = angle_util_mac;
+		};
+		0A90FA7924068856005BA9A8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0A90F6BC24065A95005BA9A8;
+			remoteInfo = angle_common_mac;
+		};
+		0A90FA7B24068856005BA9A8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0A90FA0124065F4B005BA9A8;
+			remoteInfo = sample_util_mac;
+		};
 		0A9A6BDC2391283C006A152A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
@@ -239,6 +421,16 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		0A90FA8F24068F03005BA9A8 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				0A90FA9024068F18005BA9A8 /* MetalANGLE.framework in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		0A9A6BBE2391283B006A152A /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -300,6 +492,9 @@
 		0A28CD86235789DE0081BB84 /* PaintingView.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = PaintingView.mm; sourceTree = "<group>"; };
 		0A28CD87235789DE0081BB84 /* SoundEffect.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SoundEffect.m; sourceTree = "<group>"; };
 		0A28CD8B235795BF0081BB84 /* MGLPaint.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MGLPaint.entitlements; sourceTree = "<group>"; };
+		0A90FA3524068853005BA9A8 /* MGLKitSampleApp_mac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MGLKitSampleApp_mac.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0A90FA7E24068948005BA9A8 /* Info_mac.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info_mac.plist; sourceTree = "<group>"; };
+		0A90FA812406896B005BA9A8 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main_mac.storyboard; sourceTree = "<group>"; };
 		0A946A30235700930027DFE1 /* MGLKitSampleApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MGLKitSampleApp.entitlements; sourceTree = "<group>"; };
 		0A9A6BC32391283B006A152A /* MGLKitSampleApp_ios9.0.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MGLKitSampleApp_ios9.0.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = OpenGLES.xcodeproj; sourceTree = "<group>"; };
@@ -335,6 +530,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				0A28CD5A235788EF0081BB84 /* MetalANGLE.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0A90FA3224068853005BA9A8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0A90FA8E24068EFE005BA9A8 /* MetalANGLE.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -450,6 +653,7 @@
 				0AAF41462354FAE8000E3CC8 /* MGLKitSampleApp.app */,
 				0A28CD22235787370081BB84 /* MGLPaint.app */,
 				0A9A6BC32391283B006A152A /* MGLKitSampleApp_ios9.0.app */,
+				0A90FA3524068853005BA9A8 /* MGLKitSampleApp_mac.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -464,11 +668,21 @@
 				0AAF40D02354CB64000E3CC8 /* libglslang.a */,
 				0AAF40D22354CB64000E3CC8 /* libspirv-cross.a */,
 				0AAF40D42354CB64000E3CC8 /* libjsoncpp.a */,
+				0A90FA6A24068856005BA9A8 /* MetalANGLE.framework */,
+				0A90FA6C24068856005BA9A8 /* libangle_metal_backend_mac.a */,
+				0A90FA6E24068856005BA9A8 /* libangle_gl_backend_mac.a */,
+				0A90FA7024068856005BA9A8 /* libangle_image_util_mac.a */,
+				0A90FA7224068856005BA9A8 /* libglslang_mac.a */,
+				0A90FA7424068856005BA9A8 /* libspirv-cross_mac.a */,
+				0A90FA7624068856005BA9A8 /* libjsoncpp_mac.a */,
 				0AAF40D62354CB64000E3CC8 /* MetalANGLE_ios_13.0.framework */,
 				0AAF40D82354CB64000E3CC8 /* libangle_metal_backend_ios_13.0.a */,
 				0AAF40DA2354CB64000E3CC8 /* libangle_util.a */,
 				0AAF40DC2354CB64000E3CC8 /* libangle_common.a */,
+				0A90FA7824068856005BA9A8 /* libangle_util_mac.a */,
+				0A90FA7A24068856005BA9A8 /* libangle_common_mac.a */,
 				0AAF40DE2354CB64000E3CC8 /* sample_util.framework */,
+				0A90FA7C24068856005BA9A8 /* sample_util_mac.framework */,
 				0AAF40E02354CB64000E3CC8 /* hello_triangle.app */,
 				0AAF40E22354CB64000E3CC8 /* multi_texture.app */,
 				0AAF40E42354CB64000E3CC8 /* particle_system.app */,
@@ -479,6 +693,16 @@
 				0AAF40EE2354CB64000E3CC8 /* mip_map_2d.app */,
 				0AAF40F02354CB64000E3CC8 /* stencil_operations.app */,
 				0AAF40F22354CB64000E3CC8 /* tri_fan_microbench.app */,
+				0A8BCF962406EF0A00600A41 /* hello_triangle_mac.app */,
+				0A8BCF982406EF0A00600A41 /* multi_texture_mac.app */,
+				0A8BCF9A2406EF0A00600A41 /* particle_system_mac.app */,
+				0A8BCF9C2406EF0A00600A41 /* simple_texture_2d_mac.app */,
+				0A8BCF9E2406EF0A00600A41 /* simple_texture_cubemap_mac.app */,
+				0A8BCFA02406EF0A00600A41 /* simple_vertex_shader_mac.app */,
+				0A8BCFA22406EF0A00600A41 /* texture_wrap_mac.app */,
+				0A8BCFA42406EF0A00600A41 /* mip_map_2d_mac.app */,
+				0A8BCFA62406EF0A00600A41 /* stencil_operations_mac.app */,
+				0A8BCFA82406EF0A00600A41 /* tri_fan_microbench_mac.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -502,10 +726,12 @@
 				0AAF41492354FAE8000E3CC8 /* AppDelegate.m */,
 				0AAF414E2354FAE8000E3CC8 /* GLViewController.h */,
 				0AAF414F2354FAE8000E3CC8 /* GLViewController.m */,
+				0A90FA802406896B005BA9A8 /* Main_mac.storyboard */,
 				0AAF41512354FAE8000E3CC8 /* Main.storyboard */,
 				0AAF41542354FAE9000E3CC8 /* Assets.xcassets */,
 				0AAF41562354FAE9000E3CC8 /* LaunchScreen.storyboard */,
 				0AAF41592354FAE9000E3CC8 /* Info.plist */,
+				0A90FA7E24068948005BA9A8 /* Info_mac.plist */,
 				0AAF415A2354FAE9000E3CC8 /* main.m */,
 			);
 			path = MGLKitSampleApp;
@@ -552,10 +778,30 @@
 			buildRules = (
 			);
 			dependencies = (
+				0A8BCFAA2406EF0E00600A41 /* PBXTargetDependency */,
 			);
 			name = MGLPaint;
 			productName = MGLPaint;
 			productReference = 0A28CD22235787370081BB84 /* MGLPaint.app */;
+			productType = "com.apple.product-type.application";
+		};
+		0A90FA3424068853005BA9A8 /* MGLKitSampleApp_mac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0A90FA7D24068856005BA9A8 /* Build configuration list for PBXNativeTarget "MGLKitSampleApp_mac" */;
+			buildPhases = (
+				0A90FA3124068853005BA9A8 /* Sources */,
+				0A90FA3224068853005BA9A8 /* Frameworks */,
+				0A90FA3324068853005BA9A8 /* Resources */,
+				0A90FA8F24068F03005BA9A8 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				0A8BCFAE2406EF1600600A41 /* PBXTargetDependency */,
+			);
+			name = MGLKitSampleApp_mac;
+			productName = MGLKitSampleApp_mac;
+			productReference = 0A90FA3524068853005BA9A8 /* MGLKitSampleApp_mac.app */;
 			productType = "com.apple.product-type.application";
 		};
 		0A9A6BAB2391283B006A152A /* MGLKitSampleApp_ios9.0 */ = {
@@ -570,6 +816,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				0A8BCFAC2406EF1200600A41 /* PBXTargetDependency */,
 			);
 			name = MGLKitSampleApp_ios9.0;
 			productName = MGLKitSampleApp;
@@ -588,6 +835,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				0A8BCF692406EF0A00600A41 /* PBXTargetDependency */,
 			);
 			name = MGLKitSampleApp;
 			productName = MGLKitSampleApp;
@@ -605,6 +853,9 @@
 				TargetAttributes = {
 					0A28CD21235787370081BB84 = {
 						CreatedOnToolsVersion = 11.0;
+					};
+					0A90FA3424068853005BA9A8 = {
+						CreatedOnToolsVersion = 11.3.1;
 					};
 					0AAF41452354FAE8000E3CC8 = {
 						CreatedOnToolsVersion = 11.0;
@@ -633,11 +884,152 @@
 				0AAF41452354FAE8000E3CC8 /* MGLKitSampleApp */,
 				0A28CD21235787370081BB84 /* MGLPaint */,
 				0A9A6BAB2391283B006A152A /* MGLKitSampleApp_ios9.0 */,
+				0A90FA3424068853005BA9A8 /* MGLKitSampleApp_mac */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXReferenceProxy section */
+		0A8BCF962406EF0A00600A41 /* hello_triangle_mac.app */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.application;
+			path = hello_triangle_mac.app;
+			remoteRef = 0A8BCF952406EF0A00600A41 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		0A8BCF982406EF0A00600A41 /* multi_texture_mac.app */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.application;
+			path = multi_texture_mac.app;
+			remoteRef = 0A8BCF972406EF0A00600A41 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		0A8BCF9A2406EF0A00600A41 /* particle_system_mac.app */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.application;
+			path = particle_system_mac.app;
+			remoteRef = 0A8BCF992406EF0A00600A41 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		0A8BCF9C2406EF0A00600A41 /* simple_texture_2d_mac.app */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.application;
+			path = simple_texture_2d_mac.app;
+			remoteRef = 0A8BCF9B2406EF0A00600A41 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		0A8BCF9E2406EF0A00600A41 /* simple_texture_cubemap_mac.app */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.application;
+			path = simple_texture_cubemap_mac.app;
+			remoteRef = 0A8BCF9D2406EF0A00600A41 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		0A8BCFA02406EF0A00600A41 /* simple_vertex_shader_mac.app */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.application;
+			path = simple_vertex_shader_mac.app;
+			remoteRef = 0A8BCF9F2406EF0A00600A41 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		0A8BCFA22406EF0A00600A41 /* texture_wrap_mac.app */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.application;
+			path = texture_wrap_mac.app;
+			remoteRef = 0A8BCFA12406EF0A00600A41 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		0A8BCFA42406EF0A00600A41 /* mip_map_2d_mac.app */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.application;
+			path = mip_map_2d_mac.app;
+			remoteRef = 0A8BCFA32406EF0A00600A41 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		0A8BCFA62406EF0A00600A41 /* stencil_operations_mac.app */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.application;
+			path = stencil_operations_mac.app;
+			remoteRef = 0A8BCFA52406EF0A00600A41 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		0A8BCFA82406EF0A00600A41 /* tri_fan_microbench_mac.app */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.application;
+			path = tri_fan_microbench_mac.app;
+			remoteRef = 0A8BCFA72406EF0A00600A41 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		0A90FA6A24068856005BA9A8 /* MetalANGLE.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = MetalANGLE.framework;
+			remoteRef = 0A90FA6924068856005BA9A8 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		0A90FA6C24068856005BA9A8 /* libangle_metal_backend_mac.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libangle_metal_backend_mac.a;
+			remoteRef = 0A90FA6B24068856005BA9A8 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		0A90FA6E24068856005BA9A8 /* libangle_gl_backend_mac.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libangle_gl_backend_mac.a;
+			remoteRef = 0A90FA6D24068856005BA9A8 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		0A90FA7024068856005BA9A8 /* libangle_image_util_mac.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libangle_image_util_mac.a;
+			remoteRef = 0A90FA6F24068856005BA9A8 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		0A90FA7224068856005BA9A8 /* libglslang_mac.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libglslang_mac.a;
+			remoteRef = 0A90FA7124068856005BA9A8 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		0A90FA7424068856005BA9A8 /* libspirv-cross_mac.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = "libspirv-cross_mac.a";
+			remoteRef = 0A90FA7324068856005BA9A8 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		0A90FA7624068856005BA9A8 /* libjsoncpp_mac.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libjsoncpp_mac.a;
+			remoteRef = 0A90FA7524068856005BA9A8 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		0A90FA7824068856005BA9A8 /* libangle_util_mac.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libangle_util_mac.a;
+			remoteRef = 0A90FA7724068856005BA9A8 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		0A90FA7A24068856005BA9A8 /* libangle_common_mac.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libangle_common_mac.a;
+			remoteRef = 0A90FA7924068856005BA9A8 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		0A90FA7C24068856005BA9A8 /* sample_util_mac.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = sample_util_mac.framework;
+			remoteRef = 0A90FA7B24068856005BA9A8 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
 		0A9A6BDD2391283C006A152A /* libangle_gl_backend.a */ = {
 			isa = PBXReferenceProxy;
 			fileType = archive.ar;
@@ -823,6 +1215,18 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		0A90FA3324068853005BA9A8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0A90FA822406896B005BA9A8 /* Main_mac.storyboard in Resources */,
+				0A90FA8924068E01005BA9A8 /* tile_floor.png in Resources */,
+				0A90FA8824068DFD005BA9A8 /* item_powerup_fish.png in Resources */,
+				0A90FA8624068B4E005BA9A8 /* SimpleFragment.glsl in Resources */,
+				0A90FA8724068B51005BA9A8 /* SimpleVertex.glsl in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		0A9A6BB62391283B006A152A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -868,6 +1272,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		0A90FA3124068853005BA9A8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0A90FA8C24068E14005BA9A8 /* CC3Kazmath.c in Sources */,
+				0A90FA8324068A8C005BA9A8 /* AppDelegate.m in Sources */,
+				0A90FA8524068A91005BA9A8 /* main.m in Sources */,
+				0A90FA8A24068E0D005BA9A8 /* CC3Foundation.m in Sources */,
+				0A90FA8B24068E10005BA9A8 /* CC3GLMatrix.m in Sources */,
+				0A90FA8D24068E17005BA9A8 /* CC3Math.m in Sources */,
+				0A90FA8424068A8E005BA9A8 /* GLViewController.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		0A9A6BAC2391283B006A152A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -898,6 +1316,29 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		0A8BCF692406EF0A00600A41 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = MetalANGLE;
+			targetProxy = 0A8BCF682406EF0A00600A41 /* PBXContainerItemProxy */;
+		};
+		0A8BCFAA2406EF0E00600A41 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = MetalANGLE;
+			targetProxy = 0A8BCFA92406EF0E00600A41 /* PBXContainerItemProxy */;
+		};
+		0A8BCFAC2406EF1200600A41 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = MetalANGLE;
+			targetProxy = 0A8BCFAB2406EF1200600A41 /* PBXContainerItemProxy */;
+		};
+		0A8BCFAE2406EF1600600A41 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = MetalANGLE_mac;
+			targetProxy = 0A8BCFAD2406EF1600600A41 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin PBXVariantGroup section */
 		0A28CD2D235787370081BB84 /* Main.storyboard */ = {
 			isa = PBXVariantGroup;
@@ -913,6 +1354,14 @@
 				0A28CD332357873A0081BB84 /* Base */,
 			);
 			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+		0A90FA802406896B005BA9A8 /* Main_mac.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				0A90FA812406896B005BA9A8 /* Base */,
+			);
+			name = Main_mac.storyboard;
 			sourceTree = "<group>";
 		};
 		0AAF41512354FAE8000E3CC8 /* Main.storyboard */ = {
@@ -977,6 +1426,50 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTS_MACCATALYST = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		0A90FA4624068856005BA9A8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = MGLKitSampleApp/MGLKitSampleApp.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = MGLKitSampleApp/Info_mac.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.hqgame.MGLKitSampleApp-mac";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		0A90FA4724068856005BA9A8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = MGLKitSampleApp/MGLKitSampleApp.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = MGLKitSampleApp/Info_mac.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.hqgame.MGLKitSampleApp-mac";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
 			};
 			name = Release;
 		};
@@ -1200,6 +1693,15 @@
 			buildConfigurations = (
 				0A28CD382357873A0081BB84 /* Debug */,
 				0A28CD392357873A0081BB84 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		0A90FA7D24068856005BA9A8 /* Build configuration list for PBXNativeTarget "MGLKitSampleApp_mac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0A90FA4624068856005BA9A8 /* Debug */,
+				0A90FA4724068856005BA9A8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

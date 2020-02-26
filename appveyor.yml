@@ -10,7 +10,7 @@ before_build:
   - gn gen out/release --args="angle_enable_gl=false is_debug=false strip_absolute_paths_from_debug_symbols=true"
 
 build_script:
-  - SUPPORTS_MACCATALYST=YES ios/xcode/travis_build.sh Release macosx
+  - SUPPORTS_MACCATALYST=YES ios/xcode/travis_build_ios.sh Release macosx
   - ninja -C out/release angle_end2end_tests angle_deqp_gles2_tests hello_triangle
 
 test: off

@@ -12,7 +12,29 @@
 
 #import "GLViewController.h"
 
+#if TARGET_OS_OSX
+// macOS emulation of UIImage
+#import <AppKit/NSImage.h>
+
+typedef NSImage MGLKNativeImage;
+
+@interface NSImage (MGLK)
+- (CGImageRef) CGImage;
+@end
+
+@implementation NSImage (MGLK)
+- (CGImageRef) CGImage
+{
+    CGRect rect = CGRectMake(0, 0, self.size.width, self.size.height);
+    return [self CGImageForProposedRect:&rect context:nil hints:nil];
+}
+@end
+
+#else  // TARGET_OS_OSX
 #import <UIKit/UIImage.h>
+
+typedef UIImage MGLKNativeImage;
+#endif  // TARGET_OS_OSX
 
 #include <MetalANGLE/GLES2/gl2.h>
 
@@ -232,7 +254,7 @@ const GLubyte Indices2[] = {1, 0, 2, 3};
 {
 
     // 1
-    CGImageRef spriteImage = [UIImage imageNamed:fileName].CGImage;
+    CGImageRef spriteImage = [MGLKNativeImage imageNamed:fileName].CGImage;
     if (!spriteImage)
     {
         NSLog(@"Failed to load image %@", fileName);

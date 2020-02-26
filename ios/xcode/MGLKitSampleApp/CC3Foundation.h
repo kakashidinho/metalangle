@@ -49,8 +49,6 @@
 
 /* Base library of definitions and functions for operating in a 3D world. */
 
-#import <UIKit/UIColor.h>
-
 #import "CC3Logging.h"
 #import "CC3Math.h"
 #import "ccTypes.h"
@@ -559,17 +557,5 @@ GLubyte CCColorByteFromFloat(GLfloat colorValue);
  * Invokes the copy method to create a copy of this instance, autoreleases it, and returns it.
  */
 - (id)copyAutoreleased;
-
-@end
-
-/** Extension category to support cocos3d functionality. */
-@interface UIColor (CC3)
-
-/** Returns a transparent ccColor4F struct containing the RGBA values for this color. */
-- (ccColor4F)asCCColor4F;
-
-/** Returns an autoreleased UIColor instance created from the RGBA values in the specified
- * ccColor4F. */
-+ (UIColor *)colorWithCCColor4F:(ccColor4F)rgba;
 
 @end

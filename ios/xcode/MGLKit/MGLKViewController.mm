@@ -4,21 +4,25 @@
 // found in the LICENSE file.
 //
 
-#import "MGLKViewController.h"
+#import "MGLKViewController+Private.h"
 
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <EGL/eglext_angle.h>
+#include <EGL/eglplatform.h>
 #include <common/apple_platform_utils.h>
+#include <common/debug.h>
 
-@interface MGLKViewController () {
-    __weak MGLKView *_glView;
-    CADisplayLink *_displayLink;
-    CFTimeInterval _lastUpdateTime;
-
-    BOOL _appWasInBackground;
-}
-
-@end
+#import "MGLDisplay.h"
+#import "MGLKView+Private.h"
 
 @implementation MGLKViewController
+
+#if TARGET_OS_OSX
+#    include "MGLKViewController+Mac.mm"
+#else
+#    include "MGLKViewController+iOS.mm"
+#endif
 
 - (instancetype)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
 {
@@ -45,33 +49,28 @@
 
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(appWillPause:)
-                                                 name:UIApplicationWillResignActiveNotification
+                                                 name:MGLKApplicationWillResignActiveNotification
                                                object:nil];
 
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(appDidBecomeActive:)
-                                                 name:UIApplicationDidBecomeActiveNotification
+                                                 name:MGLKApplicationDidBecomeActiveNotification
                                                object:nil];
 }
 
 - (void)dealloc
 {
     [[NSNotificationCenter defaultCenter] removeObserver:self
-                                                    name:UIApplicationWillResignActiveNotification
+                                                    name:MGLKApplicationWillResignActiveNotification
                                                   object:nil];
 
     [[NSNotificationCenter defaultCenter] removeObserver:self
-                                                    name:UIApplicationDidBecomeActiveNotification
+                                                    name:MGLKApplicationDidBecomeActiveNotification
                                                   object:nil];
+    [self deallocImpl];
 }
 
-- (void)viewDidLoad
-{
-    [super viewDidLoad];
-    [self resume];
-}
-
-- (void)setView:(UIView *)view
+- (void)setView:(MGLKNativeView *)view
 {
     [super setView:view];
     if ([view isKindOfClass:MGLKView.class])
@@ -79,31 +78,26 @@
         _glView = (MGLKView *)view;
         if (!_glView.delegate)
         {
+            // If view has no delegate, set this controller as its delegate
             _glView.delegate = self;
         }
+        // Store this object inside the view itself so that the view can notify
+        // this controller about certain events such as moving to new window.
+        _glView.controller = self;
     }
     else
     {
+        if (_glView.delegate == self)
+        {
+            // Detach from old view
+            _glView.delegate = nil;
+        }
+        if (_glView.controller == self)
+        {
+            _glView.controller = nil;
+        }
         _glView = nil;
     }
-}
-
-- (void)setPreferredFramesPerSecond:(NSInteger)preferredFramesPerSecond
-{
-    _preferredFramesPerSecond = preferredFramesPerSecond;
-    if (_displayLink)
-    {
-        if (ANGLE_APPLE_AVAILABLE_CI(13.0, 10.0))
-        {
-            _displayLink.preferredFramesPerSecond = _preferredFramesPerSecond;
-        }
-        else
-        {
-            _displayLink.frameInterval = 60 / _preferredFramesPerSecond;
-        }
-    }
-    [self pause];
-    [self resume];
 }
 
 - (void)mglkView:(MGLKView *)view drawInRect:(CGRect)rect
@@ -113,45 +107,15 @@
 
 - (void)appWillPause:(NSNotification *)note
 {
+    NSLog(@"MGLKViewController appWillPause:");
     _appWasInBackground = YES;
     [self pause];
 }
 
 - (void)appDidBecomeActive:(NSNotification *)note
 {
+    NSLog(@"MGLKViewController appDidBecomeActive:");
     [self resume];
-}
-
-- (void)pause
-{
-    if (_displayLink)
-    {
-        [_displayLink removeFromRunLoop:[NSRunLoop mainRunLoop] forMode:NSDefaultRunLoopMode];
-        _displayLink = nil;
-    }
-}
-
-- (void)resume
-{
-    [self pause];
-
-    if (!_displayLink)
-    {
-        _displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(frameStep)];
-        if (ANGLE_APPLE_AVAILABLE_CI(13.0, 10.0))
-        {
-            _displayLink.preferredFramesPerSecond = _preferredFramesPerSecond;
-        }
-        else
-        {
-            _displayLink.frameInterval = 60 / _preferredFramesPerSecond;
-        }
-    }
-
-    if (_glView)
-    {
-        [_displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSDefaultRunLoopMode];
-    }
 }
 
 - (void)handleAppWasInBackground
@@ -176,6 +140,17 @@
 
     [self update];
     [_glView display];
+
+    if (_needDisableVsync)
+    {
+        eglSwapInterval([MGLDisplay defaultDisplay].eglDisplay, 0);
+        _needDisableVsync = NO;
+    }
+    else if (_needEnableVsync)
+    {
+        eglSwapInterval([MGLDisplay defaultDisplay].eglDisplay, 1);
+        _needEnableVsync = NO;
+    }
 
     _framesDisplayed++;
     _lastUpdateTime = now;

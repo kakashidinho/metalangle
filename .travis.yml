@@ -3,6 +3,7 @@ os: osx
 before_install:
   - git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git $HOME/depot_tools
   - gem install xcpretty
+  - npm install -g github-release-cli
 
 before_script:
   - export PATH=$PATH:$HOME/depot_tools
@@ -12,18 +13,33 @@ before_script:
 
 jobs:
   include:
-  - name: "ios xcode 9.4"
-    python: "3.5"
-    env: CMD="ios/xcode/travis_build.sh Release"
-    osx_image: xcode9.4
   - name: "ios xcode 11.2"
     python: "3.5"
-    env: CMD="ios/xcode/travis_build.sh Release"
+    env: CMD="ios/xcode/travis_build_ios.sh Release"
     osx_image: xcode11.2
-  - name: "macos xcode 9.4"
+  - name: "macos xcode project 11.2"
+    python: "3.5"
+    env: CMD="mac/xcode/travis_build_mac.sh Release"
+    osx_image: xcode11.2
+  - name: "macos gn xcode 9.4"
     python: "3.5"
     env: CMD="ninja -j 2 -C out/release angle_end2end_tests angle_deqp_gles2_tests hello_triangle"
+    osx_image: xcode9.4
+  - name: "ios xcode 9.4"
+    python: "3.5"
+    env: CMD="ios/xcode/travis_build_ios.sh Release"
+    osx_image: xcode9.4
+  - name: "macos xcode project 9.4"
+    python: "3.5"
+    env: CMD="mac/xcode/travis_build_mac.sh Release"
     osx_image: xcode9.4
 
 script:
   - $CMD
+
+env:
+  global:
+    secure: ZkKZ1qrKGtkYllW4ETjTk57rz4+63DaNYDP9i6MhvKNVpWNxhVt4ACabeO2cdMSzWduipMi67GxhqESoF6U7jm+eZRdWsMsL6TQ7riM44JglcnPoThczAypeSRIl/JoBv63mtTGKMHexaA2unvwqDZXhUcaYNrr/zkkJ8euMv2z8SuzcinYBVsqb6QL0LA7OhfAyq7Odx75WX2UrcDUERN79zM2fm0wBcVxC3zzdcR5Z5jr4N7aYgVCrMPwKnlpo/p848xGB+8xjXh7NCzoq9WlkL8GHWPF2NCCC2XNUHmC3Q+ztPtLN4blcoRLuZEt/8Wpf0pApAe3cnXnVB5CoBZa0vsbOqLWQYE1cKGIGM5j6xg1yy5G+eQ0E1j/IlCc7cVtBHQWZzOLRv+AcfphryC60XE23Nn1YhsjVi4gv1AcsxAinlNAVojdtKEbx0Gf9gIomupwYhSGirS6jye7EhCAGCKSBBH75zSCAnDwWql99wV7ytJIsw9jth+Qgj30CkVUS7vrAOCQWX7pcisdlO23wnp+BiRr8SlrEECjG8NUDNo71J2A8ezpeJDcEqfR+F/9oNThCFw/AopfB5Zs8g/eFI/pcvrVfU3LYPlfEuXWB1XDBPUupKt5s9gPoQSS2aIOIsTCz079YcHygZro44/PB1hi0rU4cm3h8KUKs10k=
+
+after_failure:
+  - ios/xcode/travis_upload_log.sh

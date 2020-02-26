@@ -4,7 +4,8 @@
 // found in the LICENSE file.
 //
 
-#import "MGLKView.h"
+#import "MGLKView+Private.h"
+#import "MGLKViewController+Private.h"
 
 namespace
 {
@@ -14,20 +15,18 @@ void Throw(NSString *msg)
 }
 }
 
-@interface MGLKView ()
-
-@property(atomic) BOOL drawing;
-@property(nonatomic, weak) MGLLayer *glLayer;
-
-@end
-
 @implementation MGLKView
 
 - (id)initWithCoder:(NSCoder *)coder
 {
     if (self = [super initWithCoder:coder])
     {
+#if TARGET_OS_OSX
+        self.wantsLayer       = YES;
+        self.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
+#else
         self.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+#endif
     }
     return self;
 }
@@ -36,7 +35,12 @@ void Throw(NSString *msg)
 {
     if (self = [super initWithFrame:frame])
     {
+#if TARGET_OS_OSX
+        self.wantsLayer       = YES;
+        self.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
+#else
         self.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+#endif
     }
     return self;
 }
@@ -46,10 +50,17 @@ void Throw(NSString *msg)
     _context = nil;
 }
 
+#if TARGET_OS_OSX
+- (CALayer *)makeBackingLayer
+{
+    return [MGLLayer layer];
+}
+#else
 + (Class)layerClass
 {
     return MGLLayer.class;
 }
+#endif
 
 - (MGLLayer *)glLayer
 {
@@ -100,6 +111,23 @@ void Throw(NSString *msg)
         return zero;
     }
     return self.glLayer.drawableSize;
+}
+
+#if TARGET_OS_OSX
+- (void)viewDidMoveToWindow
+{
+    [super viewDidMoveToWindow];
+#else
+- (void)didMoveToWindow
+{
+    [super didMoveToWindow];
+#endif
+
+    // notify view controller
+    if (_controller)
+    {
+        [_controller viewDidMoveToWindow];
+    }
 }
 
 - (void)drawRect:(CGRect)rect

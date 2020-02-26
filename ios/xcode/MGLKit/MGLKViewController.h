@@ -16,11 +16,16 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
-@interface MGLKViewController : UIViewController <MGLKViewDelegate>
+@interface MGLKViewController : MGLKNativeViewController <MGLKViewDelegate>
 
 @property(nonatomic, assign) IBOutlet id<MGLKViewControllerDelegate> delegate;
 
-// The default value is 30
+// The default value is 30.
+// On iOS:
+//  - Setting to 0 or 1 will sync the framerate with display's refresh rate
+// On macOS:
+//  - Setting to 1 will sync the framerate with display's refresh rate
+//  - Setting to 0 will display the frames as fast as possible.
 @property(nonatomic) NSInteger preferredFramesPerSecond;
 
 @property(nonatomic, readonly) NSInteger framesDisplayed;

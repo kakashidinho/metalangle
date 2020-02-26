@@ -21,7 +21,7 @@
 
 // NOTE: do not subclass this class, use delegate if needed to override
 // the drawing method.
-@interface MGLKView : UIView
+@interface MGLKView : MGLKNativeView
 
 @property(nonatomic) MGLContext *context;
 @property(nonatomic, assign) IBOutlet id<MGLKViewDelegate> delegate;

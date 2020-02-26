@@ -18,8 +18,11 @@ On all platforms:
 
 For MacOS build:
 
- * GN is the build system.  GYP support has been removed. GN is available through depot_tools installation.
+ * GN is the default build system.  GYP support has been removed. GN is available through depot_tools installation.
  * Clang will be set up by the build system and used by default.
+ * __Optionally__, an Xcode project named `OpenGLES.xcodeproj` is provided in `mac/xcode` directory.
+   This is for convenience only. GN is still the recommended build system since it contains full
+   test targets to verify MetalANGLE and is actively maintained.
 
 For iOS build:
 
@@ -55,6 +58,8 @@ remove this code snippets:
 ```
 
 ### Building MacOS version
+
+##### Default ANGLE build system
 After getting the source successfully, you are ready to generate the ninja files:
 ```
 gn gen out/Debug --ide=xcode --args='mac_deployment_target="10.13" angle_enable_metal=true'
@@ -81,10 +86,18 @@ ninja -C out/Release
 Ninja automatically calls GN to regenerate the build files on any configuration change.
 Ensure `depot_tools` is in your path as it provides ninja.
 
+##### Xcode build project
+An Xcode project is also provided for your convenience. It can build `MetalANGLE.framework` and
+several sample apps:
+
+- Open `OpenGLES.xcodeproj` in `mac/xcode` folder.
+- The target `MetalANGLE` will build OpenGL ES framework named `MetalANGLE.framework`.
+- If you want to build the sample app using [MGLKit](#MGLKit) library. Open `MGKitSamples.xcodeproj` instead of `OpenGLES.xcodeproj`, DO NOT open both at the same time. As `MGKitSamples.xcodeproj` will open the `OpenGLES.xcodeproj` inside its workspace.
+
 ### Building iOS version
 - Open `OpenGLES.xcodeproj` in `ios/xcode` folder.
 - The target `MetalANGLE` will build OpenGL ES framework named `MetalANGLE.framework`.
-- Note: in order to test sample apps on real devices. You have to change their Bundle Identifier in XCode to something you like, since only one development team can use one ID at a time. And this is global restriction across the globes. Once one person install the sample apps using his Apple developer profile, the ID configured will be registered for that developer only. And no other developers can use that ID to install to their device anymore.
+- __Note__: in order to test sample apps on real devices. You have to change their Bundle Identifier in XCode to something you like, since only one development team can use one ID at a time. And this is global restriction across the globes. Once one person install the sample apps using his Apple developer profile, the ID configured will be registered for that developer only. And no other developers can use that ID to install to their device anymore.
 - If you want to build the sample app using [MGLKit](#MGLKit) library. Open `MGKitSamples.xcodeproj` instead of `OpenGLES.xcodeproj`, DO NOT open both at the same time. As `MGKitSamples.xcodeproj`will open the `OpenGLES.xcodeproj` inside its workspace.
 
 ## Application Development with ANGLE
@@ -100,14 +113,15 @@ Currently, iOS version cannot choose other renderer other than the default (Meta
 
 Configure your build environment to have access to the `include` folder to provide access to the standard Khronos EGL and GLES2 header files.
 
-#### On MacOS
+#### On MacOS (using default ANGLE build system to build MetalANGLE)
 
  - Configure your build environment to have access to `libEGL.dylib` and `libGLESv2.dylib` found in the build output directory (see [Building ANGLE](#Building-MacOS-version)).
  - Link you application against `libGLESv2.dylib` and `libEGL.dylib`.
  - Code your application to the Khronos [OpenGL ES 2.0](http://www.khronos.org/registry/gles/) and [EGL 1.4](http://www.khronos.org/registry/egl/) APIs.
 
-#### On iOS
+#### On iOS and MacOS (using provided Xcode project to build MetalANGLE)
 
  - Link you application against `MetalANGLE.framework`.
+
 ##### MGLKit
  - `MetalANGLE.framework` also contains MGLKit utilities classes such as `MGLContext`, `MGLLayer`, `MGLKView`, `MGLKViewController`, similar to Apple's provided GLKit classes such as `CAEAGLContext`, `CAEAGLLayer`, `GLKView`, `GLKViewController`. Please see the sample app making use of this MGLKit classes in `MGLKitSamples.xcodeproj`

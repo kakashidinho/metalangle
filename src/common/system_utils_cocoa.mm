@@ -4,7 +4,11 @@
 // found in the LICENSE file.
 //
 
-// system_utils_ios.mm: Implementation of OS-specific functions for iOS
+// system_utils_cocoa.mm: Implementation of OS-specific functions for Apple's
+// iOS and macOS apps running on Cocoa frameworks.
+// This file is different from system_utils_mac.cpp is that system_utils_mac.cpp
+// is used for traditional command line apps using .dylib as shared library.
+// While this file is used for Cocoa app bundles that embed .framework as shared libraries.
 
 #include "system_utils.h"
 
@@ -93,10 +97,10 @@ bool RunApp(const std::vector<const char *> &args,
     return false;
 }
 
-class IOSLibrary : public Library
+class FrameworkLibrary : public Library
 {
   public:
-    IOSLibrary(const char *libraryName)
+    FrameworkLibrary(const char *libraryName)
     {
         char buffer[4096];
         int ret = snprintf(buffer, 4096, "%s/%s.framework/%s",
@@ -108,7 +112,7 @@ class IOSLibrary : public Library
         }
     }
 
-    ~IOSLibrary() override
+    ~FrameworkLibrary() override
     {
         if (mModule)
         {
@@ -134,7 +138,7 @@ class IOSLibrary : public Library
 
 Library *OpenSharedLibrary(const char *libraryName, SearchType searchType)
 {
-    return new IOSLibrary(libraryName);
+    return new FrameworkLibrary(libraryName);
 }
 
 bool IsDirectory(const char *filename)

@@ -23,6 +23,7 @@ invoke_xcodebuild()
 {
     TARGET=$1
 
+    ERR=0
     xcodebuild build \
                -project MGLKitSamples.xcodeproj \
                -scheme $TARGET  \
@@ -33,13 +34,26 @@ invoke_xcodebuild()
                CODE_SIGNING_REQUIRED=NO \
                CODE_SIGNING_ALLOWED=NO \
                $QUIET \
-               | xcpretty
+               |  tee xcodebuild.log | xcpretty && ERR=${PIPESTATUS[0]}
+
+    if [ ! "$ERR" = "0" ]; then
+        exit $ERR
+    fi
 }
 
 invoke_xcodebuild MGLKitSampleApp
 invoke_xcodebuild MGLPaint
 invoke_xcodebuild MGLKitSampleApp_ios9.0
 invoke_xcodebuild hello_triangle
+invoke_xcodebuild multi_texture
+invoke_xcodebuild particle_system
+invoke_xcodebuild simple_texture_2d
+invoke_xcodebuild simple_texture_cubemap
+invoke_xcodebuild simple_vertex_shader
+invoke_xcodebuild texture_wrap
+invoke_xcodebuild mip_map_2d
+invoke_xcodebuild stencil_operations
+invoke_xcodebuild tri_fan_microbench
 
 cd $CURRENR_DIR
 

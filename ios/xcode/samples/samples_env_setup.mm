@@ -16,6 +16,11 @@ __attribute__((constructor)) void SetEGLLibName()
 {
     @autoreleasepool
     {
+        NSLog(@"%s:%d Setting MetalANGLE framework search path for the sample app", __FILE__, __LINE__);
+
+#if TARGET_OS_OSX
+        angle::SetEnvironmentVar("ANGLE_EGL_LIBRARY_NAME", "MetalANGLE");
+#else
         NSString *pathMetalANGLEv13 = [[NSBundle mainBundle].privateFrameworksPath
             stringByAppendingPathComponent:@"MetalANGLE_ios_13.0.framework/MetalANGLE_ios_13.0"];
         NSString *pathMetalANGLE    = [[NSBundle mainBundle].privateFrameworksPath
@@ -29,6 +34,7 @@ __attribute__((constructor)) void SetEGLLibName()
         {
             angle::SetEnvironmentVar("ANGLE_EGL_LIBRARY_NAME", "MetalANGLE");
         }
+#endif  // TARGET_OS_OSX
     }
 }
 

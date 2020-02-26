@@ -11,7 +11,8 @@
 
 #import <Foundation/Foundation.h>
 #import <QuartzCore/CALayer.h>
-#import <UIKit/UIKit.h>
+
+#import "MGLKitPlatform.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

@@ -6,9 +6,14 @@
 //  Copyright © 2019 HQGame. All rights reserved.
 //
 
-#import <UIKit/UIKit.h>
 #import "AppDelegate.h"
 
+#if TARGET_OS_OSX
+int main(int argc, const char *argv[])
+{
+    return NSApplicationMain(argc, argv);
+}
+#else
 int main(int argc, char *argv[])
 {
     NSString *appDelegateClassName;
@@ -19,3 +24,4 @@ int main(int argc, char *argv[])
     }
     return UIApplicationMain(argc, argv, nil, appDelegateClassName);
 }
+#endif
