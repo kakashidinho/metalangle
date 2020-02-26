@@ -9975,6 +9975,7 @@
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				OTHER_CFLAGS = (
+					"-Wno-unguarded-availability",
 					"-Wno-nullability-completeness",
 					"$(inherited)",
 				);
@@ -9996,6 +9997,7 @@
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				OTHER_CFLAGS = (
+					"-Wno-unguarded-availability",
 					"-Wno-nullability-completeness",
 					"$(inherited)",
 				);
@@ -10325,6 +10327,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				OTHER_CFLAGS = (
+					"-Wno-unguarded-availability",
 					"-Wno-nullability-completeness",
 					"$(inherited)",
 				);
@@ -10349,6 +10352,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = "${inherited}";
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				OTHER_CFLAGS = (
+					"-Wno-unguarded-availability",
 					"-Wno-nullability-completeness",
 					"$(inherited)",
 				);
@@ -11832,6 +11836,7 @@
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				OTHER_CFLAGS = (
+					"-Wno-unguarded-availability",
 					"-Wno-nullability-completeness",
 					"$(inherited)",
 				);
@@ -11854,6 +11859,7 @@
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				OTHER_CFLAGS = (
+					"-Wno-unguarded-availability",
 					"-Wno-nullability-completeness",
 					"$(inherited)",
 				);
