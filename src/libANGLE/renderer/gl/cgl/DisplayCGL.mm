@@ -337,6 +337,9 @@ void DisplayCGL::generateExtensions(egl::DisplayExtensions *outExtensions) const
     // Contexts are virtualized so textures can be shared globally
     outExtensions->displayTextureShareGroup = true;
 
+    // Support any surface & context combination
+    outExtensions->flexibleSurfaceCompatibility = true;
+
     if (mSupportsGPUSwitching)
     {
         outExtensions->powerPreference = true;
