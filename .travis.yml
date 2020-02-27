@@ -14,19 +14,56 @@ before_script:
 jobs:
   include:
   - name: "ios xcode 11.2"
+    osx_image: xcode11.2
     python: "3.5"
     script:
-      - ios/xcode/travis_build_ios.sh Release
-    osx_image: xcode11.2
+      - ios/xcode/travis_build_ios.sh Release iphoneos ${TRAVIS_BUILD_DIR}/build_ios
+      - cd ${TRAVIS_BUILD_DIR}/build_ios/Build/Products/Release-iphoneos && zip --symlinks -r ${TRAVIS_BUILD_DIR}/MetalANGLE.framework.ios.zip MetalANGLE.framework
+
+    deploy:
+      provider: releases
+      api_key: ${GITHUB_TOKEN}
+      file: ${TRAVIS_BUILD_DIR}/MetalANGLE.framework.ios.zip
+      draft: true
+      skip_cleanup: true
+      overwrite: true
+      on:
+        tags: true
+
   - name: "macos xcode project 11.2"
+    osx_image: xcode11.2
     python: "3.5"
     script:
-      - mac/xcode/travis_build_mac.sh Release
-    osx_image: xcode11.2
-  - name: "macos gn xcode 9.4"
+      - mac/xcode/travis_build_mac.sh Release macosx ${TRAVIS_BUILD_DIR}/build_mac
+      - cd ${TRAVIS_BUILD_DIR}/build_mac/Build/Products/Release && zip --symlinks -r ${TRAVIS_BUILD_DIR}/MetalANGLE.framework.mac.zip MetalANGLE.framework
+    deploy:
+      provider: releases
+      api_key: ${GITHUB_TOKEN}
+      file: ${TRAVIS_BUILD_DIR}/MetalANGLE.framework.mac.zip
+      draft: true
+      skip_cleanup: true
+      overwrite: true
+      on:
+        tags: true
+
+  - name: "macos gn xcode 11.3"
+    osx_image: xcode11.3
     python: "3.5"
-    script: ninja -j 2 -C out/release angle_end2end_tests angle_deqp_gles2_tests hello_triangle
-    osx_image: xcode9.4
+    script:
+      - ninja -j 2 -C out/release angle_end2end_tests angle_deqp_gles2_tests hello_triangle
+      - cp -v out/release/*.dylib ./
+      - zip --symlinks -r MetalANGLE.dylib.mac.zip include libGLESv2.dylib libGLESv1_CM.dylib libEGL.dylib
+      - rm -v *.dylib
+    deploy:
+      provider: releases
+      api_key: ${GITHUB_TOKEN}
+      file: ${TRAVIS_BUILD_DIR}/MetalANGLE.dylib.mac.zip
+      draft: true
+      skip_cleanup: true
+      overwrite: true
+      on:
+        tags: true
+
   - name: "ios xcode 9.4"
     python: "3.5"
     script:
@@ -36,6 +73,11 @@ jobs:
     python: "3.5"
     script:
       - mac/xcode/travis_build_mac.sh Release
+    osx_image: xcode9.4
+  - name: "macos gn xcode 9.4"
+    python: "3.5"
+    script:
+      - ninja -j 2 -C out/release angle_end2end_tests angle_deqp_gles2_tests hello_triangle
     osx_image: xcode9.4
 
 env:

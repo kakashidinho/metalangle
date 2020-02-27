@@ -7,7 +7,8 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 CURRENR_DIR=$PWD
 CONFIGURATION=$1
 SDK=$2
-QUIET=$3
+OUTPUT_DIR=$3
+QUIET=$4
 
 if [ "$CONFIGURATION" = "" ]; then
     CONFIGURATION=Debug
@@ -15,6 +16,10 @@ fi
 
 if [ "$SDK" = "" ]; then
     SDK=macosx
+fi
+
+if [ ! "$OUTPUT_DIR" = "" ]; then
+    OUTPUT_DIR_OPTION="-derivedDataPath $OUTPUT_DIR"
 fi
 
 cd $SCRIPT_DIR
@@ -33,6 +38,7 @@ invoke_xcodebuild()
                CODE_SIGN_ENTITLEMENTS="" \
                CODE_SIGNING_REQUIRED=NO \
                CODE_SIGNING_ALLOWED=NO \
+               $OUTPUT_DIR_OPTION \
                $QUIET \
                |  tee xcodebuild.log | xcpretty && ERR=${PIPESTATUS[0]}
 
