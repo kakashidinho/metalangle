@@ -109,6 +109,7 @@ class CommandBuffer final : public WrappedObject<id<MTLCommandBuffer>>, angle::N
     void invalidateActiveCommandEncoder(CommandEncoder *encoder);
 
     id<MTLRenderCommandEncoder> makeMetalRenderCommandEncoder(const RenderPassDesc &desc);
+
   private:
     void set(id<MTLCommandBuffer> metalBuffer);
     void cleanup();
@@ -303,6 +304,7 @@ class BlitCommandEncoder final : public CommandEncoder
                                     MTLOrigin srcOrigin);
 
     BlitCommandEncoder &generateMipmapsForTexture(const TextureRef &texture);
+    BlitCommandEncoder &synchronizeResource(const BufferRef &buffer);
     BlitCommandEncoder &synchronizeResource(const TextureRef &texture);
 
   private:

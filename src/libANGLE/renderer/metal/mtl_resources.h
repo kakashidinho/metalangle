@@ -60,6 +60,9 @@ class Resource : angle::NonCopyable
 
     // Flag indicate whether we should synchornize the content to CPU after GPU changed this
     // resource's content.
+    bool isCPUReadMemNeedSync() const { return mUsageRef->cpuReadMemNeedSync; }
+    void resetCPUReadMemNeedSync() { mUsageRef->cpuReadMemNeedSync = false; }
+
     bool isCPUReadMemDirty() const { return mUsageRef->cpuReadMemDirty; }
     void resetCPUReadMemDirty() { mUsageRef->cpuReadMemDirty = false; }
 
@@ -67,6 +70,8 @@ class Resource : angle::NonCopyable
     Resource();
     // Share the GPU usage ref with other resource
     Resource(Resource *other);
+
+    void reset();
 
   private:
     struct UsageRef
@@ -77,6 +82,9 @@ class Resource : angle::NonCopyable
         // NOTE(hqle): resource dirty handle is not threadsafe.
         // This flag means the resource was issued to be modified by GPU, if CPU wants to read
         // its content, explicit synchornization call must be invoked.
+        bool cpuReadMemNeedSync = false;
+
+        // This flag is useful for BufferMtl to know whether it should update the shadow copy
         bool cpuReadMemDirty = false;
     };
 
@@ -157,7 +165,7 @@ class Texture final : public Resource,
     // Change the wrapped metal object. Special case for swapchain image
     void set(id<MTLTexture> metalTexture);
 
-    // sync content between CPU and GPU
+    // Explicitly sync content between CPU and GPU
     void syncContent(ContextMtl *context, mtl::BlitCommandEncoder *encoder);
 
   private:
@@ -182,7 +190,9 @@ class Texture final : public Resource,
     TextureRef mStencilView;
 };
 
-class Buffer final : public Resource, public WrappedObject<id<MTLBuffer>>
+class Buffer final : public Resource,
+                     public WrappedObject<id<MTLBuffer>>,
+                     public std::enable_shared_from_this<Buffer>
 {
   public:
     static angle::Result MakeBuffer(ContextMtl *context,
@@ -192,13 +202,23 @@ class Buffer final : public Resource, public WrappedObject<id<MTLBuffer>>
 
     angle::Result reset(ContextMtl *context, size_t size, const uint8_t *data);
 
+    const uint8_t *mapReadOnly(ContextMtl *context);
     uint8_t *map(ContextMtl *context);
+    uint8_t *map(ContextMtl *context, bool noSync);
+    uint8_t *map(ContextMtl *context, bool readonly, bool noSync);
+
     void unmap(ContextMtl *context);
+    void unmap(ContextMtl *context, size_t offsetWritten, size_t sizeWritten);
 
     size_t size() const;
 
+    // Explicitly sync content between CPU and GPU
+    void syncContent(ContextMtl *context, mtl::BlitCommandEncoder *encoder);
+
   private:
     Buffer(ContextMtl *context, size_t size, const uint8_t *data);
+
+    bool mMapReadOnly = true;
 };
 
 }  // namespace mtl

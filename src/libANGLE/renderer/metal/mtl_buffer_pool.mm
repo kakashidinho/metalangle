@@ -35,10 +35,44 @@ void BufferPool::initialize(ContextMtl *contextMtl,
                             size_t alignment,
                             size_t maxBuffers)
 {
-    destroy(contextMtl);
+    ANGLE_UNUSED_VARIABLE(commit(contextMtl));
+    releaseInFlightBuffers(contextMtl);
+
+    mSize = 0;
+    if (mBufferFreeList.size() && mInitialSize <= mBufferFreeList.front()->size())
+    {
+        // Instead of deleteing old buffers, we should reset them to avoid excessive
+        // memory re-allocations
+        if (maxBuffers && mBufferFreeList.size() > maxBuffers)
+        {
+            mBufferFreeList.resize(maxBuffers);
+            mBuffersAllocated = maxBuffers;
+        }
+
+        mSize = mBufferFreeList.front()->size();
+        for (size_t i = 0; i < mBufferFreeList.size(); ++i)
+        {
+            BufferRef &buffer = mBufferFreeList[i];
+            if (!buffer->isBeingUsedByGPU(contextMtl))
+            {
+                continue;
+            }
+            if (IsError(buffer->reset(contextMtl, mSize, nullptr)))
+            {
+                mBufferFreeList.clear();
+                mBuffersAllocated = 0;
+                mSize             = 0;
+                break;
+            }
+        }
+    }
+    else
+    {
+        mBufferFreeList.clear();
+        mBuffersAllocated = 0;
+    }
 
     mInitialSize = initialSize;
-    mSize        = 0;
 
     mMaxBuffers = maxBuffers;
 

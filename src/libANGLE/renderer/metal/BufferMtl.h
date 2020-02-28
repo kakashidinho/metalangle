@@ -115,7 +115,7 @@ class BufferMtl : public BufferImpl, public BufferHolderMtl
                                       gl::DrawElementsType type,
                                       size_t offset,
                                       size_t count,
-                                      std::pair<uint32_t, uint32_t> *outIndices) const;
+                                      std::pair<uint32_t, uint32_t> *outIndices);
 
     const uint8_t *getClientShadowCopyData(const gl::Context *context);
 
@@ -128,9 +128,17 @@ class BufferMtl : public BufferImpl, public BufferHolderMtl
                                                        gl::DrawElementsType type,
                                                        size_t offset);
 
+    // NOTE(hqle): If the buffer is modifed by GPU, this function must be explicitly
+    // called.
+    void markConversionBuffersDirty();
+
     size_t size() const { return static_cast<size_t>(mState.getSize()); }
 
   private:
+    angle::Result setDataImpl(const gl::Context *context,
+                              const void *data,
+                              size_t size,
+                              gl::BufferUsage usage);
     angle::Result setSubDataImpl(const gl::Context *context,
                                  const void *data,
                                  size_t size,
@@ -139,9 +147,9 @@ class BufferMtl : public BufferImpl, public BufferHolderMtl
     angle::Result commitShadowCopy(const gl::Context *context);
     angle::Result commitShadowCopy(const gl::Context *context, size_t size);
 
-    void markConversionBuffersDirty();
-
     void clearConversionBuffers();
+    void ensureShadowCopySyncedFromGPU(const gl::Context *context);
+    uint8_t *syncAndObtainShadowCopy(const gl::Context *context);
 
     // Client side shadow buffer
     angle::MemoryBuffer mShadowCopy;

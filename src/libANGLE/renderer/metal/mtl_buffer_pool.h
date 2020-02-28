@@ -70,6 +70,8 @@ class BufferPool
     size_t getAlignment() { return mAlignment; }
     void updateAlignment(ContextMtl *contextMtl, size_t alignment);
 
+    size_t getMaxBuffers() const { return mMaxBuffers; }
+
     // Set whether allocate() will always allocate new buffer or attempting to append to previous
     // buffer or not. Default is false.
     void setAlwaysAllocateNewBuffer(bool e) { mAlwaysAllocateNewBuffer = e; }

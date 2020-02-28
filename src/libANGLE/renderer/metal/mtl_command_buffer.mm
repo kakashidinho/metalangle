@@ -1000,6 +1000,21 @@ BlitCommandEncoder &BlitCommandEncoder::generateMipmapsForTexture(const TextureR
 
     return *this;
 }
+BlitCommandEncoder &BlitCommandEncoder::synchronizeResource(const BufferRef &buffer)
+{
+    if (!buffer)
+    {
+        return *this;
+    }
+
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
+    // Only MacOS has separated storage for resource on CPU and GPU and needs explicit
+    // synchronization
+    cmdBuffer().setReadDependency(buffer);
+    [get() synchronizeResource:buffer->get()];
+#endif
+    return *this;
+}
 BlitCommandEncoder &BlitCommandEncoder::synchronizeResource(const TextureRef &texture)
 {
     if (!texture)
@@ -1010,7 +1025,7 @@ BlitCommandEncoder &BlitCommandEncoder::synchronizeResource(const TextureRef &te
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
     // Only MacOS has separated storage for resource on CPU and GPU and needs explicit
     // synchronization
-    cmdBuffer().setWriteDependency(texture);
+    cmdBuffer().setReadDependency(texture);
     if (texture->get().parentTexture)
     {
         [get() synchronizeResource:texture->get().parentTexture];
