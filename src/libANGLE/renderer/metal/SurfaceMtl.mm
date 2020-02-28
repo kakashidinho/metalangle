@@ -444,7 +444,7 @@ angle::Result SurfaceMtl::ensureDepthStencilSizeCorrect(const gl::Context *conte
         ANGLE_TRY(mtl::Texture::Make2DTexture(contextMtl, mDepthFormat, size.width, size.height, 1,
                                               true, false, &mDepthTexture));
 
-        mDepthRenderTarget.set(mDepthTexture, 0, 0, mDepthFormat);
+        mDepthRenderTarget.reset(mDepthTexture, 0, 0, mDepthFormat);
     }
 
     if (mStencilFormat.valid() && (!mStencilTexture || mStencilTexture->size() != size))
@@ -459,7 +459,7 @@ angle::Result SurfaceMtl::ensureDepthStencilSizeCorrect(const gl::Context *conte
                                                   size.height, 1, true, false, &mStencilTexture));
         }
 
-        mStencilRenderTarget.set(mStencilTexture, 0, 0, mStencilFormat);
+        mStencilRenderTarget.reset(mStencilTexture, 0, 0, mStencilFormat);
     }
 
     return angle::Result::Continue;
@@ -515,7 +515,7 @@ angle::Result SurfaceMtl::obtainNextDrawable(const gl::Context *context)
         if (!mDrawableTexture)
         {
             mDrawableTexture = mtl::Texture::MakeFromMetal(mCurrentDrawable.get().texture);
-            mColorRenderTarget.set(mDrawableTexture, 0, 0, mColorFormat);
+            mColorRenderTarget.reset(mDrawableTexture, 0, 0, mColorFormat);
         }
         else
         {

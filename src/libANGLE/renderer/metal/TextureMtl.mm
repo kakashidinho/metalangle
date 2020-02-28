@@ -343,7 +343,7 @@ void TextureMtl::releaseTexture(bool releaseImages)
         {
             for (auto &mipRenderTarget : sliceRenderTargets.second)
             {
-                mipRenderTarget.set(nullptr);
+                mipRenderTarget.reset();
             }
         }
     }
@@ -427,7 +427,7 @@ angle::Result TextureMtl::ensureTextureCreated(const gl::Context *context)
             // directly.
             mTexImages[layer][mip] = mNativeTexture->createSliceMipView(layer, mip);
 
-            mTexImageRenderTargets[layer][mip].set(mTexImages[layer][mip], 0, 0, mFormat);
+            mTexImageRenderTargets[layer][mip].reset(mTexImages[layer][mip], 0, 0, mFormat);
         }
     }
 
@@ -936,7 +936,7 @@ angle::Result TextureMtl::redefineImage(const gl::Context *context,
                 UNREACHABLE();
         }
 
-        imageRtt.set(image, 0, 0, mtlFormat);
+        imageRtt.reset(image, 0, 0, mtlFormat);
     }
 
     // Make sure emulated channels are properly initialized

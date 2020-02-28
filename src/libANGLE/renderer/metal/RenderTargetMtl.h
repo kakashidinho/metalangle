@@ -32,11 +32,11 @@ class RenderTargetMtl final : public FramebufferAttachmentRenderTarget
     // Used in std::vector initialization.
     RenderTargetMtl(RenderTargetMtl &&other);
 
-    void set(const mtl::TextureRef &texture,
-             uint32_t level,
-             uint32_t layer,
-             const mtl::Format &format);
-    void set(const mtl::TextureRef &texture);
+    void reset(const mtl::TextureRef &texture,
+               uint32_t level,
+               uint32_t layer,
+               const mtl::Format &format);
+    void reset(const mtl::TextureRef &texture);
     void reset();
 
     mtl::TextureRef getTexture() const { return mTextureRenderTargetInfo->getTextureRef(); }

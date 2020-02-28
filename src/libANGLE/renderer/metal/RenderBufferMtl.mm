@@ -63,7 +63,7 @@ angle::Result RenderbufferMtl::setStorageImpl(const gl::Context *context,
                                               static_cast<uint32_t>(height), 1, false, false,
                                               &mTexture));
 
-        mRenderTarget.set(mTexture, 0, 0, mFormat);
+        mRenderTarget.reset(mTexture, 0, 0, mFormat);
     }
 
     return angle::Result::Continue;
