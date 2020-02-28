@@ -24,7 +24,7 @@ constexpr size_t kConvertedElementArrayBufferInitialSize = 1024 * 8;
 
 // The max size that we will use buffer pool for dynamic update.
 // If the buffer size exceeds this limit, we will use only one buffer instead of using the pool.
-constexpr size_t kDynamicBufferPoolMaxBufSize = 4 * 1024;
+constexpr size_t kDynamicBufferPoolMaxBufSize = 128 * 1024;
 
 template <typename IndexType>
 angle::Result GetFirstLastIndices(const IndexType *indices,
@@ -369,11 +369,11 @@ angle::Result BufferMtl::setDataImpl(const gl::Context *context,
             maxBuffers = 1;  // static/read buffer doesn't need high speed data update
             break;
         default:
-            // dynamic buffer, allow up to 3 update per frame/encoding without
+            // dynamic buffer, allow up to 10 update per frame/encoding without
             // waiting for GPU.
             if (adjustedSize <= kDynamicBufferPoolMaxBufSize)
             {
-                maxBuffers = 3;
+                maxBuffers = 10;
             }
             else
             {

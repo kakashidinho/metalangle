@@ -470,7 +470,16 @@ angle::Result Buffer::MakeBuffer(ContextMtl *context,
                                  const uint8_t *data,
                                  BufferRef *bufferOut)
 {
-    bufferOut->reset(new Buffer(context, size, data));
+    return MakeBuffer(context, false, size, data, bufferOut);
+}
+
+angle::Result Buffer::MakeBuffer(ContextMtl *context,
+                                 bool useSharedMem,
+                                 size_t size,
+                                 const uint8_t *data,
+                                 BufferRef *bufferOut)
+{
+    bufferOut->reset(new Buffer(context, useSharedMem, size, data));
 
     if (!bufferOut || !bufferOut->get())
     {
@@ -480,12 +489,17 @@ angle::Result Buffer::MakeBuffer(ContextMtl *context,
     return angle::Result::Continue;
 }
 
-Buffer::Buffer(ContextMtl *context, size_t size, const uint8_t *data)
+Buffer::Buffer(ContextMtl *context, bool useSharedMem, size_t size, const uint8_t *data)
 {
-    (void)reset(context, size, data);
+    (void)reset(context, useSharedMem, size, data);
 }
 
 angle::Result Buffer::reset(ContextMtl *context, size_t size, const uint8_t *data)
+{
+    return reset(context, false, size, data);
+}
+
+angle::Result Buffer::reset(ContextMtl *context, bool useSharedMem, size_t size, const uint8_t *data)
 {
     ANGLE_MTL_OBJC_SCOPE
     {
@@ -496,8 +510,15 @@ angle::Result Buffer::reset(ContextMtl *context, size_t size, const uint8_t *dat
 
         options = 0;
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        options |= MTLResourceStorageModeManaged;
+        if (!useSharedMem)
+        {
+            options |= MTLResourceStorageModeManaged;
+        }
+        else
 #endif
+        {
+            options |= MTLResourceStorageModeShared;
+        }
 
         if (data)
         {
@@ -563,7 +584,10 @@ void Buffer::unmap(ContextMtl *context)
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
     if (!mMapReadOnly)
     {
-        [get() didModifyRange:NSMakeRange(0, size())];
+        if (get().storageMode == MTLStorageModeManaged)
+        {
+            [get() didModifyRange:NSMakeRange(0, size())];
+        }
         mMapReadOnly = true;
     }
 #endif
@@ -573,7 +597,10 @@ void Buffer::unmap(ContextMtl *context, size_t offsetWritten, size_t sizeWritten
 {
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
     ASSERT(!mMapReadOnly);
-    [get() didModifyRange:NSMakeRange(offsetWritten, sizeWritten)];
+    if (get().storageMode == MTLStorageModeManaged)
+    {
+        [get() didModifyRange:NSMakeRange(offsetWritten, sizeWritten)];
+    }
     mMapReadOnly = true;
 #endif
 }

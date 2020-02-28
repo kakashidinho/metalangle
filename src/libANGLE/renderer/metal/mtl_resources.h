@@ -195,12 +195,22 @@ class Buffer final : public Resource,
                      public std::enable_shared_from_this<Buffer>
 {
   public:
+    // This function is equivalent to MakeBuffer(useSharedMem = false)
     static angle::Result MakeBuffer(ContextMtl *context,
                                     size_t size,
                                     const uint8_t *data,
                                     BufferRef *bufferOut);
 
+    static angle::Result MakeBuffer(ContextMtl *context,
+                                    bool useSharedMem,
+                                    size_t size,
+                                    const uint8_t *data,
+                                    BufferRef *bufferOut);
+
+    // This function is equivalent to reset(useSharedMem = false)
     angle::Result reset(ContextMtl *context, size_t size, const uint8_t *data);
+    angle::Result reset(ContextMtl *context, bool useSharedMem, size_t size,
+                        const uint8_t *data);
 
     const uint8_t *mapReadOnly(ContextMtl *context);
     uint8_t *map(ContextMtl *context);
@@ -216,7 +226,7 @@ class Buffer final : public Resource,
     void syncContent(ContextMtl *context, mtl::BlitCommandEncoder *encoder);
 
   private:
-    Buffer(ContextMtl *context, size_t size, const uint8_t *data);
+    Buffer(ContextMtl *context, bool useSharedMem, size_t size, const uint8_t *data);
 
     bool mMapReadOnly = true;
 };

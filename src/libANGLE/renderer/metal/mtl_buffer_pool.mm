@@ -17,8 +17,17 @@ namespace rx
 namespace mtl
 {
 
+namespace
+{
+// The max size of a buffer that will be allocated in shared memory
+constexpr size_t kSharedMemBufferMaxBufSize = 128 * 1024;
+}
+
 // BufferPool implementation.
 BufferPool::BufferPool(bool alwaysAllocNewBuffer)
+    : BufferPool(alwaysAllocNewBuffer, false)
+{}
+BufferPool::BufferPool(bool alwaysAllocNewBuffer, bool alwaysUseSharedMem)
     : mInitialSize(0),
       mBuffer(nullptr),
       mNextAllocationOffset(0),
@@ -26,7 +35,8 @@ BufferPool::BufferPool(bool alwaysAllocNewBuffer)
       mAlignment(1),
       mBuffersAllocated(0),
       mMaxBuffers(0),
-      mAlwaysAllocateNewBuffer(alwaysAllocNewBuffer)
+      mAlwaysAllocateNewBuffer(alwaysAllocNewBuffer),
+      mAlwaysUseSharedMem(alwaysUseSharedMem)
 
 {}
 
@@ -57,7 +67,8 @@ void BufferPool::initialize(ContextMtl *contextMtl,
             {
                 continue;
             }
-            if (IsError(buffer->reset(contextMtl, mSize, nullptr)))
+            bool useSharedMem = mAlwaysUseSharedMem || mSize <= kSharedMemBufferMaxBufSize;
+            if (IsError(buffer->reset(contextMtl, useSharedMem, mSize, nullptr)))
             {
                 mBufferFreeList.clear();
                 mBuffersAllocated = 0;
@@ -111,7 +122,8 @@ angle::Result BufferPool::allocateNewBuffer(ContextMtl *contextMtl)
         return angle::Result::Continue;
     }
 
-    ANGLE_TRY(Buffer::MakeBuffer(contextMtl, mSize, nullptr, &mBuffer));
+    bool useSharedMem = mAlwaysUseSharedMem || mSize <= kSharedMemBufferMaxBufSize;
+    ANGLE_TRY(Buffer::MakeBuffer(contextMtl, useSharedMem, mSize, nullptr, &mBuffer));
 
     ASSERT(mBuffer);
 
