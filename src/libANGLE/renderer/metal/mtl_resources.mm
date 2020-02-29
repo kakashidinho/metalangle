@@ -661,5 +661,11 @@ size_t Buffer::size() const
 {
     return get().length;
 }
+
+bool Buffer::useSharedMem() const
+{
+    return get().storageMode == MTLStorageModeShared;
+}
+
 }
 }

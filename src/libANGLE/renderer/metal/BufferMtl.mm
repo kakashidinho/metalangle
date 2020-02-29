@@ -367,6 +367,7 @@ angle::Result BufferMtl::setDataImpl(const gl::Context *context,
         case gl::BufferUsage::DynamicRead:
         case gl::BufferUsage::StreamRead:
             maxBuffers = 1;  // static/read buffer doesn't need high speed data update
+            mBufferPool.setAlwaysUseGPUMem();
             break;
         default:
             // dynamic buffer, allow up to 10 update per frame/encoding without
@@ -374,10 +375,12 @@ angle::Result BufferMtl::setDataImpl(const gl::Context *context,
             if (adjustedSize <= kDynamicBufferPoolMaxBufSize)
             {
                 maxBuffers = 10;
+                mBufferPool.setAlwaysUseSharedMem();
             }
             else
             {
                 maxBuffers = 1;
+                mBufferPool.setAlwaysUseGPUMem();
             }
             break;
     }

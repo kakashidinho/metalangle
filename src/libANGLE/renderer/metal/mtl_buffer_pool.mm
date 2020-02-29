@@ -20,12 +20,14 @@ namespace mtl
 namespace
 {
 // The max size of a buffer that will be allocated in shared memory
-constexpr size_t kSharedMemBufferMaxBufSize = 128 * 1024;
+constexpr size_t kSharedMemBufferMaxBufSizeHint = 128 * 1024;
 }
 
 // BufferPool implementation.
-BufferPool::BufferPool(bool alwaysAllocNewBuffer) : BufferPool(alwaysAllocNewBuffer, false) {}
-BufferPool::BufferPool(bool alwaysAllocNewBuffer, bool alwaysUseSharedMem)
+BufferPool::BufferPool(bool alwaysAllocNewBuffer)
+    : BufferPool(alwaysAllocNewBuffer, BufferPoolMemPolicy::Auto)
+{}
+BufferPool::BufferPool(bool alwaysAllocNewBuffer, BufferPoolMemPolicy policy)
     : mInitialSize(0),
       mBuffer(nullptr),
       mNextAllocationOffset(0),
@@ -33,8 +35,8 @@ BufferPool::BufferPool(bool alwaysAllocNewBuffer, bool alwaysUseSharedMem)
       mAlignment(1),
       mBuffersAllocated(0),
       mMaxBuffers(0),
-      mAlwaysAllocateNewBuffer(alwaysAllocNewBuffer),
-      mAlwaysUseSharedMem(alwaysUseSharedMem)
+      mMemPolicy(policy),
+      mAlwaysAllocateNewBuffer(alwaysAllocNewBuffer)
 
 {}
 
@@ -65,7 +67,7 @@ void BufferPool::initialize(ContextMtl *contextMtl,
             {
                 continue;
             }
-            bool useSharedMem = mAlwaysUseSharedMem || mSize <= kSharedMemBufferMaxBufSize;
+            bool useSharedMem = shouldAllocateInSharedMem();
             if (IsError(buffer->reset(contextMtl, useSharedMem, mSize, nullptr)))
             {
                 mBufferFreeList.clear();
@@ -89,6 +91,19 @@ void BufferPool::initialize(ContextMtl *contextMtl,
 }
 
 BufferPool::~BufferPool() {}
+
+bool BufferPool::shouldAllocateInSharedMem() const
+{
+    switch (mMemPolicy)
+    {
+        case BufferPoolMemPolicy::AlwaysSharedMem:
+            return true;
+        case BufferPoolMemPolicy::AlwaysGPUMem:
+            return false;
+        default:
+            return mSize <= kSharedMemBufferMaxBufSizeHint;
+    }
+}
 
 angle::Result BufferPool::allocateNewBuffer(ContextMtl *contextMtl)
 {
@@ -120,7 +135,7 @@ angle::Result BufferPool::allocateNewBuffer(ContextMtl *contextMtl)
         return angle::Result::Continue;
     }
 
-    bool useSharedMem = mAlwaysUseSharedMem || mSize <= kSharedMemBufferMaxBufSize;
+    bool useSharedMem = shouldAllocateInSharedMem();
     ANGLE_TRY(Buffer::MakeBuffer(contextMtl, useSharedMem, mSize, nullptr, &mBuffer));
 
     ASSERT(mBuffer);
@@ -225,7 +240,12 @@ void BufferPool::releaseInFlightBuffers(ContextMtl *contextMtl)
     for (auto &toRelease : mInFlightBuffers)
     {
         // If the dynamic buffer was resized we cannot reuse the retained buffer.
-        if (toRelease->size() < mSize)
+        if (toRelease->size() < mSize
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
+            // Also release buffer if it was allocated in different policy
+            || toRelease->useSharedMem() != shouldAllocateInSharedMem()
+#endif
+        )
         {
             toRelease = nullptr;
             mBuffersAllocated--;

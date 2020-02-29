@@ -238,6 +238,7 @@ class Buffer final : public Resource,
     void unmap(ContextMtl *context, size_t offsetWritten, size_t sizeWritten);
 
     size_t size() const;
+    bool useSharedMem() const;
 
     // Explicitly sync content between CPU and GPU
     void syncContent(ContextMtl *context, mtl::BlitCommandEncoder *encoder);
