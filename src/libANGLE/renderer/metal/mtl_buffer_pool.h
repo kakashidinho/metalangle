@@ -34,8 +34,8 @@ namespace mtl
 class BufferPool
 {
   public:
-    // - alwaysAllocNewBuffer=true will always allocate new buffer or reuse free buffer on allocate(),
-    // regardless of whether current buffer still has unused portion or not.
+    // - alwaysAllocNewBuffer=true will always allocate new buffer or reuse free buffer on
+    // allocate(), regardless of whether current buffer still has unused portion or not.
     // - alwaysUseSharedMem: indicate the allocated buffers should be in shared memory or not.
     // If this flag is false. Buffer pool will automatically use shared mem if buffer size is small.
     BufferPool(bool alwaysAllocNewBuffer = false);
@@ -81,6 +81,7 @@ class BufferPool
 
     // Set whether all subsequent allocated buffers should always use shared memory or not
     void setAlwaysUseSharedMem(bool e) { mAlwaysUseSharedMem = e; }
+
   private:
     void reset();
     angle::Result allocateNewBuffer(ContextMtl *contextMtl);

@@ -24,9 +24,7 @@ constexpr size_t kSharedMemBufferMaxBufSize = 128 * 1024;
 }
 
 // BufferPool implementation.
-BufferPool::BufferPool(bool alwaysAllocNewBuffer)
-    : BufferPool(alwaysAllocNewBuffer, false)
-{}
+BufferPool::BufferPool(bool alwaysAllocNewBuffer) : BufferPool(alwaysAllocNewBuffer, false) {}
 BufferPool::BufferPool(bool alwaysAllocNewBuffer, bool alwaysUseSharedMem)
     : mInitialSize(0),
       mBuffer(nullptr),

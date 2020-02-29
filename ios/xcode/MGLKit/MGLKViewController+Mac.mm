@@ -52,18 +52,18 @@
     [self resume];
 }
 
-- (void)windowWillClose:(NSNotification*)notification
+- (void)windowWillClose:(NSNotification *)notification
 {
     NSLog(@"MGLKViewController windowWillClose:");
     [self releaseTimer];
 }
 
 static CVReturn CVFrameDisplayCallback(CVDisplayLinkRef displayLink,
-                                       const CVTimeStamp* now,
-                                       const CVTimeStamp* outputTime,
+                                       const CVTimeStamp *now,
+                                       const CVTimeStamp *outputTime,
                                        CVOptionFlags flagsIn,
-                                       CVOptionFlags* flagsOut,
-                                       void* displayLinkContext)
+                                       CVOptionFlags *flagsOut,
+                                       void *displayLinkContext)
 {
     // 'CVFrameDisplayCallback' is always called on a secondary thread.  Merge the dispatch source
     // setup for the main queue so that rendering occurs on the main thread
@@ -119,10 +119,11 @@ static CVReturn CVFrameDisplayCallback(CVDisplayLinkRef displayLink,
         // to execute rendering on the main thread.
         if (!_displaySource)
         {
-            _displaySource = dispatch_source_create(DISPATCH_SOURCE_TYPE_DATA_ADD, 0, 0, dispatch_get_main_queue());
-            __weak MGLKViewController* weakSelf = self;
-            dispatch_source_set_event_handler(_displaySource, ^(){
-                [weakSelf frameStep];
+            _displaySource = dispatch_source_create(DISPATCH_SOURCE_TYPE_DATA_ADD, 0, 0,
+                                                    dispatch_get_main_queue());
+            __weak MGLKViewController *weakSelf = self;
+            dispatch_source_set_event_handler(_displaySource, ^() {
+              [weakSelf frameStep];
             });
             dispatch_resume(_displaySource);
 
@@ -138,10 +139,12 @@ static CVReturn CVFrameDisplayCallback(CVDisplayLinkRef displayLink,
         if (!_displayLink)
         {
             CVDisplayLinkCreateWithActiveCGDisplays(&_displayLink);
-            CVDisplayLinkSetOutputCallback(_displayLink, CVFrameDisplayCallback, (__bridge void *)_displaySource);
+            CVDisplayLinkSetOutputCallback(_displayLink, CVFrameDisplayCallback,
+                                           (__bridge void *)_displaySource);
         }
-        CGDirectDisplayID displayID = (CGDirectDisplayID) [window.screen.deviceDescription[@"NSScreenNumber"]
-                                                           unsignedIntegerValue];
+        CGDirectDisplayID displayID =
+            (CGDirectDisplayID)[window.screen
+                                    .deviceDescription[@"NSScreenNumber"] unsignedIntegerValue];
         CVDisplayLinkSetCurrentCGDisplay(_displayLink, displayID);
 
         CVDisplayLinkStart(_displayLink);
@@ -152,7 +155,8 @@ static CVReturn CVFrameDisplayCallback(CVDisplayLinkRef displayLink,
         _needDisableVsync = YES;
 
         ASSERT(!_displayTimer);
-        NSTimeInterval frameInterval = (_preferredFramesPerSecond <= 0) ? 0 : (1.0 / _preferredFramesPerSecond);
+        NSTimeInterval frameInterval =
+            (_preferredFramesPerSecond <= 0) ? 0 : (1.0 / _preferredFramesPerSecond);
         _displayTimer = [NSTimer scheduledTimerWithTimeInterval:frameInterval
                                                          target:self
                                                        selector:@selector(frameStep)

@@ -12,8 +12,8 @@
 @interface MGLKViewController () {
     __weak MGLKView *_glView;
 #if TARGET_OS_OSX
-    NSTimer *_displayTimer;  // Used to render with irregular framerate
-    CVDisplayLinkRef _displayLink;  // Used to render in sync with display refresh rate
+    NSTimer *_displayTimer;            // Used to render with irregular framerate
+    CVDisplayLinkRef _displayLink;     // Used to render in sync with display refresh rate
     dispatch_source_t _displaySource;  // Used together with displayLink
     NSWindow *_observedWindow;
 #else

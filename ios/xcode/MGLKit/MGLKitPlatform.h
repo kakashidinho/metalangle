@@ -15,8 +15,8 @@
 @compatibility_alias MGLKNativeView UIView;
 @compatibility_alias MGLKNativeViewController UIViewController;
 
-#define MGLKApplicationWillResignActiveNotification UIApplicationWillResignActiveNotification
-#define MGLKApplicationDidBecomeActiveNotification UIApplicationDidBecomeActiveNotification
+#    define MGLKApplicationWillResignActiveNotification UIApplicationWillResignActiveNotification
+#    define MGLKApplicationDidBecomeActiveNotification UIApplicationDidBecomeActiveNotification
 
 #elif TARGET_OS_OSX
 #    include <Cocoa/Cocoa.h>
@@ -24,8 +24,8 @@
 @compatibility_alias MGLKNativeView NSView;
 @compatibility_alias MGLKNativeViewController NSViewController;
 
-#define MGLKApplicationWillResignActiveNotification NSApplicationWillResignActiveNotification
-#define MGLKApplicationDidBecomeActiveNotification NSApplicationDidBecomeActiveNotification
+#    define MGLKApplicationWillResignActiveNotification NSApplicationWillResignActiveNotification
+#    define MGLKApplicationDidBecomeActiveNotification NSApplicationDidBecomeActiveNotification
 #else
 #    error "Unsupported platform"
 #endif

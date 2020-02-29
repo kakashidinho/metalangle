@@ -16,7 +16,8 @@ __attribute__((constructor)) void SetEGLLibName()
 {
     @autoreleasepool
     {
-        NSLog(@"%s:%d Setting MetalANGLE framework search path for the sample app", __FILE__, __LINE__);
+        NSLog(@"%s:%d Setting MetalANGLE framework search path for the sample app", __FILE__,
+              __LINE__);
 
 #if TARGET_OS_OSX
         angle::SetEnvironmentVar("ANGLE_EGL_LIBRARY_NAME", "MetalANGLE");

@@ -14,16 +14,16 @@
 
 #if TARGET_OS_OSX
 // macOS emulation of UIImage
-#import <AppKit/NSImage.h>
+#    import <AppKit/NSImage.h>
 
 typedef NSImage MGLKNativeImage;
 
 @interface NSImage (MGLK)
-- (CGImageRef) CGImage;
+- (CGImageRef)CGImage;
 @end
 
 @implementation NSImage (MGLK)
-- (CGImageRef) CGImage
+- (CGImageRef)CGImage
 {
     CGRect rect = CGRectMake(0, 0, self.size.width, self.size.height);
     return [self CGImageForProposedRect:&rect context:nil hints:nil];
@@ -31,7 +31,7 @@ typedef NSImage MGLKNativeImage;
 @end
 
 #else  // TARGET_OS_OSX
-#import <UIKit/UIImage.h>
+#    import <UIKit/UIImage.h>
 
 typedef UIImage MGLKNativeImage;
 #endif  // TARGET_OS_OSX
