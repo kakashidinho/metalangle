@@ -958,15 +958,49 @@ BlitCommandEncoder &BlitCommandEncoder::copyBufferToTexture(const BufferRef &src
     return *this;
 }
 
-BlitCommandEncoder &BlitCommandEncoder::copyTexture(const TextureRef &dst,
-                                                    uint32_t dstSlice,
-                                                    uint32_t dstLevel,
-                                                    MTLOrigin dstOrigin,
-                                                    MTLSize dstSize,
-                                                    const TextureRef &src,
+BlitCommandEncoder &BlitCommandEncoder::copyTextureToBuffer(const TextureRef &src,
+                                                            uint32_t srcSlice,
+                                                            uint32_t srcLevel,
+                                                            MTLOrigin srcOrigin,
+                                                            MTLSize srcSize,
+                                                            const BufferRef &dst,
+                                                            size_t dstOffset,
+                                                            size_t dstBytesPerRow,
+                                                            size_t dstBytesPerImage,
+                                                            MTLBlitOption blitOption)
+{
+
+    if (!src || !dst)
+    {
+        return *this;
+    }
+
+    cmdBuffer().setReadDependency(src);
+    cmdBuffer().setWriteDependency(dst);
+
+    [get() copyFromTexture:src->get()
+                     sourceSlice:srcSlice
+                     sourceLevel:srcLevel
+                    sourceOrigin:srcOrigin
+                      sourceSize:srcSize
+                        toBuffer:dst->get()
+               destinationOffset:dstOffset
+          destinationBytesPerRow:dstBytesPerRow
+        destinationBytesPerImage:dstBytesPerImage
+                         options:blitOption];
+
+    return *this;
+}
+
+BlitCommandEncoder &BlitCommandEncoder::copyTexture(const TextureRef &src,
                                                     uint32_t srcSlice,
                                                     uint32_t srcLevel,
-                                                    MTLOrigin srcOrigin)
+                                                    MTLOrigin srcOrigin,
+                                                    MTLSize srcSize,
+                                                    const TextureRef &dst,
+                                                    uint32_t dstSlice,
+                                                    uint32_t dstLevel,
+                                                    MTLOrigin dstOrigin)
 {
     if (!src || !dst)
     {
@@ -979,7 +1013,7 @@ BlitCommandEncoder &BlitCommandEncoder::copyTexture(const TextureRef &dst,
                sourceSlice:srcSlice
                sourceLevel:srcLevel
               sourceOrigin:srcOrigin
-                sourceSize:dstSize
+                sourceSize:srcSize
                  toTexture:dst->get()
           destinationSlice:dstSlice
           destinationLevel:dstLevel

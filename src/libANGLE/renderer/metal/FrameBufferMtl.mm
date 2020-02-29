@@ -328,18 +328,58 @@ angle::Result FramebufferMtl::blit(const gl::Context *context,
         return angle::Result::Continue;
     }
 
+    // NOTE(hqle): Consider splitting this function.
     // Use blit with draw
-    mtl::RenderCommandEncoder *encoder = ensureRenderPassStarted(context);
+    mtl::RenderCommandEncoder *renderEncoder = nullptr;
 
     mtl::BlitParams baseParams;
     baseParams.dstTextureSize = mState.getExtents();
     baseParams.dstRect        = srcClippedDestArea;
     baseParams.dstScissorRect = scissoredDestArea;
     baseParams.dstFlipY       = this->flipY();
-    baseParams.srcRect        = clippedSourceArea;
     baseParams.srcYFlipped    = srcFrameBuffer->flipY();
     baseParams.unpackFlipX    = unpackFlipX;
     baseParams.unpackFlipY    = unpackFlipY;
+
+    // Depth & stencil are special cases. Need to copy to intermediate texture that is readable
+    // in shader. The copy must be done before render pass starts.
+    if (blitDepthBuffer || blitStencilBuffer)
+    {
+        mtl::DepthStencilBlitParams dsBlitParams;
+        memcpy(&dsBlitParams, &baseParams, sizeof(baseParams));
+        RenderTargetMtl *depthRt   = srcFrameBuffer->getDepthRenderTarget();
+        RenderTargetMtl *stencilRt = srcFrameBuffer->getStencilRenderTarget();
+
+        bool sameTexture = depthRt == stencilRt;
+        if (blitDepthBuffer)
+        {
+            ANGLE_TRY(getReadableViewForRenderTarget(context, *depthRt, clippedSourceArea, false,
+                                                     /** readableView */ &dsBlitParams.src,
+                                                     &dsBlitParams.srcLevel,
+                                                     &dsBlitParams.srcRect));
+            if (sameTexture && blitStencilBuffer)
+            {
+                // If texture is packed depth stencil, we can skip the stencil view copying step.
+                dsBlitParams.srcStencil = dsBlitParams.src->getStencilView();
+            }
+        }
+
+        if (blitStencilBuffer && !dsBlitParams.srcStencil)
+        {
+            ANGLE_TRY(getReadableViewForRenderTarget(context, *stencilRt, clippedSourceArea, true,
+                                                     /** readableView */ &dsBlitParams.srcStencil,
+                                                     &dsBlitParams.srcLevel,
+                                                     &dsBlitParams.srcRect));
+        }
+
+        renderEncoder = ensureRenderPassStarted(context);
+        contextMtl->getDisplay()->getUtils().blitDepthStencilWithDraw(context, renderEncoder,
+                                                                      dsBlitParams);
+    }
+    else
+    {
+        renderEncoder = ensureRenderPassStarted(context);
+    }
 
     // Blit color
     if (blitColorBuffer)
@@ -352,37 +392,15 @@ angle::Result FramebufferMtl::blit(const gl::Context *context,
 
         colorBlitParams.src      = srcColorRt->getTexture();
         colorBlitParams.srcLevel = srcColorRt->getLevelIndex();
+        colorBlitParams.srcRect  = clippedSourceArea;
 
         colorBlitParams.blitColorMask  = contextMtl->getColorMask();
         colorBlitParams.enabledBuffers = getState().getEnabledDrawBuffers();
         colorBlitParams.filter         = filter;
         colorBlitParams.dstLuminance   = srcColorRt->getFormat()->actualAngleFormat().isLUMA();
 
-        contextMtl->getDisplay()->getUtils().blitColorWithDraw(context, encoder, colorBlitParams);
-    }
-
-    // Blit depth & stencil
-    if (blitDepthBuffer || blitStencilBuffer)
-    {
-        mtl::DepthStencilBlitParams dsBlitParams;
-        memcpy(&dsBlitParams, &baseParams, sizeof(baseParams));
-
-        if (blitDepthBuffer)
-        {
-            RenderTargetMtl *depthRt = srcFrameBuffer->getDepthRenderTarget();
-            dsBlitParams.src         = depthRt->getTexture();
-            dsBlitParams.srcLevel    = depthRt->getLevelIndex();
-        }
-
-        if (blitStencilBuffer)
-        {
-            RenderTargetMtl *stencilRt   = srcFrameBuffer->getStencilRenderTarget();
-            dsBlitParams.srcStencil      = stencilRt->getTexture()->getStencilView();
-            dsBlitParams.srcStencilLevel = stencilRt->getLevelIndex();
-        }
-
-        contextMtl->getDisplay()->getUtils().blitDepthStencilWithDraw(context, encoder,
-                                                                      dsBlitParams);
+        contextMtl->getDisplay()->getUtils().blitColorWithDraw(context, renderEncoder,
+                                                               colorBlitParams);
     }
 
     return angle::Result::Continue;
@@ -617,6 +635,67 @@ angle::Result FramebufferMtl::updateCachedRenderTarget(const gl::Context *contex
                                               &newRenderTarget));
     }
     *cachedRenderTarget = newRenderTarget;
+    return angle::Result::Continue;
+}
+
+angle::Result FramebufferMtl::getReadableViewForRenderTarget(const gl::Context *context,
+                                                             const RenderTargetMtl &rtt,
+                                                             const gl::Rectangle &readArea,
+                                                             bool readStencil,
+                                                             mtl::TextureRef *readableView,
+                                                             uint32_t *readableViewLevel,
+                                                             gl::Rectangle *readableViewArea)
+{
+    ContextMtl *contextMtl     = mtl::GetImpl(context);
+    mtl::TextureRef srcTexture = rtt.getTexture();
+    uint32_t level             = rtt.getLevelIndex();
+    uint32_t slice             = rtt.getLayerIndex();
+
+    // NOTE(hqle): slice is not used atm.
+    ASSERT(slice == 0);
+
+    if (!srcTexture)
+    {
+        *readableView     = nullptr;
+        *readableViewArea = readArea;
+        return angle::Result::Continue;
+    }
+
+    bool skipCopy = srcTexture->isShaderReadable();
+    if (rtt.getFormat()->hasDepthAndStencilBits() && readStencil)
+    {
+        // If the texture is packed depth stencil, and we need stencil view,
+        // then it must support creating different format view.
+        skipCopy = skipCopy && srcTexture->supportFormatView();
+    }
+
+    if (skipCopy)
+    {
+        // Texture is shader readable, just use it directly
+        *readableView      = srcTexture;
+        *readableViewLevel = level;
+        *readableViewArea  = readArea;
+    }
+    else
+    {
+        ASSERT(srcTexture->textureType() != MTLTextureType3D);
+
+        // Texture is not shader readable, copy to a interminate texture that is readable
+        *readableView = srcTexture->getReadableCopy(
+            contextMtl, contextMtl->getBlitCommandEncoder(), level, slice,
+            MTLRegionMake2D(readArea.x, readArea.y, readArea.width, readArea.height));
+
+        ANGLE_CHECK_GL_ALLOC(contextMtl, *readableView);
+
+        if (readStencil)
+        {
+            *readableView = (*readableView)->getStencilView();
+        }
+
+        *readableViewLevel = 0;
+        *readableViewArea  = gl::Rectangle(0, 0, readArea.width, readArea.height);
+    }
+
     return angle::Result::Continue;
 }
 

@@ -256,7 +256,7 @@ egl::Error SurfaceMtl::initialize(const egl::Display *display)
 
         mMetalLayer.get().device          = metalDevice;
         mMetalLayer.get().pixelFormat     = mColorFormat.metalFormat;
-        mMetalLayer.get().framebufferOnly = NO;  // This to allow readPixels
+        mMetalLayer.get().framebufferOnly = NO;  // Support blitting and glReadPixels
 
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
         // Autoresize with parent layer.
@@ -442,7 +442,8 @@ angle::Result SurfaceMtl::ensureDepthStencilSizeCorrect(const gl::Context *conte
     if (mDepthFormat.valid() && (!mDepthTexture || mDepthTexture->size() != size))
     {
         ANGLE_TRY(mtl::Texture::Make2DTexture(contextMtl, mDepthFormat, size.width, size.height, 1,
-                                              true, false, &mDepthTexture));
+                                              /** renderTargetOnly */ true,
+                                              /** allowFormatView */ false, &mDepthTexture));
 
         mDepthRenderTarget.reset(mDepthTexture, 0, 0, mDepthFormat);
     }
@@ -456,7 +457,9 @@ angle::Result SurfaceMtl::ensureDepthStencilSizeCorrect(const gl::Context *conte
         else
         {
             ANGLE_TRY(mtl::Texture::Make2DTexture(contextMtl, mStencilFormat, size.width,
-                                                  size.height, 1, true, false, &mStencilTexture));
+                                                  size.height, 1,
+                                                  /** renderTargetOnly */ true,
+                                                  /** allowFormatView */ false, &mStencilTexture));
         }
 
         mStencilRenderTarget.reset(mStencilTexture, 0, 0, mStencilFormat);

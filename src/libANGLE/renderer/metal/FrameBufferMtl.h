@@ -21,7 +21,7 @@ namespace rx
 namespace mtl
 {
 class RenderCommandEncoder;
-}
+}  // namespace mtl
 class ContextMtl;
 class SurfaceMtl;
 
@@ -140,6 +140,22 @@ class FramebufferMtl : public FramebufferImpl
     angle::Result updateCachedRenderTarget(const gl::Context *context,
                                            const gl::FramebufferAttachment *attachment,
                                            RenderTargetMtl **cachedRenderTarget);
+
+    // This function either returns the render target's texture itself if the texture is readable
+    // or create a copy of that texture that is readable if not. This function is typically used
+    // for packed depth stencil where reading stencil requires a stencil view. However if a texture
+    // has both render target, pixel format view & shader readable usage flags, there will be
+    // some glitches happen in Metal framework.
+    // So the solution is creating a depth stencil texture without pixel format view flag but has
+    // render target flag, then during blitting process, this texture is copied to another
+    // intermidiate texture having pixel format view flag, but not render target flag.
+    angle::Result getReadableViewForRenderTarget(const gl::Context *context,
+                                                 const RenderTargetMtl &rtt,
+                                                 const gl::Rectangle &readArea,
+                                                 bool readStencil,
+                                                 mtl::TextureRef *readableView,
+                                                 uint32_t *readableViewLevel,
+                                                 gl::Rectangle *readableViewArea);
 
     // NOTE: we cannot use RenderTargetCache here because it doesn't support separate
     // depth & stencil attachments as of now. Separate depth & stencil could be useful to

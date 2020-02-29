@@ -107,7 +107,7 @@ class Texture final : public Resource,
                                        uint32_t height,
                                        uint32_t mips /** use zero to create full mipmaps chain */,
                                        bool renderTargetOnly,
-                                       bool allowTextureView,
+                                       bool allowFormatView,
                                        TextureRef *refOut);
 
     static angle::Result MakeCubeTexture(ContextMtl *context,
@@ -115,13 +115,18 @@ class Texture final : public Resource,
                                          uint32_t size,
                                          uint32_t mips /** use zero to create full mipmaps chain */,
                                          bool renderTargetOnly,
-                                         bool allowTextureView,
+                                         bool allowFormatView,
                                          TextureRef *refOut);
 
     static TextureRef MakeFromMetal(id<MTLTexture> metalTexture);
 
     // Allow CPU to read & write data directly to this texture?
     bool isCPUAccessible() const;
+    // Allow shaders to read/sample this texture?
+    // Texture created with renderTargetOnly flag won't be readable
+    bool isShaderReadable() const;
+
+    bool supportFormatView() const;
 
     void replaceRegion(ContextMtl *context,
                        MTLRegion region,
@@ -162,6 +167,18 @@ class Texture final : public Resource,
     // Get stencil view
     TextureRef getStencilView();
 
+    // Get reading copy. Used for reading non-readable texture or reading stencil value from
+    // packed depth & stencil texture.
+    // NOTE: this only copies 1 depth slice of the 3D texture.
+    // The texels will be copied to region(0, 0, 0, areaToCopy.size) of the returned texture.
+    // The returned pointer will be retained by the original texture object.
+    // Calling getReadableCopy() will overwrite previously returned texture.
+    TextureRef getReadableCopy(ContextMtl *context,
+                               mtl::BlitCommandEncoder *encoder,
+                               const uint32_t levelToCopy,
+                               const uint32_t sliceToCopy,
+                               const MTLRegion &areaToCopy);
+
     // Change the wrapped metal object. Special case for swapchain image
     void set(id<MTLTexture> metalTexture);
 
@@ -176,7 +193,7 @@ class Texture final : public Resource,
             MTLTextureDescriptor *desc,
             uint32_t mips,
             bool renderTargetOnly,
-            bool supportTextureView);
+            bool allowFormatView);
 
     // Create a texture view
     Texture(Texture *original, MTLPixelFormat format);
@@ -188,6 +205,7 @@ class Texture final : public Resource,
     std::shared_ptr<MTLColorWriteMask> mColorWritableMask;
 
     TextureRef mStencilView;
+    TextureRef mReadCopy;
 };
 
 class Buffer final : public Resource,
@@ -209,8 +227,7 @@ class Buffer final : public Resource,
 
     // This function is equivalent to reset(useSharedMem = false)
     angle::Result reset(ContextMtl *context, size_t size, const uint8_t *data);
-    angle::Result reset(ContextMtl *context, bool useSharedMem, size_t size,
-                        const uint8_t *data);
+    angle::Result reset(ContextMtl *context, bool useSharedMem, size_t size, const uint8_t *data);
 
     const uint8_t *mapReadOnly(ContextMtl *context);
     uint8_t *map(ContextMtl *context);

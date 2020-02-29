@@ -374,15 +374,17 @@ angle::Result TextureMtl::ensureTextureCreated(const gl::Context *context)
         case gl::TextureType::_2D:
             layers = 1;
             ANGLE_TRY(mtl::Texture::Make2DTexture(contextMtl, mFormat, desc.size.width,
-                                                  desc.size.height, mips, false, true,
-                                                  &mNativeTexture));
+                                                  desc.size.height, mips,
+                                                  /** renderTargetOnly */ false,
+                                                  /** allowFormatView */ false, &mNativeTexture));
             mLayeredTextureViews.resize(1);
             mLayeredTextureViews[0] = mNativeTexture;
             break;
         case gl::TextureType::CubeMap:
             layers = 6;
             ANGLE_TRY(mtl::Texture::MakeCubeTexture(contextMtl, mFormat, desc.size.width, mips,
-                                                    false, true, &mNativeTexture));
+                                                    /** renderTargetOnly */ false,
+                                                    /** allowFormatView */ false, &mNativeTexture));
             mLayeredTextureViews.resize(gl::kCubeFaceCount);
             for (uint32_t f = 0; f < gl::kCubeFaceCount; ++f)
             {
@@ -417,8 +419,8 @@ angle::Result TextureMtl::ensureTextureCreated(const gl::Context *context)
                 {
                     encoder = contextMtl->getBlitCommandEncoder();
                 }
-                encoder->copyTexture(mNativeTexture, layer, mip, mtlOrigin, mtlSize,
-                                     imageToTransfer, 0, 0, mtlOrigin);
+                encoder->copyTexture(imageToTransfer, 0, 0, mtlOrigin, mtlSize, mNativeTexture,
+                                     layer, mip, mtlOrigin);
             }
 
             imageToTransfer = nullptr;
@@ -930,7 +932,9 @@ angle::Result TextureMtl::redefineImage(const gl::Context *context,
             case gl::TextureType::_2D:
             case gl::TextureType::CubeMap:
                 ANGLE_TRY(mtl::Texture::Make2DTexture(contextMtl, mtlFormat, size.width,
-                                                      size.height, 1, false, false, &image));
+                                                      size.height, 1,
+                                                      /** renderTargetOnly */ false,
+                                                      /** allowFormatView */ false, &image));
                 break;
             default:
                 UNREACHABLE();

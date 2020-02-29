@@ -70,7 +70,6 @@ struct ColorBlitParams : public BlitParams
 struct DepthStencilBlitParams : public BlitParams
 {
     TextureRef srcStencil;
-    uint32_t srcStencilLevel = 0;
 };
 
 struct TriFanFromArrayParams

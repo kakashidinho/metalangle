@@ -293,15 +293,26 @@ class BlitCommandEncoder final : public CommandEncoder
                                             MTLOrigin dstOrigin,
                                             MTLBlitOption blitOption);
 
-    BlitCommandEncoder &copyTexture(const TextureRef &dst,
-                                    uint32_t dstSlice,
-                                    uint32_t dstLevel,
-                                    MTLOrigin dstOrigin,
-                                    MTLSize dstSize,
-                                    const TextureRef &src,
+    BlitCommandEncoder &copyTextureToBuffer(const TextureRef &src,
+                                            uint32_t srcSlice,
+                                            uint32_t srcLevel,
+                                            MTLOrigin srcOrigin,
+                                            MTLSize srcSize,
+                                            const BufferRef &dst,
+                                            size_t dstOffset,
+                                            size_t dstBytesPerRow,
+                                            size_t dstBytesPerImage,
+                                            MTLBlitOption blitOption);
+
+    BlitCommandEncoder &copyTexture(const TextureRef &src,
                                     uint32_t srcSlice,
                                     uint32_t srcLevel,
-                                    MTLOrigin srcOrigin);
+                                    MTLOrigin srcOrigin,
+                                    MTLSize srcSize,
+                                    const TextureRef &dst,
+                                    uint32_t dstSlice,
+                                    uint32_t dstLevel,
+                                    MTLOrigin dstOrigin);
 
     BlitCommandEncoder &generateMipmapsForTexture(const TextureRef &texture);
     BlitCommandEncoder &synchronizeResource(const BufferRef &buffer);
