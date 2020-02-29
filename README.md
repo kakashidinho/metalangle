@@ -11,6 +11,7 @@ to continue operate on Apple platforms by translating OpenGL ES draw calls to Me
 - MetalANGLE is being migrated into official ANGLE repo. So this repo might not get updated for a while.
 - Almost all basic samples has been tested to work fine.
 - __OpenGL ES 2.0__ functionalities are 100% completed.
+- OpenGL ES 3.0 functionalities are being developed.
 - __Almost all of ANGLE end2end tests have been passed__. See [List of failed tests](src/libANGLE/renderer/metal/README.md#Failed-ANGLE-end2end-tests).
 - __97.7% of OpenGL ES 2.0 conformance tests passed__. See [Khronos VK-GL-CTS](https://github.com/KhronosGroup/VK-GL-CTS).
 - [MGLKit](src/libANGLE/renderer/metal/DevSetup.md#MGLKit) utilities classes have been added. Providing kind of similar functionalies to Apples's GLKit.
@@ -65,7 +66,7 @@ underway, and future plans include compute shader support (ES 3.1) and MacOS sup
 |                |  Direct3D 9   |  Direct3D 11     |   Desktop GL   |    GL ES      |    Vulkan     |    Metal      |
 |----------------|:-------------:|:----------------:|:--------------:|:-------------:|:-------------:|:-------------:|
 | OpenGL ES 2.0  |    complete   |    complete      |    complete    |   complete    |    complete   |  in progress  |
-| OpenGL ES 3.0  |               |    complete      |    complete    |   complete    |  in progress  |               |
+| OpenGL ES 3.0  |               |    complete      |    complete    |   complete    |  in progress  |  in progress  |
 | OpenGL ES 3.1  |               |   in progress    |    complete    |   complete    |  in progress  |               |
 | OpenGL ES 3.2  |               |                  |    planned     |    planned    |    planned    |               |
 
