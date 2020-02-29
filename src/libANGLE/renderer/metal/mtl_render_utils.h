@@ -18,6 +18,37 @@
 
 namespace rx
 {
+namespace mtl
+{
+struct IndexConversionPipelineCacheKey
+{
+    gl::DrawElementsType srcType;
+    bool srcBufferOffsetAligned;
+
+    bool operator==(const IndexConversionPipelineCacheKey &other) const;
+
+    size_t hash() const;
+};
+
+}  // namespace mtl
+}  // namespace rx
+
+namespace std
+{
+
+template <>
+struct hash<rx::mtl::IndexConversionPipelineCacheKey>
+{
+    size_t operator()(const rx::mtl::IndexConversionPipelineCacheKey &key) const
+    {
+        return key.hash();
+    }
+};
+
+}  // namespace std
+
+namespace rx
+{
 
 class BufferMtl;
 class ContextMtl;
@@ -218,17 +249,9 @@ class RenderUtils : public Context, angle::NonCopyable
     RenderPipelineCache mStencilBlitRenderPipelineCache;
     RenderPipelineCache mDepthStencilBlitRenderPipelineCache;
 
-    struct IndexConvesionPipelineCacheKey
-    {
-        gl::DrawElementsType srcType;
-        bool srcBufferOffsetAligned;
-
-        bool operator==(const IndexConvesionPipelineCacheKey &other) const;
-        bool operator<(const IndexConvesionPipelineCacheKey &other) const;
-    };
-    std::map<IndexConvesionPipelineCacheKey, AutoObjCPtr<id<MTLComputePipelineState>>>
+    std::unordered_map<IndexConversionPipelineCacheKey, AutoObjCPtr<id<MTLComputePipelineState>>>
         mIndexConversionPipelineCaches;
-    std::map<IndexConvesionPipelineCacheKey, AutoObjCPtr<id<MTLComputePipelineState>>>
+    std::unordered_map<IndexConversionPipelineCacheKey, AutoObjCPtr<id<MTLComputePipelineState>>>
         mTriFanFromElemArrayGeneratorPipelineCaches;
     AutoObjCPtr<id<MTLComputePipelineState>> mTriFanFromArraysGeneratorPipeline;
 };

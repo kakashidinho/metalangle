@@ -101,23 +101,16 @@ void GetFirstLastIndicesFromClientElements(GLsizei count,
 
 }  // namespace
 
-bool RenderUtils::IndexConvesionPipelineCacheKey::operator==(
-    const IndexConvesionPipelineCacheKey &other) const
+bool IndexConversionPipelineCacheKey::operator==(const IndexConversionPipelineCacheKey &other) const
 {
     return srcType == other.srcType && srcBufferOffsetAligned == other.srcBufferOffsetAligned;
 }
-bool RenderUtils::IndexConvesionPipelineCacheKey::operator<(
-    const IndexConvesionPipelineCacheKey &other) const
+size_t IndexConversionPipelineCacheKey::hash() const
 {
-    if (!srcBufferOffsetAligned && other.srcBufferOffsetAligned)
-    {
-        return true;
-    }
-    if (srcBufferOffsetAligned && !other.srcBufferOffsetAligned)
-    {
-        return false;
-    }
-    return static_cast<int>(srcType) < static_cast<int>(other.srcType);
+    size_t h = srcBufferOffsetAligned ? 1 : 0;
+    h        = (h << static_cast<size_t>(gl::DrawElementsType::EnumCount));
+    h        = h | static_cast<size_t>(srcType);
+    return h;
 }
 
 RenderUtils::RenderUtils(DisplayMtl *display) : Context(display) {}
@@ -752,7 +745,7 @@ AutoObjCPtr<id<MTLComputePipelineState>> RenderUtils::getIndexConversionPipeline
     size_t elementSize        = gl::GetDrawElementsTypeSize(srcType);
     bool aligned              = (srcOffset % elementSize) == 0;
 
-    IndexConvesionPipelineCacheKey key = {srcType, aligned};
+    IndexConversionPipelineCacheKey key = {srcType, aligned};
 
     auto &cache = mIndexConversionPipelineCaches[key];
 
@@ -816,7 +809,7 @@ AutoObjCPtr<id<MTLComputePipelineState>> RenderUtils::getTriFanFromElemArrayGene
     size_t elementSize        = gl::GetDrawElementsTypeSize(srcType);
     bool aligned              = (srcOffset % elementSize) == 0;
 
-    IndexConvesionPipelineCacheKey key = {srcType, aligned};
+    IndexConversionPipelineCacheKey key = {srcType, aligned};
 
     auto &cache = mTriFanFromElemArrayGeneratorPipelineCaches[key];
 
