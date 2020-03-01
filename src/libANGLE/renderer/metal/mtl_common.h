@@ -100,7 +100,8 @@ constexpr size_t kDefaultAttributeSize = 4 * sizeof(float);
 // Metal limits
 constexpr uint32_t kMaxShaderBuffers     = 31;
 constexpr uint32_t kMaxShaderSamplers    = 16;
-constexpr size_t kDefaultUniformsMaxSize = 4 * 1024;
+constexpr size_t kInlineConstDataMaxSize = 4 * 1024;
+constexpr size_t kDefaultUniformsMaxSize = kInlineConstDataMaxSize;
 constexpr uint32_t kMaxViewports         = 1;
 
 constexpr uint32_t kVertexAttribBufferStrideAlignment = 4;
