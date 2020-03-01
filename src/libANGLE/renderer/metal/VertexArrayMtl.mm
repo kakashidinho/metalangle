@@ -139,7 +139,7 @@ inline size_t GetIndexCount(BufferMtl *srcBuffer, size_t offset, gl::DrawElement
 
 inline void SetDefaultVertexBufferLayout(mtl::VertexBufferLayoutDesc *layout)
 {
-    layout->stepFunction = MTLVertexStepFunctionConstant;
+    layout->stepFunction = mtl::kVertexStepFunctionInvalid;
     layout->stepRate     = 0;
     layout->stride       = 0;
 }
@@ -363,7 +363,7 @@ angle::Result VertexArrayMtl::setupDraw(const gl::Context *glContext,
                                                mCurrentArrayInlineDataSizes[v], bufferIdx);
                 }
             }
-        }
+        } // for (v)
     }
 
     *vertexDescChanged = dirty;
