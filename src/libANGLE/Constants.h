@@ -72,7 +72,10 @@ enum
     IMPLEMENTATION_MAX_ATOMIC_COUNTER_BUFFERS = 8,
 
     // Implementation upper limits, real maximums depend on the hardware.
-    IMPLEMENTATION_MAX_SHADER_STORAGE_BUFFER_BINDINGS = 64
+    IMPLEMENTATION_MAX_SHADER_STORAGE_BUFFER_BINDINGS = 64,
+
+    // Implementation upper limits of max number of clip distances
+    IMPLEMENTATION_MAX_CLIP_DISTANCES = 32,
 };
 
 namespace limits

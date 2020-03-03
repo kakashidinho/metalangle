@@ -67,6 +67,11 @@ struct GraphicsDriverUniforms
 
     // We'll use x, y, z for near / far / diff respectively.
     std::array<float, 4> depthRange;
+
+    // 32 bits for 32 clip planes
+    uint32_t enabledClipPlanes{};
+
+    float padding[3];
 };
 
 struct ComputeDriverUniforms
@@ -2135,10 +2140,6 @@ angle::Result ContextVk::syncState(const gl::Context *context,
                 break;
             case gl::State::DIRTY_BIT_DITHER_ENABLED:
                 break;
-            case gl::State::DIRTY_BIT_GENERATE_MIPMAP_HINT:
-                break;
-            case gl::State::DIRTY_BIT_SHADER_DERIVATIVE_HINT:
-                break;
             case gl::State::DIRTY_BIT_READ_FRAMEBUFFER_BINDING:
                 updateFlipViewportReadFramebuffer(context->getState());
                 break;
@@ -2264,6 +2265,23 @@ angle::Result ContextVk::syncState(const gl::Context *context,
                 break;
             }
             case gl::State::DIRTY_BIT_PROVOKING_VERTEX:
+                break;
+            case gl::State::DIRTY_BIT_EXTENDED:
+                for (size_t extendedBit : glState.getExtendedDirtyBits())
+                {
+                    switch (extendedBit)
+                    {
+                        case gl::State::DIRTY_BIT_EXT_CLIP_DISTANCE_ENABLED:
+                            invalidateGraphicsDriverUniforms();
+                            break;
+                        case gl::State::DIRTY_BIT_EXT_GENERATE_MIPMAP_HINT:
+                            break;
+                        case gl::State::DIRTY_BIT_EXT_SHADER_DERIVATIVE_HINT:
+                            break;
+                        default:
+                            UNREACHABLE();
+                    }
+                }
                 break;
             default:
                 UNREACHABLE();
@@ -2662,7 +2680,8 @@ angle::Result ContextVk::handleDirtyGraphicsDriverUniforms(const gl::Context *co
         xfbActiveUnpaused,
         {},
         {},
-        {depthRangeNear, depthRangeFar, depthRangeDiff, 0.0f}};
+        {depthRangeNear, depthRangeFar, depthRangeDiff, 0.0f},
+        mState.getEnabledClipDistances().bits()};
 
     if (xfbActiveUnpaused)
     {

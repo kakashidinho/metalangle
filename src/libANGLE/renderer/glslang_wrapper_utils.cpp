@@ -102,6 +102,7 @@ void GetBuiltInResourcesFromCaps(const gl::Caps &caps, TBuiltInResource *outBuil
     outBuiltInResources->maxVertexAttribs                 = caps.maxVertexAttributes;
     outBuiltInResources->maxVertexOutputComponents        = caps.maxVertexOutputComponents;
     outBuiltInResources->maxVertexUniformVectors          = caps.maxVertexUniformVectors;
+    outBuiltInResources->maxClipDistances                 = caps.maxClipDistances;
 }
 
 class IntermediateShaderSource final : angle::NonCopyable

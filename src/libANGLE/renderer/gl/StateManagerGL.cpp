@@ -152,6 +152,7 @@ StateManagerGL::StateManagerGL(const FunctionsGL *functions,
       mPathStencilMask(std::numeric_limits<GLuint>::max()),
       mIsMultiviewEnabled(extensions.multiview || extensions.multiview2),
       mProvokingVertex(GL_LAST_VERTEX_CONVENTION),
+      mMaxClipDistances(rendererCaps.maxClipDistances),
       mLocalDirtyBits()
 {
     ASSERT(mFunctions);
@@ -383,9 +384,9 @@ void StateManagerGL::bindBufferBase(gl::BufferBinding target, size_t index, GLui
     if (binding.buffer != buffer || binding.offset != static_cast<size_t>(-1) ||
         binding.size != static_cast<size_t>(-1))
     {
-        binding.buffer = buffer;
-        binding.offset = static_cast<size_t>(-1);
-        binding.size   = static_cast<size_t>(-1);
+        binding.buffer   = buffer;
+        binding.offset   = static_cast<size_t>(-1);
+        binding.size     = static_cast<size_t>(-1);
         mBuffers[target] = buffer;
         mFunctions->bindBufferBase(gl::ToGLenum(target), static_cast<GLuint>(index), buffer);
     }
@@ -400,9 +401,9 @@ void StateManagerGL::bindBufferRange(gl::BufferBinding target,
     auto &binding = mIndexedBuffers[target][index];
     if (binding.buffer != buffer || binding.offset != offset || binding.size != size)
     {
-        binding.buffer = buffer;
-        binding.offset = offset;
-        binding.size   = size;
+        binding.buffer   = buffer;
+        binding.offset   = offset;
+        binding.size     = size;
         mBuffers[target] = buffer;
         mFunctions->bindBufferRange(gl::ToGLenum(target), static_cast<GLuint>(index), buffer,
                                     offset, size);
@@ -1682,12 +1683,6 @@ void StateManagerGL::syncState(const gl::Context *context,
             case gl::State::DIRTY_BIT_DITHER_ENABLED:
                 setDitherEnabled(state.isDitherEnabled());
                 break;
-            case gl::State::DIRTY_BIT_GENERATE_MIPMAP_HINT:
-                // TODO(jmadill): implement this
-                break;
-            case gl::State::DIRTY_BIT_SHADER_DERIVATIVE_HINT:
-                // TODO(jmadill): implement this
-                break;
             case gl::State::DIRTY_BIT_READ_FRAMEBUFFER_BINDING:
             {
                 gl::Framebuffer *framebuffer = state.getReadFramebuffer();
@@ -1867,6 +1862,30 @@ void StateManagerGL::syncState(const gl::Context *context,
             case gl::State::DIRTY_BIT_PROVOKING_VERTEX:
                 setProvokingVertex(ToGLenum(state.getProvokingVertex()));
                 break;
+            case gl::State::DIRTY_BIT_EXTENDED:
+            {
+                const gl::State::DirtyBitsExtended glAndLocalDirtyBitsExtended =
+                    (state.getExtendedDirtyBits() | mLocalDirtyBitsExtended);
+
+                for (size_t extendedBit : glAndLocalDirtyBitsExtended)
+                {
+                    switch (extendedBit)
+                    {
+                        case gl::State::DIRTY_BIT_EXT_CLIP_DISTANCE_ENABLED:
+                            setClipDistancesEnable(state.getEnabledClipDistances());
+                            break;
+                        case gl::State::DIRTY_BIT_EXT_GENERATE_MIPMAP_HINT:
+                            // TODO(jmadill): implement this
+                            break;
+                        case gl::State::DIRTY_BIT_EXT_SHADER_DERIVATIVE_HINT:
+                            // TODO(jmadill): implement this
+                            break;
+                        default:
+                            UNREACHABLE();
+                    }
+                }
+            }
+            break;
             default:
                 UNREACHABLE();
                 break;
@@ -1874,6 +1893,10 @@ void StateManagerGL::syncState(const gl::Context *context,
     }
 
     mLocalDirtyBits &= ~(bitMask);
+    if (bitMask.test(gl::State::DIRTY_BIT_EXTENDED))
+    {
+        mLocalDirtyBitsExtended.reset();
+    }
 }
 
 void StateManagerGL::setFramebufferSRGBEnabled(const gl::Context *context, bool enabled)
@@ -2036,6 +2059,32 @@ void StateManagerGL::setProvokingVertex(GLenum mode)
 
         mLocalDirtyBits.set(gl::State::DIRTY_BIT_PROVOKING_VERTEX);
     }
+}
+
+void StateManagerGL::setClipDistancesEnable(const gl::State::ClipDistanceEnableBits &enables)
+{
+    if (enables == mEnabledClipDistances)
+    {
+        return;
+    }
+    ASSERT(mMaxClipDistances <= gl::IMPLEMENTATION_MAX_CLIP_DISTANCES);
+
+    gl::State::ClipDistanceEnableBits diff = enables ^ mEnabledClipDistances;
+    for (size_t i : diff)
+    {
+        if (enables.test(i))
+        {
+            mFunctions->enable(GL_CLIP_DISTANCE0_EXT + static_cast<uint32_t>(i));
+        }
+        else
+        {
+            mFunctions->disable(GL_CLIP_DISTANCE0_EXT + static_cast<uint32_t>(i));
+        }
+    }
+
+    mEnabledClipDistances = enables;
+    mLocalDirtyBits.set(gl::State::DIRTY_BIT_EXTENDED);
+    mLocalDirtyBitsExtended.set(gl::State::DIRTY_BIT_EXT_CLIP_DISTANCE_ENABLED);
 }
 
 void StateManagerGL::setTextureCubemapSeamlessEnabled(bool enabled)

@@ -539,6 +539,9 @@ void DisplayMtl::ensureCapsInitialized() const
 
     // NOTE(hqle): support MSAA.
     mNativeCaps.maxSamples = 1;
+
+    // GL_APPLE_clip_distance
+    mNativeCaps.maxClipDistances = 8;
 }
 
 void DisplayMtl::initializeExtensions() const
@@ -601,6 +604,9 @@ void DisplayMtl::initializeExtensions() const
     mNativeExtensions.standardDerivatives = true;
 
     mNativeExtensions.elementIndexUint = true;
+
+    // GL_APPLE_clip_distance
+    mNativeExtensions.clipDistanceAPPLE = true;
 }
 
 void DisplayMtl::initializeTextureCaps() const

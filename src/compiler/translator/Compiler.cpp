@@ -1037,6 +1037,7 @@ void TCompiler::setResourceString()
         << ":WEBGL_debug_shader_precision:" << mResources.WEBGL_debug_shader_precision
         << ":ANGLE_multi_draw:" << mResources.ANGLE_multi_draw
         << ":ANGLE_base_vertex_base_instance:" << mResources.ANGLE_base_vertex_base_instance
+        << ":APPLE_clip_distance:" << mResources.APPLE_clip_distance
         << ":MinProgramTextureGatherOffset:" << mResources.MinProgramTextureGatherOffset
         << ":MaxProgramTextureGatherOffset:" << mResources.MaxProgramTextureGatherOffset
         << ":MaxImageUnits:" << mResources.MaxImageUnits
@@ -1074,7 +1075,8 @@ void TCompiler::setResourceString()
         << ":MaxGeometryAtomicCounters:" << mResources.MaxGeometryAtomicCounters
         << ":MaxGeometryShaderStorageBlocks:" << mResources.MaxGeometryShaderStorageBlocks
         << ":MaxGeometryShaderInvocations:" << mResources.MaxGeometryShaderInvocations
-        << ":MaxGeometryImageUniforms:" << mResources.MaxGeometryImageUniforms;
+        << ":MaxGeometryImageUniforms:" << mResources.MaxGeometryImageUniforms
+        << ":MaxClipDistances" << mResources.MaxClipDistances;
     // clang-format on
 
     mBuiltInResourcesString = strstream.str();

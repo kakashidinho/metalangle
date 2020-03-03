@@ -688,6 +688,7 @@ bool IsBuiltinOutputVariable(TQualifier qualifier)
         case EvqSecondaryFragColorEXT:
         case EvqFragData:
         case EvqSecondaryFragDataEXT:
+        case EvqClipDistance:
             return true;
         default:
             break;

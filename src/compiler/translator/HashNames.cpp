@@ -56,6 +56,11 @@ ImmutableString HashName(const ImmutableString &name,
             // have as long names and could conflict.
             return name;
         }
+        if (name == "gl_ClipDistance")
+        {
+            // gl_ClipDistance can be re-declared. If so, use the original name instead of prefix it
+            return name;
+        }
         ImmutableStringBuilder prefixedName(kUnhashedNamePrefix.length() + name.length());
         prefixedName << kUnhashedNamePrefix << name;
         return prefixedName;

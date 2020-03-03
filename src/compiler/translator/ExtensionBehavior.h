@@ -38,7 +38,8 @@ enum class TExtension
     OVR_multiview,
     OVR_multiview2,
     ANGLE_multi_draw,
-    ANGLE_base_vertex_base_instance
+    ANGLE_base_vertex_base_instance,
+    APPLE_clip_distance,
 };
 
 enum TBehavior

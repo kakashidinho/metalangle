@@ -1441,6 +1441,17 @@ void GenerateCaps(const FunctionsGL *functions,
                                  functions->hasGLESExtension("GL_EXT_memory_object_fd");
     extensions->semaphoreFd = functions->hasGLExtension("GL_EXT_semaphore_fd") ||
                               functions->hasGLESExtension("GL_EXT_semaphore_fd");
+
+    // GL_APPLE_clip_distance
+    extensions->clipDistanceAPPLE = functions->isAtLeastGL(gl::Version(3, 0));
+    if (extensions->clipDistanceAPPLE)
+    {
+        caps->maxClipDistances = QuerySingleGLInt(functions, GL_MAX_CLIP_DISTANCES_EXT);
+    }
+    else
+    {
+        caps->maxClipDistances = 0;
+    }
 }
 
 void InitializeFeatures(const FunctionsGL *functions, angle::FeaturesGL *features)

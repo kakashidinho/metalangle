@@ -155,6 +155,8 @@ class StateManagerGL final : angle::NonCopyable
 
     void setProvokingVertex(GLenum mode);
 
+    void setClipDistancesEnable(const gl::State::ClipDistanceEnableBits &enables);
+
     void pauseTransformFeedback();
     angle::Result pauseAllQueries(const gl::Context *context);
     angle::Result pauseQuery(const gl::Context *context, gl::QueryType type);
@@ -352,7 +354,11 @@ class StateManagerGL final : angle::NonCopyable
 
     GLenum mProvokingVertex;
 
+    gl::State::ClipDistanceEnableBits mEnabledClipDistances;
+    const size_t mMaxClipDistances;
+
     gl::State::DirtyBits mLocalDirtyBits;
+    gl::State::DirtyBitsExtended mLocalDirtyBitsExtended;
     gl::AttributesMask mLocalDirtyCurrentValues;
 };
 }  // namespace rx

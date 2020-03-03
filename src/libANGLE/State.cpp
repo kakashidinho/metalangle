@@ -514,6 +514,8 @@ void State::reset(const Context *context)
     mPathStencilRef  = 0;
     mPathStencilMask = std::numeric_limits<GLuint>::max();
 
+    mClipDistancesEnabled.reset();
+
     setAllDirtyBits();
 }
 
@@ -887,63 +889,105 @@ void State::setPrimitiveRestart(bool enabled)
     mDirtyBits.set(DIRTY_BIT_PRIMITIVE_RESTART_ENABLED);
 }
 
+void State::setClipDistanceEnable(int idx, bool enable)
+{
+    if (enable)
+    {
+        mClipDistancesEnabled.set(idx);
+    }
+    else
+    {
+        mClipDistancesEnabled.reset(idx);
+    }
+
+    mDirtyBits.set(DIRTY_BIT_EXTENDED);
+    mExtendedDirtyBits.set(DIRTY_BIT_EXT_CLIP_DISTANCE_ENABLED);
+}
+
 void State::setEnableFeature(GLenum feature, bool enabled)
 {
     switch (feature)
     {
         case GL_MULTISAMPLE_EXT:
             setMultisampling(enabled);
-            break;
+            return;
         case GL_SAMPLE_ALPHA_TO_ONE_EXT:
             setSampleAlphaToOne(enabled);
-            break;
+            return;
         case GL_CULL_FACE:
             setCullFace(enabled);
-            break;
+            return;
         case GL_POLYGON_OFFSET_FILL:
             setPolygonOffsetFill(enabled);
-            break;
+            return;
         case GL_SAMPLE_ALPHA_TO_COVERAGE:
             setSampleAlphaToCoverage(enabled);
-            break;
+            return;
         case GL_SAMPLE_COVERAGE:
             setSampleCoverage(enabled);
-            break;
+            return;
         case GL_SCISSOR_TEST:
             setScissorTest(enabled);
-            break;
+            return;
         case GL_STENCIL_TEST:
             setStencilTest(enabled);
-            break;
+            return;
         case GL_DEPTH_TEST:
             setDepthTest(enabled);
-            break;
+            return;
         case GL_BLEND:
             setBlend(enabled);
-            break;
+            return;
         case GL_DITHER:
             setDither(enabled);
-            break;
+            return;
         case GL_PRIMITIVE_RESTART_FIXED_INDEX:
             setPrimitiveRestart(enabled);
-            break;
+            return;
         case GL_RASTERIZER_DISCARD:
             setRasterizerDiscard(enabled);
-            break;
+            return;
         case GL_SAMPLE_MASK:
             setSampleMaskEnabled(enabled);
-            break;
+            return;
         case GL_DEBUG_OUTPUT_SYNCHRONOUS:
             mDebug.setOutputSynchronous(enabled);
-            break;
+            return;
         case GL_DEBUG_OUTPUT:
             mDebug.setOutputEnabled(enabled);
-            break;
+            return;
         case GL_FRAMEBUFFER_SRGB_EXT:
             setFramebufferSRGB(enabled);
-            break;
+            return;
+        // GL_APPLE_clip_distance/GL_EXT_clip_cull_distance
+        case GL_CLIP_DISTANCE0_EXT:
+        case GL_CLIP_DISTANCE1_EXT:
+        case GL_CLIP_DISTANCE2_EXT:
+        case GL_CLIP_DISTANCE3_EXT:
+        case GL_CLIP_DISTANCE4_EXT:
+        case GL_CLIP_DISTANCE5_EXT:
+        case GL_CLIP_DISTANCE6_EXT:
+        case GL_CLIP_DISTANCE7_EXT:
+            // NOTE(hqle): These enums are conflicted with GLES1's enums, need
+            // to do additional check here:
+            if (mClientVersion.major >= 2)
+            {
+                setClipDistanceEnable(feature - GL_CLIP_DISTANCE0_EXT, enabled);
+                return;
+            }
+    }
 
-        // GLES1 emulation
+    if (mClientVersion.major >= 2)
+    {
+        // Anything below are for GLES1
+        UNREACHABLE();
+        return;
+    }
+
+    // GLES1 emulation. Need to separate from main switch due to conflict enum between
+    // GL_CLIP_DISTANCE0_EXT & GL_CLIP_PLANE0
+    switch (feature)
+    {
         case GL_ALPHA_TEST:
             mGLES1State.mAlphaTestEnabled = enabled;
             break;
@@ -1049,7 +1093,33 @@ bool State::getEnableFeature(GLenum feature) const
             return mRobustResourceInit;
         case GL_PROGRAM_CACHE_ENABLED_ANGLE:
             return mProgramBinaryCacheEnabled;
+        // GL_APPLE_clip_distance/GL_EXT_clip_cull_distance
+        case GL_CLIP_DISTANCE0_EXT:
+        case GL_CLIP_DISTANCE1_EXT:
+        case GL_CLIP_DISTANCE2_EXT:
+        case GL_CLIP_DISTANCE3_EXT:
+        case GL_CLIP_DISTANCE4_EXT:
+        case GL_CLIP_DISTANCE5_EXT:
+        case GL_CLIP_DISTANCE6_EXT:
+        case GL_CLIP_DISTANCE7_EXT:
+            if (mClientVersion.major >= 2)
+            {
+                // If GLES version is 1, the GL_CLIP_DISTANCE0_EXT enum will be used as
+                // GL_CLIP_PLANE0 instead.
+                return mClipDistancesEnabled.test(feature - GL_CLIP_DISTANCE0_EXT);
+            }
+            break;
+    }
 
+    if (mClientVersion.major >= 2)
+    {
+        // Anything below are for GLES1
+        UNREACHABLE();
+        return false;
+    }
+
+    switch (feature)
+    {
         // GLES1 emulation
         case GL_ALPHA_TEST:
             return mGLES1State.mAlphaTestEnabled;
@@ -1116,13 +1186,15 @@ void State::setLineWidth(GLfloat width)
 void State::setGenerateMipmapHint(GLenum hint)
 {
     mGenerateMipmapHint = hint;
-    mDirtyBits.set(DIRTY_BIT_GENERATE_MIPMAP_HINT);
+    mDirtyBits.set(DIRTY_BIT_EXTENDED);
+    mExtendedDirtyBits.set(DIRTY_BIT_EXT_GENERATE_MIPMAP_HINT);
 }
 
 void State::setFragmentShaderDerivativeHint(GLenum hint)
 {
     mFragmentShaderDerivativeHint = hint;
-    mDirtyBits.set(DIRTY_BIT_SHADER_DERIVATIVE_HINT);
+    mDirtyBits.set(DIRTY_BIT_EXTENDED);
+    mExtendedDirtyBits.set(DIRTY_BIT_EXT_SHADER_DERIVATIVE_HINT);
     // TODO: Propagate the hint to shader translator so we can write
     // ddx, ddx_coarse, or ddx_fine depending on the hint.
     // Ignore for now. It is valid for implementations to ignore hint.

@@ -48,6 +48,7 @@ angle_unittests_sources = [
   "../tests/angle_unittests_utils.h",
   "../tests/compiler_tests/API_test.cpp",
   "../tests/compiler_tests/AppendixALimitations_test.cpp",
+  "../tests/compiler_tests/APPLE_clip_distance_test.cpp",
   "../tests/compiler_tests/ARB_texture_rectangle_test.cpp",
   "../tests/compiler_tests/AtomicCounter_test.cpp",
   "../tests/compiler_tests/BufferVariables_test.cpp",

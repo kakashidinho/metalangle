@@ -81,7 +81,7 @@ void MarkActive(ShaderVariable *variable)
             }
         }
         variable->staticUse = true;
-        variable->active = true;
+        variable->active    = true;
     }
 }
 
@@ -178,6 +178,7 @@ class CollectVariablesTraverser : public TIntermTraverser
 
     // Vertex Shader and Geometry Shader builtins
     bool mPositionAdded;
+    bool mClipDistanceAdded;
 
     // Fragment Shader builtins
     bool mPointCoordAdded;
@@ -236,6 +237,7 @@ CollectVariablesTraverser::CollectVariablesTraverser(
       mBaseVertexAdded(false),
       mBaseInstanceAdded(false),
       mPositionAdded(false),
+      mClipDistanceAdded(false),
       mPointCoordAdded(false),
       mFrontFacingAdded(false),
       mFragCoordAdded(false),
@@ -566,6 +568,9 @@ void CollectVariablesTraverser::visitSymbol(TIntermSymbol *symbol)
                             IsExtensionEnabled(mExtensionBehavior, TExtension::OVR_multiview)));
                 }
                 break;
+            case EvqClipDistance:
+                recordBuiltInVaryingUsed(symbol->variable(), &mClipDistanceAdded, mOutputVaryings);
+                return;
             default:
                 break;
         }

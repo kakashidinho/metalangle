@@ -65,6 +65,7 @@ void GenerateResources(ShBuiltInResources *resources)
     resources->OES_EGL_image_external    = 0;
     resources->EXT_geometry_shader       = 1;
     resources->ANGLE_texture_multisample = 0;
+    resources->APPLE_clip_distance       = 0;
 }
 
 int main(int argc, char *argv[])

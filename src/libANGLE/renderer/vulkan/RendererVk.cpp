@@ -618,7 +618,7 @@ angle::Result RendererVk::initialize(DisplayVk *displayVk,
 #else
     mEnableValidationLayers = scopedEnvironment.canEnableValidationLayers();
 #endif
-    mEnabledICD             = scopedEnvironment.getEnabledICD();
+    mEnabledICD = scopedEnvironment.getEnabledICD();
 
     // Gather global layer properties.
     uint32_t instanceLayerCount = 0;
@@ -1022,6 +1022,8 @@ angle::Result RendererVk::initializeDevice(DisplayVk *displayVk, uint32_t queueF
     enabledFeatures.features.fragmentStoresAndAtomics =
         mPhysicalDeviceFeatures.fragmentStoresAndAtomics;
     enabledFeatures.features.geometryShader = mPhysicalDeviceFeatures.geometryShader;
+    // Used to support APPLE_clip_distance
+    enabledFeatures.features.shaderClipDistance = mPhysicalDeviceFeatures.shaderClipDistance;
     if (!vk::CommandBuffer::ExecutesInline())
     {
         enabledFeatures.features.inheritedQueries = mPhysicalDeviceFeatures.inheritedQueries;

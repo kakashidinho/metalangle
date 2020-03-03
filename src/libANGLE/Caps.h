@@ -541,6 +541,9 @@ struct Extensions
 
     // GL_ANGLE_base_vertex_base_instance
     bool baseVertexBaseInstance = false;
+
+    // GL_APPLE_clip_distance
+    bool clipDistanceAPPLE = false;
 };
 
 struct ExtensionInfo
@@ -746,6 +749,9 @@ struct Caps
     GLuint maxGeometryShaderInvocations     = 0;
 
     GLuint subPixelBits = 4;
+
+    // GL_APPLE_clip_distance/GL_EXT_clip_cull_distance
+    GLuint maxClipDistances = 0;
 
     // GLES1 emulation: Caps for ES 1.1. Taken from Table 6.20 / 6.22 in the OpenGL ES 1.1 spec.
     GLuint maxMultitextureUnits                 = 0;

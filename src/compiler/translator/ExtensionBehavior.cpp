@@ -33,7 +33,8 @@
     OP(OVR_multiview)                            \
     OP(OVR_multiview2)                           \
     OP(ANGLE_multi_draw)                         \
-    OP(ANGLE_base_vertex_base_instance)
+    OP(ANGLE_base_vertex_base_instance)          \
+    OP(APPLE_clip_distance)
 
 namespace sh
 {

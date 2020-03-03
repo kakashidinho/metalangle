@@ -957,6 +957,8 @@ enum TQualifier
     EvqViewIDOVR,      // OVR_multiview
     EvqViewportIndex,  // gl_ViewportIndex
 
+    EvqClipDistance,  // APPLE_clip_distance/EXT_clip_cull_distance
+
     // built-ins written by the shader_framebuffer_fetch extension(s)
     EvqLastFragColor,
     EvqLastFragData,
@@ -1267,6 +1269,7 @@ inline const char *getQualifierString(TQualifier q)
     case EvqGeometryIn:             return "in";
     case EvqGeometryOut:            return "out";
     case EvqPerVertexIn:            return "gl_in";
+    case EvqClipDistance:           return "ClipDistance";
     default: UNREACHABLE();         return "unknown qualifier";
     }
     // clang-format on

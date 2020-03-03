@@ -545,8 +545,6 @@ class State : angle::NonCopyable
         DIRTY_BIT_PACK_STATE,
         DIRTY_BIT_PACK_BUFFER_BINDING,
         DIRTY_BIT_DITHER_ENABLED,
-        DIRTY_BIT_GENERATE_MIPMAP_HINT,
-        DIRTY_BIT_SHADER_DERIVATIVE_HINT,
         DIRTY_BIT_RENDERBUFFER_BINDING,
         DIRTY_BIT_VERTEX_ARRAY_BINDING,
         DIRTY_BIT_DRAW_INDIRECT_BUFFER_BINDING,
@@ -569,6 +567,7 @@ class State : angle::NonCopyable
         DIRTY_BIT_FRAMEBUFFER_SRGB,  // GL_EXT_sRGB_write_control
         DIRTY_BIT_CURRENT_VALUES,
         DIRTY_BIT_PROVOKING_VERTEX,
+        DIRTY_BIT_EXTENDED,  // additional bit is set in mExtendedDirtyBits
         DIRTY_BIT_INVALID,
         DIRTY_BIT_MAX = DIRTY_BIT_INVALID,
     };
@@ -593,15 +592,42 @@ class State : angle::NonCopyable
         DIRTY_OBJECT_MAX = DIRTY_OBJECT_UNKNOWN,
     };
 
+    enum ExtendedDirtyBitType
+    {
+        DIRTY_BIT_EXT_CLIP_DISTANCE_ENABLED,
+        DIRTY_BIT_EXT_GENERATE_MIPMAP_HINT,
+        DIRTY_BIT_EXT_SHADER_DERIVATIVE_HINT,
+        DIRTY_BIT_EXT_INVALID,
+        DIRTY_BIT_EXT_MAX = DIRTY_BIT_EXT_INVALID,
+    };
+
     using DirtyBits = angle::BitSet<DIRTY_BIT_MAX>;
     const DirtyBits &getDirtyBits() const { return mDirtyBits; }
-    void clearDirtyBits() { mDirtyBits.reset(); }
-    void clearDirtyBits(const DirtyBits &bitset) { mDirtyBits &= ~bitset; }
+    void clearDirtyBits()
+    {
+        mDirtyBits.reset();
+        mExtendedDirtyBits.reset();
+    }
+    void clearDirtyBits(const DirtyBits &bitset)
+    {
+        mDirtyBits &= ~bitset;
+        if (bitset.test(DIRTY_BIT_EXTENDED))
+        {
+            mExtendedDirtyBits.reset();
+        }
+    }
     void setAllDirtyBits()
     {
         mDirtyBits.set();
         mDirtyCurrentValues.set();
+        mExtendedDirtyBits.set();
     }
+
+    // Extended dirty bits
+    using DirtyBitsExtended = angle::BitSet<DIRTY_BIT_EXT_MAX>;
+    const DirtyBitsExtended &getExtendedDirtyBits() const { return mExtendedDirtyBits; }
+    void clearExtendedDirtyBits() { mExtendedDirtyBits.reset(); }
+    void clearExtendedDirtyBits(const DirtyBitsExtended &bitset) { mExtendedDirtyBits &= ~bitset; }
 
     using DirtyObjects = angle::BitSet<DIRTY_OBJECT_MAX>;
     void clearDirtyObjects() { mDirtyObjects.reset(); }
@@ -681,6 +707,10 @@ class State : angle::NonCopyable
         mDirtyBits.set(State::DIRTY_BIT_PROVOKING_VERTEX);
         mProvokingVertex = val;
     }
+
+    using ClipDistanceEnableBits = angle::BitSet32<IMPLEMENTATION_MAX_CLIP_DISTANCES>;
+    const ClipDistanceEnableBits &getEnabledClipDistances() const { return mClipDistancesEnabled; }
+    void setClipDistanceEnable(int idx, bool enable);
 
     const OverlayType *getOverlay() const { return mOverlay; }
 
@@ -890,6 +920,9 @@ class State : angle::NonCopyable
     // GL_KHR_parallel_shader_compile
     GLuint mMaxShaderCompilerThreads;
 
+    // GL_APPLE_clip_distance/GL_EXT_clip_cull_distance
+    ClipDistanceEnableBits mClipDistancesEnabled;
+
     // GLES1 emulation: state specific to GLES1
     GLES1State mGLES1State;
 
@@ -899,6 +932,7 @@ class State : angle::NonCopyable
     ActiveTextureMask mDirtyTextures;
     ActiveTextureMask mDirtySamplers;
     ImageUnitMask mDirtyImages;
+    DirtyBitsExtended mExtendedDirtyBits;
 
     // The Overlay object, used by the backend to render the overlay.
     const OverlayType *mOverlay;

@@ -97,6 +97,10 @@ void InitExtensionBehavior(const ShBuiltInResources &resources, TExtensionBehavi
     {
         extBehavior[TExtension::ANGLE_base_vertex_base_instance] = EBhUndefined;
     }
+    if (resources.APPLE_clip_distance)
+    {
+        extBehavior[TExtension::APPLE_clip_distance] = EBhUndefined;
+    }
 }
 
 void ResetExtensionBehavior(TExtensionBehavior &extBehavior)

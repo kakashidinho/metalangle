@@ -48,7 +48,7 @@ void TOutputVulkanGLSL::writeLayoutQualifier(TIntermTyped *variable)
         type.getQualifier() == EvqVertexIn || IsVarying(type.getQualifier()) ||
         IsSampler(type.getBasicType()) || type.isInterfaceBlock() || IsImage(type.getBasicType());
 
-    if (!NeedsToWriteLayoutQualifier(type) && !needsCustomLayout)
+    if ((!NeedsToWriteLayoutQualifier(type) && !needsCustomLayout))
     {
         return;
     }
@@ -165,7 +165,16 @@ void TOutputVulkanGLSL::writeQualifier(TQualifier qualifier,
     }
 
     TInfoSinkBase &out = objSink();
-    out << "@@ QUALIFIER-" << name.data() << "(" << getMemoryQualifiers(type) << ") @@ ";
+    if (name == "gl_ClipDistance")
+    {
+        // gl_ClipDistance can be redeclared by user. In that case, no need to write custom
+        // qualifier
+        out << (sh::IsVaryingIn(qualifier) ? "in" : "out ");
+    }
+    else
+    {
+        out << "@@ QUALIFIER-" << name.data() << "(" << getMemoryQualifiers(type) << ") @@ ";
+    }
 }
 
 void TOutputVulkanGLSL::writeVariableType(const TType &type, const TSymbol *symbol)

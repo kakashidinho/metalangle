@@ -298,6 +298,8 @@ class ContextMtl : public ContextImpl, public mtl::Context
                                    const void *indices,
                                    GLsizei instanceCount);
 
+    angle::Result syncExtendedState(const gl::Context *context);
+
     void updateViewport(FramebufferMtl *framebufferMtl,
                         const gl::Rectangle &viewport,
                         float nearPlane,
@@ -357,6 +359,11 @@ class ContextMtl : public ContextImpl, public mtl::Context
 
         // We'll use x, y, z, w for near / far / diff / zscale respectively.
         float depthRange[4];
+
+        // 32 bits for 32 clip distances
+        uint32_t enabledClipDistances;
+
+        float padding[3];
     };
 
     struct DefaultAttribute
