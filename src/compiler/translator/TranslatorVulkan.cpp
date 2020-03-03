@@ -859,8 +859,9 @@ ANGLE_NO_DISCARD bool ReplaceGLClipDistanceAssignments(TCompiler *compiler,
     TIntermDeclaration *clipDistanceDecl  = new TIntermDeclaration;
     clipDistanceDecl->appendDeclarator(clipDistanceDeclarator);
 
-    size_t mainIndex = FindMainIndex(root);
-    root->insertStatement(mainIndex, clipDistanceDecl);
+    // Must declare _ANGLEClipDistance before any function, since gl_ClipDistance might be accessed
+    // within a function declared before main.
+    root->insertStatement(0, clipDistanceDecl);
 
     // Replace gl_ClipDistance reference with _ANGLEClipDistance, except the declaration
     ReplaceVariableExceptOneTraverser replaceTraverser(glClipDistanceVar,
