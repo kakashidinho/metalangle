@@ -912,6 +912,7 @@ ANGLE_NO_DISCARD bool ReplaceGLClipDistanceAssignments(TCompiler *compiler,
     {
         // If there is at least one non constant index reference,
         // Then we need to loop through the whole declared size of gl_ClipDistance.
+        // Since we don't know exactly the index at compile time.
         // As mentioned in
         // https://www.khronos.org/registry/OpenGL/extensions/APPLE/APPLE_clip_distance.txt
         // Non constant index can only be used if gl_ClipDistance is redeclared with an explicit
@@ -923,11 +924,24 @@ ANGLE_NO_DISCARD bool ReplaceGLClipDistanceAssignments(TCompiler *compiler,
     }
     else
     {
-        // Every index reference is constant value, use them directly and ignore those that not
-        // used.
-        for (unsigned int index : constIndices)
+        // Assign _ANGLEClipDistance[i]'s value to gl_ClipDistance[i] if i is in the constant
+        // indices list.
+        // Those elements whose index is not in the constant index list will be zeroise.
+        for (unsigned int i = 0; i < clipDistanceType->getOutermostArraySize(); ++i)
         {
-            reassignBlock->appendStatement(assignFunc(index));
+            if (constIndices.count(i))
+            {
+                reassignBlock->appendStatement(assignFunc(i));
+            }
+            else
+            {
+                // gl_ClipDistance[i] = 0;
+                TIntermBinary *left = new TIntermBinary(
+                    EOpIndexDirect, glClipDistanceSymbol->deepCopy(), CreateIndexNode(i));
+                TIntermBinary *zeroAssignment =
+                    new TIntermBinary(EOpAssign, left, CreateFloatNode(0));
+                reassignBlock->appendStatement(zeroAssignment);
+            }
         }
     }
 
