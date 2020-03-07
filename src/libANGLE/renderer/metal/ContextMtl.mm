@@ -1372,6 +1372,8 @@ void ContextMtl::onDrawFrameBufferChangedState(const gl::Context *context,
 
     if (renderPassChanged)
     {
+        // End any render encoding using the old render pass.
+        endEncoding(false);
         // Need to re-apply state to RenderCommandEncoder
         invalidateState(context);
     }
