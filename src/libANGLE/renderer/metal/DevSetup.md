@@ -1,36 +1,70 @@
 # MetalANGLE Development
 
-MetalANGLE provides OpenGL ES 2.0 and EGL 1.4 libraries.  You can use these to build and run OpenGL ES 2.0 applications on Mac and iOS that make uses of underlying Metal API.
+MetalANGLE provides OpenGL ES 2.0 and EGL 1.4 libraries.  You can use these to build and run OpenGL
+ES 2.0 applications on Mac and iOS that make uses of underlying Metal API.
 
 ## Development setup
 
 ### Version Control
-ANGLE uses git for version control. If you are not familiar with git, helpful documentation can be found at [http://git-scm.com/documentation](http://git-scm.com/documentation).
+ANGLE uses git for version control. If you are not familiar with git, helpful documentation can be
+found at [http://git-scm.com/documentation](http://git-scm.com/documentation).
 
-### Required Tools
+### Quick build with Xcode project
+If you don't want to test MetalANGLE with ANGLE's test suites or OpenGL ES conformance tests, you
+can use the Xcode project provided in `mac/xcode` & `ios/xcode` folders to quickly build the
+`MetalANGLE.framework` as well as several sample apps.
+
+Fetching dependencies:
+
+- run `ios/xcode/fetchDepedencies.sh` script to retrieve third party dependencies.
+
+MacOS version:
+
+- Open `OpenGLES.xcodeproj` in `mac/xcode` folder.
+- The target `MetalANGLE_mac` will build OpenGL ES framework named `MetalANGLE.framework`.
+- If you want to build the sample app using [MGLKit](#MGLKit) library. Open `MGKitSamples.xcodeproj`
+  instead of `OpenGLES.xcodeproj`, DO NOT open both at the same time. As `MGKitSamples.xcodeproj`
+  will open the `OpenGLES.xcodeproj` inside its workspace.
+
+iOS version:
+
+- Open `OpenGLES.xcodeproj` in `ios/xcode` folder.
+- The target `MetalANGLE` will build OpenGL ES framework named `MetalANGLE.framework`.
+- __Note__: in order to test sample apps on real devices. You have to change their Bundle Identifier
+  in Xcode to something you like, since only one development team can use one ID at a time. And this
+  is global restriction across the globes. Once one person install the sample apps using his Apple
+  developer profile, the ID configured will be registered for that developer only. And no other
+  developers can use that ID to install to their device anymore.
+- If you want to build the sample app using [MGLKit](#MGLKit) library. Open `MGKitSamples.xcodeproj`
+  instead of `OpenGLES.xcodeproj`, DO NOT open both at the same time. As
+  `MGKitSamples.xcodeproj`will open the `OpenGLES.xcodeproj` inside its workspace.
+- Running and testing on iOS Simulator requires Xcode 11+ and MacOS Catalina (10.15+).
+
+
+### Standard ANGLE build with all test suites
+The following is the standard building process of ANGLE project, which contains extensive test
+targets to verify MetalANGLE implementation. Note that the standard ANGLE build process will produce
+`libEGL.dylib`, `libGLESv2.dylib` & `libGLESv1CM.dylib` instead of `MetalANGLE.framework`. The
+`.dylib` version doesn't contain [MGLKit](#MGLKit) wrapper classes as the framework version does.
+Currently, it only supports building MacOS version.
+
+##### Required Tools
+
 On all platforms:
 
  * [depot_tools](http://dev.chromium.org/developers/how-tos/install-depot-tools)
    * Required to generate projects and fetch third-party dependencies.
    * Provides gclient, GN and ninja tools.
- * [XCode](https://developer.apple.com/xcode/) for Clang and development files.
+ * [Xcode](https://developer.apple.com/xcode/) for Clang and development files.
  * Bison and flex are not needed as we only support generating the translator grammar on Windows.
 
 For MacOS build:
 
- * GN is the default build system.  GYP support has been removed. GN is available through depot_tools installation.
+ * GN is the default build system.  GYP support has been removed. GN is available through
+   depot_tools installation.
  * Clang will be set up by the build system and used by default.
- * __Optionally__, an Xcode project named `OpenGLES.xcodeproj` is provided in `mac/xcode` directory.
-   This is for convenience only. GN is still the recommended build system since it contains full
-   test targets to verify MetalANGLE and is actively maintained.
 
-For iOS build:
-
- * An Xcode project named `OpenGLES.xcodeproj` is provided in `ios/xcode` directory.
- * GN is not used atm. The aim is eventually using GN to build iOS version as the rest of platfomrs.
- * Running and testing on iOS Simulator requires Xcode 11+ and MacOS Catalina (10.15+).
-
-### Getting the source
+##### Getting the source
 
 ```
 git clone https://github.com/kakashidinho/metalangle
@@ -40,8 +74,9 @@ gclient sync
 git checkout master
 ```
 
-After running `gclient sync`, it may report some errors about failed to fetch "gs://chromium-clang-format ...". If this happens, open `DEPS` file in the root directory,
-remove this code snippets:
+After running `gclient sync`, it may report some errors about failed to fetch
+"gs://chromium-clang-format ...". If this happens, open `DEPS` file in the root directory, remove
+this code snippets:
 ```
   {
     'name': 'clang_format_mac',
@@ -57,22 +92,23 @@ remove this code snippets:
   },
 ```
 
-### Building MacOS version
+##### Building MacOS version
 
-##### Default ANGLE build system
 After getting the source successfully, you are ready to generate the ninja files:
 ```
 gn gen out/Debug --ide=xcode --args='mac_deployment_target="10.13" angle_enable_metal=true'
 ```
 
-GN will generate ninja files by default.  To change the default build options run `gn args out/Debug`.  Some commonly used options are:
+GN will generate ninja files by default.  To change the default build options run `gn args
+out/Debug`.  Some commonly used options are:
 ```
 target_cpu = "x64"  (or "x86")
 is_clang = false    (to use system default compiler instead of clang)
 is_debug = true     (enable debugging, true is the default)
 strip_absolute_paths_from_debug_symbols = false (disable this flag will allow xcode to debug the output binaries)
 ```
-You can open XCode workspace generated by GN in `out/Debug` folder to browse the code, as well as debugging the tests and sample applications.
+You can open Xcode workspace generated by GN in `out/Debug` folder to browse the code, as well as
+debugging the tests and sample applications.
 
 For a release build run `gn args out/Release` and set `is_debug = false`.
 
@@ -83,45 +119,42 @@ Ninja can be used to compile with one of the following commands:
 ninja -C out/Debug
 ninja -C out/Release
 ```
-Ninja automatically calls GN to regenerate the build files on any configuration change.
-Ensure `depot_tools` is in your path as it provides ninja.
-
-##### Xcode build project
-An Xcode project is also provided for your convenience. It can build `MetalANGLE.framework` and
-several sample apps:
-
-- Open `OpenGLES.xcodeproj` in `mac/xcode` folder.
-- The target `MetalANGLE` will build OpenGL ES framework named `MetalANGLE.framework`.
-- If you want to build the sample app using [MGLKit](#MGLKit) library. Open `MGKitSamples.xcodeproj` instead of `OpenGLES.xcodeproj`, DO NOT open both at the same time. As `MGKitSamples.xcodeproj` will open the `OpenGLES.xcodeproj` inside its workspace.
-
-### Building iOS version
-- Open `OpenGLES.xcodeproj` in `ios/xcode` folder.
-- The target `MetalANGLE` will build OpenGL ES framework named `MetalANGLE.framework`.
-- __Note__: in order to test sample apps on real devices. You have to change their Bundle Identifier in XCode to something you like, since only one development team can use one ID at a time. And this is global restriction across the globes. Once one person install the sample apps using his Apple developer profile, the ID configured will be registered for that developer only. And no other developers can use that ID to install to their device anymore.
-- If you want to build the sample app using [MGLKit](#MGLKit) library. Open `MGKitSamples.xcodeproj` instead of `OpenGLES.xcodeproj`, DO NOT open both at the same time. As `MGKitSamples.xcodeproj`will open the `OpenGLES.xcodeproj` inside its workspace.
+Ninja automatically calls GN to regenerate the build files on any configuration change. Ensure
+`depot_tools` is in your path as it provides ninja.
 
 ## Application Development with ANGLE
 This sections describes how to use ANGLE to build an OpenGL ES application.
 
 ### Choosing a Backend
-ANGLE can use a variety of backing renderers based on platform.  On MacOS & iOS, it defaults to Metal.
+ANGLE can use a variety of backing renderers based on platform.  On MacOS & iOS, it defaults to
+Metal.
 
-ANGLE provides an EGL extension called `EGL_ANGLE_platform_angle` which allows uers to select which renderer to use at EGL initialization time by calling eglGetPlatformDisplayEXT with special enums. Details of the extension can be found in it's specification in `extensions/ANGLE_platform_angle.txt` and `extensions/ANGLE_platform_angle_*.txt` and examples of it's use can be seen in the ANGLE samples and tests, particularly `util/EGLWindow.cpp`.
-Currently, iOS version cannot choose other renderer other than the default (Metal).
+ANGLE provides an EGL extension called `EGL_ANGLE_platform_angle` which allows uers to select which
+renderer to use at EGL initialization time by calling eglGetPlatformDisplayEXT with special enums.
+Details of the extension can be found in it's specification in `extensions/ANGLE_platform_angle.txt`
+and `extensions/ANGLE_platform_angle_*.txt` and examples of it's use can be seen in the ANGLE
+samples and tests, particularly `util/EGLWindow.cpp`. Currently, iOS version cannot choose other
+renderer other than the default (Metal).
 
 ### To Use MetalANGLE in Your Application
 
-Configure your build environment to have access to the `include` folder to provide access to the standard Khronos EGL and GLES2 header files.
+Configure your build environment to have access to the `include` folder to provide access to the
+standard Khronos EGL and GLES2 header files.
 
-#### On MacOS (using default ANGLE build system to build MetalANGLE)
+#### On MacOS (using `libGLESv2.dylib` built by standard ANGLE build system)
 
- - Configure your build environment to have access to `libEGL.dylib` and `libGLESv2.dylib` found in the build output directory (see [Building ANGLE](#Building-MacOS-version)).
+ - Configure your build environment to have access to `libEGL.dylib` and `libGLESv2.dylib` found in
+   the build output directory (see [Building ANGLE](#Building-MacOS-version)).
  - Link you application against `libGLESv2.dylib` and `libEGL.dylib`.
- - Code your application to the Khronos [OpenGL ES 2.0](http://www.khronos.org/registry/gles/) and [EGL 1.4](http://www.khronos.org/registry/egl/) APIs.
+ - Code your application to the Khronos [OpenGL ES 2.0](http://www.khronos.org/registry/gles/) and
+   [EGL 1.4](http://www.khronos.org/registry/egl/) APIs.
 
-#### On iOS and MacOS (using provided Xcode project to build MetalANGLE)
+#### On iOS and MacOS (using `MetalANGLE.framework` built by the provided Xcode project)
 
  - Link you application against `MetalANGLE.framework`.
 
 ##### MGLKit
- - `MetalANGLE.framework` also contains MGLKit utilities classes such as `MGLContext`, `MGLLayer`, `MGLKView`, `MGLKViewController`, similar to Apple's provided GLKit classes such as `CAEAGLContext`, `CAEAGLLayer`, `GLKView`, `GLKViewController`. Please see the sample app making use of this MGLKit classes in `MGLKitSamples.xcodeproj`
+ - `MetalANGLE.framework` also contains MGLKit utilities classes such as `MGLContext`, `MGLLayer`,
+   `MGLKView`, `MGLKViewController`, similar to Apple's provided GLKit classes such as
+   `CAEAGLContext`, `CAEAGLLayer`, `GLKView`, `GLKViewController`. Please see the sample app making
+   use of this MGLKit classes in `MGLKitSamples.xcodeproj`

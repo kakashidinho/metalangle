@@ -47,6 +47,8 @@ invoke_xcodebuild()
     fi
 }
 
+./fetchDependencies.sh
+
 invoke_xcodebuild MGLKitSampleApp
 invoke_xcodebuild MGLPaint
 invoke_xcodebuild MGLKitSampleApp_ios9.0
