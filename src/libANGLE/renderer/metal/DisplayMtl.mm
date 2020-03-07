@@ -16,7 +16,6 @@
 #include "libANGLE/renderer/metal/SurfaceMtl.h"
 #include "libANGLE/renderer/metal/mtl_common.h"
 #include "libANGLE/renderer/metal/shaders/compiled/mtl_default_shaders.inc"
-#include "libANGLE/renderer/metal/shaders/mtl_default_shaders_src_autogen.inc"
 #include "platform/Platform.h"
 
 #include "EGL/eglext.h"
@@ -671,13 +670,21 @@ angle::Result DisplayMtl::initializeShaderLibrary()
 {
     mtl::AutoObjCObj<NSError> err = nil;
 
-#if defined(ANGLE_MTL_DEBUG_INTERNAL_SHADERS)
-    mDefaultShaders = CreateShaderLibrary(getDisplay()->getMetalDevice(), default_metallib_src,
-                                          sizeof(default_metallib_src), &err);
-#else
     const uint8_t *compiled_shader_binary;
     size_t compiled_shader_binary_len;
 
+#if !defined(NDEBUG)
+    if (getFeatures().hasStencilOutput.enabled)
+    {
+        compiled_shader_binary     = compiled_default_metallib_2_1_debug;
+        compiled_shader_binary_len = compiled_default_metallib_2_1_debug_len;
+    }
+    else
+    {
+        compiled_shader_binary     = compiled_default_metallib_debug;
+        compiled_shader_binary_len = compiled_default_metallib_debug_len;
+    }
+#else
     if (getFeatures().hasStencilOutput.enabled)
     {
         compiled_shader_binary = compiled_default_metallib_2_1;
@@ -688,10 +695,10 @@ angle::Result DisplayMtl::initializeShaderLibrary()
         compiled_shader_binary = compiled_default_metallib;
         compiled_shader_binary_len = compiled_default_metallib_len;
     }
-
-    mDefaultShaders = CreateShaderLibraryFromBinary(
-        getMetalDevice(), compiled_shader_binary, compiled_shader_binary_len, &err);
 #endif
+
+    mDefaultShaders = CreateShaderLibraryFromBinary(getMetalDevice(), compiled_shader_binary,
+                                                    compiled_shader_binary_len, &err);
 
     if (err && !mDefaultShaders)
     {
