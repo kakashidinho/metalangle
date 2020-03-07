@@ -238,9 +238,6 @@ struct RenderPipelineDesc
 
 struct RenderPassAttachmentTextureTargetDesc
 {
-    RenderPassAttachmentTextureTargetDesc() = default;
-    RenderPassAttachmentTextureTargetDesc(const RenderPassAttachmentTextureTargetDesc &src) =
-        default;
     TextureRef getTextureRef() const { return texture.lock(); }
 
     TextureWeakRef texture;
