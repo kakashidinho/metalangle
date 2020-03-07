@@ -15,6 +15,8 @@
 #include "libANGLE/renderer/metal/ContextMtl.h"
 #include "libANGLE/renderer/metal/SurfaceMtl.h"
 #include "libANGLE/renderer/metal/mtl_common.h"
+#include "libANGLE/renderer/metal/shaders/compiled/mtl_default_shaders.inc"
+#include "libANGLE/renderer/metal/shaders/mtl_default_shaders_src_autogen.inc"
 #include "platform/Platform.h"
 
 #include "EGL/eglext.h"
@@ -75,6 +77,7 @@ angle::Result DisplayMtl::initializeImpl(egl::Display *display)
         initializeFeatures();
 
         ANGLE_TRY(mFormatTable.initialize(this));
+        ANGLE_TRY(initializeShaderLibrary());
 
         return mUtils.initialize();
     }
@@ -88,6 +91,7 @@ void DisplayMtl::terminate()
     }
     mUtils.onDestroy();
     mCmdQueue.reset();
+    mDefaultShaders  = nil;
     mMetalDevice     = nil;
     mCapsInitialized = false;
 
@@ -550,7 +554,6 @@ void DisplayMtl::initializeExtensions() const
     mNativeExtensions = gl::Extensions();
 
     // Enable this for simple buffer readback testing, but some functionality is missing.
-    // NOTE(hqle): Support full mapBufferRange extension.
     mNativeExtensions.mapBuffer              = true;
     mNativeExtensions.mapBufferRange         = true;
     mNativeExtensions.textureStorage         = true;
@@ -662,6 +665,44 @@ void DisplayMtl::initializeFeatures()
 
     angle::PlatformMethods *platform = ANGLEPlatformCurrent();
     platform->overrideFeaturesMtl(platform, &mFeatures);
+}
+
+angle::Result DisplayMtl::initializeShaderLibrary()
+{
+    mtl::AutoObjCObj<NSError> err = nil;
+
+#if defined(ANGLE_MTL_DEBUG_INTERNAL_SHADERS)
+    mDefaultShaders = CreateShaderLibrary(getDisplay()->getMetalDevice(), default_metallib_src,
+                                          sizeof(default_metallib_src), &err);
+#else
+    const uint8_t *compiled_shader_binary;
+    size_t compiled_shader_binary_len;
+
+    if (getFeatures().hasStencilOutput.enabled)
+    {
+        compiled_shader_binary = compiled_default_metallib_2_1;
+        compiled_shader_binary_len = compiled_default_metallib_2_1_len;
+    }
+    else
+    {
+        compiled_shader_binary = compiled_default_metallib;
+        compiled_shader_binary_len = compiled_default_metallib_len;
+    }
+
+    mDefaultShaders = CreateShaderLibraryFromBinary(
+        getMetalDevice(), compiled_shader_binary, compiled_shader_binary_len, &err);
+#endif
+
+    if (err && !mDefaultShaders)
+    {
+        ANGLE_MTL_OBJC_SCOPE
+        {
+            ERR() << "Internal error: " << err.get().localizedDescription.UTF8String;
+        }
+        return angle::Result::Stop;
+    }
+
+    return angle::Result::Continue;
 }
 
 }  // namespace rx

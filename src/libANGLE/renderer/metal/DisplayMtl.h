@@ -104,6 +104,8 @@ class DisplayMtl : public DisplayImpl
     mtl::RenderUtils &getUtils() { return mUtils; }
     mtl::StateCache &getStateCache() { return mStateCache; }
 
+    id<MTLLibrary> getDefaultShadersLib() const { return mDefaultShaders; }
+
     id<MTLDepthStencilState> getDepthStencilState(const mtl::DepthStencilDesc &desc)
     {
         return mStateCache.getDepthStencilState(getMetalDevice(), desc);
@@ -138,6 +140,7 @@ class DisplayMtl : public DisplayImpl
     void initializeExtensions() const;
     void initializeTextureCaps() const;
     void initializeFeatures();
+    angle::Result initializeShaderLibrary();
 
     mtl::AutoObjCPtr<id<MTLDevice>> mMetalDevice = nil;
 
@@ -146,6 +149,9 @@ class DisplayMtl : public DisplayImpl
     mtl::FormatTable mFormatTable;
     mtl::StateCache mStateCache;
     mtl::RenderUtils mUtils;
+
+    // Built-in Shaders
+    mtl::AutoObjCPtr<id<MTLLibrary>> mDefaultShaders = nil;
 
     angle::PackedEnumMap<gl::TextureType, mtl::TextureRef> mNullTextures;
 

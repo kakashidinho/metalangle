@@ -180,7 +180,6 @@ class RenderUtils : public Context, angle::NonCopyable
                      const char *function,
                      unsigned int line) override;
 
-    angle::Result initShaderLibrary();
     void initClearResources();
     void initBlitResources();
 
@@ -239,7 +238,6 @@ class RenderUtils : public Context, angle::NonCopyable
         const gl::Context *context,
         const IndexGenerationParams &params);
 
-    AutoObjCPtr<id<MTLLibrary>> mDefaultShaders = nil;
     RenderPipelineCache mClearRenderPipelineCache[kMaxRenderTargets];
     RenderPipelineCache mBlitRenderPipelineCache[kMaxRenderTargets];
     RenderPipelineCache mBlitPremultiplyAlphaRenderPipelineCache[kMaxRenderTargets];

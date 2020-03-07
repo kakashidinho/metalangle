@@ -17,8 +17,6 @@
 #include "libANGLE/renderer/metal/DisplayMtl.h"
 #include "libANGLE/renderer/metal/mtl_common.h"
 #include "libANGLE/renderer/metal/mtl_utils.h"
-#include "libANGLE/renderer/metal/shaders/compiled/mtl_default_shaders.inc"
-#include "libANGLE/renderer/metal/shaders/mtl_default_shaders_src_autogen.inc"
 
 namespace rx
 {
@@ -119,12 +117,6 @@ RenderUtils::~RenderUtils() {}
 
 angle::Result RenderUtils::initialize()
 {
-    auto re = initShaderLibrary();
-    if (re != angle::Result::Continue)
-    {
-        return re;
-    }
-
     initClearResources();
     initBlitResources();
 
@@ -133,8 +125,6 @@ angle::Result RenderUtils::initialize()
 
 void RenderUtils::onDestroy()
 {
-    mDefaultShaders = nil;
-
     for (uint32_t i = 0; i < kMaxRenderTargets; ++i)
     {
         mClearRenderPipelineCache[i].clear();
@@ -173,47 +163,12 @@ void RenderUtils::handleError(NSError *nserror,
           << nserror.localizedDescription.UTF8String;
 }
 
-angle::Result RenderUtils::initShaderLibrary()
-{
-    AutoObjCObj<NSError> err = nil;
-
-#if defined(ANGLE_MTL_DEBUG_INTERNAL_SHADERS)
-    mDefaultShaders = CreateShaderLibrary(getDisplay()->getMetalDevice(), default_metallib_src,
-                                          sizeof(default_metallib_src), &err);
-#else
-    const uint8_t *compiled_shader_binary;
-    size_t compiled_shader_binary_len;
-
-    if (getDisplay()->getFeatures().hasStencilOutput.enabled)
-    {
-        compiled_shader_binary     = compiled_default_metallib_2_1;
-        compiled_shader_binary_len = compiled_default_metallib_2_1_len;
-    }
-    else
-    {
-        compiled_shader_binary     = compiled_default_metallib;
-        compiled_shader_binary_len = compiled_default_metallib_len;
-    }
-
-    mDefaultShaders = CreateShaderLibraryFromBinary(
-        getDisplay()->getMetalDevice(), compiled_shader_binary, compiled_shader_binary_len, &err);
-#endif
-
-    if (err && !mDefaultShaders)
-    {
-        ANGLE_MTL_CHECK(this, false, err.get());
-        return angle::Result::Stop;
-    }
-
-    return angle::Result::Continue;
-}
-
 void RenderUtils::initClearResources()
 {
     ANGLE_MTL_OBJC_SCOPE
     {
         NSError *err       = nil;
-        auto shaderLib     = mDefaultShaders.get();
+        auto shaderLib     = getDisplay()->getDefaultShadersLib();
         auto vertexShader  = [[shaderLib newFunctionWithName:@"clearVS"] ANGLE_MTL_AUTORELEASE];
         auto funcConstants = [[[MTLFunctionConstantValues alloc] init] ANGLE_MTL_AUTORELEASE];
 
@@ -244,7 +199,7 @@ void RenderUtils::initBlitResources()
     ANGLE_MTL_OBJC_SCOPE
     {
         NSError *err       = nil;
-        auto shaderLib     = mDefaultShaders.get();
+        auto shaderLib     = getDisplay()->getDefaultShadersLib();
         auto vertexShader  = [[shaderLib newFunctionWithName:@"blitVS"] ANGLE_MTL_AUTORELEASE];
         auto funcConstants = [[[MTLFunctionConstantValues alloc] init] ANGLE_MTL_AUTORELEASE];
 
@@ -753,7 +708,7 @@ AutoObjCPtr<id<MTLComputePipelineState>> RenderUtils::getIndexConversionPipeline
     {
         ANGLE_MTL_OBJC_SCOPE
         {
-            auto shaderLib         = mDefaultShaders.get();
+            auto shaderLib         = getDisplay()->getDefaultShadersLib();
             id<MTLFunction> shader = nil;
             auto funcConstants = [[[MTLFunctionConstantValues alloc] init] ANGLE_MTL_AUTORELEASE];
             NSError *err       = nil;
@@ -817,7 +772,7 @@ AutoObjCPtr<id<MTLComputePipelineState>> RenderUtils::getTriFanFromElemArrayGene
     {
         ANGLE_MTL_OBJC_SCOPE
         {
-            auto shaderLib         = mDefaultShaders.get();
+            auto shaderLib         = getDisplay()->getDefaultShadersLib();
             id<MTLFunction> shader = nil;
             auto funcConstants = [[[MTLFunctionConstantValues alloc] init] ANGLE_MTL_AUTORELEASE];
             NSError *err       = nil;
@@ -883,7 +838,7 @@ angle::Result RenderUtils::ensureTriFanFromArrayGeneratorInitialized(ContextMtl 
         ANGLE_MTL_OBJC_SCOPE
         {
             id<MTLDevice> metalDevice = context->getMetalDevice();
-            auto shaderLib            = mDefaultShaders.get();
+            auto shaderLib            = getDisplay()->getDefaultShadersLib();
             NSError *err              = nil;
             id<MTLFunction> shader = [shaderLib newFunctionWithName:@"genTriFanIndicesFromArray"];
 
