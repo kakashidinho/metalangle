@@ -15,8 +15,12 @@ to continue operate on Apple platforms by translating OpenGL ES draw calls to Me
 - __Almost all of ANGLE end2end tests have been passed__. See [List of failed tests](src/libANGLE/renderer/metal/README.md#Failed-ANGLE-end2end-tests).
 - __97.7% of OpenGL ES 2.0 conformance tests passed__. See [Khronos VK-GL-CTS](https://github.com/KhronosGroup/VK-GL-CTS).
 - [MGLKit](src/libANGLE/renderer/metal/DevSetup.md#MGLKit) utilities classes have been added. Providing kind of similar functionalies to Apples's GLKit.
-- [EXT_instanced_arrays](https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_instanced_arrays.txt)/[ANGLE_instanced_arrays](https://www.khronos.org/registry/OpenGL/extensions/ANGLE/ANGLE_instanced_arrays.txt) support has been added, giving instanced draw capabilities to MetalANGLE.
-- [OES_depth_texture](https://www.khronos.org/registry/OpenGL/extensions/OES/OES_depth_texture.txt) support has been added.
+- These extensions have been implemented:
+  - [x] [EXT_instanced_arrays](https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_instanced_arrays.txt)/[ANGLE_instanced_arrays](https://www.khronos.org/registry/OpenGL/extensions/ANGLE/ANGLE_instanced_arrays.txt): Instanced draw calls for GLES 2.0.
+  - [x] [OES_depth_texture](https://www.khronos.org/registry/OpenGL/extensions/OES/OES_depth_texture.txt).
+  - [x] [EXT_draw_buffers](https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_draw_buffers.txt): Multiple render targets for GLES 2.0.
+  - [x] [ANGLE_framebuffer_blit](https://www.khronos.org/registry/OpenGL/extensions/ANGLE/ANGLE_framebuffer_blit.txt).
+  - [x] [APPLE_clip_distance](https://www.khronos.org/registry/OpenGL/extensions/APPLE/APPLE_clip_distance.txt): Custom clip planes.
 - Urho3D engine's demos have been tested using MetalANGLE without issues. See [Urho3D's MetalANGLE integration testing branch](https://github.com/kakashidinho/Urho3D/tree/angle-metal-backend).
 - Irrlicht Engine's integration with MetalANGLE sample: [https://github.com/kakashidinho/irrlicht](https://github.com/kakashidinho/irrlicht).
 - ~~No `GL_TRIANGLE_FAN` & `GL_LINE_LOOP` support in draw calls yet.~~
