@@ -65,6 +65,8 @@ class SurfaceMtl : public SurfaceImpl
     EGLint isPostSubBufferSupported() const override;
     EGLint getSwapBehavior() const override;
 
+    int getSamples() const { return mSamples; }
+
     angle::Result getAttachmentRenderTarget(const gl::Context *context,
                                             GLenum binding,
                                             const gl::ImageIndex &imageIndex,
@@ -76,7 +78,13 @@ class SurfaceMtl : public SurfaceImpl
   private:
     angle::Result swapImpl(const gl::Context *context);
     angle::Result obtainNextDrawable(const gl::Context *context);
-    angle::Result ensureDepthStencilSizeCorrect(const gl::Context *context);
+    angle::Result ensureTexturesSizeCorrect(const gl::Context *context);
+    angle::Result createTexture(const gl::Context *context,
+                                const mtl::Format &format,
+                                uint32_t width,
+                                uint32_t height,
+                                uint32_t samples,
+                                mtl::TextureRef *textureOut);
 
     CGSize calcExpectedDrawableSize() const;
     // Check if metal layer has been resized.
@@ -85,14 +93,24 @@ class SurfaceMtl : public SurfaceImpl
     mtl::AutoObjCObj<CAMetalLayer> mMetalLayer = nil;
     CALayer *mLayer;
     mtl::AutoObjCPtr<id<CAMetalDrawable>> mCurrentDrawable = nil;
+
+    // Normal textures
     mtl::TextureRef mDrawableTexture;
     mtl::TextureRef mDepthTexture;
     mtl::TextureRef mStencilTexture;
+
+    // Implicit multisample textures
+    mtl::TextureRef mMSColorTexture;
+    mtl::TextureRef mMSDepthTexture;
+    mtl::TextureRef mMSStencilTexture;
+
     bool mUsePackedDepthStencil = false;
 
     mtl::Format mColorFormat;
     mtl::Format mDepthFormat;
     mtl::Format mStencilFormat;
+
+    int mSamples = 0;
 
     RenderTargetMtl mColorRenderTarget;
     RenderTargetMtl mDepthRenderTarget;

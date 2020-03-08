@@ -31,20 +31,36 @@ void RenderTargetMtl::set(const mtl::TextureRef &texture,
                           uint32_t layer,
                           const mtl::Format &format)
 {
-    mTextureRenderTargetInfo->texture = texture;
-    mTextureRenderTargetInfo->level   = level;
-    mTextureRenderTargetInfo->slice   = layer;
-    mFormat                           = &format;
+    set(texture, nullptr, level, layer, format);
 }
 
-void RenderTargetMtl::set(const mtl::TextureRef &texture)
+void RenderTargetMtl::set(const mtl::TextureRef &texture,
+                          const mtl::TextureRef &implicitMSTexture,
+                          uint32_t level,
+                          uint32_t layer,
+                          const mtl::Format &format)
+{
+    mTextureRenderTargetInfo->texture           = texture;
+    mTextureRenderTargetInfo->implicitMSTexture = implicitMSTexture;
+    mTextureRenderTargetInfo->level             = level;
+    mTextureRenderTargetInfo->slice             = layer;
+    mFormat                                     = &format;
+}
+
+void RenderTargetMtl::setTexture(const mtl::TextureRef &texture)
 {
     mTextureRenderTargetInfo->texture = texture;
+}
+
+void RenderTargetMtl::setImplicitMSTexture(const mtl::TextureRef &implicitMSTexture)
+{
+    mTextureRenderTargetInfo->implicitMSTexture = implicitMSTexture;
 }
 
 void RenderTargetMtl::reset()
 {
     mTextureRenderTargetInfo->texture.reset();
+    mTextureRenderTargetInfo->implicitMSTexture.reset();
     mTextureRenderTargetInfo->level = 0;
     mTextureRenderTargetInfo->slice = 0;
     mFormat                         = nullptr;

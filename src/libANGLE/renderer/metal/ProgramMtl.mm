@@ -11,11 +11,13 @@
 
 #include <TargetConditionals.h>
 
+#include <regex>
 #include <sstream>
 
 #include <spirv_msl.hpp>
 
 #include "common/debug.h"
+#include "compiler/translator/TranslatorMetal.h"
 #include "libANGLE/Context.h"
 #include "libANGLE/ProgramLinkedResources.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
@@ -32,6 +34,7 @@ namespace
 {
 
 #define SHADER_ENTRY_NAME @"main0"
+constexpr char kSpirvCrossSpecConstSuffix[] = "_tmp";
 
 spv::ExecutionModel ShaderTypeToSpvExecutionModel(gl::ShaderType shaderType)
 {
@@ -110,6 +113,23 @@ angle::Result BindResources(spirv_cross::CompilerMSL *compiler,
     }
 
     return angle::Result::Continue;
+}
+
+std::string PostProcessTranslatedMsl(const std::string &translatedSource)
+{
+    std::string regexStr = R"(\[\s*\[\s*sample_mask\s*\]\s*\])";
+
+    std::string replaceStr = std::string("[[sample_mask, function_constant(") +
+                             sh::TranslatorMetal::GetCoverageMaskEnabledConstName() + ")]]";
+    // Add function_constant attribute to gl_SampleMask.
+    // Even though this varying is only used when ANGLECoverageMaskEnabled is true,
+    // the spirv-cross doesn't assign function_constant attribute to it. Thus it won't be dead-code
+    // removed when ANGLECoverageMaskEnabled=false.
+
+    // This replaces "gl_SampleMask [[sample_mask]]"
+    //          with "gl_SampleMask [[sample_mask, function_constant(ANGLECoverageMaskEnabled)]]"
+    std::regex sampleMaskDeclareRegex(regexStr);
+    return std::regex_replace(translatedSource, sampleMaskDeclareRegex, replaceStr);
 }
 
 void InitDefaultUniformBlock(const std::vector<sh::Uniform> &uniforms,
@@ -463,8 +483,10 @@ angle::Result ProgramMtl::convertToMsl(const gl::Context *glContext,
         ANGLE_MTL_CHECK(contextMtl, false, GL_INVALID_OPERATION);
     }
 
+    std::string postprocessedMsl = PostProcessTranslatedMsl(translatedMsl);
+
     // Create actual Metal shader
-    ANGLE_TRY(createMslShader(glContext, shaderType, infoLog, translatedMsl));
+    ANGLE_TRY(createMslShader(glContext, shaderType, infoLog, postprocessedMsl));
 
     return angle::Result::Continue;
 }
@@ -497,17 +519,52 @@ angle::Result ProgramMtl::createMslShader(const gl::Context *glContext,
             ANGLE_MTL_CHECK(contextMtl, false, GL_INVALID_OPERATION);
         }
 
-        auto mtlShader = [mtlShaderLib.get() newFunctionWithName:SHADER_ENTRY_NAME];
-        [mtlShader ANGLE_MTL_AUTORELEASE];
-        ASSERT(mtlShader);
         if (shaderType == gl::ShaderType::Vertex)
         {
+            auto mtlShader = [mtlShaderLib.get() newFunctionWithName:SHADER_ENTRY_NAME];
+            [mtlShader ANGLE_MTL_AUTORELEASE];
+            ASSERT(mtlShader);
+
             mMetalRenderPipelineCache.setVertexShader(contextMtl, mtlShader);
         }
         else if (shaderType == gl::ShaderType::Fragment)
         {
-            mMetalRenderPipelineCache.setFragmentShader(contextMtl, mtlShader);
-        }
+            NSError *nsErr = nil;
+            // For fragment shader, we need to create 2 variances, one with sample coverage mask
+            // disabled, one with the mask enabled.
+            auto funcConstants = [[[MTLFunctionConstantValues alloc] init] ANGLE_MTL_AUTORELEASE];
+
+            NSString *coverageMaskEnabledStr = [NSString
+                stringWithFormat:@"%s%s", sh::TranslatorMetal::GetCoverageMaskEnabledConstName(),
+                                 kSpirvCrossSpecConstSuffix];
+
+            BOOL enables[] = {NO, YES};
+            for (auto enable : enables)
+            {
+                [funcConstants setConstantValue:&enable
+                                           type:MTLDataTypeBool
+                                       withName:coverageMaskEnabledStr];
+
+                auto mtlShader = [mtlShaderLib.get() newFunctionWithName:SHADER_ENTRY_NAME
+                                                          constantValues:funcConstants
+                                                                   error:&nsErr];
+                [mtlShader ANGLE_MTL_AUTORELEASE];
+                if (nsErr && !mtlShader)
+                {
+                    std::ostringstream ss;
+                    ss << "Internal error compiling Metal shader:\n"
+                       << nsErr.localizedDescription.UTF8String << "\n";
+
+                    ERR() << ss.str();
+
+                    infoLog << ss.str();
+
+                    ANGLE_MTL_CHECK(contextMtl, false, GL_INVALID_OPERATION);
+                }
+
+                mMetalRenderPipelineCache.setFragmentShader(contextMtl, mtlShader, enable);
+            }
+        }  // gl::ShaderType::Fragment
 
         return angle::Result::Continue;
     }

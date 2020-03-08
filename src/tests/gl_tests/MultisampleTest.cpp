@@ -263,10 +263,106 @@ TEST_P(MultisampleTest, Triangle)
     }
 }
 
+// Test polygon rendering on a multisampled surface. And rendering is interrupted by a compute pass
+// that converts the index buffer. Make sure the rendering's multisample result is preserved after
+// interruption.
+TEST_P(MultisampleTest, ContentPresevedAfterInterruption)
+{
+    ANGLE_SKIP_TEST_IF(!IsGLExtensionEnabled("GL_ANGLE_framebuffer_blit"));
+    ANGLE_SKIP_TEST_IF(!IsGLExtensionEnabled("GL_OES_rgb8_rgba8"));
+    ANGLE_SKIP_TEST_IF(!mMultisampledConfigExists);
+    // http://anglebug.com/3470
+    ANGLE_SKIP_TEST_IF(IsAndroid() && IsNVIDIAShield() && IsOpenGLES());
+
+    ANGLE_GL_PROGRAM(program, essl1_shaders::vs::Simple(), essl1_shaders::fs::Red());
+    glUseProgram(program);
+    const GLint positionLocation = glGetAttribLocation(program, essl1_shaders::PositionAttrib());
+
+    if (IsGLExtensionEnabled("GL_EXT_discard_framebuffer"))
+    {
+        GLenum attachments[] = {GL_COLOR_EXT, GL_DEPTH_EXT, GL_STENCIL_EXT};
+        glDiscardFramebufferEXT(GL_FRAMEBUFFER, 3, attachments);
+    }
+    // Draw triangle
+    GLBuffer vertexBuffer;
+    const Vector3 vertices[3] = {{-1.0f, -1.0f, 0.0f}, {-1.0f, 1.0f, 0.0f}, {1.0f, -1.0f, 0.0f}};
+    prepareVertexBuffer(vertexBuffer, vertices, 3, positionLocation);
+
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+
+    ASSERT_GL_NO_ERROR();
+
+    // Draw a line
+    GLBuffer vertexBuffer2;
+    GLBuffer indexBuffer2;
+    const Vector3 vertices2[2] = {{-1.0f, -0.3f, 0.0f}, {1.0f, 0.3f, 0.0f}};
+    const GLubyte indices2[]   = {0, 1};
+    prepareVertexBuffer(vertexBuffer2, vertices2, 2, positionLocation);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer2);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices2), indices2, GL_STATIC_DRAW);
+
+    glDrawElements(GL_LINES, 2, GL_UNSIGNED_BYTE, 0);
+
+    ASSERT_GL_NO_ERROR();
+
+    // Blit to the render buffer
+    GLFramebuffer fbo;
+    GLRenderbuffer renderbuffer;
+    glBindRenderbuffer(GL_RENDERBUFFER, renderbuffer);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8_OES, kWindowSize, kWindowSize);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+    glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER,
+                              renderbuffer);
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+    glBlitFramebufferANGLE(0, 0, kWindowSize, kWindowSize, 0, 0, kWindowSize, kWindowSize,
+                           GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+    // Top-left pixels should be all red.
+    EXPECT_PIXEL_COLOR_EQ(0, 0, GLColor::red);
+    EXPECT_PIXEL_COLOR_EQ(kWindowSize / 4, kWindowSize / 4, GLColor::red);
+
+    // Triangle edge:
+    // Diagonal pixels from bottom-left to top-right are between red and black.  Pixels above the
+    // diagonal are red and pixels below it are black.
+    {
+        const GLColor kMidRed      = {128, 0, 0, 128};
+        constexpr int kErrorMargin = 16;
+
+        for (int i = 1; i + 1 < kWindowSize; ++i)
+        {
+            // Exclude the middle pixel where the triangle and line cross each other.
+            if (abs(kWindowSize / 2 - i) <= 1)
+            {
+                continue;
+            }
+            int j = kWindowSize - 1 - i;
+            EXPECT_PIXEL_COLOR_NEAR(i, j, kMidRed, kErrorMargin);
+            EXPECT_PIXEL_COLOR_EQ(i, j - 1, GLColor::red);
+            EXPECT_PIXEL_COLOR_EQ(i, j + 1, GLColor::transparentBlack);
+        }
+    }
+
+    // Line edge:
+    {
+        const GLColor kDarkRed     = {128, 0, 0, 128};
+        constexpr int kErrorMargin = 16;
+        constexpr int kLargeMargin = 80;
+
+        static_assert(kWindowSize == 8, "Verification code written for 8x8 window");
+        // Exclude the triangle region.
+        EXPECT_PIXEL_COLOR_NEAR(5, 4, GLColor::red, kErrorMargin);
+        EXPECT_PIXEL_COLOR_NEAR(6, 4, GLColor::red, kLargeMargin);
+        EXPECT_PIXEL_COLOR_NEAR(7, 5, kDarkRed, kLargeMargin);
+    }
+}
+
 ANGLE_INSTANTIATE_TEST(MultisampleTest,
                        WithNoFixture(ES2_D3D11()),
                        WithNoFixture(ES3_D3D11()),
                        WithNoFixture(ES31_D3D11()),
+                       WithNoFixture(ES2_METAL()),
                        WithNoFixture(ES2_OPENGL()),
                        WithNoFixture(ES3_OPENGL()),
                        WithNoFixture(ES31_OPENGL()),

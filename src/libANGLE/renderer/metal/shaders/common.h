@@ -33,6 +33,7 @@ constant int gTexcoordsIndices[6] = {2, 1, 0, 2, 3, 1};
 
 // Common constant defined number of color outputs
 constant uint32_t kNumColorOutputs [[function_constant(0)]];
+constant bool kColorOutputAvailable0 = kNumColorOutputs > 0;
 constant bool kColorOutputAvailable1 = kNumColorOutputs > 1;
 constant bool kColorOutputAvailable2 = kNumColorOutputs > 2;
 constant bool kColorOutputAvailable3 = kNumColorOutputs > 3;
@@ -43,7 +44,7 @@ constant bool kColorOutputAvailable7 = kNumColorOutputs > 7;
 
 struct MultipleColorOutputs
 {
-    float4 color0 [[color(0)]];
+    float4 color0 [[color(0), function_constant(kColorOutputAvailable0)]];
     float4 color1 [[color(1), function_constant(kColorOutputAvailable1)]];
     float4 color2 [[color(2), function_constant(kColorOutputAvailable2)]];
     float4 color3 [[color(3), function_constant(kColorOutputAvailable3)]];
@@ -65,8 +66,8 @@ struct MultipleColorOutputs
 MultipleColorOutputs toMultipleColorOutputs(float4 color)
 {
     MultipleColorOutputs re;
-    re.color0 = color;
 
+    ANGLE_ASSIGN_COLOR_OUPUT(re, 0, color);
     ANGLE_ASSIGN_COLOR_OUPUT(re, 1, color);
     ANGLE_ASSIGN_COLOR_OUPUT(re, 2, color);
     ANGLE_ASSIGN_COLOR_OUPUT(re, 3, color);

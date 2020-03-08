@@ -125,9 +125,12 @@ angle::Result RenderUtils::initialize()
 
 void RenderUtils::onDestroy()
 {
-    for (uint32_t i = 0; i < kMaxRenderTargets; ++i)
+    for (uint32_t i = 0; i <= kMaxRenderTargets; ++i)
     {
         mClearRenderPipelineCache[i].clear();
+    }
+    for (uint32_t i = 0; i < kMaxRenderTargets; ++i)
+    {
         mBlitRenderPipelineCache[i].clear();
         mBlitPremultiplyAlphaRenderPipelineCache[i].clear();
         mBlitUnmultiplyAlphaRenderPipelineCache[i].clear();
@@ -173,11 +176,11 @@ void RenderUtils::initClearResources()
         auto funcConstants = [[[MTLFunctionConstantValues alloc] init] ANGLE_MTL_AUTORELEASE];
 
         // Create clear shader pipeline cache for each number of color outputs.
-        // So clear k color outputs will use mClearRenderPipelineCache[k-1] for example:
-        for (uint32_t i = 0; i < kMaxRenderTargets; ++i)
+        // So clear k color outputs will use mClearRenderPipelineCache[k] for example:
+        for (uint32_t i = 0; i <= kMaxRenderTargets; ++i)
         {
             RenderPipelineCache &cache = mClearRenderPipelineCache[i];
-            uint32_t numOutputs        = i + 1;
+            uint32_t numOutputs        = i;
 
             [funcConstants setConstantValue:&numOutputs
                                        type:MTLDataTypeUInt
@@ -533,7 +536,7 @@ id<MTLRenderPipelineState> RenderUtils::getClearRenderPipelineState(
 
     pipelineDesc.inputPrimitiveTopology = kPrimitiveTopologyClassTriangle;
 
-    RenderPipelineCache &cache = mClearRenderPipelineCache[renderPassDesc.numColorAttachments - 1];
+    RenderPipelineCache &cache = mClearRenderPipelineCache[renderPassDesc.numColorAttachments];
 
     return cache.getRenderPipelineState(contextMtl, pipelineDesc);
 }

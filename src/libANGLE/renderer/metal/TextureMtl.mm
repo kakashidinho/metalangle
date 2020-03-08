@@ -343,7 +343,7 @@ void TextureMtl::releaseTexture(bool releaseImages)
         {
             for (auto &mipRenderTarget : sliceRenderTargets.second)
             {
-                mipRenderTarget.set(nullptr);
+                mipRenderTarget.reset();
             }
         }
     }

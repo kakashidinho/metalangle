@@ -238,7 +238,7 @@ class RenderUtils : public Context, angle::NonCopyable
         const gl::Context *context,
         const IndexGenerationParams &params);
 
-    RenderPipelineCache mClearRenderPipelineCache[kMaxRenderTargets];
+    RenderPipelineCache mClearRenderPipelineCache[kMaxRenderTargets + 1];
     RenderPipelineCache mBlitRenderPipelineCache[kMaxRenderTargets];
     RenderPipelineCache mBlitPremultiplyAlphaRenderPipelineCache[kMaxRenderTargets];
     RenderPipelineCache mBlitUnmultiplyAlphaRenderPipelineCache[kMaxRenderTargets];

@@ -327,7 +327,16 @@ class RenderCommandEncoder final : public CommandEncoder
     RenderCommandEncoder &setDepthStoreAction(MTLStoreAction action);
     RenderCommandEncoder &setStencilStoreAction(MTLStoreAction action);
 
+    // Change the render pass's loadAction. Note that this operation is only allowed when there
+    // is no draw call recorded yet.
+    RenderCommandEncoder &setColorLoadAction(MTLLoadAction action,
+                                             const MTLClearColor &clearValue,
+                                             uint32_t colorAttachmentIndex);
+    RenderCommandEncoder &setDepthLoadAction(MTLLoadAction action, double clearValue);
+    RenderCommandEncoder &setStencilLoadAction(MTLLoadAction action, uint32_t clearValue);
+
     const RenderPassDesc &renderPassDesc() const { return mRenderPassDesc; }
+    bool hasDrawCalls() const { return mHasDrawCalls; }
 
   private:
     // Override CommandEncoder
@@ -337,8 +346,10 @@ class RenderCommandEncoder final : public CommandEncoder
     }
     void insertDebugSignImpl(NSString *label) override;
 
-    void initWriteDependencyAndStoreAction(const TextureRef &texture,
-                                           MTLStoreAction *storeActionOut);
+    void initWriteDependency(const TextureRef &texture);
+
+    void finalizeLoadStoreAction(MTLRenderPassAttachmentDescriptor *objCRenderPassAttachment);
+
     void encodeMetalEncoder();
     void simulateDiscardFramebuffer();
     void endEncodingImpl(bool considerDiscardSimulation);
@@ -347,7 +358,8 @@ class RenderCommandEncoder final : public CommandEncoder
     // Cached Objective-C render pass desc to avoid re-allocate every frame.
     mtl::AutoObjCObj<MTLRenderPassDescriptor> mCachedRenderPassDescObjC;
 
-    bool mRecording = false;
+    bool mRecording    = false;
+    bool mHasDrawCalls = false;
     IntermediateCommandStream mCommands;
 };
 

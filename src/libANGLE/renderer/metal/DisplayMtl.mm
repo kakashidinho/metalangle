@@ -272,7 +272,6 @@ egl::ConfigSet DisplayMtl::generateConfigs()
 
     // Misc
     config.sampleBuffers     = 0;
-    config.samples           = 0;
     config.level             = 0;
     config.bindToTextureRGB  = EGL_FALSE;
     config.bindToTextureRGBA = EGL_FALSE;
@@ -297,32 +296,41 @@ egl::ConfigSet DisplayMtl::generateConfigs()
 
     config.colorComponentType = EGL_COLOR_COMPONENT_TYPE_FIXED_EXT;
 
-    // Buffer sizes
-    config.redSize    = 8;
-    config.greenSize  = 8;
-    config.blueSize   = 8;
-    config.alphaSize  = 8;
-    config.bufferSize = config.redSize + config.greenSize + config.blueSize + config.alphaSize;
+    constexpr int samplesSupported[] = {0, 4};
 
-    // With DS
-    config.depthSize   = 24;
-    config.stencilSize = 8;
-    configs.add(config);
+    for (int samples : samplesSupported)
+    {
+        config.samples       = samples;
+        config.sampleBuffers = (samples == 0) ? 0 : 1;
 
-    // With D
-    config.depthSize   = 24;
-    config.stencilSize = 0;
-    configs.add(config);
+        // Buffer sizes
+        config.redSize    = 8;
+        config.greenSize  = 8;
+        config.blueSize   = 8;
+        config.alphaSize  = 8;
+        config.bufferSize = config.redSize + config.greenSize + config.blueSize + config.alphaSize;
 
-    // With S
-    config.depthSize   = 0;
-    config.stencilSize = 8;
-    configs.add(config);
+        // With DS
+        config.depthSize   = 24;
+        config.stencilSize = 8;
 
-    // No DS
-    config.depthSize   = 0;
-    config.stencilSize = 0;
-    configs.add(config);
+        configs.add(config);
+
+        // With D
+        config.depthSize   = 24;
+        config.stencilSize = 0;
+        configs.add(config);
+
+        // With S
+        config.depthSize   = 0;
+        config.stencilSize = 8;
+        configs.add(config);
+
+        // No DS
+        config.depthSize   = 0;
+        config.stencilSize = 0;
+        configs.add(config);
+    }
 
     return configs;
 }
@@ -687,12 +695,12 @@ angle::Result DisplayMtl::initializeShaderLibrary()
 #else
     if (getFeatures().hasStencilOutput.enabled)
     {
-        compiled_shader_binary = compiled_default_metallib_2_1;
+        compiled_shader_binary     = compiled_default_metallib_2_1;
         compiled_shader_binary_len = compiled_default_metallib_2_1_len;
     }
     else
     {
-        compiled_shader_binary = compiled_default_metallib;
+        compiled_shader_binary     = compiled_default_metallib;
         compiled_shader_binary_len = compiled_default_metallib_len;
     }
 #endif

@@ -197,7 +197,9 @@ struct RenderPipelineOutputDesc
     MTLPixelFormat depthAttachmentPixelFormat;
     MTLPixelFormat stencilAttachmentPixelFormat;
 
-    uint8_t numColorAttachments;
+    static_assert(kMaxRenderTargets <= 4, "kMaxRenderTargets must be <= 4");
+    uint32_t numColorAttachments : 3;
+    uint32_t sampleCount : 5;
 };
 
 // Some SDK levels don't declare MTLPrimitiveTopologyClass. Needs to do compile time check here:
@@ -233,14 +235,27 @@ struct RenderPipelineDesc
 
     PrimitiveTopologyClass inputPrimitiveTopology;
 
-    bool rasterizationEnabled;
+    bool rasterizationEnabled : 1;
+    bool alphaToCoverageEnabled : 1;
+    bool coverageMaskEnabled : 1;
 };
 
 struct RenderPassAttachmentTextureTargetDesc
 {
     TextureRef getTextureRef() const { return texture.lock(); }
+    TextureRef getImplicitMSTextureRef() const { return implicitMSTexture.lock(); }
+    bool hasImplicitMSTexture() const { return !implicitMSTexture.expired(); }
+    uint32_t getRenderSamples() const
+    {
+        TextureRef tex   = getTextureRef();
+        TextureRef msTex = getImplicitMSTextureRef();
+        return msTex ? msTex->samples() : (tex ? tex->samples() : 1);
+    }
 
     TextureWeakRef texture;
+    // Implicit multisample texture that will be rendered into and discarded at the end of
+    // a render pass. Its result will be resolved into normal texture above.
+    TextureWeakRef implicitMSTexture;
     uint32_t level = 0;
     uint32_t slice = 0;
 };
@@ -257,6 +272,18 @@ struct RenderPassAttachmentDesc
     ANGLE_INLINE TextureRef texture() const
     {
         return renderTarget ? renderTarget->getTextureRef() : nullptr;
+    }
+    ANGLE_INLINE TextureRef implicitMSTexture() const
+    {
+        return renderTarget ? renderTarget->getImplicitMSTextureRef() : nullptr;
+    }
+    ANGLE_INLINE bool hasImplicitMSTexture() const
+    {
+        return renderTarget ? renderTarget->hasImplicitMSTexture() : false;
+    }
+    ANGLE_INLINE uint32_t renderSamples() const
+    {
+        return renderTarget ? renderTarget->getRenderSamples() : 1;
     }
     ANGLE_INLINE uint32_t level() const { return renderTarget ? renderTarget->level : 0; }
     ANGLE_INLINE uint32_t slice() const { return renderTarget ? renderTarget->slice : 0; }
@@ -337,6 +364,7 @@ struct RenderPassDesc
     inline bool operator!=(const RenderPassDesc &other) const { return !(*this == other); }
 
     uint32_t numColorAttachments = 0;
+    uint32_t sampleCount         = 1;
 };
 
 }  // namespace mtl
@@ -377,10 +405,15 @@ class RenderPipelineCache final : angle::NonCopyable
     ~RenderPipelineCache();
 
     void setVertexShader(Context *context, id<MTLFunction> shader);
-    void setFragmentShader(Context *context, id<MTLFunction> shader);
+    void setFragmentShader(Context *context, id<MTLFunction> shader)
+    {
+        setFragmentShader(context, shader, false);
+    }
+    void setFragmentShader(Context *context, id<MTLFunction> shader, bool withCoverageMaskWrite);
 
     id<MTLFunction> getVertexShader() { return mVertexShader.get(); }
-    id<MTLFunction> getFragmentShader() { return mFragmentShader.get(); }
+    id<MTLFunction> getFragmentShader() { return mFragmentShaders[0].get(); }
+    id<MTLFunction> getFragmentShaderWithCoverageMaskWrite() { return mFragmentShaders[1].get(); }
 
     AutoObjCPtr<id<MTLRenderPipelineState>> getRenderPipelineState(ContextMtl *context,
                                                                    const RenderPipelineDesc &desc);
@@ -388,8 +421,9 @@ class RenderPipelineCache final : angle::NonCopyable
     void clear();
 
   protected:
-    AutoObjCPtr<id<MTLFunction>> mVertexShader   = nil;
-    AutoObjCPtr<id<MTLFunction>> mFragmentShader = nil;
+    AutoObjCPtr<id<MTLFunction>> mVertexShader = nil;
+    // On shader with coverage mask disabled, one with coverage mask enabled
+    AutoObjCPtr<id<MTLFunction>> mFragmentShaders[2] = {};
 
   private:
     void clearPipelineStates();

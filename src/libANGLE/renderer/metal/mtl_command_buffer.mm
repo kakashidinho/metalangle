@@ -674,6 +674,43 @@ void RenderCommandEncoder::reset()
     mCommands.clear();
 }
 
+void RenderCommandEncoder::finalizeLoadStoreAction(
+    MTLRenderPassAttachmentDescriptor *objCRenderPassAttachment)
+{
+    if (!objCRenderPassAttachment.texture)
+    {
+        objCRenderPassAttachment.loadAction     = MTLLoadActionDontCare;
+        objCRenderPassAttachment.storeAction    = MTLStoreActionDontCare;
+        objCRenderPassAttachment.resolveTexture = nil;
+        return;
+    }
+
+    if (objCRenderPassAttachment.resolveTexture)
+    {
+        if (objCRenderPassAttachment.storeAction == MTLStoreActionStore)
+        {
+            // NOTE(hqle): Currently if the store action with implicit MS texture is MTLStoreAction,
+            // it is automatically convert to store and resolve action. It might introduce
+            // unnecessary overhead.
+            // Consider an improvement such as only store the MS texture, and resolve only at
+            // the end of real render pass (not render pass the was interrupted by compute pass)
+            // or before glBlitFramebuffer operation starts.
+            objCRenderPassAttachment.storeAction = MTLStoreActionStoreAndMultisampleResolve;
+        }
+        else if (objCRenderPassAttachment.storeAction == MTLStoreActionDontCare)
+        {
+            // Ignore resolve texture if the store action is not a resolve action.
+            objCRenderPassAttachment.resolveTexture = nil;
+        }
+    }
+
+    if (objCRenderPassAttachment.storeAction == MTLStoreActionUnknown)
+    {
+        // If storeAction hasn't been set for this attachment, we set to dontcare.
+        objCRenderPassAttachment.storeAction = MTLStoreActionDontCare;
+    }
+}
+
 void RenderCommandEncoder::endEncoding()
 {
     endEncodingImpl(true);
@@ -685,27 +722,23 @@ void RenderCommandEncoder::endEncodingImpl(bool considerDiscardSimulation)
         return;
 
     // Last minute correcting the store options.
-    MTLRenderPassDescriptor *rpDesc = mCachedRenderPassDescObjC.get();
+    MTLRenderPassDescriptor *objCRenderPassDesc = mCachedRenderPassDescObjC.get();
     for (uint32_t i = 0; i < mRenderPassDesc.numColorAttachments; ++i)
     {
-        if (rpDesc.colorAttachments[i].storeAction == MTLStoreActionUnknown)
-        {
-            // If storeAction hasn't been set for this attachment, we set to dontcare.
-            rpDesc.colorAttachments[i].storeAction = MTLStoreActionDontCare;
-        }
+        // Update store action set between restart() and endEncoding()
+        objCRenderPassDesc.colorAttachments[i].storeAction =
+            mRenderPassDesc.colorAttachments[i].storeAction;
+        finalizeLoadStoreAction(objCRenderPassDesc.colorAttachments[i]);
     }
 
-    if (rpDesc.depthAttachment.storeAction == MTLStoreActionUnknown)
-    {
-        // If storeAction hasn't been set for this attachment, we set to dontcare.
-        rpDesc.depthAttachment.storeAction = MTLStoreActionDontCare;
-    }
+    // Update store action set between restart() and endEncoding()
+    objCRenderPassDesc.depthAttachment.storeAction = mRenderPassDesc.depthAttachment.storeAction;
+    finalizeLoadStoreAction(objCRenderPassDesc.depthAttachment);
 
-    if (rpDesc.stencilAttachment.storeAction == MTLStoreActionUnknown)
-    {
-        // If storeAction hasn't been set for this attachment, we set to dontcare.
-        rpDesc.stencilAttachment.storeAction = MTLStoreActionDontCare;
-    }
+    // Update store action set between restart() and endEncoding()
+    objCRenderPassDesc.stencilAttachment.storeAction =
+        mRenderPassDesc.stencilAttachment.storeAction;
+    finalizeLoadStoreAction(objCRenderPassDesc.stencilAttachment);
 
     // Encode the actual encoder
     encodeMetalEncoder();
@@ -723,17 +756,11 @@ void RenderCommandEncoder::endEncodingImpl(bool considerDiscardSimulation)
     mRenderPassDesc = RenderPassDesc();
 }
 
-inline void RenderCommandEncoder::initWriteDependencyAndStoreAction(const TextureRef &texture,
-                                                                    MTLStoreAction *storeActionOut)
+inline void RenderCommandEncoder::initWriteDependency(const TextureRef &texture)
 {
     if (texture)
     {
         cmdBuffer().setWriteDependency(texture);
-    }
-    else
-    {
-        // Texture is invalid, use don'tcare store action
-        *storeActionOut = MTLStoreActionDontCare;
     }
 }
 
@@ -839,19 +866,17 @@ RenderCommandEncoder &RenderCommandEncoder::restart(const RenderPassDesc &desc)
 
     mRenderPassDesc = desc;
     mRecording      = true;
+    mHasDrawCalls   = false;
 
     // mask writing dependency & set appropriate store options
     for (uint32_t i = 0; i < mRenderPassDesc.numColorAttachments; ++i)
     {
-        initWriteDependencyAndStoreAction(mRenderPassDesc.colorAttachments[i].texture(),
-                                          &mRenderPassDesc.colorAttachments[i].storeAction);
+        initWriteDependency(mRenderPassDesc.colorAttachments[i].texture());
     }
 
-    initWriteDependencyAndStoreAction(mRenderPassDesc.depthAttachment.texture(),
-                                      &mRenderPassDesc.depthAttachment.storeAction);
+    initWriteDependency(mRenderPassDesc.depthAttachment.texture());
 
-    initWriteDependencyAndStoreAction(mRenderPassDesc.stencilAttachment.texture(),
-                                      &mRenderPassDesc.stencilAttachment.storeAction);
+    initWriteDependency(mRenderPassDesc.stencilAttachment.texture());
 
     // Convert to Objective-C descriptor
     mRenderPassDesc.convertToMetalDesc(mCachedRenderPassDescObjC);
@@ -1080,6 +1105,7 @@ RenderCommandEncoder &RenderCommandEncoder::draw(MTLPrimitiveType primitiveType,
                                                  uint32_t vertexStart,
                                                  uint32_t vertexCount)
 {
+    mHasDrawCalls = true;
     mCommands.push(CmdType::Draw).push(primitiveType).push(vertexStart).push(vertexCount);
 
     return *this;
@@ -1090,6 +1116,7 @@ RenderCommandEncoder &RenderCommandEncoder::drawInstanced(MTLPrimitiveType primi
                                                           uint32_t vertexCount,
                                                           uint32_t instances)
 {
+    mHasDrawCalls = true;
     mCommands.push(CmdType::DrawInstanced)
         .push(primitiveType)
         .push(vertexStart)
@@ -1110,6 +1137,7 @@ RenderCommandEncoder &RenderCommandEncoder::drawIndexed(MTLPrimitiveType primiti
         return *this;
     }
 
+    mHasDrawCalls = true;
     cmdBuffer().setReadDependency(indexBuffer);
 
     mCommands.push(CmdType::DrawIndexed)
@@ -1134,6 +1162,7 @@ RenderCommandEncoder &RenderCommandEncoder::drawIndexedInstanced(MTLPrimitiveTyp
         return *this;
     }
 
+    mHasDrawCalls = true;
     cmdBuffer().setReadDependency(indexBuffer);
 
     mCommands.push(CmdType::DrawIndexedInstanced)
@@ -1161,6 +1190,7 @@ RenderCommandEncoder &RenderCommandEncoder::drawIndexedInstancedBaseVertex(
         return *this;
     }
 
+    mHasDrawCalls = true;
     cmdBuffer().setReadDependency(indexBuffer);
 
     mCommands.push(CmdType::DrawIndexedInstancedBaseVertex)
@@ -1228,6 +1258,44 @@ RenderCommandEncoder &RenderCommandEncoder::setStencilStoreAction(MTLStoreAction
     // We only store the options, will defer the actual setting until the encoder finishes
     mRenderPassDesc.stencilAttachment.storeAction = action;
 
+    return *this;
+}
+
+RenderCommandEncoder &RenderCommandEncoder::setColorLoadAction(MTLLoadAction action,
+                                                               const MTLClearColor &clearValue,
+                                                               uint32_t colorAttachmentIndex)
+{
+    ASSERT(!hasDrawCalls());
+    if (mCachedRenderPassDescObjC.get().colorAttachments[colorAttachmentIndex].texture)
+    {
+        mCachedRenderPassDescObjC.get().colorAttachments[colorAttachmentIndex].loadAction = action;
+        mCachedRenderPassDescObjC.get().colorAttachments[colorAttachmentIndex].clearColor =
+            clearValue;
+    }
+    return *this;
+}
+
+RenderCommandEncoder &RenderCommandEncoder::setDepthLoadAction(MTLLoadAction action,
+                                                               double clearVal)
+{
+    ASSERT(!hasDrawCalls());
+    if (mCachedRenderPassDescObjC.get().depthAttachment.texture)
+    {
+        mCachedRenderPassDescObjC.get().depthAttachment.loadAction = action;
+        mCachedRenderPassDescObjC.get().depthAttachment.clearDepth = clearVal;
+    }
+    return *this;
+}
+
+RenderCommandEncoder &RenderCommandEncoder::setStencilLoadAction(MTLLoadAction action,
+                                                                 uint32_t clearVal)
+{
+    ASSERT(!hasDrawCalls());
+    if (mCachedRenderPassDescObjC.get().stencilAttachment.texture)
+    {
+        mCachedRenderPassDescObjC.get().stencilAttachment.loadAction   = action;
+        mCachedRenderPassDescObjC.get().stencilAttachment.clearStencil = clearVal;
+    }
     return *this;
 }
 

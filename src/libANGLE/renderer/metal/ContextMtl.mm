@@ -610,19 +610,19 @@ angle::Result ContextMtl::syncState(const gl::Context *context,
                 invalidateRenderPipeline();
                 break;
             case gl::State::DIRTY_BIT_SAMPLE_ALPHA_TO_COVERAGE_ENABLED:
-                // NOTE(hqle): MSAA support
+                invalidateRenderPipeline();
                 break;
             case gl::State::DIRTY_BIT_SAMPLE_COVERAGE_ENABLED:
-                // NOTE(hqle): MSAA support
+                invalidateRenderPipeline();
                 break;
             case gl::State::DIRTY_BIT_SAMPLE_COVERAGE:
-                // NOTE(hqle): MSAA support
+                invalidateDriverUniforms();
                 break;
             case gl::State::DIRTY_BIT_SAMPLE_MASK_ENABLED:
-                // NOTE(hqle): MSAA support
+                // NOTE(hqle): 3.1 MSAA support
                 break;
             case gl::State::DIRTY_BIT_SAMPLE_MASK:
-                // NOTE(hqle): MSAA support
+                // NOTE(hqle): 3.1 MSAA support
                 break;
             case gl::State::DIRTY_BIT_DEPTH_TEST_ENABLED:
                 mDepthStencilDesc.updateDepthTestEnabled(glState.getDepthStencilState());
@@ -757,7 +757,7 @@ angle::Result ContextMtl::syncState(const gl::Context *context,
                 invalidateCurrentTextures();
                 break;
             case gl::State::DIRTY_BIT_MULTISAMPLING:
-                // NOTE(hqle): MSAA feature.
+                // NOTE(hqle): MSAA on/off.
                 break;
             case gl::State::DIRTY_BIT_SAMPLE_ALPHA_TO_ONE:
                 // NOTE(hqle): this is part of EXT_multisample_compatibility.
@@ -1143,16 +1143,9 @@ void ContextMtl::present(const gl::Context *context, id<CAMetalDrawable> present
 {
     ensureCommandBufferValid();
 
-    // Always discard default FBO's depth stencil buffers at the end of the frame:
-    if (mDrawFramebufferIsDefault && mDrawFramebuffer->renderPassHasStarted(this))
+    if (mDrawFramebuffer)
     {
-        constexpr GLenum dsAttachments[] = {GL_DEPTH, GL_STENCIL};
-        (void)mDrawFramebuffer->invalidate(context, 2, dsAttachments);
-
-        endEncoding(false);
-
-        // Reset discard flag by notify framebuffer that a new render pass has started.
-        mDrawFramebuffer->onStartedDrawingToFrameBuffer(context);
+        mDrawFramebuffer->onFrameEnd(context);
     }
 
     endEncoding(false);
@@ -1371,8 +1364,7 @@ void ContextMtl::updateDrawFrameBufferBinding(const gl::Context *context)
 {
     const gl::State &glState = getState();
 
-    mDrawFramebuffer          = mtl::GetImpl(glState.getDrawFramebuffer());
-    mDrawFramebufferIsDefault = mDrawFramebuffer->getState().isDefault();
+    mDrawFramebuffer = mtl::GetImpl(glState.getDrawFramebuffer());
 
     mDrawFramebuffer->onStartedDrawingToFrameBuffer(context);
 
@@ -1609,7 +1601,21 @@ angle::Result ContextMtl::handleDirtyDriverUniforms(const gl::Context *context)
     mDriverUniforms.depthRange[2] = depthRangeDiff;
     mDriverUniforms.depthRange[3] = NeedToInvertDepthRange(depthRangeNear, depthRangeFar) ? -1 : 1;
 
+    // gl_ClipDistance
     mDriverUniforms.enabledClipDistances = mState.getEnabledClipDistances().bits();
+
+    // Sample coverage mask
+    uint32_t sampleBitCount = mDrawFramebuffer->getSamples();
+    uint32_t coverageSampleBitCount =
+        static_cast<uint32_t>(std::round(mState.getSampleCoverageValue() * sampleBitCount));
+    ASSERT(sampleBitCount < 32);
+    uint32_t coverageMask = (1u << coverageSampleBitCount) - 1;
+    uint32_t sampleMask   = (1u << sampleBitCount) - 1;
+    if (mState.getSampleCoverageInvert())
+    {
+        coverageMask = sampleMask & (~coverageMask);
+    }
+    mDriverUniforms.coverageMask = coverageMask;
 
     ASSERT(mRenderEncoder.valid());
     mRenderEncoder.setFragmentData(mDriverUniforms, mtl::kDriverUniformsBindingIndex);
@@ -1684,6 +1690,8 @@ angle::Result ContextMtl::checkIfPipelineChanged(
                                                         &mRenderPipelineDesc.outputDescriptor);
 
         mRenderPipelineDesc.inputPrimitiveTopology = topologyClass;
+        mRenderPipelineDesc.alphaToCoverageEnabled = mState.isSampleAlphaToCoverageEnabled();
+        mRenderPipelineDesc.coverageMaskEnabled    = mState.isSampleCoverageEnabled();
 
         mRenderPipelineDesc.outputDescriptor.updateEnabledDrawBuffers(
             mDrawFramebuffer->getState().getEnabledDrawBuffers());

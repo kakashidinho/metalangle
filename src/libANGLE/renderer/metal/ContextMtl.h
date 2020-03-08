@@ -363,7 +363,9 @@ class ContextMtl : public ContextImpl, public mtl::Context
         // 32 bits for 32 clip distances
         uint32_t enabledClipDistances;
 
-        float padding[3];
+        uint32_t coverageMask;
+
+        float padding[2];
     };
 
     struct DefaultAttribute
@@ -381,12 +383,6 @@ class ContextMtl : public ContextImpl, public mtl::Context
     FramebufferMtl *mDrawFramebuffer = nullptr;
     VertexArrayMtl *mVertexArray     = nullptr;
     ProgramMtl *mProgram             = nullptr;
-
-    // Special flag to indicate current draw framebuffer is default framebuffer.
-    // We need this instead of calling mDrawFramebuffer->getState().isDefault() because
-    // mDrawFramebuffer might point to a deleted object, ContextMtl only knows about this very late,
-    // only during syncState() function call.
-    bool mDrawFramebufferIsDefault = true;
 
     using DirtyBits = angle::BitSet<DIRTY_BIT_MAX>;
 

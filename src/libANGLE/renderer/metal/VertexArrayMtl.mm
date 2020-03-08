@@ -363,7 +363,7 @@ angle::Result VertexArrayMtl::setupDraw(const gl::Context *glContext,
                                                mCurrentArrayInlineDataSizes[v], bufferIdx);
                 }
             }
-        } // for (v)
+        }  // for (v)
     }
 
     *vertexDescChanged = dirty;

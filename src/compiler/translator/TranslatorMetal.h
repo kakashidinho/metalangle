@@ -25,6 +25,8 @@ class TranslatorMetal : public TranslatorVulkan
   public:
     TranslatorMetal(sh::GLenum type, ShShaderSpec spec);
 
+    static const char *GetCoverageMaskEnabledConstName();
+
   protected:
     ANGLE_NO_DISCARD bool translate(TIntermBlock *root,
                                     ShCompileOptions compileOptions,
@@ -32,6 +34,11 @@ class TranslatorMetal : public TranslatorVulkan
 
     ANGLE_NO_DISCARD bool transformDepthBeforeCorrection(TIntermBlock *root,
                                                          const TVariable *driverUniforms) override;
+
+    void createGraphicsDriverUniformAdditionFields(std::vector<TField *> *fieldsOut) override;
+
+    ANGLE_NO_DISCARD bool insertSampleMaskWritingLogic(TIntermBlock *root,
+                                                       const TVariable *driverUniforms);
 };
 
 }  // namespace sh

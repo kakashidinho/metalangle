@@ -185,6 +185,8 @@ SurfaceMtl::SurfaceMtl(DisplayMtl *display,
     mColorFormat.intendedFormatId = mColorFormat.actualFormatId = angle::FormatID::B8G8R8A8_UNORM;
     mColorFormat.metalFormat                                    = MTLPixelFormatBGRA8Unorm;
 
+    mSamples = state.config->samples;
+
     int depthBits   = 0;
     int stencilBits = 0;
     if (state.config)
@@ -225,6 +227,11 @@ void SurfaceMtl::destroy(const egl::Display *display)
     mDrawableTexture = nullptr;
     mDepthTexture    = nullptr;
     mStencilTexture  = nullptr;
+
+    mMSColorTexture   = nullptr;
+    mMSDepthTexture   = nullptr;
+    mMSStencilTexture = nullptr;
+
     mCurrentDrawable = nil;
     if (mMetalLayer && mMetalLayer.get() != mLayer)
     {
@@ -399,7 +406,7 @@ angle::Result SurfaceMtl::getAttachmentRenderTarget(const gl::Context *context,
 {
     // NOTE(hqle): Support MSAA.
     ANGLE_TRY(ensureCurrentDrawableObtained(context));
-    ANGLE_TRY(ensureDepthStencilSizeCorrect(context));
+    ANGLE_TRY(ensureTexturesSizeCorrect(context));
 
     switch (binding)
     {
@@ -431,40 +438,88 @@ angle::Result SurfaceMtl::ensureCurrentDrawableObtained(const gl::Context *conte
     return angle::Result::Continue;
 }
 
-angle::Result SurfaceMtl::ensureDepthStencilSizeCorrect(const gl::Context *context)
+angle::Result SurfaceMtl::ensureTexturesSizeCorrect(const gl::Context *context)
 {
     ASSERT(mMetalLayer);
 
-    ContextMtl *contextMtl = mtl::GetImpl(context);
     gl::Extents size(static_cast<int>(mMetalLayer.get().drawableSize.width),
                      static_cast<int>(mMetalLayer.get().drawableSize.height), 1);
 
+    if (mSamples > 1 && (!mMSColorTexture || mMSColorTexture->size() != size))
+    {
+        ANGLE_TRY(createTexture(context, mColorFormat, size.width, size.height, mSamples,
+                                &mMSColorTexture));
+
+        mColorRenderTarget.setImplicitMSTexture(mMSColorTexture);
+    }
+
     if (mDepthFormat.valid() && (!mDepthTexture || mDepthTexture->size() != size))
     {
-        ANGLE_TRY(mtl::Texture::Make2DTexture(contextMtl, mDepthFormat, size.width, size.height, 1,
-                                              /** renderTargetOnly */ true,
-                                              /** allowFormatView */ false, &mDepthTexture));
+        // Create normal texture
+        ANGLE_TRY(createTexture(context, mDepthFormat, size.width, size.height, 1, &mDepthTexture));
+        if (mSamples > 1)
+        {
+            // Implicit MS texture
+            ANGLE_TRY(createTexture(context, mDepthFormat, size.width, size.height, mSamples,
+                                    &mMSDepthTexture));
+        }
+        else
+        {
+            mMSDepthTexture = nullptr;
+        }
 
-        mDepthRenderTarget.set(mDepthTexture, 0, 0, mDepthFormat);
+        mDepthRenderTarget.set(mDepthTexture, mMSDepthTexture, 0, 0, mDepthFormat);
     }
 
     if (mStencilFormat.valid() && (!mStencilTexture || mStencilTexture->size() != size))
     {
         if (mUsePackedDepthStencil)
         {
-            mStencilTexture = mDepthTexture;
+            mStencilTexture   = mDepthTexture;
+            mMSStencilTexture = mMSDepthTexture;
         }
         else
         {
-            ANGLE_TRY(mtl::Texture::Make2DTexture(contextMtl, mStencilFormat, size.width,
-                                                  size.height, 1,
-                                                  /** renderTargetOnly */ true,
-                                                  /** allowFormatView */ false, &mStencilTexture));
+            ANGLE_TRY(createTexture(context, mStencilFormat, size.width, size.height, 1,
+                                    &mStencilTexture));
+            if (mSamples > 1)
+            {
+                // Implicit MS texture
+                ANGLE_TRY(createTexture(context, mStencilFormat, size.width, size.height, mSamples,
+                                        &mMSStencilTexture));
+            }
+            else
+            {
+                mMSStencilTexture = nullptr;
+            }
         }
 
-        mStencilRenderTarget.set(mStencilTexture, 0, 0, mStencilFormat);
+        mStencilRenderTarget.set(mStencilTexture, mMSStencilTexture, 0, 0, mStencilFormat);
     }
 
+    return angle::Result::Continue;
+}
+
+angle::Result SurfaceMtl::createTexture(const gl::Context *context,
+                                        const mtl::Format &format,
+                                        uint32_t width,
+                                        uint32_t height,
+                                        uint32_t samples,
+                                        mtl::TextureRef *textureOut)
+{
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+    if (samples > 1)
+    {
+        ANGLE_TRY(mtl::Texture::Make2DMSTexture(contextMtl, format, width, height, samples,
+                                                /** renderTargetOnly */ true,
+                                                /** allowFormatView */ false, textureOut));
+    }
+    else
+    {
+        ANGLE_TRY(mtl::Texture::Make2DTexture(contextMtl, format, width, height, 1,
+                                              /** renderTargetOnly */ true,
+                                              /** allowFormatView */ false, textureOut));
+    }
     return angle::Result::Continue;
 }
 
@@ -491,7 +546,7 @@ angle::Result SurfaceMtl::checkIfLayerResized(const gl::Context *context)
     }
 
     // Now we have to resize depth stencil buffers if required.
-    ANGLE_TRY(ensureDepthStencilSizeCorrect(context));
+    ANGLE_TRY(ensureTexturesSizeCorrect(context));
 
     return angle::Result::Continue;
 }
@@ -518,7 +573,7 @@ angle::Result SurfaceMtl::obtainNextDrawable(const gl::Context *context)
         if (!mDrawableTexture)
         {
             mDrawableTexture = mtl::Texture::MakeFromMetal(mCurrentDrawable.get().texture);
-            mColorRenderTarget.set(mDrawableTexture, 0, 0, mColorFormat);
+            mColorRenderTarget.set(mDrawableTexture, mMSColorTexture, 0, 0, mColorFormat);
         }
         else
         {
@@ -529,7 +584,7 @@ angle::Result SurfaceMtl::obtainNextDrawable(const gl::Context *context)
                       mDrawableTexture->height());
 
         // Now we have to resize depth stencil buffers if required.
-        ANGLE_TRY(ensureDepthStencilSizeCorrect(context));
+        ANGLE_TRY(ensureTexturesSizeCorrect(context));
 
         return angle::Result::Continue;
     }
