@@ -683,6 +683,7 @@ void OSXWindow::destroy()
     [mDelegate onOSXWindowDeleted];
     [mDelegate release];
     mDelegate = nil;
+    [mWindow setContentView:nil];
     [mWindow release];
     mWindow = nil;
 }
