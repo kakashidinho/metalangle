@@ -1,8 +1,8 @@
 {
   "src/libANGLE/renderer/metal/gen_mtl_format_table.py":
-    "afa19b351ae9615be0ec962790d81bd3",
+    "124c82b1239c9b5122756a09080971f2",
   "src/libANGLE/renderer/metal/mtl_format_map.json":
-    "0166b70697732612bd46942e7ccf8e6e",
+    "ea94034818ca2c4f0450111bbca9ab02",
   "src/libANGLE/renderer/metal/mtl_format_table_autogen.mm":
-    "8796be69461e2bb07db3b81b6ef24432"
+    "01b9a8d695f75eae6dabc01b23e8e37d"
 }
