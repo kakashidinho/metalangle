@@ -528,6 +528,9 @@ angle::Result SurfaceMtl::obtainNextDrawable(const gl::Context *context)
         ANGLE_MTL_LOG("Current metal drawable size=%d,%d", mDrawableTexture->width(),
                       mDrawableTexture->height());
 
+        // Now we have to resize depth stencil buffers if required.
+        ANGLE_TRY(ensureDepthStencilSizeCorrect(context));
+
         return angle::Result::Continue;
     }
 }
