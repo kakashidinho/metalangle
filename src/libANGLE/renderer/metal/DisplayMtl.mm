@@ -436,7 +436,7 @@ void DisplayMtl::ensureCapsInitialized() const
     mNativeCaps.maxVaryingVectors         = 31;
     mNativeCaps.maxVertexOutputComponents = 124;
 #else
-    if ([getMetalDevice() supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily3_v1])
+    if (supportiOSGPUFamily(3))
     {
         mNativeCaps.max2DTextureSize          = 16384;
         mNativeCaps.maxVertexOutputComponents = 124;
@@ -653,17 +653,14 @@ void DisplayMtl::initializeFeatures()
     if (ANGLE_APPLE_AVAILABLE_XC(10.15, 13.0))
     {
         // The runtime OS must be MacOS 10.15+ or Mac Catalyst for this to be supported:
-        ANGLE_FEATURE_CONDITION((&mFeatures), hasTextureSwizzle,
-                                [getMetalDevice() supportsFamily:MTLGPUFamilyMac2]);
+        ANGLE_FEATURE_CONDITION((&mFeatures), hasTextureSwizzle, supportMacGPUFamily(2));
     }
 #    endif
 #elif TARGET_OS_IOS
     // Base Vertex drawing is only supported since GPU family 3.
-    ANGLE_FEATURE_CONDITION((&mFeatures), hasBaseVertexInstancedDraw,
-                            [getMetalDevice() supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily3_v1]);
+    ANGLE_FEATURE_CONDITION((&mFeatures), hasBaseVertexInstancedDraw, supportiOSGPUFamily(3));
 
-    ANGLE_FEATURE_CONDITION((&mFeatures), hasNonUniformDispatch,
-                            [getMetalDevice() supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily4_v1]);
+    ANGLE_FEATURE_CONDITION((&mFeatures), hasNonUniformDispatch, supportiOSGPUFamily(4));
 
 #    if !TARGET_OS_SIMULATOR
     mFeatures.allowSeparatedDepthStencilBuffers.enabled = true;
@@ -718,6 +715,131 @@ angle::Result DisplayMtl::initializeShaderLibrary()
     }
 
     return angle::Result::Continue;
+}
+
+bool DisplayMtl::supportiOSGPUFamily(uint8_t iOSFamily) const
+{
+#if !TARGET_OS_IOS
+    return false;
+#else
+#    if (__IPHONE_OS_VERSION_MAX_ALLOWED >= 130000) || \
+        (defined(__TV_OS_VERSION_MAX_ALLOWED) && __TV_OS_VERSION_MAX_ALLOWED >= 130000)
+    if (ANGLE_APPLE_AVAILABLE_I(13.0))
+    {
+        MTLGPUFamily family;
+        switch (iOSFamily)
+        {
+            case 1:
+                family = MTLGPUFamilyApple1;
+                break;
+            case 2:
+                family = MTLGPUFamilyApple2;
+                break;
+            case 3:
+                family = MTLGPUFamilyApple3;
+                break;
+            case 4:
+                family = MTLGPUFamilyApple4;
+                break;
+            case 5:
+                family = MTLGPUFamilyApple5;
+                break;
+            case 6:
+                family = MTLGPUFamilyApple6;
+                break;
+            default:
+                return false;
+        }
+        return [getMetalDevice() supportsFamily:family];
+    }  // Metal 2.2
+#    endif  // __IPHONE_OS_VERSION_MAX_ALLOWED
+    // NOTE(hqle): Support tvOS
+    MTLFeatureSet featureSet;
+    switch (iOSFamily)
+    {
+        case 1:
+            featureSet = MTLFeatureSet_iOS_GPUFamily1_v1;
+            break;
+        case 2:
+            featureSet = MTLFeatureSet_iOS_GPUFamily2_v1;
+            break;
+        case 3:
+            featureSet = MTLFeatureSet_iOS_GPUFamily3_v1;
+            break;
+        case 4:
+            featureSet = MTLFeatureSet_iOS_GPUFamily4_v1;
+            break;
+#    if __IPHONE_OS_VERSION_MAX_ALLOWED >= 120000
+        case 5:
+            featureSet = MTLFeatureSet_iOS_GPUFamily5_v1;
+            break;
+#    endif
+        default:
+            return false;
+    }
+
+    return [getMetalDevice() supportsFeatureSet:featureSet];
+#endif  // TARGET_OS_IOS
+}
+
+bool DisplayMtl::supportMacGPUFamily(uint8_t macFamily) const
+{
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
+#    if defined(__MAC_10_15)
+    if (ANGLE_APPLE_AVAILABLE_XC(10.15, 13.0))
+    {
+        MTLGPUFamily family;
+
+        switch (macFamily)
+        {
+#        if TARGET_OS_MACCATALYST
+            case 1:
+                family = MTLGPUFamilyMacCatalyst1;
+                break;
+            case 2:
+                family = MTLGPUFamilyMacCatalyst2;
+                break;
+#        else   // TARGET_OS_MACCATALYST
+            case 1:
+                family = MTLGPUFamilyMac1;
+                break;
+            case 2:
+                family = MTLGPUFamilyMac2;
+                break;
+#        endif  // TARGET_OS_MACCATALYST
+            default:
+                return false;
+        }
+
+        return [getMetalDevice() supportsFamily:family];
+    }  // Metal 2.2
+#    endif
+
+    MTLFeatureSet featureSet;
+    switch (macFamily)
+    {
+        case 1:
+            featureSet = MTLFeatureSet_macOS_GPUFamily1_v1;
+            break;
+#    if defined(__MAC_10_14)
+        case 2:
+            featureSet = MTLFeatureSet_macOS_GPUFamily2_v1;
+            break;
+#    endif
+        default:
+            return false;
+    }
+    return [getMetalDevice() supportsFeatureSet:featureSet];
+#else  // #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
+
+    return false;
+
+#endif
+}
+
+bool DisplayMtl::supportEitherGPUFamily(uint8_t iOSFamily, uint8_t macFamily) const
+{
+    return supportiOSGPUFamily(iOSFamily) || supportMacGPUFamily(macFamily);
 }
 
 }  // namespace rx

@@ -248,14 +248,15 @@ Texture::Texture(ContextMtl *context,
         // Every texture will support being rendered for now
         desc.usage = 0;
 
-        if (Format::FormatRenderable(desc.pixelFormat))
+        if (context->getNativeFormatCaps(desc.pixelFormat).isRenderable())
         {
             desc.usage |= MTLTextureUsageRenderTarget;
         }
 
-        if (!Format::FormatCPUReadable(desc.pixelFormat) ||
+        if (context->getNativeFormatCaps(desc.pixelFormat).depthRenderable ||
             desc.textureType == MTLTextureType2DMultisample)
         {
+            // Metal doesn't support host access to depth stencil texture's data
             desc.resourceOptions = MTLResourceStorageModePrivate;
         }
 

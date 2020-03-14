@@ -97,6 +97,11 @@ class DisplayMtl : public DisplayImpl
     const gl::Limitations &getNativeLimitations() const { return mNativeLimitations; }
     const angle::FeaturesMtl &getFeatures() const { return mFeatures; }
 
+    // Check whether either of the specified iOS or Mac GPU family is supported
+    bool supportEitherGPUFamily(uint8_t iOSFamily, uint8_t macFamily) const;
+    bool supportiOSGPUFamily(uint8_t iOSFamily) const;
+    bool supportMacGPUFamily(uint8_t macFamily) const;
+
     id<MTLDevice> getMetalDevice() const { return mMetalDevice; }
 
     mtl::CommandQueue &cmdQueue() { return mCmdQueue; }
@@ -120,6 +125,10 @@ class DisplayMtl : public DisplayImpl
     const mtl::Format &getPixelFormat(angle::FormatID angleFormatId) const
     {
         return mFormatTable.getPixelFormat(angleFormatId);
+    }
+    const mtl::FormatCaps &getNativeFormatCaps(MTLPixelFormat mtlFormat) const
+    {
+        return mFormatTable.getNativeFormatCaps(mtlFormat);
     }
 
     // See mtl::FormatTable::getVertexFormat()

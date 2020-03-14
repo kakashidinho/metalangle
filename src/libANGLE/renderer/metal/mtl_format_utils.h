@@ -13,6 +13,8 @@
 
 #import <Metal/Metal.h>
 
+#include <unordered_map>
+
 #include "common/angleutils.h"
 #include "libANGLE/Caps.h"
 #include "libANGLE/formatutils.h"
@@ -41,6 +43,19 @@ struct FormatBase
     angle::FormatID intendedFormatId = angle::FormatID::NONE;
 };
 
+struct FormatCaps
+{
+    bool isRenderable() const { return colorRenderable || depthRenderable; }
+
+    bool filterable      = false;
+    bool writable        = false;
+    bool colorRenderable = false;
+    bool depthRenderable = false;
+    bool blendable       = false;
+    bool multisample     = false;  // can be used as MSAA target
+    bool resolve         = false;  // Can be used as resolve target
+};
+
 // Pixel format
 struct Format : public FormatBase
 {
@@ -54,10 +69,11 @@ struct Format : public FormatBase
         return actualAngleFormat().depthBits && actualAngleFormat().stencilBits;
     }
 
-    static bool FormatRenderable(MTLPixelFormat format);
-    static bool FormatCPUReadable(MTLPixelFormat format);
+    const FormatCaps &getCaps() const { return *caps; }
 
     MTLPixelFormat metalFormat = MTLPixelFormatInvalid;
+
+    const FormatCaps *caps = nullptr;
 
   private:
     void init(const DisplayMtl *display, angle::FormatID intendedFormatId);
@@ -93,6 +109,7 @@ class FormatTable final : angle::NonCopyable
                              std::vector<GLenum> *compressedFormatsOut) const;
 
     const Format &getPixelFormat(angle::FormatID angleFormatId) const;
+    const FormatCaps &getNativeFormatCaps(MTLPixelFormat mtlFormat) const;
 
     // tightlyPacked means this format will be used in a tightly packed vertex buffer.
     // In that case, it's easier to just convert everything to float to ensure
@@ -101,7 +118,27 @@ class FormatTable final : angle::NonCopyable
     const VertexFormat &getVertexFormat(angle::FormatID angleFormatId, bool tightlyPacked) const;
 
   private:
+    void initNativeFormatCaps(const DisplayMtl *display);
+    void setFormatCaps(MTLPixelFormat formatId,
+                       bool filterable,
+                       bool writable,
+                       bool blendable,
+                       bool multisample,
+                       bool resolve,
+                       bool colorRenderable);
+    void setFormatCaps(MTLPixelFormat formatId,
+                       bool filterable,
+                       bool writable,
+                       bool blendable,
+                       bool multisample,
+                       bool resolve,
+                       bool colorRenderable,
+                       bool depthRenderable);
+
+    void setCompressedFormatCaps(MTLPixelFormat formatId, bool filterable);
+
     std::array<Format, angle::kNumANGLEFormats> mPixelFormatTable;
+    std::unordered_map<MTLPixelFormat, FormatCaps> mNativePixelFormatCapsTable;
     // One for tightly packed buffers, one for general cases.
     std::array<VertexFormat, angle::kNumANGLEFormats> mVertexFormatTables[2];
 };

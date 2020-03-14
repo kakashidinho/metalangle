@@ -1091,6 +1091,11 @@ const mtl::Format &ContextMtl::getPixelFormat(angle::FormatID angleFormatId) con
     return getDisplay()->getPixelFormat(angleFormatId);
 }
 
+const mtl::FormatCaps &ContextMtl::getNativeFormatCaps(MTLPixelFormat mtlFormat) const
+{
+    return getDisplay()->getNativeFormatCaps(mtlFormat);
+}
+
 // See mtl::FormatTable::getVertexFormat()
 const mtl::VertexFormat &ContextMtl::getVertexFormat(angle::FormatID angleFormatId,
                                                      bool tightlyPacked) const

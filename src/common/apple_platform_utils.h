@@ -39,4 +39,7 @@
 // ANGLE_APPLE_AVAILABLE_XI: check if either of the 2 platforms (OSX/iOS) min verions is available:
 #define ANGLE_APPLE_AVAILABLE_XI(macVer, iOSVer) @available(macOS macVer, iOS iOSVer, *)
 
+// ANGLE_APPLE_AVAILABLE_I: check if a particular iOS version is available
+#define ANGLE_APPLE_AVAILABLE_I(iOSVer) @available(iOS iOSVer, *)
+
 #endif
