@@ -36,6 +36,10 @@
 // Return the size of the OpenGL default framebuffer.
 @property(readonly) CGSize drawableSize;
 
+#if TARGET_OS_IOS
+@property(readonly, strong) UIImage *snapshot;
+#endif
+
 // Redraw the view's contents immediately.
 - (void)display;
 
