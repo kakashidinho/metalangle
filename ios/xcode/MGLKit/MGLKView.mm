@@ -100,6 +100,11 @@ void Throw(NSString *msg)
     self.glLayer.drawableStencilFormat = _drawableStencilFormat = drawableStencilFormat;
 }
 
+- (void)setDrawableMultisample:(MGLDrawableMultisample)drawableMultisample
+{
+    self.glLayer.drawableMultisample = _drawableMultisample = drawableMultisample;
+}
+
 - (void)display
 {
     [self drawRect:self.bounds];

@@ -24,12 +24,16 @@
     CAMetalLayer *_metalLayer;
 
     // Textures used to retain the content of framebuffer.
-    GLuint _offscreenTexture;
+    GLuint _offscreenTexture;       // Use if glBlitFramebufferANGLE is not available
+    GLuint _offscreenRenderBuffer;  // Use if glBlitFramebufferANGLE is available
     GLuint _offscreenDepthStencilBuffer;
     GLuint _offscreenBlitProgram;
     GLuint _offscreenBlitVBO;
     GLuint _offscreenBlitVAO;
     CGSize _offscreenFBOSize;
+    BOOL _blitFramebufferAvail;
+    BOOL _readBufferAvail;
+    BOOL _useOffscreenFBO;
 }
 
 @property(nonatomic, readonly) EGLSurface eglSurface;

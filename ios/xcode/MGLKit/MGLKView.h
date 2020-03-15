@@ -32,6 +32,8 @@
 @property(nonatomic) MGLDrawableColorFormat drawableColorFormat;      // Default is RGBA8888
 @property(nonatomic) MGLDrawableDepthFormat drawableDepthFormat;      // Default is DepthNone
 @property(nonatomic) MGLDrawableStencilFormat drawableStencilFormat;  // Default is StencilNone
+@property(nonatomic)
+    MGLDrawableMultisample drawableMultisample;  // Default is MGLDrawableMultisampleNone
 
 // Return the size of the OpenGL default framebuffer.
 @property(readonly) CGSize drawableSize;
