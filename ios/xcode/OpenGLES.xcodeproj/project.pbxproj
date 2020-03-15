@@ -2130,6 +2130,12 @@
 		0AC2A5222346714A0045B949 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AC2A5202346714A0045B949 /* Foundation.framework */; };
 		0AC2A5232346714A0045B949 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AC2A5212346714A0045B949 /* CoreFoundation.framework */; };
 		0AC2A524234671670045B949 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A60566023465AEE005CEA98 /* Metal.framework */; };
+		0AC8B2ED241E9761003916D1 /* mtl_occlusion_query_pool.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AC8B2EA241E9761003916D1 /* mtl_occlusion_query_pool.mm */; };
+		0AC8B2EE241E9761003916D1 /* mtl_occlusion_query_pool.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AC8B2EA241E9761003916D1 /* mtl_occlusion_query_pool.mm */; };
+		0AC8B2EF241E9761003916D1 /* mtl_occlusion_query_pool.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AC8B2EA241E9761003916D1 /* mtl_occlusion_query_pool.mm */; };
+		0AC8B2F0241E9761003916D1 /* QueryMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AC8B2EB241E9761003916D1 /* QueryMtl.mm */; };
+		0AC8B2F1241E9761003916D1 /* QueryMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AC8B2EB241E9761003916D1 /* QueryMtl.mm */; };
+		0AC8B2F2241E9761003916D1 /* QueryMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AC8B2EB241E9761003916D1 /* QueryMtl.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -3938,6 +3944,10 @@
 		0AC8B2DC241E9682003916D1 /* common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = common.h; sourceTree = "<group>"; };
 		0AC8B2DD241E9682003916D1 /* misc.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = misc.metal; sourceTree = "<group>"; };
 		0AC8B2DE241E9682003916D1 /* gen_indices.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = gen_indices.metal; sourceTree = "<group>"; };
+		0AC8B2E9241E9760003916D1 /* QueryMtl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = QueryMtl.h; path = ../../src/libANGLE/renderer/metal/QueryMtl.h; sourceTree = "<group>"; };
+		0AC8B2EA241E9761003916D1 /* mtl_occlusion_query_pool.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = mtl_occlusion_query_pool.mm; path = ../../src/libANGLE/renderer/metal/mtl_occlusion_query_pool.mm; sourceTree = "<group>"; };
+		0AC8B2EB241E9761003916D1 /* QueryMtl.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = QueryMtl.mm; path = ../../src/libANGLE/renderer/metal/QueryMtl.mm; sourceTree = "<group>"; };
+		0AC8B2EC241E9761003916D1 /* mtl_occlusion_query_pool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mtl_occlusion_query_pool.h; path = ../../src/libANGLE/renderer/metal/mtl_occlusion_query_pool.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -4790,10 +4800,14 @@
 				0A6055E1234655FC005CEA98 /* mtl_format_table_autogen.mm */,
 				0A605608234655FF005CEA98 /* mtl_format_utils.h */,
 				0A605605234655FE005CEA98 /* mtl_format_utils.mm */,
+				0AC8B2EC241E9761003916D1 /* mtl_occlusion_query_pool.h */,
+				0AC8B2EA241E9761003916D1 /* mtl_occlusion_query_pool.mm */,
 				0A6055FF234655FE005CEA98 /* mtl_resources.h */,
 				0A6055DB234655FC005CEA98 /* mtl_resources.mm */,
 				0A605600234655FE005CEA98 /* mtl_utils.h */,
 				0A6055E0234655FC005CEA98 /* mtl_utils.mm */,
+				0AC8B2E9241E9760003916D1 /* QueryMtl.h */,
+				0AC8B2EB241E9761003916D1 /* QueryMtl.mm */,
 				0A6055D8234655FC005CEA98 /* ProgramMtl.h */,
 				0A6055F1234655FD005CEA98 /* ProgramMtl.mm */,
 				0A6055F5234655FD005CEA98 /* README.md */,
@@ -8384,9 +8398,11 @@
 				0A60565C23465667005CEA98 /* TextureMtl.mm in Sources */,
 				0A60565A23465667005CEA98 /* mtl_state_cache.mm in Sources */,
 				0A60565D23465667005CEA98 /* mtl_render_utils.mm in Sources */,
+				0AC8B2ED241E9761003916D1 /* mtl_occlusion_query_pool.mm in Sources */,
 				0A60565E23465667005CEA98 /* VertexArrayMtl.mm in Sources */,
 				0A60564B23465667005CEA98 /* FrameBufferMtl.mm in Sources */,
 				0A60565923465667005CEA98 /* ShaderMtl.mm in Sources */,
+				0AC8B2F0241E9761003916D1 /* QueryMtl.mm in Sources */,
 				0A60564723465667005CEA98 /* BufferMtl.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -8605,9 +8621,11 @@
 				0A90F76A24065B06005BA9A8 /* TextureMtl.mm in Sources */,
 				0A90F76B24065B06005BA9A8 /* mtl_state_cache.mm in Sources */,
 				0A90F76C24065B06005BA9A8 /* mtl_render_utils.mm in Sources */,
+				0AC8B2EE241E9761003916D1 /* mtl_occlusion_query_pool.mm in Sources */,
 				0A90F76D24065B06005BA9A8 /* VertexArrayMtl.mm in Sources */,
 				0A90F76E24065B06005BA9A8 /* FrameBufferMtl.mm in Sources */,
 				0A90F76F24065B06005BA9A8 /* ShaderMtl.mm in Sources */,
+				0AC8B2F1241E9761003916D1 /* QueryMtl.mm in Sources */,
 				0A90F77024065B06005BA9A8 /* BufferMtl.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -9448,9 +9466,11 @@
 				0AA2FFC1234727A400E0B98C /* TextureMtl.mm in Sources */,
 				0AA2FFC2234727A400E0B98C /* mtl_state_cache.mm in Sources */,
 				0AA2FFC4234727A400E0B98C /* mtl_render_utils.mm in Sources */,
+				0AC8B2EF241E9761003916D1 /* mtl_occlusion_query_pool.mm in Sources */,
 				0AA2FFC5234727A400E0B98C /* VertexArrayMtl.mm in Sources */,
 				0AA2FFC6234727A400E0B98C /* FrameBufferMtl.mm in Sources */,
 				0AA2FFC8234727A400E0B98C /* ShaderMtl.mm in Sources */,
+				0AC8B2F2241E9761003916D1 /* QueryMtl.mm in Sources */,
 				0AA2FFC9234727A400E0B98C /* BufferMtl.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
