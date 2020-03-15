@@ -21,7 +21,10 @@ template_header_boilerplate = """// GENERATED FILE - DO NOT EDIT.
 //
 """
 
-
+# Convert content of a file to byte array and store in a header file.
+# variable_name: name of C++ variable that will hold the file content as byte array.
+# filename: the file whose content will be converted to C++ byte array.
+# dest_src_file: destination header file that will contain the byte array.
 def append_file_as_byte_array_string(variable_name, filename, dest_src_file):
     string = '// Generated from {0}:\n'.format(filename)
     string += 'constexpr uint8_t {0}[]={{\n'.format(variable_name)
@@ -33,31 +36,54 @@ def append_file_as_byte_array_string(variable_name, filename, dest_src_file):
         out_file.write(string)
 
 
-def gen_precompiled_shaders(mac_version, ios_version, variable_name, additional_flags):
+# Compile metal shader.
+# mac_version: target version of macOS
+# ios_version: target version of iOS
+# variable_name: name of C++ variable that will hold the compiled binary data as a C array.
+# additional_flags: additional shader compiler flags
+# src_files: metal source files
+def gen_precompiled_shaders(mac_version, ios_version, variable_name, additional_flags, src_files):
     print('Generating default shaders with flags=\'{0}\' ...'.format(additional_flags))
+
+    # Mac version's compilation
     print('Compiling macos {0} version of default shaders ...'.format(mac_version))
+    object_files = ''
+    for src_file in src_files:
+        object_file = 'compiled/default.{0}.{1}.air'.format(mac_version, src_file)
+        object_files += ' ' + object_file
+        os.system(
+            'xcrun -sdk macosx metal -mmacosx-version-min={0} {1} {2} -c -o {3}'
+            .format(mac_version, additional_flags, src_file, object_file))
     os.system(
-        'xcrun -sdk macosx metal master_source.metal -mmacosx-version-min={0} {1} -c -o compiled/default.{0}.air'
-        .format(mac_version, additional_flags))
-    os.system(
-        'xcrun -sdk macosx metallib compiled/default.{0}.air -o compiled/default.{0}.metallib'
-        .format(mac_version))
+        'xcrun -sdk macosx metallib {object_files} -o compiled/default.{mac_version}.metallib'
+        .format(mac_version=mac_version, object_files=object_files))
 
+    # iOS device version's compilation
     print('Compiling ios {0} version of default shaders ...'.format(ios_version))
+    object_files = ''
+    for src_file in src_files:
+        object_file = 'compiled/default.ios.{0}.{1}.air'.format(ios_version, src_file)
+        object_files += ' ' + object_file
+        os.system(
+            'xcrun -sdk iphoneos metal -mios-version-min={0} {1} {2} -c -o {3}'
+            .format(ios_version, additional_flags, src_file, object_file))
     os.system(
-        'xcrun -sdk iphoneos metal master_source.metal -mios-version-min={0} {1} -c -o compiled/default.ios.{0}.air'
-        .format(ios_version, additional_flags))
-    os.system(
-        'xcrun -sdk iphoneos metallib compiled/default.ios.{0}.air -o compiled/default.ios.{0}.metallib'
-        .format(ios_version))
+        'xcrun -sdk iphoneos metallib {object_files} -o compiled/default.ios.{ios_version}.metallib'
+        .format(ios_version=ios_version, object_files=object_files))
 
+    # iOS simulator version's compilation
     print('Compiling ios {0} simulator version of default shaders ...'.format(ios_version))
+    object_files = ''
+    object_files = ''
+    for src_file in src_files:
+        object_file = 'compiled/default.ios_sim.{0}.{1}.air'.format(ios_version, src_file)
+        object_files += ' ' + object_file
+        os.system(
+            'xcrun -sdk iphonesimulator metal {0} {1} -c -o {2}'
+            .format(additional_flags, src_file, object_file))
     os.system(
-        'xcrun -sdk iphonesimulator metal master_source.metal {1} -c -o compiled/default.ios_sim.{0}.air'
-        .format(ios_version, additional_flags))
-    os.system(
-        'xcrun -sdk iphonesimulator metallib compiled/default.ios_sim.{0}.air -o compiled/default.ios_sim.{0}.metallib'
-        .format(ios_version))
+        'xcrun -sdk iphonesimulator metallib {object_files} -o compiled/default.ios_sim.{ios_version}.metallib'
+        .format(ios_version=ios_version, object_files=object_files))
 
     # Mac version's byte array string
     os.system(
@@ -98,11 +124,10 @@ def gen_precompiled_shaders(mac_version, ios_version, variable_name, additional_
 
 
 def main():
+    src_files = ['blit.metal', 'clear.metal', 'gen_indices.metal']
     # auto_script parameters.
     if len(sys.argv) > 1:
-        inputs = [
-            'master_source.metal', 'blit.metal', 'clear.metal', 'gen_indices.metal', 'common.h'
-        ]
+        inputs = src_files + [ 'common.h' ]
         outputs = ['compiled/mtl_default_shaders.inc']
 
         if sys.argv[1] == 'inputs':
@@ -129,10 +154,10 @@ def main():
     os.system('echo "// clang-format off" >> compiled/mtl_default_shaders.inc')
 
     # pre-compiled shaders
-    gen_precompiled_shaders(10.13, 11.0, 'compiled_default_metallib', '')
-    gen_precompiled_shaders(10.13, 11.0, 'compiled_default_metallib_debug', '-gline-tables-only -MO')
-    gen_precompiled_shaders(10.14, 12.0, 'compiled_default_metallib_2_1', '')
-    gen_precompiled_shaders(10.14, 12.0, 'compiled_default_metallib_2_1_debug', '-gline-tables-only -MO')
+    gen_precompiled_shaders(10.13, 11.0, 'compiled_default_metallib', '', src_files)
+    gen_precompiled_shaders(10.13, 11.0, 'compiled_default_metallib_debug', '-gline-tables-only -MO', src_files)
+    gen_precompiled_shaders(10.14, 12.0, 'compiled_default_metallib_2_1', '', src_files)
+    gen_precompiled_shaders(10.14, 12.0, 'compiled_default_metallib_2_1_debug', '-gline-tables-only -MO', src_files)
 
     os.system('echo "// clang-format on" >> compiled/mtl_default_shaders.inc')
 
