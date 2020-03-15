@@ -719,7 +719,7 @@ angle::Result DisplayMtl::initializeShaderLibrary()
 
 bool DisplayMtl::supportiOSGPUFamily(uint8_t iOSFamily) const
 {
-#if !TARGET_OS_IOS
+#if !TARGET_OS_IOS || TARGET_OS_MACCATALYST
     return false;
 #else
 #    if (__IPHONE_OS_VERSION_MAX_ALLOWED >= 130000) || \
@@ -815,22 +815,27 @@ bool DisplayMtl::supportMacGPUFamily(uint8_t macFamily) const
     }  // Metal 2.2
 #    endif
 
+#    if TARGET_OS_MACCATALYST
+    UNREACHABLE();
+    return false;
+#    else
     MTLFeatureSet featureSet;
     switch (macFamily)
     {
         case 1:
             featureSet = MTLFeatureSet_macOS_GPUFamily1_v1;
             break;
-#    if defined(__MAC_10_14)
+#        if defined(__MAC_10_14)
         case 2:
             featureSet = MTLFeatureSet_macOS_GPUFamily2_v1;
             break;
-#    endif
+#        endif
         default:
             return false;
     }
     return [getMetalDevice() supportsFeatureSet:featureSet];
-#else  // #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
+#    endif  // TARGET_OS_MACCATALYST
+#else       // #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
 
     return false;
 

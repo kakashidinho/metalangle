@@ -233,7 +233,7 @@ void FormatTable::initNativeFormatCaps(const DisplayMtl *display)
     setFormatCaps(MTLPixelFormatRG16Float,      true,                          true,        true,           true,        true,                                 true);
     setFormatCaps(MTLPixelFormatR32Float,    display->supportMacGPUFamily(1),  true,        true,           true,      display->supportMacGPUFamily(1),        true);
 
-#if TARGET_OS_IOS
+#if TARGET_OS_IOS && !TARGET_OS_MACCATALYST
     //            |  formatId                  | filterable    |  writable  |  blendable |  multisample |  resolve   | colorRenderable |
     setFormatCaps(MTLPixelFormatB5G6R5Unorm,      true,            false,        true,           true,        true,      true);
     setFormatCaps(MTLPixelFormatABGR4Unorm,       true,            false,        true,           true,        true,      true);
