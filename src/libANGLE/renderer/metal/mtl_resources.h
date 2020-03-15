@@ -49,7 +49,10 @@ class Resource : angle::NonCopyable
   public:
     virtual ~Resource() {}
 
+    // Check whether the resource still being used by GPU
     bool isBeingUsedByGPU(Context *context) const;
+    // Checks whether the last command buffer that uses the given resource has been committed or not
+    bool hasPendingWorks(Context *context) const;
 
     void setUsedByCommandBufferWithQueueSerial(uint64_t serial, bool writing);
 
@@ -244,9 +247,19 @@ class Buffer final : public Resource,
                                     const uint8_t *data,
                                     BufferRef *bufferOut);
 
+    static angle::Result MakeBuffer(ContextMtl *context,
+                                    MTLResourceOptions resourceOptions,
+                                    size_t size,
+                                    const uint8_t *data,
+                                    BufferRef *bufferOut);
+
     // This function is equivalent to reset(useSharedMem = false)
     angle::Result reset(ContextMtl *context, size_t size, const uint8_t *data);
     angle::Result reset(ContextMtl *context, bool useSharedMem, size_t size, const uint8_t *data);
+    angle::Result reset(ContextMtl *context,
+                        MTLResourceOptions resourceOptions,
+                        size_t size,
+                        const uint8_t *data);
 
     const uint8_t *mapReadOnly(ContextMtl *context);
     uint8_t *map(ContextMtl *context);
@@ -264,6 +277,10 @@ class Buffer final : public Resource,
 
   private:
     Buffer(ContextMtl *context, bool useSharedMem, size_t size, const uint8_t *data);
+    Buffer(ContextMtl *context,
+           MTLResourceOptions resourceOptions,
+           size_t size,
+           const uint8_t *data);
 
     bool mMapReadOnly = true;
 };

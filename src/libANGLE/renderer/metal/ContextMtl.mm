@@ -17,6 +17,7 @@
 #include "libANGLE/renderer/metal/DisplayMtl.h"
 #include "libANGLE/renderer/metal/FrameBufferMtl.h"
 #include "libANGLE/renderer/metal/ProgramMtl.h"
+#include "libANGLE/renderer/metal/QueryMtl.h"
 #include "libANGLE/renderer/metal/RenderBufferMtl.h"
 #include "libANGLE/renderer/metal/ShaderMtl.h"
 #include "libANGLE/renderer/metal/TextureMtl.h"
@@ -160,15 +161,15 @@ class LineLoopHelper
         if (indexTypeOrNone == gl::DrawElementsType::InvalidEnum)
         {
             ANGLE_TRY(mContextMtl->getDisplay()->getUtils().generateLineLoopLastSegment(
-                context, firstVertex, firstVertex + vertexOrIndexCount - 1, mLineLoopIndexBuffer,
-                0));
+                mContextMtl, firstVertex, firstVertex + vertexOrIndexCount - 1,
+                mLineLoopIndexBuffer, 0));
         }
         else
         {
             ASSERT(firstVertex == 0);
             ANGLE_TRY(
                 mContextMtl->getDisplay()->getUtils().generateLineLoopLastSegmentFromElementsArray(
-                    context,
+                    mContextMtl,
                     {indexTypeOrNone, vertexOrIndexCount, indices, mLineLoopIndexBuffer, 0}));
         }
 
@@ -189,7 +190,7 @@ ContextMtl::ContextMtl(const gl::State &state, gl::ErrorSet *errorSet, DisplayMt
     : ContextImpl(state, errorSet),
       mtl::Context(display),
       mCmdBuffer(&display->cmdQueue()),
-      mRenderEncoder(&mCmdBuffer),
+      mRenderEncoder(&mCmdBuffer, mOcclusionQueryPool),
       mBlitEncoder(&mCmdBuffer),
       mComputeEncoder(&mCmdBuffer)
 {}
@@ -214,6 +215,7 @@ void ContextMtl::onDestroy(const gl::Context *context)
 {
     mTriFanIndexBuffer.destroy(this);
     mLineLoopIndexBuffer.destroy(this);
+    mOcclusionQueryPool.destroy(this);
 }
 
 // Flush and finish.
@@ -246,7 +248,7 @@ angle::Result ContextMtl::drawTriFanArraysWithBaseVertex(const gl::Context *cont
         ANGLE_TRY(
             mtl::Buffer::MakeBuffer(this, indexBufferSize, nullptr, &mTriFanArraysIndexBuffer));
         ANGLE_TRY(getDisplay()->getUtils().generateTriFanBufferFromArrays(
-            context, {0, static_cast<uint32_t>(count), mTriFanArraysIndexBuffer, 0}));
+            this, {0, static_cast<uint32_t>(count), mTriFanArraysIndexBuffer, 0}));
     }
 
     ANGLE_TRY(setupDraw(context, gl::PrimitiveMode::TriangleFan, first, count, instances,
@@ -274,8 +276,8 @@ angle::Result ContextMtl::drawTriFanArraysLegacy(const gl::Context *context,
     ANGLE_TRY(AllocateTriangleFanBufferFromPool(this, count, &mTriFanIndexBuffer, &genIdxBuffer,
                                                 &genIdxBufferOffset, &genIndicesCount));
     ANGLE_TRY(getDisplay()->getUtils().generateTriFanBufferFromArrays(
-        context, {static_cast<uint32_t>(first), static_cast<uint32_t>(count), genIdxBuffer,
-                  genIdxBufferOffset}));
+        this, {static_cast<uint32_t>(first), static_cast<uint32_t>(count), genIdxBuffer,
+               genIdxBufferOffset}));
 
     ANGLE_TRY(setupDraw(context, gl::PrimitiveMode::TriangleFan, first, count, instances,
                         gl::DrawElementsType::InvalidEnum, reinterpret_cast<const void *>(0)));
@@ -390,7 +392,7 @@ angle::Result ContextMtl::drawTriFanElements(const gl::Context *context,
                                                     &genIdxBufferOffset, &genIndicesCount));
 
         ANGLE_TRY(getDisplay()->getUtils().generateTriFanBufferFromElementsArray(
-            context, {type, count, indices, genIdxBuffer, genIdxBufferOffset}));
+            this, {type, count, indices, genIdxBuffer, genIdxBufferOffset}));
 
         ANGLE_TRY(mTriFanIndexBuffer.commit(this));
 
@@ -899,9 +901,7 @@ VertexArrayImpl *ContextMtl::createVertexArray(const gl::VertexArrayState &state
 // Query and Fence creation
 QueryImpl *ContextMtl::createQuery(gl::QueryType type)
 {
-    // NOTE(hqle): ES 3.0
-    UNIMPLEMENTED();
-    return nullptr;
+    return new QueryMtl(type);
 }
 FenceNVImpl *ContextMtl::createFenceNV()
 {
@@ -1105,7 +1105,16 @@ const mtl::VertexFormat &ContextMtl::getVertexFormat(angle::FormatID angleFormat
 
 void ContextMtl::endEncoding(mtl::RenderCommandEncoder *encoder)
 {
+    // End any pending visibility query in the render pass
+    if (mOcclusionQuery)
+    {
+        endOcclusionQueryInRenderPass(mOcclusionQuery);
+    }
+
     encoder->endEncoding();
+
+    // Resolve visibility results
+    mOcclusionQueryPool.resolveVisibilityResults(this);
 }
 
 void ContextMtl::endEncoding(bool forceSaveRenderPassContent)
@@ -1119,7 +1128,7 @@ void ContextMtl::endEncoding(bool forceSaveRenderPassContent)
             mRenderEncoder.setDepthStencilStoreAction(MTLStoreActionStore, MTLStoreActionStore);
         }
 
-        mRenderEncoder.endEncoding();
+        endEncoding(&mRenderEncoder);
     }
 
     if (mBlitEncoder.valid())
@@ -1402,6 +1411,67 @@ void ContextMtl::onDrawFrameBufferChangedState(const gl::Context *context,
     }
 }
 
+angle::Result ContextMtl::onOcclusionQueryBegan(const gl::Context *context, QueryMtl *query)
+{
+    ASSERT(mOcclusionQuery == nullptr);
+    mOcclusionQuery = query;
+
+    if (mRenderEncoder.valid())
+    {
+        // if render pass has started, start the query in the encoder
+        return startOcclusionQueryInRenderPass(query, true);
+    }
+    else
+    {
+        query->resetVisibilityResult(this);
+    }
+
+    return angle::Result::Continue;
+}
+void ContextMtl::onOcclusionQueryEnded(const gl::Context *context, QueryMtl *query)
+{
+    ASSERT(mOcclusionQuery == query);
+
+    if (mRenderEncoder.valid())
+    {
+        // if render pass has started, end the query in the encoder
+        endOcclusionQueryInRenderPass(query);
+    }
+
+    mOcclusionQuery = nullptr;
+}
+void ContextMtl::onOcclusionQueryDestroyed(const gl::Context *context, QueryMtl *query)
+{
+    if (query->getAllocatedVisibilityOffset() == -1)
+    {
+        return;
+    }
+    mOcclusionQueryPool.deallocateQueryOffset(this, query);
+}
+
+angle::Result ContextMtl::startOcclusionQueryInRenderPass(QueryMtl *query, bool clearOldValue)
+{
+    ASSERT(mRenderEncoder.valid());
+    ANGLE_TRY(mOcclusionQueryPool.allocateQueryOffset(this, query, clearOldValue));
+    mRenderEncoder.setVisibilityResultMode(MTLVisibilityResultModeBoolean,
+                                           query->getAllocatedVisibilityOffset());
+
+    // We need to mark the query's buffer as being written in this command buffer now. Since the
+    // actual writing is deferred until the render pass ends and user could try to read the query
+    // result before the render pass ends.
+    mCmdBuffer.setWriteDependency(query->getVisibilityResultBuffer());
+
+    return angle::Result::Continue;
+}
+
+void ContextMtl::endOcclusionQueryInRenderPass(QueryMtl *query)
+{
+    ASSERT(mRenderEncoder.valid());
+    ASSERT(mOcclusionQuery == query);
+    mRenderEncoder.setVisibilityResultMode(MTLVisibilityResultModeDisabled,
+                                           query->getAllocatedVisibilityOffset());
+}
+
 void ContextMtl::updateProgramExecutable(const gl::Context *context)
 {
     // Need to rebind textures
@@ -1477,6 +1547,13 @@ angle::Result ContextMtl::setupDraw(const gl::Context *context,
 
         // re-apply everything
         invalidateState(context);
+    }
+
+    if (mOcclusionQuery && mOcclusionQueryPool.getNumRenderPassAllocatedQueries() == 0)
+    {
+        // The occlusion query is still active, and a new render pass has started.
+        // We need to continue the querying process in the new render encoder.
+        ANGLE_TRY(startOcclusionQueryInRenderPass(mOcclusionQuery, false));
     }
 
     Optional<mtl::RenderPipelineDesc> changedPipelineDesc;

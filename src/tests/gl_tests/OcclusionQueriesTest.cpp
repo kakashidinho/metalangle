@@ -115,6 +115,111 @@ TEST_P(OcclusionQueriesTest, IsNotOccluded)
     EXPECT_GL_TRUE(result);
 }
 
+TEST_P(OcclusionQueriesTest, MultiQueries)
+{
+    ANGLE_SKIP_TEST_IF(getClientMajorVersion() < 3 &&
+                       !IsGLExtensionEnabled("GL_EXT_occlusion_query_boolean"));
+
+    // TODO(syoussefi): Using render pass ops to clear the framebuffer attachment results in
+    // AMD/Windows misbehaving in this test.  http://anglebug.com/3286
+    ANGLE_SKIP_TEST_IF(IsWindows() && IsAMD() && IsVulkan());
+
+    GLuint query[5] = {};
+    glGenQueriesEXT(5, query);
+
+    // First query
+    glBeginQueryEXT(GL_ANY_SAMPLES_PASSED_EXT, query[0]);
+
+    EXPECT_GL_NO_ERROR();
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+    EXPECT_GL_NO_ERROR();
+
+    drawQuad(mProgram, essl1_shaders::PositionAttrib(), 0.8f);  // this quad should not be occluded
+
+    EXPECT_GL_NO_ERROR();
+
+    glFlush();
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    drawQuad(mProgram, essl1_shaders::PositionAttrib(), -2, 0.25f);  // this quad should be occluded
+    glEndQueryEXT(GL_ANY_SAMPLES_PASSED_EXT);
+    // First query ends
+
+    drawQuad(mProgram, essl1_shaders::PositionAttrib(), 0.8f,
+             0.25f);  // this quad should not be occluded
+
+    // Second query
+    glBeginQueryEXT(GL_ANY_SAMPLES_PASSED_EXT, query[1]);
+    drawQuad(mProgram, essl1_shaders::PositionAttrib(), 0.9f,
+             0.25f);  // this quad should be occluded
+    glEndQueryEXT(GL_ANY_SAMPLES_PASSED_EXT);
+
+    // Third query
+    glBeginQueryEXT(GL_ANY_SAMPLES_PASSED_EXT, query[2]);
+    drawQuad(mProgram, essl1_shaders::PositionAttrib(), 0.9f,
+             0.5f);  // this quad should not be occluded
+    glEndQueryEXT(GL_ANY_SAMPLES_PASSED_EXT);
+    // ------------
+    glFlush();
+
+    glViewport(0, 0, getWindowWidth() / 2, getWindowHeight());
+    glScissor(0, 0, getWindowWidth() / 2, getWindowHeight());
+    glEnable(GL_SCISSOR_TEST);
+    drawQuad(mProgram, essl1_shaders::PositionAttrib(), 0.9f,
+             0.5f);  // this quad should not be occluded
+
+    // Fourth query
+    glBeginQueryEXT(GL_ANY_SAMPLES_PASSED_EXT, query[3]);
+    // glClear should not be counted toward query);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    glEndQueryEXT(GL_ANY_SAMPLES_PASSED_EXT);
+
+    // Fifth query
+    glBeginQueryEXT(GL_ANY_SAMPLES_PASSED_EXT, query[4]);
+    drawQuad(mProgram, essl1_shaders::PositionAttrib(), 0.8f,
+             0.25f);  // this quad should not be occluded
+
+    glFlush();
+
+    drawQuad(mProgram, essl1_shaders::PositionAttrib(), 0.9f,
+             0.25f);  // this quad should be occluded
+    drawQuad(mProgram, essl1_shaders::PositionAttrib(), 0.9f,
+             0.5f);  // this quad should not be occluded
+    glEndQueryEXT(GL_ANY_SAMPLES_PASSED_EXT);
+
+    GLuint result = GL_TRUE;
+    glGetQueryObjectuivEXT(query[0], GL_QUERY_RESULT_EXT,
+                           &result);  // will block waiting for result
+    EXPECT_GL_NO_ERROR();
+    EXPECT_GL_TRUE(result);
+
+    glGetQueryObjectuivEXT(query[1], GL_QUERY_RESULT_EXT,
+                           &result);  // will block waiting for result
+    EXPECT_GL_NO_ERROR();
+    EXPECT_GL_FALSE(result);
+
+    glGetQueryObjectuivEXT(query[2], GL_QUERY_RESULT_EXT,
+                           &result);  // will block waiting for result
+    EXPECT_GL_NO_ERROR();
+    EXPECT_GL_TRUE(result);
+
+    glGetQueryObjectuivEXT(query[3], GL_QUERY_RESULT_EXT,
+                           &result);  // will block waiting for result
+    EXPECT_GL_NO_ERROR();
+    EXPECT_GL_FALSE(result);
+
+    glGetQueryObjectuivEXT(query[4], GL_QUERY_RESULT_EXT,
+                           &result);  // will block waiting for result
+    EXPECT_GL_NO_ERROR();
+    EXPECT_GL_TRUE(result);
+
+    glDeleteQueriesEXT(5, query);
+}
+
 TEST_P(OcclusionQueriesTest, Errors)
 {
     ANGLE_SKIP_TEST_IF(getClientMajorVersion() < 3 &&
@@ -347,6 +452,7 @@ ANGLE_INSTANTIATE_TEST(OcclusionQueriesTest,
                        ES2_D3D11(),
                        ES3_D3D11(),
                        ES2_OPENGL(),
+                       ES2_METAL(),
                        ES3_OPENGL(),
                        ES2_OPENGLES(),
                        ES3_OPENGLES(),

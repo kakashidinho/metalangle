@@ -16,6 +16,7 @@
 #endif
 
 #include "common/debug.h"
+#include "libANGLE/renderer/metal/mtl_occlusion_query_pool.h"
 #include "libANGLE/renderer/metal/mtl_resources.h"
 
 namespace rx
@@ -50,7 +51,10 @@ namespace
     PROC(DrawIndexed)                    \
     PROC(DrawIndexedInstanced)           \
     PROC(DrawIndexedInstancedBaseVertex) \
-    PROC(InsertDebugsign)
+    PROC(SetVisibilityResultMode)        \
+    PROC(InsertDebugsign)                \
+    PROC(PushDebugGroup)                 \
+    PROC(PopDebugGroup)
 
 #define ANGLE_MTL_TYPE_DECL(CMD) CMD,
 
@@ -284,6 +288,14 @@ void DrawIndexedInstancedBaseVertexCmd(id<MTLRenderCommandEncoder> encoder,
     [indexBuffer ANGLE_MTL_RELEASE];
 }
 
+void SetVisibilityResultModeCmd(id<MTLRenderCommandEncoder> encoder,
+                                IntermediateCommandStream *stream)
+{
+    auto mode   = stream->fetch<MTLVisibilityResultMode>();
+    auto offset = stream->fetch<size_t>();
+    [encoder setVisibilityResultMode:mode offset:offset];
+}
+
 void InsertDebugsignCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
 {
     auto label = stream->fetch<NSString *>();
@@ -291,7 +303,19 @@ void InsertDebugsignCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommand
     [label ANGLE_MTL_RELEASE];
 }
 
-// Command decoder mapping
+void PushDebugGroupCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
+{
+    auto label = stream->fetch<NSString *>();
+    [encoder pushDebugGroup:label];
+    [label ANGLE_MTL_RELEASE];
+}
+
+void PopDebugGroupCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
+{
+    [encoder popDebugGroup];
+}
+
+// Command encoder mapping
 #define ANGLE_MTL_CMD_MAP(CMD) CMD##Cmd,
 
 using CommandEncoderFunc = void (*)(id<MTLRenderCommandEncoder>, IntermediateCommandStream *);
@@ -379,6 +403,17 @@ bool CommandQueue::isResourceBeingUsedByGPU(const Resource *resource) const
            resource->getCommandBufferQueueSerial().load(std::memory_order_relaxed);
 }
 
+bool CommandQueue::resourceHasPendingWorks(const Resource *resource) const
+{
+    if (!resource)
+    {
+        return false;
+    }
+
+    return mCommittedBufferSerial.load(std::memory_order_relaxed) <
+           resource->getCommandBufferQueueSerial().load(std::memory_order_relaxed);
+}
+
 AutoObjCPtr<id<MTLCommandBuffer>> CommandQueue::makeMetalCommandBuffer(uint64_t *queueSerialOut)
 {
     ANGLE_MTL_OBJC_SCOPE
@@ -405,6 +440,17 @@ AutoObjCPtr<id<MTLCommandBuffer>> CommandQueue::makeMetalCommandBuffer(uint64_t 
 
         return metalCmdBuffer;
     }
+}
+
+void CommandQueue::onCommandBufferCommitted(id<MTLCommandBuffer> buf, uint64_t serial)
+{
+    std::lock_guard<std::mutex> lg(mLock);
+
+    ANGLE_MTL_LOG("Committed MTLCommandBuffer %llu:%p", serial, buf);
+
+    mCommittedBufferSerial.store(
+        std::max(mCommittedBufferSerial.load(std::memory_order_relaxed), serial),
+        std::memory_order_relaxed);
 }
 
 void CommandQueue::onCommandBufferCompleted(id<MTLCommandBuffer> buf, uint64_t serial)
@@ -520,7 +566,11 @@ void CommandBuffer::insertDebugSign(const std::string &marker)
     mtl::CommandEncoder *currentEncoder = mActiveCommandEncoder.load(std::memory_order_relaxed);
     if (currentEncoder)
     {
-        currentEncoder->insertDebugSign(marker);
+        ANGLE_MTL_OBJC_SCOPE
+        {
+            auto label = [NSString stringWithUTF8String:marker.c_str()];
+            currentEncoder->insertDebugSign(label);
+        }
     }
     else
     {
@@ -549,7 +599,11 @@ void CommandBuffer::setActiveCommandEncoder(CommandEncoder *encoder)
     mActiveCommandEncoder = encoder;
     for (auto &marker : mPendingDebugSigns)
     {
-        encoder->insertDebugSign(marker);
+        ANGLE_MTL_OBJC_SCOPE
+        {
+            auto label = [NSString stringWithUTF8String:marker.c_str()];
+            encoder->insertDebugSign(label);
+        }
     }
     mPendingDebugSigns.clear();
 }
@@ -590,10 +644,11 @@ void CommandBuffer::commitImpl()
         mActiveCommandEncoder = nullptr;
     }
 
+    // Notify command queue
+    mCmdQueue.onCommandBufferCommitted(get(), mQueueSerial);
+
     // Do the actual commit
     [get() commit];
-
-    ANGLE_MTL_LOG("Committed MTLCommandBuffer %llu:%p", mQueueSerial, get());
 
     mCommitted = true;
 }
@@ -641,13 +696,9 @@ CommandEncoder &CommandEncoder::markResourceBeingWrittenByGPU(const TextureRef &
     return *this;
 }
 
-void CommandEncoder::insertDebugSign(const std::string &marker)
+void CommandEncoder::insertDebugSign(NSString *label)
 {
-    ANGLE_MTL_OBJC_SCOPE
-    {
-        auto label = [NSString stringWithUTF8String:marker.c_str()];
-        insertDebugSignImpl(label);
-    }
+    insertDebugSignImpl(label);
 }
 
 void CommandEncoder::insertDebugSignImpl(NSString *label)
@@ -657,8 +708,9 @@ void CommandEncoder::insertDebugSignImpl(NSString *label)
 }
 
 // RenderCommandEncoder implemtation
-RenderCommandEncoder::RenderCommandEncoder(CommandBuffer *cmdBuffer)
-    : CommandEncoder(cmdBuffer, RENDER)
+RenderCommandEncoder::RenderCommandEncoder(CommandBuffer *cmdBuffer,
+                                           const OcclusionQueryPool &queryPool)
+    : CommandEncoder(cmdBuffer, RENDER), mOcclusionQueryPool(queryPool)
 {
     ANGLE_MTL_OBJC_SCOPE
     {
@@ -739,6 +791,17 @@ void RenderCommandEncoder::endEncodingImpl(bool considerDiscardSimulation)
     objCRenderPassDesc.stencilAttachment.storeAction =
         mRenderPassDesc.stencilAttachment.storeAction;
     finalizeLoadStoreAction(objCRenderPassDesc.stencilAttachment);
+
+    // Set visibility result buffer
+    if (mOcclusionQueryPool.getNumRenderPassAllocatedQueries())
+    {
+        objCRenderPassDesc.visibilityResultBuffer =
+            mOcclusionQueryPool.getRenderPassVisibilityPoolBuffer()->get();
+    }
+    else
+    {
+        objCRenderPassDesc.visibilityResultBuffer = nil;
+    }
 
     // Encode the actual encoder
     encodeMetalEncoder();
@@ -1205,10 +1268,27 @@ RenderCommandEncoder &RenderCommandEncoder::drawIndexedInstancedBaseVertex(
     return *this;
 }
 
+RenderCommandEncoder &RenderCommandEncoder::setVisibilityResultMode(MTLVisibilityResultMode mode,
+                                                                    size_t offset)
+{
+    mCommands.push(CmdType::SetVisibilityResultMode).push(mode).push(offset);
+    return *this;
+}
+
 void RenderCommandEncoder::insertDebugSignImpl(NSString *label)
 {
     // Defer the insertion until endEncoding()
     mCommands.push(CmdType::InsertDebugsign).push([label ANGLE_MTL_RETAIN]);
+}
+
+void RenderCommandEncoder::pushDebugGroup(NSString *label)
+{
+    // Defer the insertion until endEncoding()
+    mCommands.push(CmdType::PushDebugGroup).push([label ANGLE_MTL_RETAIN]);
+}
+void RenderCommandEncoder::popDebugGroup()
+{
+    mCommands.push(CmdType::PopDebugGroup);
 }
 
 RenderCommandEncoder &RenderCommandEncoder::setColorStoreAction(MTLStoreAction action,
@@ -1331,6 +1411,29 @@ BlitCommandEncoder &BlitCommandEncoder::restart()
     }
 }
 
+BlitCommandEncoder &BlitCommandEncoder::copyBuffer(const BufferRef &src,
+                                                   size_t srcOffset,
+                                                   const BufferRef &dst,
+                                                   size_t dstOffset,
+                                                   size_t size)
+{
+    if (!src || !dst)
+    {
+        return *this;
+    }
+
+    cmdBuffer().setReadDependency(src);
+    cmdBuffer().setWriteDependency(dst);
+
+    [get() copyFromBuffer:src->get()
+             sourceOffset:srcOffset
+                 toBuffer:dst->get()
+        destinationOffset:dstOffset
+                     size:size];
+
+    return *this;
+}
+
 BlitCommandEncoder &BlitCommandEncoder::copyBufferToTexture(const BufferRef &src,
                                                             size_t srcOffset,
                                                             size_t srcBytesPerRow,
@@ -1425,6 +1528,19 @@ BlitCommandEncoder &BlitCommandEncoder::copyTexture(const TextureRef &src,
           destinationLevel:dstLevel
          destinationOrigin:dstOrigin];
 
+    return *this;
+}
+
+BlitCommandEncoder &BlitCommandEncoder::fillBuffer(const BufferRef &buffer,
+                                                   NSRange range,
+                                                   uint8_t value)
+{
+    if (!buffer)
+    {
+        return *this;
+    }
+
+    [get() fillBuffer:buffer->get() range:range value:value];
     return *this;
 }
 

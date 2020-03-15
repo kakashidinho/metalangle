@@ -17,6 +17,7 @@
 #include "libANGLE/renderer/ContextImpl.h"
 #include "libANGLE/renderer/metal/mtl_buffer_pool.h"
 #include "libANGLE/renderer/metal/mtl_command_buffer.h"
+#include "libANGLE/renderer/metal/mtl_occlusion_query_pool.h"
 #include "libANGLE/renderer/metal/mtl_resources.h"
 #include "libANGLE/renderer/metal/mtl_state_cache.h"
 #include "libANGLE/renderer/metal/mtl_utils.h"
@@ -209,6 +210,14 @@ class ContextMtl : public ContextImpl, public mtl::Context
                                        FramebufferMtl *framebuffer,
                                        bool renderPassChanged);
 
+    // Invoke by QueryMtl
+    angle::Result onOcclusionQueryBegan(const gl::Context *context, QueryMtl *query);
+    void onOcclusionQueryEnded(const gl::Context *context, QueryMtl *query);
+    void onOcclusionQueryDestroyed(const gl::Context *context, QueryMtl *query);
+
+    // Useful for temporarily disable occlusion query during clear/blit with draw
+    const QueryMtl *getActiveOcclusionQuery() const { return mOcclusionQuery; }
+
     const MTLClearColor &getClearColorValue() const;
     MTLColorWriteMask getColorMask() const;
     float getClearDepthValue() const;
@@ -324,6 +333,9 @@ class ContextMtl : public ContextImpl, public mtl::Context
                                          gl::PrimitiveMode primitiveMode,
                                          Optional<mtl::RenderPipelineDesc> *changedPipelineDesc);
 
+    angle::Result startOcclusionQueryInRenderPass(QueryMtl *query, bool clearOldValue);
+    void endOcclusionQueryInRenderPass(QueryMtl *query);
+
     // Dirty bits.
     enum DirtyBitType : size_t
     {
@@ -375,6 +387,8 @@ class ContextMtl : public ContextImpl, public mtl::Context
         float values[4];
     };
 
+    mtl::OcclusionQueryPool mOcclusionQueryPool;
+
     mtl::CommandBuffer mCmdBuffer;
     mtl::RenderCommandEncoder mRenderEncoder;
     mtl::BlitCommandEncoder mBlitEncoder;
@@ -384,6 +398,7 @@ class ContextMtl : public ContextImpl, public mtl::Context
     FramebufferMtl *mDrawFramebuffer = nullptr;
     VertexArrayMtl *mVertexArray     = nullptr;
     ProgramMtl *mProgram             = nullptr;
+    QueryMtl *mOcclusionQuery        = nullptr;
 
     using DirtyBits = angle::BitSet<DIRTY_BIT_MAX>;
 

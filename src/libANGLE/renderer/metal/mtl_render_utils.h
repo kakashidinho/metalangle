@@ -143,7 +143,7 @@ class RenderUtils : public Context, angle::NonCopyable
                                   RenderCommandEncoder *cmdEncoder,
                                   const DepthStencilBlitParams &params);
 
-    angle::Result convertIndexBuffer(const gl::Context *context,
+    angle::Result convertIndexBuffer(ContextMtl *contextMtl,
                                      gl::DrawElementsType srcType,
                                      uint32_t indexCount,
                                      const BufferRef &srcBuffer,
@@ -151,23 +151,27 @@ class RenderUtils : public Context, angle::NonCopyable
                                      const BufferRef &dstBuffer,
                                      // Must be multiples of kIndexBufferOffsetAlignment
                                      uint32_t dstOffset);
-    angle::Result generateTriFanBufferFromArrays(const gl::Context *context,
+    angle::Result generateTriFanBufferFromArrays(ContextMtl *contextMtl,
                                                  const TriFanFromArrayParams &params);
-    angle::Result generateTriFanBufferFromElementsArray(const gl::Context *context,
+    angle::Result generateTriFanBufferFromElementsArray(ContextMtl *contextMtl,
                                                         const IndexGenerationParams &params);
 
-    angle::Result generateLineLoopLastSegment(const gl::Context *context,
+    angle::Result generateLineLoopLastSegment(ContextMtl *contextMtl,
                                               uint32_t firstVertex,
                                               uint32_t lastVertex,
                                               const BufferRef &dstBuffer,
                                               uint32_t dstOffset);
-    angle::Result generateLineLoopLastSegmentFromElementsArray(const gl::Context *context,
+    angle::Result generateLineLoopLastSegmentFromElementsArray(ContextMtl *contextMtl,
                                                                const IndexGenerationParams &params);
 
-    angle::Result dispatchCompute(const gl::Context *context,
-                                  ComputeCommandEncoder *encoder,
-                                  id<MTLComputePipelineState> pipelineState,
-                                  size_t numThreads);
+    void combineVisibilityResult(ContextMtl *contextMtl,
+                                 const BufferRef &renderPassResultBuf,
+                                 const BufferRef &finalResultBuf);
+
+    void dispatchCompute(ContextMtl *contextMtl,
+                         ComputeCommandEncoder *encoder,
+                         id<MTLComputePipelineState> pipelineState,
+                         size_t numThreads);
 
   private:
     // override ErrorHandler
@@ -215,16 +219,15 @@ class RenderUtils : public Context, angle::NonCopyable
     void setupDrawCommonStates(RenderCommandEncoder *cmdEncoder);
 
     AutoObjCPtr<id<MTLComputePipelineState>> getIndexConversionPipeline(
-        ContextMtl *context,
         gl::DrawElementsType srcType,
         uint32_t srcOffset);
     AutoObjCPtr<id<MTLComputePipelineState>> getTriFanFromElemArrayGeneratorPipeline(
-        ContextMtl *context,
         gl::DrawElementsType srcType,
         uint32_t srcOffset);
-    angle::Result ensureTriFanFromArrayGeneratorInitialized(ContextMtl *context);
+    void ensureTriFanFromArrayGeneratorInitialized();
+    void ensureVisibilityResultCombPipelineInitialized();
     angle::Result generateTriFanBufferFromElementsArrayGPU(
-        const gl::Context *context,
+        ContextMtl *contextMtl,
         gl::DrawElementsType srcType,
         uint32_t indexCount,
         const BufferRef &srcBuffer,
@@ -232,10 +235,10 @@ class RenderUtils : public Context, angle::NonCopyable
         const BufferRef &dstBuffer,
         // Must be multiples of kIndexBufferOffsetAlignment
         uint32_t dstOffset);
-    angle::Result generateTriFanBufferFromElementsArrayCPU(const gl::Context *context,
+    angle::Result generateTriFanBufferFromElementsArrayCPU(ContextMtl *contextMtl,
                                                            const IndexGenerationParams &params);
     angle::Result generateLineLoopLastSegmentFromElementsArrayCPU(
-        const gl::Context *context,
+        ContextMtl *contextMtl,
         const IndexGenerationParams &params);
 
     RenderPipelineCache mClearRenderPipelineCache[kMaxRenderTargets + 1];
@@ -256,6 +259,7 @@ class RenderUtils : public Context, angle::NonCopyable
     std::unordered_map<IndexConversionPipelineCacheKey, AutoObjCPtr<id<MTLComputePipelineState>>>
         mTriFanFromElemArrayGeneratorPipelineCaches;
     AutoObjCPtr<id<MTLComputePipelineState>> mTriFanFromArraysGeneratorPipeline;
+    AutoObjCPtr<id<MTLComputePipelineState>> mVisibilityResultCombPipeline;
 };
 
 }  // namespace mtl

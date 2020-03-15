@@ -63,10 +63,7 @@ class BufferHolderMtl
     // a queue of mtl::Buffer and only let CPU modifies a free mtl::Buffer.
     // So, in order to let GPU use the most recent modified content, one must call this method
     // right before the draw call to retrieved the most up-to-date mtl::Buffer.
-    mtl::BufferRef getCurrentBuffer(const gl::Context *context)
-    {
-        return mIsWeak ? mBufferWeakRef.lock() : mBuffer;
-    }
+    mtl::BufferRef getCurrentBuffer() { return mIsWeak ? mBufferWeakRef.lock() : mBuffer; }
 
   protected:
     mtl::BufferRef mBuffer;
@@ -111,13 +108,13 @@ class BufferMtl : public BufferImpl, public BufferHolderMtl
                                 bool primitiveRestartEnabled,
                                 gl::IndexRange *outRange) override;
 
-    angle::Result getFirstLastIndices(const gl::Context *context,
+    angle::Result getFirstLastIndices(ContextMtl *contextMtl,
                                       gl::DrawElementsType type,
                                       size_t offset,
                                       size_t count,
                                       std::pair<uint32_t, uint32_t> *outIndices);
 
-    const uint8_t *getClientShadowCopyData(const gl::Context *context);
+    const uint8_t *getClientShadowCopyData(ContextMtl *contextMtl);
 
     ConversionBufferMtl *getVertexConversionBuffer(const gl::Context *context,
                                                    angle::FormatID formatID,
@@ -148,8 +145,13 @@ class BufferMtl : public BufferImpl, public BufferHolderMtl
     angle::Result commitShadowCopy(const gl::Context *context, size_t size);
 
     void clearConversionBuffers();
-    void ensureShadowCopySyncedFromGPU(const gl::Context *context);
-    uint8_t *syncAndObtainShadowCopy(const gl::Context *context);
+    // Convenient method
+    const uint8_t *getClientShadowCopyData(const gl::Context *context)
+    {
+        return getClientShadowCopyData(mtl::GetImpl(context));
+    }
+    void ensureShadowCopySyncedFromGPU(ContextMtl *contextMtl);
+    uint8_t *syncAndObtainShadowCopy(ContextMtl *contextMtl);
 
     // Client side shadow buffer
     angle::MemoryBuffer mShadowCopy;

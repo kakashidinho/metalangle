@@ -124,7 +124,7 @@ def gen_precompiled_shaders(mac_version, ios_version, variable_name, additional_
 
 
 def main():
-    src_files = ['blit.metal', 'clear.metal', 'gen_indices.metal']
+    src_files = ['blit.metal', 'clear.metal', 'gen_indices.metal', 'misc.metal']
     # auto_script parameters.
     if len(sys.argv) > 1:
         inputs = src_files + [ 'common.h' ]

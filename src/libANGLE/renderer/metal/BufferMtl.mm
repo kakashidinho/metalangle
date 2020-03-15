@@ -158,14 +158,15 @@ angle::Result BufferMtl::mapRange(const gl::Context *context,
 
     if (mapPtr)
     {
+        ContextMtl *contextMtl = mtl::GetImpl(context);
         if (mBufferPool.getMaxBuffers() == 1)
         {
-            *mapPtr = mBuffer->map(mtl::GetImpl(context), (access & GL_MAP_WRITE_BIT) == 0,
+            *mapPtr = mBuffer->map(contextMtl, (access & GL_MAP_WRITE_BIT) == 0,
                                    access & GL_MAP_UNSYNCHRONIZED_BIT);
         }
         else
         {
-            *mapPtr = syncAndObtainShadowCopy(context) + offset;
+            *mapPtr = syncAndObtainShadowCopy(contextMtl) + offset;
         }
     }
 
@@ -227,13 +228,13 @@ angle::Result BufferMtl::getIndexRange(const gl::Context *context,
     return angle::Result::Continue;
 }
 
-angle::Result BufferMtl::getFirstLastIndices(const gl::Context *context,
+angle::Result BufferMtl::getFirstLastIndices(ContextMtl *contextMtl,
                                              gl::DrawElementsType type,
                                              size_t offset,
                                              size_t count,
                                              std::pair<uint32_t, uint32_t> *outIndices)
 {
-    const uint8_t *indices = getClientShadowCopyData(context) + offset;
+    const uint8_t *indices = getClientShadowCopyData(contextMtl) + offset;
 
     switch (type)
     {
@@ -254,33 +255,32 @@ angle::Result BufferMtl::getFirstLastIndices(const gl::Context *context,
 }
 
 /* public */
-const uint8_t *BufferMtl::getClientShadowCopyData(const gl::Context *context)
+const uint8_t *BufferMtl::getClientShadowCopyData(ContextMtl *contextMtl)
 {
     if (mBufferPool.getMaxBuffers() == 1)
     {
         // Don't need shadow copy in this case, use the buffer directly
-        return mBuffer->mapReadOnly(mtl::GetImpl(context));
+        return mBuffer->mapReadOnly(contextMtl);
     }
-    return syncAndObtainShadowCopy(context);
+    return syncAndObtainShadowCopy(contextMtl);
 }
 
-void BufferMtl::ensureShadowCopySyncedFromGPU(const gl::Context *context)
+void BufferMtl::ensureShadowCopySyncedFromGPU(ContextMtl *contextMtl)
 {
     if (mBuffer->isCPUReadMemDirty())
     {
-        ContextMtl *contextMtl = mtl::GetImpl(context);
-        const uint8_t *ptr     = mBuffer->mapReadOnly(contextMtl);
+        const uint8_t *ptr = mBuffer->mapReadOnly(contextMtl);
         memcpy(mShadowCopy.data(), ptr, size());
         mBuffer->unmap(contextMtl);
 
         mBuffer->resetCPUReadMemDirty();
     }
 }
-uint8_t *BufferMtl::syncAndObtainShadowCopy(const gl::Context *context)
+uint8_t *BufferMtl::syncAndObtainShadowCopy(ContextMtl *contextMtl)
 {
     ASSERT(mShadowCopy.size());
 
-    ensureShadowCopySyncedFromGPU(context);
+    ensureShadowCopySyncedFromGPU(contextMtl);
 
     return mShadowCopy.data();
 }
@@ -466,7 +466,7 @@ angle::Result BufferMtl::setSubDataImpl(const gl::Context *context,
     {
         ASSERT(mShadowCopy.size());
 
-        ensureShadowCopySyncedFromGPU(context);
+        ensureShadowCopySyncedFromGPU(contextMtl);
 
         std::copy(srcPtr, srcPtr + sizeToCopy, mShadowCopy.data() + offset);
 

@@ -571,7 +571,7 @@ void DisplayMtl::initializeExtensions() const
     mNativeExtensions.framebufferMultisample = true;
     mNativeExtensions.copyTexture            = false;
     mNativeExtensions.copyCompressedTexture  = false;
-    mNativeExtensions.debugMarker            = false;
+    mNativeExtensions.debugMarker            = true;
     mNativeExtensions.robustness             = true;
     mNativeExtensions.textureBorderClamp     = false;  // not implemented yet
     mNativeExtensions.translatedShaderSource = true;
@@ -601,8 +601,7 @@ void DisplayMtl::initializeExtensions() const
 
     mNativeExtensions.eglSync = false;
 
-    // NOTE(hqle): support occlusion query
-    mNativeExtensions.occlusionQueryBoolean = false;
+    mNativeExtensions.occlusionQueryBoolean = true;
 
     mNativeExtensions.disjointTimerQuery          = false;
     mNativeExtensions.queryCounterBitsTimeElapsed = false;

@@ -83,6 +83,11 @@ bool Resource::isBeingUsedByGPU(Context *context) const
     return context->cmdQueue().isResourceBeingUsedByGPU(this);
 }
 
+bool Resource::hasPendingWorks(Context *context) const
+{
+    return context->cmdQueue().resourceHasPendingWorks(this);
+}
+
 void Resource::setUsedByCommandBufferWithQueueSerial(uint64_t serial, bool writing)
 {
     auto curSerial = mUsageRef->cmdBufferQueueSerial.load(std::memory_order_relaxed);
@@ -560,9 +565,30 @@ angle::Result Buffer::MakeBuffer(ContextMtl *context,
     return angle::Result::Continue;
 }
 
+angle::Result Buffer::MakeBuffer(ContextMtl *context,
+                                 MTLResourceOptions options,
+                                 size_t size,
+                                 const uint8_t *data,
+                                 BufferRef *bufferOut)
+{
+    bufferOut->reset(new Buffer(context, options, size, data));
+
+    if (!bufferOut || !bufferOut->get())
+    {
+        ANGLE_MTL_CHECK(context, false, GL_OUT_OF_MEMORY);
+    }
+
+    return angle::Result::Continue;
+}
+
 Buffer::Buffer(ContextMtl *context, bool useSharedMem, size_t size, const uint8_t *data)
 {
     (void)reset(context, useSharedMem, size, data);
+}
+
+Buffer::Buffer(ContextMtl *context, MTLResourceOptions options, size_t size, const uint8_t *data)
+{
+    (void)reset(context, options, size, data);
 }
 
 angle::Result Buffer::reset(ContextMtl *context, size_t size, const uint8_t *data)
@@ -575,24 +601,32 @@ angle::Result Buffer::reset(ContextMtl *context,
                             size_t size,
                             const uint8_t *data)
 {
+    MTLResourceOptions options;
+
+    options = 0;
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
+    if (!useSharedMem)
+    {
+        options |= MTLResourceStorageModeManaged;
+    }
+    else
+#endif
+    {
+        options |= MTLResourceStorageModeShared;
+    }
+
+    return reset(context, options, size, data);
+}
+
+angle::Result Buffer::reset(ContextMtl *context,
+                            MTLResourceOptions options,
+                            size_t size,
+                            const uint8_t *data)
+{
     ANGLE_MTL_OBJC_SCOPE
     {
-        MTLResourceOptions options;
-
         id<MTLBuffer> newBuffer;
         id<MTLDevice> metalDevice = context->getMetalDevice();
-
-        options = 0;
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        if (!useSharedMem)
-        {
-            options |= MTLResourceStorageModeManaged;
-        }
-        else
-#endif
-        {
-            options |= MTLResourceStorageModeShared;
-        }
 
         if (data)
         {
