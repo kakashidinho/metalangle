@@ -1,16 +1,14 @@
 {
   "src/libANGLE/renderer/metal/shaders/blit.metal":
-    "500254e3136a2f7fd85e8da6e6e0abf2",
+    "2433978b84d4487af2e1b2c0a34c5c7b",
   "src/libANGLE/renderer/metal/shaders/clear.metal":
     "cc966df44c597c5f136dc8dfb27fc6fa",
   "src/libANGLE/renderer/metal/shaders/common.h":
-    "00faed96360dbf7db5b4861fb54eea7a",
+    "4a7352fb2a6e3481f5ba088be92a5d82",
   "src/libANGLE/renderer/metal/shaders/compiled/mtl_default_shaders.inc":
-    "e482d8448294d46a00d68e0d910f1e8d",
+    "885666f31e8973c403a03bf5175697d2",
   "src/libANGLE/renderer/metal/shaders/gen_indices.metal":
     "81ffe0d990068226a7108abe2513def0",
   "src/libANGLE/renderer/metal/shaders/gen_mtl_internal_shaders.py":
-    "5a3d4f394a58dc86fb06c5255ae02ce4",
-  "src/libANGLE/renderer/metal/shaders/master_source.metal":
-    "fbe6f4bfb49a48ae87791a4cff5fab0a"
+    "adf22c4fbd80437f29840716ac1d7343"
 }
