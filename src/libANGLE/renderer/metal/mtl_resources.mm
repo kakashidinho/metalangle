@@ -18,6 +18,7 @@
 #include "libANGLE/renderer/metal/DisplayMtl.h"
 #include "libANGLE/renderer/metal/mtl_command_buffer.h"
 #include "libANGLE/renderer/metal/mtl_format_utils.h"
+#include "libANGLE/renderer/metal/mtl_utils.h"
 
 namespace rx
 {
@@ -146,16 +147,8 @@ angle::Result Texture::Make2DTexture(ContextMtl *context,
                                                               height:height
                                                            mipmapped:mips == 0 || mips > 1];
 
-        SetTextureSwizzle(context, format, desc);
-        refOut->reset(new Texture(context, desc, mips, renderTargetOnly, allowFormatView));
+        return MakeTexture(context, format, desc, mips, renderTargetOnly, allowFormatView, refOut);
     }  // ANGLE_MTL_OBJC_SCOPE
-
-    if (!refOut || !refOut->get())
-    {
-        ANGLE_MTL_CHECK(context, false, GL_OUT_OF_MEMORY);
-    }
-
-    return angle::Result::Continue;
 }
 
 /** static */
@@ -173,16 +166,9 @@ angle::Result Texture::MakeCubeTexture(ContextMtl *context,
             [MTLTextureDescriptor textureCubeDescriptorWithPixelFormat:format.metalFormat
                                                                   size:size
                                                              mipmapped:mips == 0 || mips > 1];
-        SetTextureSwizzle(context, format, desc);
-        refOut->reset(new Texture(context, desc, mips, renderTargetOnly, allowFormatView));
+
+        return MakeTexture(context, format, desc, mips, renderTargetOnly, allowFormatView, refOut);
     }  // ANGLE_MTL_OBJC_SCOPE
-
-    if (!refOut || !refOut->get())
-    {
-        ANGLE_MTL_CHECK(context, false, GL_OUT_OF_MEMORY);
-    }
-
-    return angle::Result::Continue;
 }
 
 /** static */
@@ -205,13 +191,29 @@ angle::Result Texture::Make2DMSTexture(ContextMtl *context,
         desc.mipmapLevelCount      = 1;
         desc.sampleCount           = samples;
 
-        SetTextureSwizzle(context, format, desc);
-        refOut->reset(new Texture(context, desc, 1, renderTargetOnly, allowFormatView));
+        return MakeTexture(context, format, desc, 1, renderTargetOnly, allowFormatView, refOut);
     }  // ANGLE_MTL_OBJC_SCOPE
+}
+
+/** static */
+angle::Result Texture::MakeTexture(ContextMtl *context,
+                                   const Format &mtlFormat,
+                                   MTLTextureDescriptor *desc,
+                                   uint32_t mips,
+                                   bool renderTargetOnly,
+                                   bool allowFormatView,
+                                   TextureRef *refOut)
+{
+    SetTextureSwizzle(context, mtlFormat, desc);
+    refOut->reset(new Texture(context, desc, mips, renderTargetOnly, allowFormatView));
 
     if (!refOut || !refOut->get())
     {
         ANGLE_MTL_CHECK(context, false, GL_OUT_OF_MEMORY);
+    }
+    if (!mtlFormat.hasDepthAndStencilBits())
+    {
+        refOut->get()->setColorWritableMask(GetEmulatedColorWriteMask(mtlFormat));
     }
 
     return angle::Result::Continue;

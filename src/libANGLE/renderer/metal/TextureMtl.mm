@@ -28,45 +28,6 @@ namespace rx
 namespace
 {
 
-MTLColorWriteMask GetColorWriteMask(const mtl::Format &mtlFormat, bool *emulatedChannelsOut)
-{
-    const angle::Format &intendedFormat = mtlFormat.intendedAngleFormat();
-    const angle::Format &actualFormat   = mtlFormat.actualAngleFormat();
-    bool emulatedChannels               = false;
-    MTLColorWriteMask colorWritableMask = MTLColorWriteMaskAll;
-    if (intendedFormat.alphaBits == 0 && actualFormat.alphaBits)
-    {
-        emulatedChannels = true;
-        // Disable alpha write to this texture
-        colorWritableMask = colorWritableMask & (~MTLColorWriteMaskAlpha);
-    }
-    if (intendedFormat.luminanceBits == 0)
-    {
-        if (intendedFormat.redBits == 0 && actualFormat.redBits)
-        {
-            emulatedChannels = true;
-            // Disable red write to this texture
-            colorWritableMask = colorWritableMask & (~MTLColorWriteMaskRed);
-        }
-        if (intendedFormat.greenBits == 0 && actualFormat.greenBits)
-        {
-            emulatedChannels = true;
-            // Disable green write to this texture
-            colorWritableMask = colorWritableMask & (~MTLColorWriteMaskGreen);
-        }
-        if (intendedFormat.blueBits == 0 && actualFormat.blueBits)
-        {
-            emulatedChannels = true;
-            // Disable blue write to this texture
-            colorWritableMask = colorWritableMask & (~MTLColorWriteMaskBlue);
-        }
-    }
-
-    *emulatedChannelsOut = emulatedChannels;
-
-    return colorWritableMask;
-}
-
 gl::ImageIndex GetImageBaseLevelIndex(const mtl::TextureRef &image)
 {
     gl::ImageIndex imageBaseIndex;
@@ -1140,9 +1101,7 @@ angle::Result TextureMtl::checkForEmulatedChannels(const gl::Context *context,
                                                    const mtl::Format &mtlFormat,
                                                    const mtl::TextureRef &texture)
 {
-    bool emulatedChannels               = false;
-    MTLColorWriteMask colorWritableMask = GetColorWriteMask(mtlFormat, &emulatedChannels);
-    texture->setColorWritableMask(colorWritableMask);
+    bool emulatedChannels               = mtl::IsFormatEmulated(mtlFormat);
 
     // For emulated channels that GL texture intends to not have,
     // we need to initialize their content.

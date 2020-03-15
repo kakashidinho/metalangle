@@ -199,6 +199,14 @@ class Texture final : public Resource,
   private:
     using ParentClass = WrappedObject<id<MTLTexture>>;
 
+    static angle::Result MakeTexture(ContextMtl *context,
+                                     const Format &mtlFormat,
+                                     MTLTextureDescriptor *desc,
+                                     uint32_t mips,
+                                     bool renderTargetOnly,
+                                     bool allowFormatView,
+                                     TextureRef *refOut);
+
     Texture(id<MTLTexture> metalTexture);
     Texture(ContextMtl *context,
             MTLTextureDescriptor *desc,
