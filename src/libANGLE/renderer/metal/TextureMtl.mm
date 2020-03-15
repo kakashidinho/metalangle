@@ -338,7 +338,9 @@ void TextureMtl::releaseTexture(bool releaseImages)
     if (releaseImages)
     {
         mTexImages.clear();
-        // Clear render target cache for each texture's image
+        mImplicitMSTextures.clear();
+        // Clear render target cache for each texture's image. We don't erase them because they
+        // might still be referenced by a framebuffer.
         for (auto &sliceRenderTargets : mTexImageRenderTargets)
         {
             for (auto &mipRenderTarget : sliceRenderTargets.second)
@@ -792,20 +794,43 @@ angle::Result TextureMtl::getAttachmentRenderTarget(const gl::Context *context,
                                                     FramebufferAttachmentRenderTarget **rtOut)
 {
     ANGLE_TRY(ensureTextureCreated(context));
-    // NOTE(hqle): Support MSAA.
-    // Non-zero mip level attachments are an ES 3.0 feature.
-    ASSERT(imageIndex.getLevelIndex() == 0);
 
     ContextMtl *contextMtl = mtl::GetImpl(context);
     ANGLE_MTL_TRY(contextMtl, mNativeTexture);
 
+    gl::Extents size = mNativeTexture ? mNativeTexture->size(imageIndex) : gl::Extents(0, 0, 0);
+
     switch (imageIndex.getType())
     {
         case gl::TextureType::_2D:
-            *rtOut = &mTexImageRenderTargets[0][0];
-            break;
+        {
+            RenderTargetMtl &rtt = mTexImageRenderTargets[0][imageIndex.getLevelIndex()];
+            *rtOut               = &rtt;
+
+            if (samples > 0 && rtt.getTexture())
+            {
+                const gl::TextureCaps &textureCaps =
+                    contextMtl->getTextureCaps().get(mFormat.actualFormatId);
+                samples = textureCaps.getNearestSamples(std::max(2, samples));
+                ANGLE_MTL_CHECK(contextMtl, samples != 0, GL_INVALID_VALUE);
+
+                // Create implicit MS texture.
+                mtl::TextureRef &msTexture = mImplicitMSTextures[0][imageIndex.getLevelIndex()];
+                if (!msTexture || msTexture->samples() != static_cast<uint32_t>(samples))
+                {
+                    ANGLE_TRY(
+                        mtl::Texture::Make2DMSTexture(contextMtl, mFormat, size.width, size.height,
+                                                      samples, /* renderTargetOnly */ true,
+                                                      /* allowFormatView */ false, &msTexture));
+                }
+
+                rtt.setImplicitMSTexture(msTexture);
+            }
+        }
+        break;  // case gl::TextureType::_2D:
         case gl::TextureType::CubeMap:
-            *rtOut = &mTexImageRenderTargets[imageIndex.cubeMapFaceIndex()][0];
+            *rtOut =
+                &mTexImageRenderTargets[imageIndex.cubeMapFaceIndex()][imageIndex.getLevelIndex()];
             break;
         default:
             UNREACHABLE();

@@ -574,6 +574,9 @@ void DisplayMtl::initializeExtensions() const
     mNativeExtensions.translatedShaderSource = true;
     mNativeExtensions.discardFramebuffer     = true;
 
+    // EXT_multisampled_render_to_texture
+    mNativeExtensions.multisampledRenderToTexture = true;
+
     // Enable EXT_blend_minmax
     mNativeExtensions.blendMinMax = true;
 

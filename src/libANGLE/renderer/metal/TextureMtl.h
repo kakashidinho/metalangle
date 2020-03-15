@@ -237,6 +237,7 @@ class TextureMtl : public TextureImpl
     // Once the images array is complete, they will be transferred to real texture object.
     std::map<int, gl::TexLevelArray<mtl::TextureRef>> mTexImages;
     std::map<int, gl::TexLevelArray<RenderTargetMtl>> mTexImageRenderTargets;
+    std::map<int, gl::TexLevelArray<mtl::TextureRef>> mImplicitMSTextures;
 
     bool mIsPow2 = false;
 };
