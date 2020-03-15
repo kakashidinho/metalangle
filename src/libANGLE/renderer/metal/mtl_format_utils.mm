@@ -63,7 +63,7 @@ void GenerateTextureCapsMap(const FormatTable &formatTable,
         {
             return;
         }
-        const FormatCaps &formatCaps = formatTable.getNativeFormatCaps(mtlFormat.metalFormat);
+        const FormatCaps &formatCaps = mtlFormat.getCaps();
 
         const angle::Format &intendedAngleFormat = mtlFormat.intendedAngleFormat();
         gl::TextureCaps textureCaps;

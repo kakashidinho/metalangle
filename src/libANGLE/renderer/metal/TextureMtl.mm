@@ -809,8 +809,11 @@ angle::Result TextureMtl::getAttachmentRenderTarget(const gl::Context *context,
 
             if (samples > 0 && rtt.getTexture())
             {
+                // This format must supports implicit resolve
+                ANGLE_MTL_CHECK(contextMtl, mFormat.getCaps().resolve, GL_INVALID_VALUE);
+
                 const gl::TextureCaps &textureCaps =
-                    contextMtl->getTextureCaps().get(mFormat.actualFormatId);
+                    contextMtl->getTextureCaps().get(mFormat.intendedFormatId);
                 samples = textureCaps.getNearestSamples(std::max(2, samples));
                 ANGLE_MTL_CHECK(contextMtl, samples != 0, GL_INVALID_VALUE);
 

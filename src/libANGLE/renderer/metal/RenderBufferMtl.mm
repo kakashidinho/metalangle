@@ -67,7 +67,7 @@ angle::Result RenderbufferMtl::setStorageImpl(const gl::Context *context,
         actualSamples = static_cast<uint32_t>(std::max<size_t>(2, samples));
 
         const gl::TextureCaps &textureCaps =
-            contextMtl->getTextureCaps().get(mFormat.actualFormatId);
+            contextMtl->getTextureCaps().get(mFormat.intendedFormatId);
         actualSamples = textureCaps.getNearestSamples(actualSamples);
         ANGLE_MTL_CHECK(contextMtl, actualSamples != 0, GL_INVALID_VALUE);
     }
@@ -84,6 +84,10 @@ angle::Result RenderbufferMtl::setStorageImpl(const gl::Context *context,
             if (actualSamples > 1)
             {
                 // NOTE(hqle): Depth stencil buffer always use implicit multisample texture
+
+                // This format must supports implicit resolve
+                ANGLE_MTL_CHECK(contextMtl, mFormat.getCaps().resolve, GL_INVALID_VALUE);
+
                 ANGLE_TRY(mtl::Texture::Make2DMSTexture(
                     contextMtl, mFormat, static_cast<uint32_t>(width),
                     static_cast<uint32_t>(height), actualSamples,
