@@ -3186,7 +3186,6 @@
 		0A6055E4234655FD005CEA98 /* BufferMtl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BufferMtl.h; path = ../../src/libANGLE/renderer/metal/BufferMtl.h; sourceTree = "<group>"; };
 		0A6055E5234655FD005CEA98 /* ShaderMtl.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = ShaderMtl.mm; path = ../../src/libANGLE/renderer/metal/ShaderMtl.mm; sourceTree = "<group>"; };
 		0A6055EE234655FD005CEA98 /* mtl_default_shaders.inc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.pascal; path = mtl_default_shaders.inc; sourceTree = "<group>"; };
-		0A6055EF234655FD005CEA98 /* default.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = default.metal; sourceTree = "<group>"; };
 		0A6055F1234655FD005CEA98 /* ProgramMtl.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = ProgramMtl.mm; path = ../../src/libANGLE/renderer/metal/ProgramMtl.mm; sourceTree = "<group>"; };
 		0A6055F2234655FD005CEA98 /* mtl_state_cache.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = mtl_state_cache.mm; path = ../../src/libANGLE/renderer/metal/mtl_state_cache.mm; sourceTree = "<group>"; };
 		0A6055F3234655FD005CEA98 /* TextureMtl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TextureMtl.h; path = ../../src/libANGLE/renderer/metal/TextureMtl.h; sourceTree = "<group>"; };
@@ -3934,6 +3933,11 @@
 		0ABF407F235341360051488C /* TriFanMicroBench.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TriFanMicroBench.cpp; sourceTree = "<group>"; };
 		0AC2A5202346714A0045B949 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		0AC2A5212346714A0045B949 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		0AC8B2DA241E9681003916D1 /* blit.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = blit.metal; sourceTree = "<group>"; };
+		0AC8B2DB241E9681003916D1 /* clear.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = clear.metal; sourceTree = "<group>"; };
+		0AC8B2DC241E9682003916D1 /* common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = common.h; sourceTree = "<group>"; };
+		0AC8B2DD241E9682003916D1 /* misc.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = misc.metal; sourceTree = "<group>"; };
+		0AC8B2DE241E9682003916D1 /* gen_indices.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = gen_indices.metal; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -4816,8 +4820,12 @@
 		0A6055E6234655FD005CEA98 /* shaders */ = {
 			isa = PBXGroup;
 			children = (
+				0AC8B2DA241E9681003916D1 /* blit.metal */,
+				0AC8B2DB241E9681003916D1 /* clear.metal */,
+				0AC8B2DC241E9682003916D1 /* common.h */,
+				0AC8B2DE241E9682003916D1 /* gen_indices.metal */,
+				0AC8B2DD241E9682003916D1 /* misc.metal */,
 				0A6055E7234655FD005CEA98 /* compiled */,
-				0A6055EF234655FD005CEA98 /* default.metal */,
 			);
 			name = shaders;
 			path = ../../src/libANGLE/renderer/metal/shaders;
