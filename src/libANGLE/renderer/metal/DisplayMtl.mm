@@ -549,6 +549,9 @@ void DisplayMtl::ensureCapsInitialized() const
     mNativeCaps.maxTransformFeedbackSeparateComponents =
         gl::IMPLEMENTATION_MAX_TRANSFORM_FEEDBACK_SEPARATE_COMPONENTS;
 
+    // GL_OES_get_program_binary
+    mNativeCaps.programBinaryFormats.push_back(GL_PROGRAM_BINARY_ANGLE);
+
     // GL_APPLE_clip_distance
     mNativeCaps.maxClipDistances = 8;
 }
@@ -615,6 +618,9 @@ void DisplayMtl::initializeExtensions() const
     mNativeExtensions.standardDerivatives = true;
 
     mNativeExtensions.elementIndexUint = true;
+
+    // GL_OES_get_program_binary
+    mNativeExtensions.getProgramBinary = true;
 
     // GL_APPLE_clip_distance
     mNativeExtensions.clipDistanceAPPLE = true;

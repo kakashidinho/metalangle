@@ -123,6 +123,11 @@ class ProgramMtl : public ProgramImpl
     void setUniformImpl(GLint location, GLsizei count, const T *v, GLenum entryPointType);
 
     angle::Result initDefaultUniformBlocks(const gl::Context *glContext);
+    angle::Result resizeDefaultUniformBlocksMemory(const gl::Context *glContext,
+                                                   const gl::ShaderMap<size_t> &requiredBufferSize);
+    void saveDefaultUniformBlocksInfo(gl::BinaryOutputStream *stream);
+    angle::Result loadDefaultUniformBlocksInfo(const gl::Context *glContext,
+                                               gl::BinaryInputStream *stream);
 
     angle::Result commitUniforms(ContextMtl *context, mtl::RenderCommandEncoder *cmdEncoder);
     angle::Result updateTextures(const gl::Context *glContext,
@@ -130,8 +135,19 @@ class ProgramMtl : public ProgramImpl
                                  bool forceUpdate);
 
     void reset(ContextMtl *context);
+
+    void saveTranslatedShaders(gl::BinaryOutputStream *stream);
+    void loadTranslatedShaders(gl::BinaryInputStream *stream);
+
     void linkResources(const gl::ProgramLinkedResources &resources);
-    angle::Result linkImpl(const gl::Context *glContext, gl::InfoLog &infoLog);
+    angle::Result linkImpl(const gl::Context *glContext,
+                           const gl::ShaderMap<std::string> &shaderSource,
+                           gl::InfoLog &infoLog);
+
+    angle::Result linkTranslatedShaders(const gl::Context *glContext,
+                                        gl::BinaryInputStream *stream,
+                                        gl::InfoLog &infoLog);
+
     angle::Result convertToMsl(const gl::Context *glContext,
                                gl::ShaderType shaderType,
                                gl::InfoLog &infoLog,
@@ -160,8 +176,7 @@ class ProgramMtl : public ProgramImpl
     gl::ShaderBitSet mSamplerBindingsDirty;
     gl::ShaderMap<DefaultUniformBlock> mDefaultUniformBlocks;
 
-    // We keep the translated linked shader sources to use with shader draw call patching.
-    gl::ShaderMap<std::string> mShaderSource;
+    gl::ShaderMap<std::string> mTranslatedMslShader;
 
     mtl::RenderPipelineCache mMetalRenderPipelineCache;
 };
