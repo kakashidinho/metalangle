@@ -63,7 +63,7 @@ struct MultipleColorOutputs
         }                                                             \
     } while (0)
 
-MultipleColorOutputs toMultipleColorOutputs(float4 color)
+static inline MultipleColorOutputs toMultipleColorOutputs(float4 color)
 {
     MultipleColorOutputs re;
 
@@ -79,8 +79,4 @@ MultipleColorOutputs toMultipleColorOutputs(float4 color)
     return re;
 }
 
-fragment float4 dummyFS()
-{
-    return float4(0, 0, 0, 0);
-}
 #endif /* LIBANGLE_RENDERER_METAL_SHADERS_COMMON_H_ */

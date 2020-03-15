@@ -131,9 +131,12 @@ void RenderUtils::onDestroy()
     }
     for (uint32_t i = 0; i < kMaxRenderTargets; ++i)
     {
-        mBlitRenderPipelineCache[i].clear();
-        mBlitPremultiplyAlphaRenderPipelineCache[i].clear();
-        mBlitUnmultiplyAlphaRenderPipelineCache[i].clear();
+        for (int ms = 0; ms < 2; ++ms)
+        {
+            mBlitRenderPipelineCache[i][ms].clear();
+            mBlitPremultiplyAlphaRenderPipelineCache[i][ms].clear();
+            mBlitUnmultiplyAlphaRenderPipelineCache[i][ms].clear();
+        }
     }
 
     mIndexConversionPipelineCaches.clear();
@@ -206,40 +209,48 @@ void RenderUtils::initBlitResources()
         auto vertexShader  = [[shaderLib newFunctionWithName:@"blitVS"] ANGLE_MTL_AUTORELEASE];
         auto funcConstants = [[[MTLFunctionConstantValues alloc] init] ANGLE_MTL_AUTORELEASE];
 
-        // Create blit shader pipeline cache for each number of color outputs.
-        // So blit k color outputs will use mBlitRenderPipelineCache[k-1] for example:
-        for (uint32_t i = 0; i < kMaxRenderTargets; ++i)
-        {
-            uint32_t numOutputs = i + 1;
-
-            [funcConstants setConstantValue:&numOutputs
-                                       type:MTLDataTypeUInt
-                                   withName:NUM_COLOR_OUTPUTS_CONSTANT_NAME];
-
+        RenderPipelineCacheArray *const pipelineCachePerTypePtr[] = {
             // Normal blit
-            auto fragmentShader = [[shaderLib newFunctionWithName:@"blitFS"
-                                                   constantValues:funcConstants
-                                                            error:&err] ANGLE_MTL_AUTORELEASE];
-            ASSERT(fragmentShader);
-            mBlitRenderPipelineCache[i].setVertexShader(this, vertexShader);
-            mBlitRenderPipelineCache[i].setFragmentShader(this, fragmentShader);
-
+            &mBlitRenderPipelineCache,
             // Blit premultiply-alpha
-            fragmentShader = [[shaderLib newFunctionWithName:@"blitPremultiplyAlphaFS"
-                                              constantValues:funcConstants
-                                                       error:&err] ANGLE_MTL_AUTORELEASE];
-            ASSERT(fragmentShader);
-            mBlitPremultiplyAlphaRenderPipelineCache[i].setVertexShader(this, vertexShader);
-            mBlitPremultiplyAlphaRenderPipelineCache[i].setFragmentShader(this, fragmentShader);
-
+            &mBlitPremultiplyAlphaRenderPipelineCache,
             // Blit unmultiply alpha
-            fragmentShader = [[shaderLib newFunctionWithName:@"blitUnmultiplyAlphaFS"
-                                              constantValues:funcConstants
-                                                       error:&err] ANGLE_MTL_AUTORELEASE];
-            ASSERT(fragmentShader);
-            mBlitUnmultiplyAlphaRenderPipelineCache[i].setVertexShader(this, vertexShader);
-            mBlitUnmultiplyAlphaRenderPipelineCache[i].setFragmentShader(this, fragmentShader);
-        }
+            &mBlitUnmultiplyAlphaRenderPipelineCache};
+
+        NSString *const fragmentShaderNames[][2] = {
+            // Normal blit
+            {@"blitFS", @"blitMultisampleFS"},
+            // Blit premultiply-alpha
+            {@"blitPremultiplyAlphaFS", @"blitMultisamplePremultiplyAlphaFS"},
+            // Blit unmultiply alpha
+            {@"blitUnmultiplyAlphaFS", @"blitMultisampleUnmultiplyAlphaFS"}};
+
+        for (int type = 0; type < 3; ++type)
+        {
+            // Create blit shader pipeline cache for each number of color outputs.
+            // So blit k color outputs will use mBlitRenderPipelineCache[k-1] for example:
+            for (uint32_t numOutputs = 1; numOutputs <= kMaxRenderTargets; ++numOutputs)
+            {
+
+                [funcConstants setConstantValue:&numOutputs
+                                           type:MTLDataTypeUInt
+                                       withName:NUM_COLOR_OUTPUTS_CONSTANT_NAME];
+                for (int multisample = 0; multisample <= 1; ++multisample)
+                {
+                    RenderPipelineCache &pipelineCache =
+                        (*pipelineCachePerTypePtr)[type][numOutputs - 1][multisample];
+
+                    auto fragmentShader =
+                        [[shaderLib newFunctionWithName:fragmentShaderNames[type][multisample]
+                                         constantValues:funcConstants
+                                                  error:&err] ANGLE_MTL_AUTORELEASE];
+
+                    ASSERT(fragmentShader);
+                    pipelineCache.setVertexShader(this, vertexShader);
+                    pipelineCache.setFragmentShader(this, fragmentShader);
+                }  // for multisample
+            }      // for numOutputs
+        }          // for type
 
         // Depth & stencil blit
         mDepthBlitRenderPipelineCache.setVertexShader(this, vertexShader);
@@ -560,17 +571,18 @@ id<MTLRenderPipelineState> RenderUtils::getColorBlitRenderPipelineState(
 
     RenderPipelineCache *pipelineCache;
     uint32_t cacheIndex = renderPassDesc.numColorAttachments - 1;
+    int multisample     = params.src->samples() > 1 ? 1 : 0;
     if (params.unpackPremultiplyAlpha == params.unpackUnmultiplyAlpha)
     {
-        pipelineCache = &mBlitRenderPipelineCache[cacheIndex];
+        pipelineCache = &mBlitRenderPipelineCache[cacheIndex][multisample];
     }
     else if (params.unpackPremultiplyAlpha)
     {
-        pipelineCache = &mBlitPremultiplyAlphaRenderPipelineCache[cacheIndex];
+        pipelineCache = &mBlitPremultiplyAlphaRenderPipelineCache[cacheIndex][multisample];
     }
     else
     {
-        pipelineCache = &mBlitUnmultiplyAlphaRenderPipelineCache[cacheIndex];
+        pipelineCache = &mBlitUnmultiplyAlphaRenderPipelineCache[cacheIndex][multisample];
     }
 
     return pipelineCache->getRenderPipelineState(contextMtl, pipelineDesc);
@@ -594,6 +606,9 @@ id<MTLRenderPipelineState> RenderUtils::getDepthStencilBlitRenderPipelineState(
 
     RenderPipelineCache *pipelineCache;
 
+    // NOTE(hqle): depth & stencil MSAA blitting via draw is not supported yet.
+    ASSERT((!params.src || params.src->samples() <= 1) &&
+           (!params.srcStencil || params.srcStencil->samples() <= 1));
     if (params.src && params.srcStencil)
     {
         pipelineCache = &mDepthStencilBlitRenderPipelineCache;

@@ -467,10 +467,11 @@ void DisplayMtl::ensureCapsInitialized() const
     mNativeCaps.maxViewportWidth     = mNativeCaps.max2DTextureSize;
     mNativeCaps.maxViewportHeight    = mNativeCaps.max2DTextureSize;
 
-    // NOTE(hqle): MSAA
+    // MSAA
+    mNativeCaps.maxSamples             = mFormatTable.getMaxSamples();
     mNativeCaps.maxSampleMaskWords     = 0;
-    mNativeCaps.maxColorTextureSamples = 1;
-    mNativeCaps.maxDepthTextureSamples = 1;
+    mNativeCaps.maxColorTextureSamples = mNativeCaps.maxSamples;
+    mNativeCaps.maxDepthTextureSamples = mNativeCaps.maxSamples;
     mNativeCaps.maxIntegerSamples      = 1;
 
     mNativeCaps.maxVertexAttributes           = mtl::kMaxVertexAttribs;
@@ -548,9 +549,6 @@ void DisplayMtl::ensureCapsInitialized() const
     mNativeCaps.maxTransformFeedbackSeparateComponents =
         gl::IMPLEMENTATION_MAX_TRANSFORM_FEEDBACK_SEPARATE_COMPONENTS;
 
-    // NOTE(hqle): support MSAA.
-    mNativeCaps.maxSamples = 1;
-
     // GL_APPLE_clip_distance
     mNativeCaps.maxClipDistances = 8;
 }
@@ -567,7 +565,7 @@ void DisplayMtl::initializeExtensions() const
     mNativeExtensions.drawBuffers            = true;
     mNativeExtensions.fragDepth              = true;
     mNativeExtensions.framebufferBlit        = mFeatures.hasStencilOutput.enabled;
-    mNativeExtensions.framebufferMultisample = false;
+    mNativeExtensions.framebufferMultisample = true;
     mNativeExtensions.copyTexture            = false;
     mNativeExtensions.copyCompressedTexture  = false;
     mNativeExtensions.debugMarker            = false;

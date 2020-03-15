@@ -239,9 +239,13 @@ class RenderUtils : public Context, angle::NonCopyable
         const IndexGenerationParams &params);
 
     RenderPipelineCache mClearRenderPipelineCache[kMaxRenderTargets + 1];
-    RenderPipelineCache mBlitRenderPipelineCache[kMaxRenderTargets];
-    RenderPipelineCache mBlitPremultiplyAlphaRenderPipelineCache[kMaxRenderTargets];
-    RenderPipelineCache mBlitUnmultiplyAlphaRenderPipelineCache[kMaxRenderTargets];
+    // First array dimension: number of outputs.
+    // Second array dimenstion: source texture is multisample or not
+    using RenderPipelineCacheArray =
+        std::array<std::array<RenderPipelineCache, 2>, kMaxRenderTargets>;
+    RenderPipelineCacheArray mBlitRenderPipelineCache;
+    RenderPipelineCacheArray mBlitPremultiplyAlphaRenderPipelineCache;
+    RenderPipelineCacheArray mBlitUnmultiplyAlphaRenderPipelineCache;
 
     RenderPipelineCache mDepthBlitRenderPipelineCache;
     RenderPipelineCache mStencilBlitRenderPipelineCache;

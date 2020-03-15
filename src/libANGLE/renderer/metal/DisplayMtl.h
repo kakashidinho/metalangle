@@ -155,7 +155,7 @@ class DisplayMtl : public DisplayImpl
 
     mtl::CommandQueue mCmdQueue;
 
-    mtl::FormatTable mFormatTable;
+    mutable mtl::FormatTable mFormatTable;
     mtl::StateCache mStateCache;
     mtl::RenderUtils mUtils;
 

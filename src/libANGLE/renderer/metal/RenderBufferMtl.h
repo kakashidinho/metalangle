@@ -56,6 +56,7 @@ class RenderbufferMtl : public RenderbufferImpl
 
     mtl::Format mFormat;
     mtl::TextureRef mTexture;
+    mtl::TextureRef mImplicitMSTexture;
     RenderTargetMtl mRenderTarget;
 };
 

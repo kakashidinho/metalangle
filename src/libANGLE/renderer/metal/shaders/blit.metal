@@ -59,6 +59,26 @@ float4 blitSampleTexture(texture2d<float> srcTexture,
     return output;
 }
 
+float4 blitSampleTextureMS(texture2d_ms<float> srcTexture,
+                           float2 texCoords,
+                           constant BlitParams &options)
+{
+    uint2 dimens(srcTexture.get_width(), srcTexture.get_height());
+    uint samples = srcTexture.get_num_samples();
+    uint2 coords = uint2(texCoords * float2(dimens));
+
+    float4 output(0);
+
+    for (uint sample = 0; sample < samples; ++sample)
+    {
+        output += srcTexture.read(coords, sample);
+    }
+
+    output *= 1.0 / samples;
+
+    return output;
+}
+
 MultipleColorOutputs blitOutput(float4 color, constant BlitParams &options)
 {
     float4 ret = color;
@@ -80,22 +100,54 @@ fragment MultipleColorOutputs blitFS(BlitVSOut input[[stage_in]],
                       options);
 }
 
-fragment MultipleColorOutputs blitPremultiplyAlphaFS(BlitVSOut input[[stage_in]],
-                                                     texture2d<float> srcTexture[[texture(0)]],
-                                                     sampler textureSampler[[sampler(0)]],
-                                                     constant BlitParams &options[[buffer(0)]])
+fragment MultipleColorOutputs blitMultisampleFS(BlitVSOut input [[stage_in]],
+                                                texture2d_ms<float> srcTexture [[texture(0)]],
+                                                constant BlitParams &options [[buffer(0)]])
+{
+    return blitOutput(blitSampleTextureMS(srcTexture, input.texCoords, options), options);
+}
+
+fragment MultipleColorOutputs blitPremultiplyAlphaFS(BlitVSOut input [[stage_in]],
+                                                     texture2d<float> srcTexture [[texture(0)]],
+                                                     sampler textureSampler [[sampler(0)]],
+                                                     constant BlitParams &options [[buffer(0)]])
 {
     float4 output = blitSampleTexture(srcTexture, textureSampler, input.texCoords, options);
     output.xyz *= output.a;
     return blitOutput(output, options);
 }
 
-fragment MultipleColorOutputs blitUnmultiplyAlphaFS(BlitVSOut input[[stage_in]],
-                                                    texture2d<float> srcTexture[[texture(0)]],
-                                                    sampler textureSampler[[sampler(0)]],
-                                                    constant BlitParams &options[[buffer(0)]])
+fragment MultipleColorOutputs blitMultisamplePremultiplyAlphaFS(BlitVSOut input [[stage_in]],
+                                                                texture2d_ms<float> srcTexture
+                                                                [[texture(0)]],
+                                                                constant BlitParams &options
+                                                                [[buffer(0)]])
+{
+    float4 output = blitSampleTextureMS(srcTexture, input.texCoords, options);
+    output.xyz *= output.a;
+    return blitOutput(output, options);
+}
+
+fragment MultipleColorOutputs blitUnmultiplyAlphaFS(BlitVSOut input [[stage_in]],
+                                                    texture2d<float> srcTexture [[texture(0)]],
+                                                    sampler textureSampler [[sampler(0)]],
+                                                    constant BlitParams &options [[buffer(0)]])
 {
     float4 output = blitSampleTexture(srcTexture, textureSampler, input.texCoords, options);
+    if (output.a != 0.0)
+    {
+        output.xyz *= 1.0 / output.a;
+    }
+    return blitOutput(output, options);
+}
+
+fragment MultipleColorOutputs blitMultisampleUnmultiplyAlphaFS(BlitVSOut input [[stage_in]],
+                                                               texture2d_ms<float> srcTexture
+                                                               [[texture(0)]],
+                                                               constant BlitParams &options
+                                                               [[buffer(0)]])
+{
+    float4 output = blitSampleTextureMS(srcTexture, input.texCoords, options);
     if (output.a != 0.0)
     {
         output.xyz *= 1.0 / output.a;

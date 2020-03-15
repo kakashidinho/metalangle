@@ -106,7 +106,7 @@ class FormatTable final : angle::NonCopyable
 
     void generateTextureCaps(const DisplayMtl *display,
                              gl::TextureCapsMap *capsMapOut,
-                             std::vector<GLenum> *compressedFormatsOut) const;
+                             std::vector<GLenum> *compressedFormatsOut);
 
     const Format &getPixelFormat(angle::FormatID angleFormatId) const;
     const FormatCaps &getNativeFormatCaps(MTLPixelFormat mtlFormat) const;
@@ -116,6 +116,8 @@ class FormatTable final : angle::NonCopyable
     // Metal alignment requirements between 2 elements inside the buffer will be met regardless
     // of how many components each element has.
     const VertexFormat &getVertexFormat(angle::FormatID angleFormatId, bool tightlyPacked) const;
+
+    uint32_t getMaxSamples() const { return mMaxSamples; }
 
   private:
     void initNativeFormatCaps(const DisplayMtl *display);
@@ -141,6 +143,8 @@ class FormatTable final : angle::NonCopyable
     std::unordered_map<MTLPixelFormat, FormatCaps> mNativePixelFormatCapsTable;
     // One for tightly packed buffers, one for general cases.
     std::array<VertexFormat, angle::kNumANGLEFormats> mVertexFormatTables[2];
+
+    uint32_t mMaxSamples;
 };
 
 }  // namespace mtl

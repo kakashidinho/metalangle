@@ -47,7 +47,8 @@ bool OverrideTextureCaps(const DisplayMtl *display, angle::FormatID formatId, gl
 void GenerateTextureCapsMap(const FormatTable &formatTable,
                             const DisplayMtl *display,
                             gl::TextureCapsMap *capsMapOut,
-                            std::vector<GLenum> *compressedFormatsOut)
+                            std::vector<GLenum> *compressedFormatsOut,
+                            uint32_t *maxSamplesOut)
 {
     auto &textureCapsMap    = *capsMapOut;
     auto &compressedFormats = *compressedFormatsOut;
@@ -58,11 +59,11 @@ void GenerateTextureCapsMap(const FormatTable &formatTable,
         angle::FormatID angleFormatId =
             angle::Format::InternalFormatToID(internalFormatInfo.sizedInternalFormat);
         const Format &mtlFormat = formatTable.getPixelFormat(angleFormatId);
-
         if (!mtlFormat.valid())
         {
             return;
         }
+        const FormatCaps &formatCaps = formatTable.getNativeFormatCaps(mtlFormat.metalFormat);
 
         const angle::Format &intendedAngleFormat = mtlFormat.intendedAngleFormat();
         gl::TextureCaps textureCaps;
@@ -76,13 +77,17 @@ void GenerateTextureCapsMap(const FormatTable &formatTable,
                 mtlFormat.getCaps().colorRenderable || mtlFormat.getCaps().depthRenderable;
             textureCaps.texturable        = true;
             textureCaps.textureAttachment = textureCaps.renderbuffer;
+        }
 
-            constexpr int sampleCounts[] = {2, 4, 8};
+        if (formatCaps.multisample)
+        {
+            constexpr uint32_t sampleCounts[] = {2, 4, 8};
             for (auto sampleCount : sampleCounts)
             {
                 if ([display->getMetalDevice() supportsTextureSampleCount:sampleCount])
                 {
                     textureCaps.sampleCounts.insert(sampleCount);
+                    *maxSamplesOut = std::max(*maxSamplesOut, sampleCount);
                 }
             }
         }
@@ -128,6 +133,8 @@ const gl::InternalFormat &Format::intendedInternalFormat() const
 // FormatTable implementation
 angle::Result FormatTable::initialize(const DisplayMtl *display)
 {
+    mMaxSamples = 0;
+
     // Initialize native format caps
     initNativeFormatCaps(display);
 
@@ -146,9 +153,9 @@ angle::Result FormatTable::initialize(const DisplayMtl *display)
 
 void FormatTable::generateTextureCaps(const DisplayMtl *display,
                                       gl::TextureCapsMap *capsMapOut,
-                                      std::vector<GLenum> *compressedFormatsOut) const
+                                      std::vector<GLenum> *compressedFormatsOut)
 {
-    GenerateTextureCapsMap(*this, display, capsMapOut, compressedFormatsOut);
+    GenerateTextureCapsMap(*this, display, capsMapOut, compressedFormatsOut, &mMaxSamples);
 }
 
 const Format &FormatTable::getPixelFormat(angle::FormatID angleFormatId) const
