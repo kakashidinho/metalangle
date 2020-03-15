@@ -3,7 +3,7 @@
 - No ES 3.0 support ~~(multiple render targets, instanced draw, etc).~~
 - ~~No triangle fan, line loop support.~~
 - ~~iOS pre iPhone 6S: No array of samplers support in shader.~~
-- No multisample support.
+- ~~No multisample support.~~
 - ~~unsigned byte index is not natively supported. Metal backend will do CPU conversion during draw calls.~~
 - offset passed to glVertexAttribPointer() must be multiple of 4 bytes.
 Otherwise, a CPU conversion will take place.

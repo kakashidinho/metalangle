@@ -26,7 +26,7 @@ to continue operate on Apple platforms by translating OpenGL ES draw calls to Me
 - ~~No `GL_TRIANGLE_FAN` & `GL_LINE_LOOP` support in draw calls yet.~~
 - Metal doesn't allow buffer offset not being multiple of 4 bytes. Hence, draw calls that use unsupported offsets, strides,
 and vertex formats will force MetalANGLE to do software conversions on CPU.
-- MSAA is not supported yet.
+- ~~MSAA is not supported yet.~~
 - __Platforms supports__:
   - MetalANGLE only supports __MacOS 10.13+__ for Mac.
   - For iOS, the min supported version is __iOS 9.0__. However, Metal acceleration is only available
@@ -37,11 +37,11 @@ and vertex formats will force MetalANGLE to do software conversions on CPU.
   - iPhone 5 and below are not supported.
   - __MacCatalyst 13.0+__ is supported.
 #### TODO lists
-- Make sure it passes all ANGLE's tests.
-- ~~Support `GL_TRIANGLE_FAN` & `GL_LINE_LOOP` by generating index buffer on the fly using Metal compute shader.~~
-- Use compute shader to convert unsupported offsets, strides & vertex formats.
-- Support MSAA.
-- Support OpenGL ES 3.0.
+- [ ] Make sure it passes all ANGLE's tests.
+- [x] ~~Support `GL_TRIANGLE_FAN` & `GL_LINE_LOOP` by generating index buffer on the fly using Metal compute shader.~~
+- [ ] Use compute shader to convert unsupported offsets, strides & vertex formats.
+- [x] ~~Support MSAA.~~
+- [ ] Support OpenGL ES 3.0.
 
 ## How to build Metal ANGLE for MacOS & iOS
 View the [Metal backend's Dev setup instructions](src/libANGLE/renderer/metal/DevSetup.md).
