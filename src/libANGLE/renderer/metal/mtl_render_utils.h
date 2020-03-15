@@ -53,6 +53,7 @@ namespace rx
 class BufferMtl;
 class ContextMtl;
 class DisplayMtl;
+class VisibilityBufferOffsetsMtl;
 
 namespace mtl
 {
@@ -131,17 +132,17 @@ class RenderUtils : public Context, angle::NonCopyable
     void onDestroy();
 
     // Clear current framebuffer
-    void clearWithDraw(const gl::Context *context,
-                       RenderCommandEncoder *cmdEncoder,
-                       const ClearRectParams &params);
+    angle::Result clearWithDraw(const gl::Context *context,
+                                RenderCommandEncoder *cmdEncoder,
+                                const ClearRectParams &params);
     // Blit texture data to current framebuffer
-    void blitColorWithDraw(const gl::Context *context,
-                           RenderCommandEncoder *cmdEncoder,
-                           const ColorBlitParams &params);
+    angle::Result blitColorWithDraw(const gl::Context *context,
+                                    RenderCommandEncoder *cmdEncoder,
+                                    const ColorBlitParams &params);
 
-    void blitDepthStencilWithDraw(const gl::Context *context,
-                                  RenderCommandEncoder *cmdEncoder,
-                                  const DepthStencilBlitParams &params);
+    angle::Result blitDepthStencilWithDraw(const gl::Context *context,
+                                           RenderCommandEncoder *cmdEncoder,
+                                           const DepthStencilBlitParams &params);
 
     angle::Result convertIndexBuffer(ContextMtl *contextMtl,
                                      gl::DrawElementsType srcType,
@@ -165,6 +166,8 @@ class RenderUtils : public Context, angle::NonCopyable
                                                                const IndexGenerationParams &params);
 
     void combineVisibilityResult(ContextMtl *contextMtl,
+                                 bool keepOldValue,
+                                 const VisibilityBufferOffsetsMtl &renderPassResultBufOffsets,
                                  const BufferRef &renderPassResultBuf,
                                  const BufferRef &finalResultBuf);
 

@@ -20,7 +20,7 @@ QueryMtl::~QueryMtl() {}
 void QueryMtl::onDestroy(const gl::Context *context)
 {
     ContextMtl *contextMtl = mtl::GetImpl(context);
-    if (getAllocatedVisibilityOffset() != -1)
+    if (!getAllocatedVisibilityOffsets().empty())
     {
         contextMtl->onOcclusionQueryDestroyed(context, this);
     }

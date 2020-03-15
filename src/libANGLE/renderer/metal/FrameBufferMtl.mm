@@ -373,8 +373,8 @@ angle::Result FramebufferMtl::blit(const gl::Context *context,
         }
 
         renderEncoder = ensureRenderPassStarted(context);
-        contextMtl->getDisplay()->getUtils().blitDepthStencilWithDraw(context, renderEncoder,
-                                                                      dsBlitParams);
+        ANGLE_TRY(contextMtl->getDisplay()->getUtils().blitDepthStencilWithDraw(
+            context, renderEncoder, dsBlitParams));
     }
     else
     {
@@ -399,8 +399,8 @@ angle::Result FramebufferMtl::blit(const gl::Context *context,
         colorBlitParams.filter         = filter;
         colorBlitParams.dstLuminance   = srcColorRt->getFormat()->actualAngleFormat().isLUMA();
 
-        contextMtl->getDisplay()->getUtils().blitColorWithDraw(context, renderEncoder,
-                                                               colorBlitParams);
+        ANGLE_TRY(contextMtl->getDisplay()->getUtils().blitColorWithDraw(context, renderEncoder,
+                                                                         colorBlitParams));
     }
 
     return angle::Result::Continue;
@@ -925,9 +925,7 @@ angle::Result FramebufferMtl::clearWithDraw(const gl::Context *context,
     // Start new render encoder if not already.
     mtl::RenderCommandEncoder *encoder = ensureRenderPassStarted(context, mRenderPassDesc);
 
-    display->getUtils().clearWithDraw(context, encoder, clearOpts);
-
-    return angle::Result::Continue;
+    return display->getUtils().clearWithDraw(context, encoder, clearOpts);
 }
 
 angle::Result FramebufferMtl::clearImpl(const gl::Context *context,

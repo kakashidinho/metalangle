@@ -19,6 +19,50 @@ namespace rx
 
 class ContextMtl;
 
+// The class represents offset(s) allocated in the visiblity buffer for an occlusion query.
+// See doc/OcclusionQuery.md.
+// An occlusion query might have more than one offsets allocated, but all of them must be adjacent
+// to each other. Multiple offsets typically allocated when the query is paused and resumed during
+// viewport clear emulation with draw operations. In such case, Metal doesn't allow an offset to
+// be reused in a render pass, hence multiple offsets will be allocated, and their values will
+// be accumulated.
+class VisibilityBufferOffsetsMtl
+{
+  public:
+    void clear() { mStartOffset = mNumOffsets = 0; }
+    bool empty() const { return mNumOffsets == 0; }
+    uint32_t size() const { return mNumOffsets; }
+
+    // Return last offset
+    uint32_t back() const
+    {
+        ASSERT(!empty());
+        return mStartOffset + (mNumOffsets - 1) * mtl::kOcclusionQueryResultSize;
+    }
+
+    uint32_t front() const
+    {
+        ASSERT(!empty());
+        return mStartOffset;
+    }
+
+    void setStartOffset(uint32_t offset)
+    {
+        ASSERT(empty());
+        mStartOffset = offset;
+        mNumOffsets  = 1;
+    }
+    void addOffset()
+    {
+        ASSERT(!empty());
+        mNumOffsets++;
+    }
+
+  private:
+    uint32_t mStartOffset = 0;
+    uint32_t mNumOffsets  = 0;
+};
+
 class QueryMtl : public QueryImpl
 {
   public:
@@ -36,10 +80,20 @@ class QueryMtl : public QueryImpl
     angle::Result getResult(const gl::Context *context, GLuint64 *params) override;
     angle::Result isResultAvailable(const gl::Context *context, bool *available) override;
 
-    // Get allocated offset in the occlusion query pool for a render pass. -1 means no allocation.
-    ssize_t getAllocatedVisibilityOffset() const { return mVisibilityBufferOffset; }
-    // Set allocated offset in the occlusion query pool for a render pass.
-    void setAllocatedVisibilityOffset(ssize_t offset) { mVisibilityBufferOffset = offset; }
+    // Get allocated offsets in the render pass's occlusion query pool.
+    const VisibilityBufferOffsetsMtl &getAllocatedVisibilityOffsets() const
+    {
+        return mVisibilityBufferOffsets;
+    }
+    // Set first allocated offset in the render pass's occlusion query pool.
+    void setFirstAllocatedVisibilityOffset(uint32_t off)
+    {
+        mVisibilityBufferOffsets.setStartOffset(off);
+    }
+    // Add more offset allocated for the occlusion query
+    void addAllocatedVisibilityOffset() { mVisibilityBufferOffsets.addOffset(); }
+
+    void clearAllocatedVisibilityOffsets() { mVisibilityBufferOffsets.clear(); }
     // Returns the buffer containing the final occlusion query result.
     const mtl::BufferRef &getVisibilityResultBuffer() const { return mVisibilityResultBuffer; }
     // Reset the occlusion query result stored in buffer to zero
@@ -49,7 +103,8 @@ class QueryMtl : public QueryImpl
     template <typename T>
     angle::Result waitAndGetResult(const gl::Context *context, T *params);
 
-    ssize_t mVisibilityBufferOffset = -1;
+    // List of offsets in the render pass's occlusion query pool buffer allocated for this query
+    VisibilityBufferOffsetsMtl mVisibilityBufferOffsets;
     mtl::BufferRef mVisibilityResultBuffer;
 };
 

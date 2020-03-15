@@ -24,18 +24,29 @@
   etc will be recorded in a back-end owned buffer instead of encoding directly into an
   `MTLRenderCommandEncoder` object.
 - Whenever an occlusion query starts, an offset within a visibility result buffer will be allocated
-  for this request. This offset is valid only for the current render pass. The visibilitiy buffer's
+  for this request. This offset is valid only for the current render pass. The visibility buffer's
   capacity will be extended if needed to have enough storage for all the queries within the render
-  pass. The offset will be used to activate the visibitity test in the render pass.
+  pass. The offset will be used to activate the visibility test in the render pass.
 - Calling `RenderCommandEncoder.endEncoding()` will:
     - Bind the visibility result buffer allocated above.
     - Create an `MTLRenderCommandEncoder` object.
     - Encode using all render commands memorized in the back-end owned buffer.
 - Immediately after `RenderCommandEncoder.endEncoding()`:
-    - An extra compute shader or copying pass is added to copy the results from visibility
-      result buffer to the respective assigned occlusion queries' buffers.
-    - Note that if the query spans across multiple render passes, its result will be accumulated
-      with the result stored in the visibility result buffer instead of simply being copied.
+    - An extra compute shader or copying pass is added to copy the results from visibility result
+      buffer to the respective assigned occlusion queries' buffers. Each query will simply copy the
+      value from its respective allocated offset in the visibility buffer.
+    - Note that if the query spans across multiple render passes, its old value will be accumulated
+      with the result stored in the visibility result buffer instead of being replaced.
+- Special cases:
+    - If user calls `glClear` between `glBeginQuery` - `glEndQuery` pair, its pixels should not be
+      counted by the occlusion test. To avoid this, current visibility test will end, then another
+      offset in the visibility buffer will be allocated for the query, this new offset will be used
+      to continue the test after the `glClear` operation ends. In the final step, the values stored
+      in both the old offset and the new offset will be accumulated together.
+    - If user calls `glBeginQuery` then `glEndQuery` then `glBeginQuery` again within a single pass,
+      then the query will be allocated 2 offsets since Metal doesn't allow an offset to be re-used
+      in a render pass. Only the value stored in the 2nd offset will be copied back to the query at
+      the end of the render pass though.
 
 ### Future improvements
 - One could simply allocates an offset within the visibility result buffer permanently for a query.

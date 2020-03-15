@@ -142,7 +142,7 @@ constexpr MTLVertexStepFunction kVertexStepFunctionInvalid =
 
 constexpr float kEmulatedAlphaValue = 1.0f;
 
-constexpr size_t kOcclusionQueryResultSize = sizeof(uint64_t);
+constexpr uint32_t kOcclusionQueryResultSize = sizeof(uint64_t);
 
 // NOTE(hqle): Support ES 3.0.
 constexpr gl::Version kMaxSupportedGLVersion = gl::Version(2, 0);

@@ -33,9 +33,14 @@ class OcclusionQueryPool
 
     void destroy(ContextMtl *contextMtl);
 
-    // Allocate an offset in visibility buffer for a query in a render pass
+    // Allocate an offset in visibility buffer for a query in a render pass.
+    // - clearOldValue = true, if the old value of query will be cleared before combining in the
+    // visibility resolve pass. This flag is only allowed to be false for the first allocation of
+    // the render pass or the query that already has an allocated offset.
+    // Note: a query might have more than one allocated offset. They will be combined in the final
+    // step.
     angle::Result allocateQueryOffset(ContextMtl *contextMtl, QueryMtl *query, bool clearOldValue);
-    // Deallocate an offset used for a query that has been destroyed.
+    // Deallocate all offsets used for a query.
     void deallocateQueryOffset(ContextMtl *contextMtl, QueryMtl *query);
     // Retrieve a buffer that will contain the visibility results of all allocated queries for
     // a render pass

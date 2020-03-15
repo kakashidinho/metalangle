@@ -215,8 +215,15 @@ class ContextMtl : public ContextImpl, public mtl::Context
     void onOcclusionQueryEnded(const gl::Context *context, QueryMtl *query);
     void onOcclusionQueryDestroyed(const gl::Context *context, QueryMtl *query);
 
-    // Useful for temporarily disable occlusion query during clear/blit with draw
-    const QueryMtl *getActiveOcclusionQuery() const { return mOcclusionQuery; }
+    // Useful for temporarily pause then restart occlusion query during clear/blit with draw.
+    bool hasActiveOcclusionQuery() const { return mOcclusionQuery; }
+    // Disable the occlusion query in the current render pass.
+    // The render pass must already started.
+    void disableActiveOcclusionQueryInRenderPass();
+    // Re-enable the occlusion query in the current render pass.
+    // The render pass must already started.
+    // NOTE: the old query's result will be retained and combined with the new result.
+    angle::Result restartActiveOcclusionQueryInRenderPass();
 
     const MTLClearColor &getClearColorValue() const;
     MTLColorWriteMask getColorMask() const;
@@ -334,7 +341,6 @@ class ContextMtl : public ContextImpl, public mtl::Context
                                          Optional<mtl::RenderPipelineDesc> *changedPipelineDesc);
 
     angle::Result startOcclusionQueryInRenderPass(QueryMtl *query, bool clearOldValue);
-    void endOcclusionQueryInRenderPass(QueryMtl *query);
 
     // Dirty bits.
     enum DirtyBitType : size_t

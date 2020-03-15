@@ -115,6 +115,76 @@ TEST_P(OcclusionQueriesTest, IsNotOccluded)
     EXPECT_GL_TRUE(result);
 }
 
+TEST_P(OcclusionQueriesTest, ClearNotCounted)
+{
+    ANGLE_SKIP_TEST_IF(getClientMajorVersion() < 3 &&
+                       !IsGLExtensionEnabled("GL_EXT_occlusion_query_boolean"));
+
+    // TODO(syoussefi): Using render pass ops to clear the framebuffer attachment results in
+    // AMD/Windows misbehaving in this test.  http://anglebug.com/3286
+    ANGLE_SKIP_TEST_IF(IsWindows() && IsAMD() && IsVulkan());
+
+    glDepthMask(GL_TRUE);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+    EXPECT_GL_NO_ERROR();
+
+    GLuint query[2] = {0};
+    glGenQueriesEXT(2, query);
+
+    // First query
+    glBeginQueryEXT(GL_ANY_SAMPLES_PASSED_EXT, query[0]);
+    // Full screen clear
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+    // View port clear
+    glViewport(0, 0, getWindowWidth() / 2, getWindowHeight());
+    glScissor(0, 0, getWindowWidth() / 2, getWindowHeight());
+    glEnable(GL_SCISSOR_TEST);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+    glEndQueryEXT(GL_ANY_SAMPLES_PASSED_EXT);
+
+    EXPECT_GL_NO_ERROR();
+
+    // Second query
+    glBeginQueryEXT(GL_ANY_SAMPLES_PASSED_EXT, query[1]);
+
+    // View port clear
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+    // View port clear
+    glViewport(0, 0, getWindowWidth() / 2, getWindowHeight());
+    glScissor(0, 0, getWindowWidth() / 2, getWindowHeight());
+    glEnable(GL_SCISSOR_TEST);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+    // this quad should not be occluded
+    drawQuad(mProgram, essl1_shaders::PositionAttrib(), 0.8f, 0.5f);
+
+    // Clear again
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+    // this quad should not be occluded
+    drawQuad(mProgram, essl1_shaders::PositionAttrib(), 0.8f, 1.0);
+
+    glEndQueryEXT(GL_ANY_SAMPLES_PASSED_EXT);
+
+    EXPECT_GL_NO_ERROR();
+
+    swapBuffers();
+
+    GLuint result[2] = {GL_TRUE, GL_TRUE};
+    glGetQueryObjectuivEXT(query[0], GL_QUERY_RESULT_EXT, &result[0]);  // will block waiting for result
+    glGetQueryObjectuivEXT(query[1], GL_QUERY_RESULT_EXT, &result[1]);  // will block waiting for result
+    EXPECT_GL_NO_ERROR();
+
+    glDeleteQueriesEXT(2, query);
+
+    EXPECT_GL_FALSE(result[0]);
+    EXPECT_GL_TRUE(result[1]);
+}
+
 TEST_P(OcclusionQueriesTest, MultiQueries)
 {
     ANGLE_SKIP_TEST_IF(getClientMajorVersion() < 3 &&
@@ -142,6 +212,7 @@ TEST_P(OcclusionQueriesTest, MultiQueries)
 
     EXPECT_GL_NO_ERROR();
 
+    // A flush shound't clear the query result
     glFlush();
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -172,21 +243,26 @@ TEST_P(OcclusionQueriesTest, MultiQueries)
     drawQuad(mProgram, essl1_shaders::PositionAttrib(), 0.9f,
              0.5f);  // this quad should not be occluded
 
-    // Fourth query
+    // Fourth query: begin query then end then begin again
     glBeginQueryEXT(GL_ANY_SAMPLES_PASSED_EXT, query[3]);
+    drawQuad(mProgram, essl1_shaders::PositionAttrib(), 0.9f,
+             1);  // this quad should not be occluded
+    glEndQueryEXT(GL_ANY_SAMPLES_PASSED_EXT);
+    glBeginQueryEXT(GL_ANY_SAMPLES_PASSED_EXT, query[3]);
+    EXPECT_GL_NO_ERROR();
     // glClear should not be counted toward query);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     glEndQueryEXT(GL_ANY_SAMPLES_PASSED_EXT);
 
-    // Fifth query
+    // Fifth query spans across frames
     glBeginQueryEXT(GL_ANY_SAMPLES_PASSED_EXT, query[4]);
     drawQuad(mProgram, essl1_shaders::PositionAttrib(), 0.8f,
              0.25f);  // this quad should not be occluded
 
-    glFlush();
+    swapBuffers();
 
-    drawQuad(mProgram, essl1_shaders::PositionAttrib(), 0.9f,
-             0.25f);  // this quad should be occluded
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
     drawQuad(mProgram, essl1_shaders::PositionAttrib(), 0.9f,
              0.5f);  // this quad should not be occluded
     glEndQueryEXT(GL_ANY_SAMPLES_PASSED_EXT);

@@ -60,41 +60,51 @@ struct IndexConversionUniform
     uint32_t padding[2];
 };
 
+// See libANGLE/renderer/metal/shaders/misc.metal
+struct CombineVisibilityResultUniform
+{
+    uint32_t keepOldValue;
+    uint32_t startOffset;
+    uint32_t numOffsets;
+    uint32_t padding;
+};
+
 // Class to automatically disable occlusion query upon entering block and re-able it upon
 // exiting block.
 struct ScopedDisableOcclusionQuery
 {
-    ScopedDisableOcclusionQuery(ContextMtl *contextMtl, RenderCommandEncoder *encoder)
-        : mContextMtl(contextMtl), mEncoder(encoder)
+    ScopedDisableOcclusionQuery(ContextMtl *contextMtl,
+                                RenderCommandEncoder *encoder,
+                                angle::Result *resultOut)
+        : mContextMtl(contextMtl), mEncoder(encoder), mResultOut(resultOut)
     {
-        const QueryMtl *activeQuery = contextMtl->getActiveOcclusionQuery();
-        if (activeQuery && activeQuery->getAllocatedVisibilityOffset() != -1)
-        {
 #ifndef NDEBUG
+        if (contextMtl->hasActiveOcclusionQuery())
+        {
             encoder->pushDebugGroup(@"Disabled OcclusionQuery");
-#endif
-            // temporarily disable occlusion query
-            encoder->setVisibilityResultMode(MTLVisibilityResultModeDisabled,
-                                             activeQuery->getAllocatedVisibilityOffset());
         }
+#endif
+        // temporarily disable occlusion query
+        contextMtl->disableActiveOcclusionQueryInRenderPass();
     }
     ~ScopedDisableOcclusionQuery()
     {
-        const QueryMtl *activeQuery = mContextMtl->getActiveOcclusionQuery();
-        if (activeQuery && activeQuery->getAllocatedVisibilityOffset() != -1)
-        {
-            // temporarily disable occlusion query
-            mEncoder->setVisibilityResultMode(MTLVisibilityResultModeBoolean,
-                                              activeQuery->getAllocatedVisibilityOffset());
+        *mResultOut = mContextMtl->restartActiveOcclusionQueryInRenderPass();
 #ifndef NDEBUG
+        if (mContextMtl->hasActiveOcclusionQuery())
+        {
             mEncoder->popDebugGroup();
-#endif
         }
+#else
+        ANGLE_UNUSED_VARIABLE(mEncoder);
+#endif
     }
 
   private:
     ContextMtl *mContextMtl;
     RenderCommandEncoder *mEncoder;
+
+    angle::Result *mResultOut;
 };
 
 template <typename T>
@@ -312,9 +322,9 @@ void RenderUtils::initBlitResources()
     }
 }
 
-void RenderUtils::clearWithDraw(const gl::Context *context,
-                                RenderCommandEncoder *cmdEncoder,
-                                const ClearRectParams &params)
+angle::Result RenderUtils::clearWithDraw(const gl::Context *context,
+                                         RenderCommandEncoder *cmdEncoder,
+                                         const ClearRectParams &params)
 {
     auto overridedParams = params;
     // Make sure we don't clear attachment that doesn't exist
@@ -335,65 +345,74 @@ void RenderUtils::clearWithDraw(const gl::Context *context,
     if (!overridedParams.clearColor.valid() && !overridedParams.clearDepth.valid() &&
         !overridedParams.clearStencil.valid())
     {
-        return;
+        return angle::Result::Continue;
     }
     auto contextMtl = GetImpl(context);
     setupClearWithDraw(context, cmdEncoder, overridedParams);
 
+    angle::Result result;
     {
         // Need to disable occlusion query, otherwise clearing will affect the occlusion counting
-        ScopedDisableOcclusionQuery disableOcclusionQuery(contextMtl, cmdEncoder);
+        ScopedDisableOcclusionQuery disableOcclusionQuery(contextMtl, cmdEncoder, &result);
         // Draw the screen aligned triangle
         cmdEncoder->draw(MTLPrimitiveTypeTriangle, 0, 3);
     }
 
     // Invalidate current context's state
     contextMtl->invalidateState(context);
+
+    return result;
 }
 
-void RenderUtils::blitColorWithDraw(const gl::Context *context,
-                                    RenderCommandEncoder *cmdEncoder,
-                                    const ColorBlitParams &params)
+angle::Result RenderUtils::blitColorWithDraw(const gl::Context *context,
+                                             RenderCommandEncoder *cmdEncoder,
+                                             const ColorBlitParams &params)
 {
     if (!params.src)
     {
-        return;
+        return angle::Result::Continue;
     }
     ContextMtl *contextMtl = GetImpl(context);
     setupColorBlitWithDraw(context, cmdEncoder, params);
 
+    angle::Result result;
     {
         // Need to disable occlusion query, otherwise clearing will affect the occlusion counting
-        ScopedDisableOcclusionQuery disableOcclusionQuery(contextMtl, cmdEncoder);
+        ScopedDisableOcclusionQuery disableOcclusionQuery(contextMtl, cmdEncoder, &result);
         // Draw the screen aligned triangle
         cmdEncoder->draw(MTLPrimitiveTypeTriangle, 0, 3);
     }
 
     // Invalidate current context's state
     contextMtl->invalidateState(context);
+
+    return result;
 }
 
-void RenderUtils::blitDepthStencilWithDraw(const gl::Context *context,
-                                           RenderCommandEncoder *cmdEncoder,
-                                           const DepthStencilBlitParams &params)
+angle::Result RenderUtils::blitDepthStencilWithDraw(const gl::Context *context,
+                                                    RenderCommandEncoder *cmdEncoder,
+                                                    const DepthStencilBlitParams &params)
 {
     if (!params.src && !params.srcStencil)
     {
-        return;
+        return angle::Result::Continue;
     }
     ContextMtl *contextMtl = GetImpl(context);
 
     setupDepthStencilBlitWithDraw(context, cmdEncoder, params);
 
+    angle::Result result;
     {
         // Need to disable occlusion query, otherwise clearing will affect the occlusion counting
-        ScopedDisableOcclusionQuery disableOcclusionQuery(contextMtl, cmdEncoder);
+        ScopedDisableOcclusionQuery disableOcclusionQuery(contextMtl, cmdEncoder, &result);
         // Draw the screen aligned triangle
         cmdEncoder->draw(MTLPrimitiveTypeTriangle, 0, 3);
     }
 
     // Invalidate current context's state
     contextMtl->invalidateState(context);
+
+    return result;
 }
 
 void RenderUtils::setupClearWithDraw(const gl::Context *context,
@@ -1173,10 +1192,25 @@ angle::Result RenderUtils::generateLineLoopLastSegmentFromElementsArrayCPU(
     return generateLineLoopLastSegment(contextMtl, first, last, params.dstBuffer, params.dstOffset);
 }
 
-void RenderUtils::combineVisibilityResult(ContextMtl *contextMtl,
-                                          const BufferRef &renderPassResultBuf,
-                                          const BufferRef &finalResultBuf)
+void RenderUtils::combineVisibilityResult(
+    ContextMtl *contextMtl,
+    bool keepOldValue,
+    const VisibilityBufferOffsetsMtl &renderPassResultBufOffsets,
+    const BufferRef &renderPassResultBuf,
+    const BufferRef &finalResultBuf)
 {
+    ASSERT(!renderPassResultBufOffsets.empty());
+
+    if (renderPassResultBufOffsets.size() == 1 && !keepOldValue)
+    {
+        // Use blit command to copy directly
+        BlitCommandEncoder *blitEncoder = contextMtl->getBlitCommandEncoder();
+
+        blitEncoder->copyBuffer(renderPassResultBuf, renderPassResultBufOffsets.front(),
+                                finalResultBuf, 0, kOcclusionQueryResultSize);
+        return;
+    }
+
     ensureVisibilityResultCombPipelineInitialized();
 
     ComputeCommandEncoder *cmdEncoder = contextMtl->getComputeCommandEncoder();
@@ -1184,8 +1218,14 @@ void RenderUtils::combineVisibilityResult(ContextMtl *contextMtl,
 
     cmdEncoder->setComputePipelineState(mVisibilityResultCombPipeline);
 
-    cmdEncoder->setBuffer(renderPassResultBuf, 0, 0);
-    cmdEncoder->setBufferForWrite(finalResultBuf, 0, 1);
+    CombineVisibilityResultUniform options;
+    options.keepOldValue = keepOldValue ? 1 : 0;
+    options.startOffset  = renderPassResultBufOffsets.front();
+    options.numOffsets   = renderPassResultBufOffsets.size();
+
+    cmdEncoder->setData(options, 0);
+    cmdEncoder->setBuffer(renderPassResultBuf, 0, 1);
+    cmdEncoder->setBufferForWrite(finalResultBuf, 0, 2);
 
     dispatchCompute(contextMtl, cmdEncoder, mVisibilityResultCombPipeline, 1);
 }

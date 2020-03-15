@@ -1108,7 +1108,7 @@ void ContextMtl::endEncoding(mtl::RenderCommandEncoder *encoder)
     // End any pending visibility query in the render pass
     if (mOcclusionQuery)
     {
-        endOcclusionQueryInRenderPass(mOcclusionQuery);
+        disableActiveOcclusionQueryInRenderPass();
     }
 
     encoder->endEncoding();
@@ -1435,26 +1435,54 @@ void ContextMtl::onOcclusionQueryEnded(const gl::Context *context, QueryMtl *que
     if (mRenderEncoder.valid())
     {
         // if render pass has started, end the query in the encoder
-        endOcclusionQueryInRenderPass(query);
+        disableActiveOcclusionQueryInRenderPass();
     }
 
     mOcclusionQuery = nullptr;
 }
 void ContextMtl::onOcclusionQueryDestroyed(const gl::Context *context, QueryMtl *query)
 {
-    if (query->getAllocatedVisibilityOffset() == -1)
+    if (query->getAllocatedVisibilityOffsets().empty())
     {
         return;
     }
+    if (mOcclusionQuery == query)
+    {
+        onOcclusionQueryEnded(context, query);
+    }
     mOcclusionQueryPool.deallocateQueryOffset(this, query);
+}
+
+void ContextMtl::disableActiveOcclusionQueryInRenderPass()
+{
+    if (!mOcclusionQuery || mOcclusionQuery->getAllocatedVisibilityOffsets().empty())
+    {
+        return;
+    }
+
+    ASSERT(mRenderEncoder.valid());
+    mRenderEncoder.setVisibilityResultMode(MTLVisibilityResultModeDisabled,
+                                           mOcclusionQuery->getAllocatedVisibilityOffsets().back());
+}
+
+angle::Result ContextMtl::restartActiveOcclusionQueryInRenderPass()
+{
+    if (!mOcclusionQuery || mOcclusionQuery->getAllocatedVisibilityOffsets().empty())
+    {
+        return angle::Result::Continue;
+    }
+
+    return startOcclusionQueryInRenderPass(mOcclusionQuery, false);
 }
 
 angle::Result ContextMtl::startOcclusionQueryInRenderPass(QueryMtl *query, bool clearOldValue)
 {
     ASSERT(mRenderEncoder.valid());
+
     ANGLE_TRY(mOcclusionQueryPool.allocateQueryOffset(this, query, clearOldValue));
+
     mRenderEncoder.setVisibilityResultMode(MTLVisibilityResultModeBoolean,
-                                           query->getAllocatedVisibilityOffset());
+                                           query->getAllocatedVisibilityOffsets().back());
 
     // We need to mark the query's buffer as being written in this command buffer now. Since the
     // actual writing is deferred until the render pass ends and user could try to read the query
@@ -1462,14 +1490,6 @@ angle::Result ContextMtl::startOcclusionQueryInRenderPass(QueryMtl *query, bool 
     mCmdBuffer.setWriteDependency(query->getVisibilityResultBuffer());
 
     return angle::Result::Continue;
-}
-
-void ContextMtl::endOcclusionQueryInRenderPass(QueryMtl *query)
-{
-    ASSERT(mRenderEncoder.valid());
-    ASSERT(mOcclusionQuery == query);
-    mRenderEncoder.setVisibilityResultMode(MTLVisibilityResultModeDisabled,
-                                           query->getAllocatedVisibilityOffset());
 }
 
 void ContextMtl::updateProgramExecutable(const gl::Context *context)

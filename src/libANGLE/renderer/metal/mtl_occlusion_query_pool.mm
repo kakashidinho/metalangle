@@ -27,7 +27,11 @@ void OcclusionQueryPool::destroy(ContextMtl *contextMtl)
     mRenderPassResultsPool = nullptr;
     for (QueryMtl *allocatedQuery : mAllocatedQueries)
     {
-        allocatedQuery->setAllocatedVisibilityOffset(-1);
+        if (!allocatedQuery)
+        {
+            continue;
+        }
+        allocatedQuery->clearAllocatedVisibilityOffsets();
     }
     mAllocatedQueries.clear();
 }
@@ -36,40 +40,50 @@ angle::Result OcclusionQueryPool::allocateQueryOffset(ContextMtl *contextMtl,
                                                       QueryMtl *query,
                                                       bool clearOldValue)
 {
-    // Only first query of the render pass is allowed to keep old value. Subsequent queries will
-    // be reset to zero before counting the visibility of draw calls.
-    ASSERT(clearOldValue || mAllocatedQueries.empty());
+    // Only query that already has allocated offset or first query of the render pass is allowed to
+    // keep old value. Other queries must be reset to zero before counting the samples visibility in
+    // draw calls.
+    ASSERT(clearOldValue || mAllocatedQueries.empty() ||
+           !query->getAllocatedVisibilityOffsets().empty());
 
-    if (query->getAllocatedVisibilityOffset() == -1)
+    uint32_t currentOffset =
+        static_cast<uint32_t>(mAllocatedQueries.size()) * kOcclusionQueryResultSize;
+    if (!mRenderPassResultsPool)
     {
-        size_t currentOffset = mAllocatedQueries.size() * kOcclusionQueryResultSize;
-        if (!mRenderPassResultsPool)
-        {
-            // First allocation
-            ANGLE_TRY(Buffer::MakeBuffer(contextMtl, MTLResourceStorageModePrivate,
-                                         kOcclusionQueryResultSize, nullptr,
-                                         &mRenderPassResultsPool));
-            mRenderPassResultsPool->get().label = @"OcclusionQueryPool";
-        }
-        else if (currentOffset + kOcclusionQueryResultSize > mRenderPassResultsPool->size())
-        {
-            // Double the capacity
-            ANGLE_TRY(Buffer::MakeBuffer(contextMtl, MTLResourceStorageModePrivate,
-                                         mRenderPassResultsPool->size() * 2, nullptr,
-                                         &mRenderPassResultsPool));
-            mRenderPassResultsPool->get().label = @"OcclusionQueryPool";
-        }
+        // First allocation
+        ANGLE_TRY(Buffer::MakeBuffer(contextMtl, MTLResourceStorageModePrivate,
+                                     kOcclusionQueryResultSize, nullptr, &mRenderPassResultsPool));
+        mRenderPassResultsPool->get().label = @"OcclusionQueryPool";
+    }
+    else if (currentOffset + kOcclusionQueryResultSize > mRenderPassResultsPool->size())
+    {
+        // Double the capacity
+        ANGLE_TRY(Buffer::MakeBuffer(contextMtl, MTLResourceStorageModePrivate,
+                                     mRenderPassResultsPool->size() * 2, nullptr,
+                                     &mRenderPassResultsPool));
+        mRenderPassResultsPool->get().label = @"OcclusionQueryPool";
+    }
 
-        query->setAllocatedVisibilityOffset(currentOffset);
-
+    if (clearOldValue)
+    {
+        deallocateQueryOffset(contextMtl, query);
+    }
+    if (query->getAllocatedVisibilityOffsets().empty())
+    {
         mAllocatedQueries.push_back(query);
+        query->setFirstAllocatedVisibilityOffset(currentOffset);
     }
     else
     {
-        // This query is already allocated, just reuse the old offset
+        // Additional offset allocated for a query is only allowed if it is a continuous region.
+        ASSERT(currentOffset ==
+               query->getAllocatedVisibilityOffsets().back() + kOcclusionQueryResultSize);
+        // Just reserve an empty slot in the allocated query array
+        mAllocatedQueries.push_back(nullptr);
+        query->addAllocatedVisibilityOffset();
     }
 
-    if (query->getAllocatedVisibilityOffset() == 0)
+    if (currentOffset == 0)
     {
         mResetFirstQuery = clearOldValue;
     }
@@ -79,13 +93,14 @@ angle::Result OcclusionQueryPool::allocateQueryOffset(ContextMtl *contextMtl,
 
 void OcclusionQueryPool::deallocateQueryOffset(ContextMtl *contextMtl, QueryMtl *query)
 {
-    if (query->getAllocatedVisibilityOffset() == -1)
+    if (query->getAllocatedVisibilityOffsets().empty())
     {
         return;
     }
 
-    mAllocatedQueries[query->getAllocatedVisibilityOffset() / kOcclusionQueryResultSize] = nullptr;
-    query->setAllocatedVisibilityOffset(-1);
+    mAllocatedQueries[query->getAllocatedVisibilityOffsets().front() / kOcclusionQueryResultSize] =
+        nullptr;
+    query->clearAllocatedVisibilityOffsets();
 }
 
 void OcclusionQueryPool::resolveVisibilityResults(ContextMtl *contextMtl)
@@ -95,32 +110,19 @@ void OcclusionQueryPool::resolveVisibilityResults(ContextMtl *contextMtl)
         return;
     }
 
-    size_t startBlitIdx             = 0;
-    BlitCommandEncoder *blitEncoder = nullptr;
-    if (!mResetFirstQuery)
+    RenderUtils &utils = contextMtl->getDisplay()->getUtils();
+    // Combine the values stored in the offsets allocated for first query
+    if (mAllocatedQueries[0])
     {
-        // Combine the result of first query
-        startBlitIdx = 1;
-        if (mAllocatedQueries[0])
-        {
-            const BufferRef &dstBuf = mAllocatedQueries[0]->getVisibilityResultBuffer();
-            contextMtl->getDisplay()->getUtils().combineVisibilityResult(
-                contextMtl, mRenderPassResultsPool, dstBuf);
-
-            blitEncoder = contextMtl->getBlitCommandEncoder();
-            dstBuf->syncContent(contextMtl, blitEncoder);
-
-            mAllocatedQueries[0]->setAllocatedVisibilityOffset(-1);
-        }
+        const BufferRef &dstBuf = mAllocatedQueries[0]->getVisibilityResultBuffer();
+        const VisibilityBufferOffsetsMtl &allocatedOffsets =
+            mAllocatedQueries[0]->getAllocatedVisibilityOffsets();
+        utils.combineVisibilityResult(contextMtl, !mResetFirstQuery, allocatedOffsets,
+                                      mRenderPassResultsPool, dstBuf);
     }
 
-    if (!blitEncoder)
-    {
-        blitEncoder = contextMtl->getBlitCommandEncoder();
-    }
-
-    // Copy results from pool to the respective query's buffers
-    for (size_t i = startBlitIdx; i < mAllocatedQueries.size(); ++i)
+    // Combine the values stored in the offsets allocated for each of the remaining queries
+    for (size_t i = 1; i < mAllocatedQueries.size(); ++i)
     {
         QueryMtl *query = mAllocatedQueries[i];
         if (!query)
@@ -128,10 +130,28 @@ void OcclusionQueryPool::resolveVisibilityResults(ContextMtl *contextMtl)
             continue;
         }
 
-        blitEncoder->copyBuffer(mRenderPassResultsPool, query->getAllocatedVisibilityOffset(),
-                                query->getVisibilityResultBuffer(), 0, kOcclusionQueryResultSize);
-        query->getVisibilityResultBuffer()->syncContent(contextMtl, blitEncoder);
-        query->setAllocatedVisibilityOffset(-1);
+        const BufferRef &dstBuf = mAllocatedQueries[i]->getVisibilityResultBuffer();
+        const VisibilityBufferOffsetsMtl &allocatedOffsets =
+            mAllocatedQueries[i]->getAllocatedVisibilityOffsets();
+        utils.combineVisibilityResult(contextMtl, false, allocatedOffsets, mRenderPassResultsPool,
+                                      dstBuf);
+    }
+
+    // Request synchronization and cleanup
+    BlitCommandEncoder *blitEncoder = contextMtl->getBlitCommandEncoder();
+    for (size_t i = 0; i < mAllocatedQueries.size(); ++i)
+    {
+        QueryMtl *query = mAllocatedQueries[i];
+        if (!query)
+        {
+            continue;
+        }
+
+        const BufferRef &dstBuf = mAllocatedQueries[i]->getVisibilityResultBuffer();
+
+        dstBuf->syncContent(contextMtl, blitEncoder);
+
+        query->clearAllocatedVisibilityOffsets();
     }
 
     mAllocatedQueries.clear();
