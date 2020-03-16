@@ -31,30 +31,6 @@ inline NSUInteger GetMipSize(NSUInteger baseSize, NSUInteger level)
     return std::max<NSUInteger>(1, baseSize >> level);
 }
 
-void SetTextureSwizzle(ContextMtl *context,
-                       const Format &format,
-                       MTLTextureDescriptor *textureDescOut)
-{
-// Texture swizzle functions's declarations are only available if macos 10.15 sdk is present
-#if defined(__MAC_10_15)
-    if (context->getDisplay()->getFeatures().hasTextureSwizzle.enabled)
-    {
-        // Work around Metal doesn't have native support for DXT1 without alpha.
-        switch (format.intendedFormatId)
-        {
-            case angle::FormatID::BC1_RGB_UNORM_BLOCK:
-            case angle::FormatID::BC1_RGB_UNORM_SRGB_BLOCK:
-                textureDescOut.swizzle =
-                    MTLTextureSwizzleChannelsMake(MTLTextureSwizzleRed, MTLTextureSwizzleGreen,
-                                                  MTLTextureSwizzleBlue, MTLTextureSwizzleOne);
-                break;
-            default:
-                break;
-        }
-    }
-#endif
-}
-
 template <class T>
 void SyncContent(ContextMtl *context,
                  mtl::BlitCommandEncoder *blitEncoder,
@@ -204,7 +180,12 @@ angle::Result Texture::MakeTexture(ContextMtl *context,
                                    bool allowFormatView,
                                    TextureRef *refOut)
 {
-    SetTextureSwizzle(context, mtlFormat, desc);
+#if defined(__IPHONE_13_0) || defined(__MAC_10_15)
+    if (mtlFormat.swizzled)
+    {
+        desc.swizzle = mtlFormat.swizzle;
+    }
+#endif
     refOut->reset(new Texture(context, desc, mips, renderTargetOnly, allowFormatView));
 
     if (!refOut || !refOut->get())

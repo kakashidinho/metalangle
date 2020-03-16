@@ -77,8 +77,6 @@
         "map_mac": {
             "D16_UNORM": "MTLPixelFormatDepth16Unorm",
             "D24_UNORM_S8_UINT": "MTLPixelFormatDepth24Unorm_Stencil8",
-            "BC1_RGB_UNORM_BLOCK": "MTLPixelFormatBC1_RGBA",
-            "BC1_RGB_UNORM_SRGB_BLOCK": "MTLPixelFormatBC1_RGBA_sRGB",
             "BC1_RGBA_UNORM_BLOCK": "MTLPixelFormatBC1_RGBA",
             "BC1_RGBA_UNORM_SRGB_BLOCK": "MTLPixelFormatBC1_RGBA_sRGB",
             "BC2_RGBA_UNORM_BLOCK": "MTLPixelFormatBC2_RGBA",
@@ -109,7 +107,15 @@
         "override_mac": {
             "R5G6B5_UNORM": "R8G8B8A8_UNORM",
             "R5G5B5A1_UNORM": "R8G8B8A8_UNORM",
-            "R4G4B4A4_UNORM": "R8G8B8A8_UNORM"
+            "R4G4B4A4_UNORM": "R8G8B8A8_UNORM",
+            "BC1_RGB_UNORM_BLOCK": {
+                "default": "NONE",
+                "swizzle": ["RGB1", "BC1_RGBA_UNORM_BLOCK"]
+            },
+            "BC1_RGB_UNORM_SRGB_BLOCK": {
+                "default": "NONE",
+                "swizzle": ["RGB1", "BC1_RGBA_UNORM_SRGB_BLOCK"]
+            }
         },
         "fallbacks_mac": {
             "B8G8R8A8_UNORM": "R8G8B8A8_UNORM",

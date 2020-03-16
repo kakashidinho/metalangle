@@ -68,14 +68,12 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
 }}  // namespace rx
 """
 
-case_image_format_template1 = """        case angle::FormatID::{angle_format}:
+image_format_assign_template1 = """
             this->metalFormat = {mtl_format};
             this->actualFormatId = angle::FormatID::{actual_angle_format};
-            break;
-
 """
 
-case_image_format_template2 = """        case angle::FormatID::{angle_format}:
+image_format_assign_template2 = """
             if (metalDevice.depth24Stencil8PixelFormatSupported)
             {{
                 this->metalFormat = {mtl_format};
@@ -85,6 +83,29 @@ case_image_format_template2 = """        case angle::FormatID::{angle_format}:
             {{
                 this->metalFormat = {mtl_format_fallback};
                 this->actualFormatId = angle::FormatID::{actual_angle_format_fallback};
+            }}
+"""
+
+case_image_format_template1 = """        case angle::FormatID::{angle_format}:
+            {image_format_assign}
+            this->swizzled = false;
+            break;
+
+"""
+
+case_image_format_template2 = """        case angle::FormatID::{angle_format}:
+#if defined(__IPHONE_13_0) || defined(__MAC_10_15)
+            if (display->getFeatures().hasTextureSwizzle.enabled)
+            {{
+                {image_format_assign_swizzled}
+                this->swizzled = true;
+                this->swizzle  = {mtl_swizzle};
+            }}
+            else
+#endif  // #if defined(__IPHONE_13_0) || defined(__MAC_10_15)
+            {{
+                {image_format_assign_default}
+                this->swizzled = false;
             }}
             break;
 
@@ -158,46 +179,81 @@ def get_vertex_copy_function_mtl(src_format, dst_format):
 
     return angle_format.get_vertex_copy_function(src_format, dst_format)
 
+# Generate format conversion switch case (generic case)
+def gen_image_map_switch_case(angle_format, actual_angle_format_info, angle_to_mtl_map,
+                              assign_gen_func):
+    if isinstance(actual_angle_format_info, dict):
+        default_actual_angle_format = actual_angle_format_info['default']
+        # Check if the format can be override with swizzle feature
+        if 'swizzle' in actual_angle_format_info:
+            swizzle_info = actual_angle_format_info['swizzle']
+            swizzle_channels = swizzle_info[0]
+            swizzled_actual_angle_format = swizzle_info[1]
+            swizzle_map = {
+                'R': 'MTLTextureSwizzleRed',
+                'G': 'MTLTextureSwizzleGreen',
+                'B': 'MTLTextureSwizzleBlue',
+                'A': 'MTLTextureSwizzleAlpha',
+                '1': 'MTLTextureSwizzleOne',
+                '0': 'MTLTextureSwizzleZero',
+            }
 
-def gen_image_map_switch_simple_case(angle_format, actual_angle_format, angle_to_mtl_map):
-    mtl_format = angle_to_mtl_map[actual_angle_format]
-    return case_image_format_template1.format(
-        angle_format=angle_format, actual_angle_format=actual_angle_format, mtl_format=mtl_format)
-
-
-def gen_image_map_switch_mac_case(angle_format, actual_angle_format, angle_to_mtl_map,
-                                  mac_specific_map, mac_fallbacks):
-    if actual_angle_format in mac_specific_map:
-        # look for the metal format in mac specific table
-        mtl_format = mac_specific_map[actual_angle_format]
-    else:
-        # look for the metal format in common table
-        mtl_format = angle_to_mtl_map[actual_angle_format]
-
-    if actual_angle_format in mac_fallbacks:
-        # This format requires fallback when depth24Stencil8PixelFormatSupported flag is false.
-        # Fallback format:
-        actual_angle_format_fallback = mac_fallbacks[actual_angle_format]
-        if actual_angle_format_fallback in mac_specific_map:
-            # look for the metal format in mac specific table
-            mtl_format_fallback = mac_specific_map[actual_angle_format_fallback]
+            mtl_swizzle_make = 'MTLTextureSwizzleChannelsMake({r}, {g}, {b}, {a})'.format(
+                r=swizzle_map[swizzle_channels[0:1]],
+                g=swizzle_map[swizzle_channels[1:2]],
+                b=swizzle_map[swizzle_channels[2:3]],
+                a=swizzle_map[swizzle_channels[3:]])
+            return case_image_format_template2.format(
+                angle_format=angle_format,
+                image_format_assign_default=assign_gen_func(
+                    default_actual_angle_format, angle_to_mtl_map),
+                image_format_assign_swizzled=assign_gen_func(
+                    swizzled_actual_angle_format, angle_to_mtl_map),
+                mtl_swizzle=mtl_swizzle_make
+            )
         else:
-            # look for the metal format in common table
-            mtl_format_fallback = angle_to_mtl_map[actual_angle_format_fallback]
-        # return if else block:
-        return case_image_format_template2.format(
-            angle_format=angle_format,
-            actual_angle_format=actual_angle_format,
-            mtl_format=mtl_format,
-            actual_angle_format_fallback=actual_angle_format_fallback,
-            mtl_format_fallback=mtl_format_fallback)
+            # Only default case
+            return gen_image_map_switch_case(angle_format, default_actual_angle_format,
+                                             angle_to_mtl_map, assign_gen_func)
     else:
-        # return ordinary block:
+        # Default case
         return case_image_format_template1.format(
             angle_format=angle_format,
-            actual_angle_format=actual_angle_format,
-            mtl_format=mtl_format)
+            image_format_assign=assign_gen_func(
+                actual_angle_format_info, angle_to_mtl_map)
+        )
 
+# Generate format conversion switch case (simple case)
+def gen_image_map_switch_simple_case(angle_format, actual_angle_format_info, angle_to_mtl_map):
+    def gen_format_assign_code(actual_angle_format, angle_to_mtl_map):
+        return image_format_assign_template1.format(
+            actual_angle_format=actual_angle_format,
+            mtl_format=angle_to_mtl_map[actual_angle_format])
+
+    return gen_image_map_switch_case(angle_format, actual_angle_format_info, angle_to_mtl_map,
+                                     gen_format_assign_code)
+
+# Generate format conversion switch case (Mac case)
+def gen_image_map_switch_mac_case(angle_format, actual_angle_format_info, angle_to_mtl_map, mac_fallbacks):
+    def gen_format_assign_code(actual_angle_format, angle_to_mtl_map):
+        if actual_angle_format in mac_fallbacks:
+            # This format requires fallback when depth24Stencil8PixelFormatSupported flag is false.
+            # Fallback format:
+            actual_angle_format_fallback = mac_fallbacks[actual_angle_format]
+            # return if else block:
+            return image_format_assign_template2.format(
+                actual_angle_format=actual_angle_format,
+                mtl_format=angle_to_mtl_map[actual_angle_format],
+                actual_angle_format_fallback=actual_angle_format_fallback,
+                mtl_format_fallback=angle_to_mtl_map[actual_angle_format_fallback])
+        else:
+            # return ordinary block:
+            return image_format_assign_template1.format(
+                actual_angle_format=actual_angle_format,
+                mtl_format=angle_to_mtl_map[actual_angle_format])
+
+    return gen_image_map_switch_case(angle_format, actual_angle_format_info, angle_to_mtl_map,
+                                     gen_format_assign_code)
 
 def gen_image_map_switch_string(image_table):
     angle_override = image_table["override"]
@@ -208,11 +264,18 @@ def gen_image_map_switch_string(image_table):
     mac_specific_map = image_table["map_mac"]
     ios_specific_map = image_table["map_ios"]
 
+    # mac_specific_map + angle_to_mtl:
+    mac_angle_to_mtl = mac_specific_map.copy()
+    mac_angle_to_mtl.update(angle_to_mtl)
+    # ios_specific_map + angle_to_mtl
+    ios_angle_to_mtl = ios_specific_map.copy()
+    ios_angle_to_mtl.update(angle_to_mtl)
+
     switch_data = ''
 
     def gen_image_map_switch_common_case(angle_format, actual_angle_format):
-        mac_case = gen_image_map_switch_mac_case(angle_format, actual_angle_format, angle_to_mtl,
-                                                 mac_specific_map, mac_fallbacks)
+        mac_case = gen_image_map_switch_mac_case(angle_format, actual_angle_format, mac_angle_to_mtl,
+                                                 mac_fallbacks)
         non_mac_case = gen_image_map_switch_simple_case(angle_format, actual_angle_format,
                                                         angle_to_mtl)
         if mac_case == non_mac_case:
@@ -235,12 +298,11 @@ def gen_image_map_switch_string(image_table):
     # Mac specific
     switch_data += "#if TARGET_OS_OSX || TARGET_OS_MACCATALYST\n"
     for angle_format in sorted(mac_specific_map.keys()):
-        switch_data += gen_image_map_switch_mac_case(angle_format, angle_format, angle_to_mtl,
-                                                     mac_specific_map, mac_fallbacks)
+        switch_data += gen_image_map_switch_mac_case(angle_format, angle_format, mac_angle_to_mtl,
+                                                     mac_fallbacks)
     for angle_format in sorted(mac_override.keys()):
-        # overide case will always map to a format in common table, i.e. angle_to_mtl
         switch_data += gen_image_map_switch_mac_case(angle_format, mac_override[angle_format],
-                                                     angle_to_mtl, mac_specific_map, mac_fallbacks)
+                                                     mac_angle_to_mtl, mac_fallbacks)
 
     # iOS specific
     switch_data += "#elif TARGET_OS_IOS  // TARGET_OS_OSX || TARGET_OS_MACCATALYST\n"
@@ -248,9 +310,8 @@ def gen_image_map_switch_string(image_table):
         switch_data += gen_image_map_switch_simple_case(angle_format, angle_format,
                                                         ios_specific_map)
     for angle_format in sorted(ios_override.keys()):
-        # overide case will always map to a format in common table, i.e. angle_to_mtl
         switch_data += gen_image_map_switch_simple_case(angle_format, ios_override[angle_format],
-                                                        angle_to_mtl)
+                                                        ios_angle_to_mtl)
     switch_data += "#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST\n"
     switch_data += "        default:\n"
     switch_data += "            this->metalFormat = MTLPixelFormatInvalid;\n"

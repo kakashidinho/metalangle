@@ -130,6 +130,20 @@ const gl::InternalFormat &Format::intendedInternalFormat() const
     return gl::GetSizedInternalFormatInfo(intendedAngleFormat().glInternalFormat);
 }
 
+bool Format::needConversion(angle::FormatID srcFormatId) const
+{
+    if ((srcFormatId == angle::FormatID::BC1_RGB_UNORM_BLOCK &&
+         actualFormatId == angle::FormatID::BC1_RGBA_UNORM_BLOCK) ||
+        (srcFormatId == angle::FormatID::BC1_RGB_UNORM_SRGB_BLOCK &&
+         actualFormatId == angle::FormatID::BC1_RGBA_UNORM_SRGB_BLOCK))
+    {
+        // DXT1 RGB format already swizzled with alpha=1, so no need to convert
+        ASSERT(swizzled);
+        return false;
+    }
+    return srcFormatId != actualFormatId;
+}
+
 // FormatTable implementation
 angle::Result FormatTable::initialize(const DisplayMtl *display)
 {

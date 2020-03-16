@@ -1042,7 +1042,7 @@ angle::Result TextureMtl::setSubImageImpl(const gl::Context *context,
         angle::Format::Get(angle::Format::InternalFormatToID(formatInfo.sizedInternalFormat));
 
     // If source pixels are luminance or RGB8, we need to convert them to RGBA
-    if (mFormat.actualFormatId != srcAngleFormat.id)
+    if (mFormat.needConversion(srcAngleFormat.id))
     {
         return convertAndSetSubImage(context, index, mtlRegion, formatInfo, srcAngleFormat,
                                      sourceRowPitch, pixels);
@@ -1101,7 +1101,7 @@ angle::Result TextureMtl::checkForEmulatedChannels(const gl::Context *context,
                                                    const mtl::Format &mtlFormat,
                                                    const mtl::TextureRef &texture)
 {
-    bool emulatedChannels               = mtl::IsFormatEmulated(mtlFormat);
+    bool emulatedChannels = mtl::IsFormatEmulated(mtlFormat);
 
     // For emulated channels that GL texture intends to not have,
     // we need to initialize their content.
