@@ -87,48 +87,18 @@
             "BC3_RGBA_UNORM_SRGB_BLOCK": "MTLPixelFormatBC3_RGBA_sRGB"
         },
         "override": {
-            "L8_UNORM": {
-                "default": "R8G8B8A8_UNORM",
-                "swizzle": ["RRR1", "R8_UNORM"]
-            },
-            "L8A8_UNORM": {
-                "default": "R8G8B8A8_UNORM",
-                "swizzle": ["RRRG", "R8G8_UNORM"]
-            },
+            "L8_UNORM": "R8G8B8A8_UNORM",
+            "L8A8_UNORM": "R8G8B8A8_UNORM",
             "R8G8B8_UNORM": "R8G8B8A8_UNORM",
             "R8G8B8_UNORM_SRGB": "R8G8B8A8_UNORM_SRGB",
-            "R32G32B32_FLOAT": {
-                "default": "R32G32B32A32_FLOAT",
-                "swizzle": ["RGB1", "R32G32B32A32_FLOAT"]
-            },
-            "R16G16B16_FLOAT": {
-                "default": "R16G16B16A16_FLOAT",
-                "swizzle": ["RGB1", "R16G16B16A16_FLOAT"]
-            },
-            "A16_FLOAT": {
-                "default": "R16G16B16A16_FLOAT",
-                "swizzle": ["000R", "R16_FLOAT"]
-            },
-            "L16_FLOAT": {
-                "default": "R16G16B16A16_FLOAT",
-                "swizzle": ["RRR1", "R16_FLOAT"]
-            },
-            "L16A16_FLOAT": {
-                "default": "R16G16B16A16_FLOAT",
-                "swizzle": ["RRRG", "R16G16_FLOAT"]
-            },
-            "A32_FLOAT": {
-                "default": "R32G32B32A32_FLOAT",
-                "swizzle": ["000R", "R32_FLOAT"]
-            },
-            "L32_FLOAT": {
-                "default": "R32G32B32A32_FLOAT",
-                "swizzle": ["RRR1", "R32_FLOAT"]
-            },
-            "L32A32_FLOAT": {
-                "default": "R32G32B32A32_FLOAT",
-                "swizzle": ["RRRG", "R32G32_FLOAT"]
-            },
+            "R32G32B32_FLOAT": "R32G32B32A32_FLOAT",
+            "R16G16B16_FLOAT": "R16G16B16A16_FLOAT",
+            "A16_FLOAT": "R16G16B16A16_FLOAT",
+            "L16_FLOAT": "R16G16B16A16_FLOAT",
+            "L16A16_FLOAT": "R16G16B16A16_FLOAT",
+            "A32_FLOAT": "R32G32B32A32_FLOAT",
+            "L32_FLOAT": "R32G32B32A32_FLOAT",
+            "L32A32_FLOAT": "R32G32B32A32_FLOAT",
             "D24_UNORM_X8_UINT": "D32_FLOAT",
             "D32_UNORM": "D32_FLOAT"
         },
