@@ -321,6 +321,17 @@ void PopDebugGroupCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandSt
 using CommandEncoderFunc = void (*)(id<MTLRenderCommandEncoder>, IntermediateCommandStream *);
 constexpr CommandEncoderFunc gCommandEncoders[] = {ANGLE_MTL_CMD_X(ANGLE_MTL_CMD_MAP)};
 
+NSString *cppLabelToObjC(const std::string &marker)
+{
+    auto label = [NSString stringWithUTF8String:marker.c_str()];
+    if (!label)
+    {
+        // This can happen if the string is not a valid ascii string.
+        label = @"Invalid ASCII string";
+    }
+    return label;
+}
+
 }
 
 // CommandQueue implementation
@@ -568,7 +579,7 @@ void CommandBuffer::insertDebugSign(const std::string &marker)
     {
         ANGLE_MTL_OBJC_SCOPE
         {
-            auto label = [NSString stringWithUTF8String:marker.c_str()];
+            auto label = cppLabelToObjC(marker);
             currentEncoder->insertDebugSign(label);
         }
     }
@@ -601,7 +612,7 @@ void CommandBuffer::setActiveCommandEncoder(CommandEncoder *encoder)
     {
         ANGLE_MTL_OBJC_SCOPE
         {
-            auto label = [NSString stringWithUTF8String:marker.c_str()];
+            auto label = cppLabelToObjC(marker);
             encoder->insertDebugSign(label);
         }
     }
