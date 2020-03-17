@@ -1220,7 +1220,8 @@ void RenderUtils::combineVisibilityResult(
 
     CombineVisibilityResultUniform options;
     options.keepOldValue = keepOldValue ? 1 : 0;
-    options.startOffset  = renderPassResultBufOffsets.front();
+    // Offset is viewed as 64 bit unit in compute shader.
+    options.startOffset  = renderPassResultBufOffsets.front() / kOcclusionQueryResultSize;
     options.numOffsets   = renderPassResultBufOffsets.size();
 
     cmdEncoder->setData(options, 0);
