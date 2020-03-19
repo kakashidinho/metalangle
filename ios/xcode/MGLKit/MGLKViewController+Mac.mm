@@ -42,14 +42,15 @@
 - (void)viewDidMoveToWindow
 {
     NSLog(@"MGLKViewController viewDidMoveToWindow");
-    [self resume];
-}
-
-- (void)viewDidAppear
-{
-    NSLog(@"MGLKViewController viewDidAppear");
-    [super viewDidAppear];
-    [self resume];
+    if (self.view.window)
+    {
+        [self resume];
+    }
+    else
+    {
+        // View is removed from window
+        [self pause];
+    }
 }
 
 - (void)windowWillClose:(NSNotification *)notification
@@ -157,10 +158,14 @@ static CVReturn CVFrameDisplayCallback(CVDisplayLinkRef displayLink,
         ASSERT(!_displayTimer);
         NSTimeInterval frameInterval =
             (_preferredFramesPerSecond <= 0) ? 0 : (1.0 / _preferredFramesPerSecond);
-        _displayTimer = [NSTimer scheduledTimerWithTimeInterval:frameInterval
-                                                         target:self
-                                                       selector:@selector(frameStep)
-                                                       userInfo:nil
-                                                        repeats:YES];
+        _displayTimer = [NSTimer timerWithTimeInterval:frameInterval
+                                                target:self
+                                              selector:@selector(frameStep)
+                                              userInfo:nil
+                                               repeats:YES];
+        [[NSRunLoop currentRunLoop] addTimer:_displayTimer
+                                     forMode:NSDefaultRunLoopMode];
+        [[NSRunLoop currentRunLoop] addTimer:_displayTimer
+                                     forMode:NSModalPanelRunLoopMode];
     }
 }

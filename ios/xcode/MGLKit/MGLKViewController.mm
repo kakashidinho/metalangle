@@ -46,27 +46,10 @@
 {
     _appWasInBackground       = YES;
     _preferredFramesPerSecond = 30;
-
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(appWillPause:)
-                                                 name:MGLKApplicationWillResignActiveNotification
-                                               object:nil];
-
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(appDidBecomeActive:)
-                                                 name:MGLKApplicationDidBecomeActiveNotification
-                                               object:nil];
 }
 
 - (void)dealloc
 {
-    [[NSNotificationCenter defaultCenter] removeObserver:self
-                                                    name:MGLKApplicationWillResignActiveNotification
-                                                  object:nil];
-
-    [[NSNotificationCenter defaultCenter] removeObserver:self
-                                                    name:MGLKApplicationDidBecomeActiveNotification
-                                                  object:nil];
     [self deallocImpl];
 }
 
@@ -103,6 +86,59 @@
 - (void)mglkView:(MGLKView *)view drawInRect:(CGRect)rect
 {
     // Default implementation do nothing.
+}
+
+// viewDidAppear callback
+#if TARGET_OS_OSX
+- (void)viewDidAppear
+{
+    [super viewDidAppear];
+#else  // TARGET_OS_OSX
+- (void)viewDidAppear:(BOOL)animated
+{
+    [super viewDidAppear:animated];
+#endif  // TARGET_OS_OSX
+    NSLog(@"MGLKViewController viewDidAppear");
+
+    // Implementation dependent
+    [self resume];
+
+    // Register callbacks to be called when app enters/exits background
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(appWillPause:)
+                                                 name:MGLKApplicationWillResignActiveNotification
+                                               object:nil];
+
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(appDidBecomeActive:)
+                                                 name:MGLKApplicationDidBecomeActiveNotification
+                                               object:nil];
+}
+
+// viewDidDisappear callback
+#if TARGET_OS_OSX
+- (void)viewDidDisappear
+{
+    [super viewDidDisappear];
+#else  // TARGET_OS_OSX
+- (void)viewDidDisappear:(BOOL)animated
+{
+    [super viewDidDisappear:animated];
+#endif  // TARGET_OS_OSX
+    NSLog(@"MGLKViewController viewDidDisappear");
+    _appWasInBackground = YES;
+
+    // Implementation dependent
+    [self pause];
+
+    // Unregister callbacks that are called when app enters/exits background
+    [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                    name:MGLKApplicationWillResignActiveNotification
+                                                  object:nil];
+
+    [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                    name:MGLKApplicationDidBecomeActiveNotification
+                                                  object:nil];
 }
 
 - (void)appWillPause:(NSNotification *)note

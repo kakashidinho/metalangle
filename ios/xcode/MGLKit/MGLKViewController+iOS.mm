@@ -12,7 +12,6 @@
 {
     NSLog(@"MGLKViewController viewDidLoad");
     [super viewDidLoad];
-    [self resume];
 }
 
 - (void)setPreferredFramesPerSecond:(NSInteger)preferredFramesPerSecond
