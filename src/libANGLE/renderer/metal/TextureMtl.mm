@@ -1028,7 +1028,7 @@ angle::Result TextureMtl::setSubImageImpl(const gl::Context *context,
     {
         // area must be the whole mip level
         sourceRowPitch   = 0;
-        gl::Extents size = image->size(index);
+        gl::Extents size = image->size();
         if (area.x != 0 || area.y != 0 || area.width != size.width || area.height != size.height)
         {
             ANGLE_MTL_CHECK(contextMtl, false, GL_INVALID_OPERATION);
