@@ -167,6 +167,10 @@ class TextureMtl : public TextureImpl
     angle::Result checkForEmulatedChannels(const gl::Context *context,
                                            const mtl::Format &mtlFormat,
                                            const mtl::TextureRef &texture);
+    int getNativeLevel(const gl::ImageIndex &imageIndex) const;
+    mtl::TextureRef &getImage(const gl::ImageIndex &imageIndex);
+    RenderTargetMtl &getRenderTarget(const gl::ImageIndex &imageIndex);
+    mtl::TextureRef &getImplicitMSTexture(const gl::ImageIndex &imageIndex);
 
     // If levels = 0, this function will create full mipmaps texture.
     angle::Result setStorageImpl(const gl::Context *context,
@@ -214,14 +218,26 @@ class TextureMtl : public TextureImpl
                                   const gl::InternalFormat &internalFormat,
                                   gl::Framebuffer *source);
 
+    angle::Result setPerSliceSubImage(const gl::Context *context,
+                                      int slice,
+                                      const MTLRegion &mtlArea,
+                                      const gl::InternalFormat &internalFormat,
+                                      const angle::Format &pixelsFormat,
+                                      size_t pixelsRowPitch,
+                                      size_t pixelsDepthPitch,
+                                      const uint8_t *pixels,
+                                      const mtl::TextureRef &image);
+
     // Convert pixels to suported format before uploading to texture
-    angle::Result convertAndSetSubImage(const gl::Context *context,
-                                        const gl::ImageIndex &index,
-                                        const MTLRegion &mtlArea,
-                                        const gl::InternalFormat &internalFormat,
-                                        const angle::Format &pixelsFormat,
-                                        size_t pixelsRowPitch,
-                                        const uint8_t *pixels);
+    angle::Result convertAndSetPerSliceSubImage(const gl::Context *context,
+                                                int slice,
+                                                const MTLRegion &mtlArea,
+                                                const gl::InternalFormat &internalFormat,
+                                                const angle::Format &pixelsFormat,
+                                                size_t pixelsRowPitch,
+                                                size_t pixelsDepthPitch,
+                                                const uint8_t *pixels,
+                                                const mtl::TextureRef &image);
 
     angle::Result generateMipmapCPU(const gl::Context *context);
 
@@ -230,13 +246,22 @@ class TextureMtl : public TextureImpl
     mtl::TextureRef mNativeTexture;
     id<MTLSamplerState> mMetalSamplerState = nil;
 
-    // Full mipmap views of texture at each slice/cube face:
-    std::vector<mtl::TextureRef> mLayeredTextureViews;
+    // Number of slices
+    uint32_t mSlices = 1;
 
     // Stored images array defined by glTexImage/glCopy*.
     // Once the images array is complete, they will be transferred to real texture object.
+    // NOTE:
+    //  - The second dimension is indexed by configured base level + actual native level
+    //  - For Cube map, there will be at most 6 entries in the map table, one for each face. This is
+    //  because the Cube map's image is defined per face & per level.
+    //  - For other texture types, there will be only one entry in the map table. All other textures
+    //  except Cube map has texture image defined per level (all slices included).
     std::map<int, gl::TexLevelArray<mtl::TextureRef>> mTexImages;
-    std::map<int, gl::TexLevelArray<RenderTargetMtl>> mTexImageRenderTargets;
+
+    // NOTE: mPerLayerRenderTargets & mImplicitMSTextures's 2nd dimension is indexed by native level
+    // (not offset by configured base level)
+    std::map<int, gl::TexLevelArray<RenderTargetMtl>> mPerLayerRenderTargets;
     std::map<int, gl::TexLevelArray<mtl::TextureRef>> mImplicitMSTextures;
 
     bool mIsPow2 = false;

@@ -177,6 +177,64 @@ angle::Result Texture::Make2DMSTexture(ContextMtl *context,
 }
 
 /** static */
+angle::Result Texture::Make2DArrayTexture(ContextMtl *context,
+                                          const Format &format,
+                                          uint32_t width,
+                                          uint32_t height,
+                                          uint32_t mips,
+                                          uint32_t arrayLength,
+                                          bool renderTargetOnly,
+                                          bool allowFormatView,
+                                          TextureRef *refOut)
+{
+    ANGLE_MTL_OBJC_SCOPE
+    {
+        // Use texture2DDescriptorWithPixelFormat to calculate full range mipmap range:
+        MTLTextureDescriptor *desc =
+            [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:format.metalFormat
+                                                               width:width
+                                                              height:height
+                                                           mipmapped:mips == 0 || mips > 1];
+
+        desc.textureType = MTLTextureType2DArray;
+        desc.arrayLength = arrayLength;
+
+        return MakeTexture(context, format, desc, mips, renderTargetOnly, allowFormatView, refOut);
+    }  // ANGLE_MTL_OBJC_SCOPE
+}
+
+/** static */
+angle::Result Texture::Make3DTexture(ContextMtl *context,
+                                     const Format &format,
+                                     uint32_t width,
+                                     uint32_t height,
+                                     uint32_t depth,
+                                     uint32_t mips,
+                                     bool renderTargetOnly,
+                                     bool allowFormatView,
+                                     TextureRef *refOut)
+{
+    ANGLE_MTL_OBJC_SCOPE
+    {
+        // Use texture2DDescriptorWithPixelFormat to calculate full range mipmap range:
+        uint32_t maxDimen = std::max(width, height);
+        maxDimen          = std::max(maxDimen, depth);
+        MTLTextureDescriptor *desc =
+            [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:format.metalFormat
+                                                               width:maxDimen
+                                                              height:maxDimen
+                                                           mipmapped:mips == 0 || mips > 1];
+
+        desc.textureType = MTLTextureType3D;
+        desc.width       = width;
+        desc.height      = height;
+        desc.depth       = depth;
+
+        return MakeTexture(context, format, desc, mips, renderTargetOnly, allowFormatView, refOut);
+    }  // ANGLE_MTL_OBJC_SCOPE
+}
+
+/** static */
 angle::Result Texture::MakeTexture(ContextMtl *context,
                                    const Format &mtlFormat,
                                    MTLTextureDescriptor *desc,
@@ -274,7 +332,7 @@ Texture::Texture(Texture *original, MTLPixelFormat format)
     }
 }
 
-Texture::Texture(Texture *original, MTLTextureType type, NSRange mipmapLevelRange, uint32_t slice)
+Texture::Texture(Texture *original, MTLTextureType type, NSRange mipmapLevelRange, NSRange slices)
     : Resource(original),
       mColorWritableMask(original->mColorWritableMask)  // Share color write mask property
 {
@@ -283,7 +341,7 @@ Texture::Texture(Texture *original, MTLTextureType type, NSRange mipmapLevelRang
         auto view = [original->get() newTextureViewWithPixelFormat:original->pixelFormat()
                                                        textureType:type
                                                             levels:mipmapLevelRange
-                                                            slices:NSMakeRange(slice, 1)];
+                                                            slices:slices];
 
         set([view ANGLE_MTL_AUTORELEASE]);
     }
@@ -321,11 +379,22 @@ bool Texture::supportFormatView() const
 }
 
 void Texture::replaceRegion(ContextMtl *context,
-                            MTLRegion region,
+                            const MTLRegion &region,
                             uint32_t mipmapLevel,
                             uint32_t slice,
                             const uint8_t *data,
                             size_t bytesPerRow)
+{
+    replaceRegion(context, region, mipmapLevel, slice, data, bytesPerRow, 0);
+}
+
+void Texture::replaceRegion(ContextMtl *context,
+                            const MTLRegion &region,
+                            uint32_t mipmapLevel,
+                            uint32_t slice,
+                            const uint8_t *data,
+                            size_t bytesPerRow,
+                            size_t bytesPer2DImage)
 {
     if (mipmapLevel >= this->mipmapLevels())
     {
@@ -346,18 +415,25 @@ void Texture::replaceRegion(ContextMtl *context,
 
     cmdQueue.ensureResourceReadyForCPU(this);
 
+    if (textureType() != MTLTextureType3D)
+    {
+        bytesPer2DImage = 0;
+    }
+
     [get() replaceRegion:region
              mipmapLevel:mipmapLevel
                    slice:slice
                withBytes:data
              bytesPerRow:bytesPerRow
-           bytesPerImage:0];
+           bytesPerImage:bytesPer2DImage];
 }
 
 void Texture::getBytes(ContextMtl *context,
                        size_t bytesPerRow,
-                       MTLRegion region,
+                       size_t bytesPer2DInage,
+                       const MTLRegion &region,
                        uint32_t mipmapLevel,
+                       uint32_t slice,
                        uint8_t *dataOut)
 {
     ASSERT(isCPUAccessible());
@@ -374,7 +450,12 @@ void Texture::getBytes(ContextMtl *context,
 
     cmdQueue.ensureResourceReadyForCPU(this);
 
-    [get() getBytes:dataOut bytesPerRow:bytesPerRow fromRegion:region mipmapLevel:mipmapLevel];
+    [get() getBytes:dataOut
+          bytesPerRow:bytesPerRow
+        bytesPerImage:bytesPer2DInage
+           fromRegion:region
+          mipmapLevel:mipmapLevel
+                slice:slice];
 }
 
 TextureRef Texture::createCubeFaceView(uint32_t face)
@@ -384,8 +465,8 @@ TextureRef Texture::createCubeFaceView(uint32_t face)
         switch (textureType())
         {
             case MTLTextureTypeCube:
-                return TextureRef(
-                    new Texture(this, MTLTextureType2D, NSMakeRange(0, mipmapLevels()), face));
+                return TextureRef(new Texture(
+                    this, MTLTextureType2D, NSMakeRange(0, mipmapLevels()), NSMakeRange(face, 1)));
             default:
                 UNREACHABLE();
                 return nullptr;
@@ -401,12 +482,22 @@ TextureRef Texture::createSliceMipView(uint32_t slice, uint32_t level)
         {
             case MTLTextureTypeCube:
             case MTLTextureType2D:
-                return TextureRef(
-                    new Texture(this, MTLTextureType2D, NSMakeRange(level, 1), slice));
+            case MTLTextureType2DArray:
+                return TextureRef(new Texture(this, MTLTextureType2D, NSMakeRange(level, 1),
+                                              NSMakeRange(slice, 1)));
             default:
                 UNREACHABLE();
                 return nullptr;
         }
+    }
+}
+
+TextureRef Texture::createMipView(uint32_t level)
+{
+    ANGLE_MTL_OBJC_SCOPE
+    {
+        return TextureRef(
+            new Texture(this, textureType(), NSMakeRange(level, 1), NSMakeRange(0, arrayLength())));
     }
 }
 
@@ -431,6 +522,11 @@ uint32_t Texture::mipmapLevels() const
     return static_cast<uint32_t>(get().mipmapLevelCount);
 }
 
+uint32_t Texture::arrayLength() const
+{
+    return static_cast<uint32_t>(get().arrayLength);
+}
+
 uint32_t Texture::width(uint32_t level) const
 {
     return static_cast<uint32_t>(GetMipSize(get().width, level));
@@ -441,23 +537,32 @@ uint32_t Texture::height(uint32_t level) const
     return static_cast<uint32_t>(GetMipSize(get().height, level));
 }
 
+uint32_t Texture::depth(uint32_t level) const
+{
+    return static_cast<uint32_t>(GetMipSize(get().depth, level));
+}
+
 gl::Extents Texture::size(uint32_t level) const
 {
     gl::Extents re;
 
     re.width  = width(level);
     re.height = height(level);
-    re.depth  = static_cast<uint32_t>(GetMipSize(get().depth, level));
+    re.depth  = depth(level);
 
     return re;
 }
 
 gl::Extents Texture::size(const gl::ImageIndex &index) const
 {
-    // Only support these texture types for now
-    ASSERT(!get() || textureType() == MTLTextureType2D || textureType() == MTLTextureTypeCube);
+    gl::Extents extents = size(index.getLevelIndex());
 
-    return size(index.getLevelIndex());
+    if (index.hasLayer())
+    {
+        extents.depth = 1;
+    }
+
+    return extents;
 }
 
 uint32_t Texture::samples() const

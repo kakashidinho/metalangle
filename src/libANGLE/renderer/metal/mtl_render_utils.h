@@ -15,6 +15,7 @@
 #include "libANGLE/angletypes.h"
 #include "libANGLE/renderer/metal/mtl_command_buffer.h"
 #include "libANGLE/renderer/metal/mtl_state_cache.h"
+#include "libANGLE/renderer/metal/shaders/constants.h"
 
 namespace rx
 {
@@ -83,6 +84,7 @@ struct BlitParams
 
     TextureRef src;
     uint32_t srcLevel = 0;
+    uint32_t srcLayer = 0;
     gl::Rectangle srcRect;
     bool srcYFlipped = false;  // source texture has data flipped in Y direction
     bool unpackFlipX = false;  // flip texture data copying process in X direction
@@ -102,6 +104,8 @@ struct ColorBlitParams : public BlitParams
 struct DepthStencilBlitParams : public BlitParams
 {
     TextureRef srcStencil;
+    uint32_t srcStencilLevel = 0;
+    uint32_t srcStencilLayer = 0;
 };
 
 struct TriFanFromArrayParams
@@ -246,16 +250,19 @@ class RenderUtils : public Context, angle::NonCopyable
 
     RenderPipelineCache mClearRenderPipelineCache[kMaxRenderTargets + 1];
     // First array dimension: number of outputs.
-    // Second array dimenstion: source texture is multisample or not
-    using RenderPipelineCacheArray =
-        std::array<std::array<RenderPipelineCache, 2>, kMaxRenderTargets>;
-    RenderPipelineCacheArray mBlitRenderPipelineCache;
-    RenderPipelineCacheArray mBlitPremultiplyAlphaRenderPipelineCache;
-    RenderPipelineCacheArray mBlitUnmultiplyAlphaRenderPipelineCache;
+    // Second array dimension: source texture type (2d, ms, array, 3d, etc)
+    using ColorBlitRenderPipelineCacheArray =
+        std::array<std::array<RenderPipelineCache, mtl_shader::kTextureTypeCount>,
+                   kMaxRenderTargets>;
+    ColorBlitRenderPipelineCacheArray mBlitRenderPipelineCache;
+    ColorBlitRenderPipelineCacheArray mBlitPremultiplyAlphaRenderPipelineCache;
+    ColorBlitRenderPipelineCacheArray mBlitUnmultiplyAlphaRenderPipelineCache;
 
-    RenderPipelineCache mDepthBlitRenderPipelineCache;
-    RenderPipelineCache mStencilBlitRenderPipelineCache;
-    RenderPipelineCache mDepthStencilBlitRenderPipelineCache;
+    std::array<RenderPipelineCache, mtl_shader::kTextureTypeCount> mDepthBlitRenderPipelineCache;
+    std::array<RenderPipelineCache, mtl_shader::kTextureTypeCount> mStencilBlitRenderPipelineCache;
+    std::array<std::array<RenderPipelineCache, mtl_shader::kTextureTypeCount>,
+               mtl_shader::kTextureTypeCount>
+        mDepthStencilBlitRenderPipelineCache;
 
     std::unordered_map<IndexConversionPipelineCacheKey, AutoObjCPtr<id<MTLComputePipelineState>>>
         mIndexConversionPipelineCaches;

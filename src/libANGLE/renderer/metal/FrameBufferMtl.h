@@ -168,6 +168,7 @@ class FramebufferMtl : public FramebufferImpl
                                                  bool readStencil,
                                                  mtl::TextureRef *readableView,
                                                  uint32_t *readableViewLevel,
+                                                 uint32_t *readableViewLayer,
                                                  gl::Rectangle *readableViewArea);
 
     // NOTE: we cannot use RenderTargetCache here because it doesn't support separate

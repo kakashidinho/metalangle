@@ -26,8 +26,6 @@ angle::Result InitializeTextureContents(const gl::Context *context,
                                         const gl::ImageIndex &index)
 {
     ASSERT(texture && texture->valid());
-    ASSERT(texture->textureType() == MTLTextureType2D ||
-           texture->textureType() == MTLTextureTypeCube);
     ContextMtl *contextMtl = mtl::GetImpl(context);
 
     const gl::InternalFormat &intendedInternalFormat = textureObjFormat.intendedInternalFormat();
@@ -64,15 +62,72 @@ angle::Result InitializeTextureContents(const gl::Context *context,
 
     auto mtlRowRegion = MTLRegionMake2D(0, 0, size.width, 1);
 
-    for (NSUInteger r = 0; r < static_cast<NSUInteger>(size.height); ++r)
+    GLint layer      = 0;
+    GLint startDepth = 0;
+    if (index.hasLayer())
     {
-        mtlRowRegion.origin.y = r;
-
-        // Upload to texture
-        texture->replaceRegion(contextMtl, mtlRowRegion, index.getLevelIndex(),
-                               index.hasLayer() ? index.cubeMapFaceIndex() : 0,
-                               conversionRow.data(), dstRowPitch);
+        switch (index.getType())
+        {
+            case gl::TextureType::CubeMap:
+                layer = index.cubeMapFaceIndex();
+                break;
+            case gl::TextureType::_2DArray:
+                layer = index.getLayerIndex();
+                break;
+            case gl::TextureType::_3D:
+                startDepth = index.getLayerIndex();
+                break;
+            default:
+                UNREACHABLE();
+                break;
+        }
     }
+
+    for (NSUInteger d = 0; d < static_cast<NSUInteger>(size.depth); ++d)
+    {
+        mtlRowRegion.origin.z = d + startDepth;
+        for (NSUInteger r = 0; r < static_cast<NSUInteger>(size.height); ++r)
+        {
+            mtlRowRegion.origin.y = r;
+
+            // Upload to texture
+            texture->replaceRegion(contextMtl, mtlRowRegion, index.getLevelIndex(), layer,
+                                   conversionRow.data(), dstRowPitch);
+        }
+    }
+
+    return angle::Result::Continue;
+}
+
+angle::Result ReadTexturePerSliceBytes(const gl::Context *context,
+                                       const TextureRef &texture,
+                                       size_t bytesPerRow,
+                                       const gl::Rectangle &fromRegion,
+                                       uint32_t mipLevel,
+                                       uint32_t sliceOrDepth,
+                                       uint8_t *dataOut)
+{
+    ASSERT(texture && texture->valid());
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+    GLint layer            = 0;
+    GLint startDepth       = 0;
+    switch (texture->textureType())
+    {
+        case MTLTextureTypeCube:
+        case MTLTextureType2DArray:
+            layer = sliceOrDepth;
+            break;
+        case MTLTextureType3D:
+            startDepth = sliceOrDepth;
+            break;
+        default:
+            break;
+    }
+
+    MTLRegion mtlRegion = MTLRegionMake3D(fromRegion.x, fromRegion.y, startDepth, fromRegion.width,
+                                          fromRegion.height, 1);
+
+    texture->getBytes(contextMtl, bytesPerRow, 0, mtlRegion, mipLevel, layer, dataOut);
 
     return angle::Result::Continue;
 }

@@ -355,21 +355,23 @@ angle::Result FramebufferMtl::blit(const gl::Context *context,
         {
             ANGLE_TRY(getReadableViewForRenderTarget(context, *depthRt, clippedSourceArea, false,
                                                      /** readableView */ &dsBlitParams.src,
-                                                     &dsBlitParams.srcLevel,
+                                                     &dsBlitParams.srcLevel, &dsBlitParams.srcLayer,
                                                      &dsBlitParams.srcRect));
             if (sameTexture && blitStencilBuffer)
             {
                 // If texture is packed depth stencil, we can skip the stencil view copying step.
-                dsBlitParams.srcStencil = dsBlitParams.src->getStencilView();
+                dsBlitParams.srcStencil      = dsBlitParams.src->getStencilView();
+                dsBlitParams.srcStencilLevel = dsBlitParams.srcLevel;
+                dsBlitParams.srcStencilLayer = dsBlitParams.srcLayer;
             }
         }
 
         if (blitStencilBuffer && !dsBlitParams.srcStencil)
         {
-            ANGLE_TRY(getReadableViewForRenderTarget(context, *stencilRt, clippedSourceArea, true,
-                                                     /** readableView */ &dsBlitParams.srcStencil,
-                                                     &dsBlitParams.srcLevel,
-                                                     &dsBlitParams.srcRect));
+            ANGLE_TRY(getReadableViewForRenderTarget(
+                context, *stencilRt, clippedSourceArea, true,
+                /** readableView */ &dsBlitParams.srcStencil, &dsBlitParams.srcStencilLevel,
+                &dsBlitParams.srcStencilLayer, &dsBlitParams.srcRect));
         }
 
         renderEncoder = ensureRenderPassStarted(context);
@@ -392,6 +394,7 @@ angle::Result FramebufferMtl::blit(const gl::Context *context,
 
         colorBlitParams.src      = srcColorRt->getTexture();
         colorBlitParams.srcLevel = srcColorRt->getLevelIndex();
+        colorBlitParams.srcLayer = srcColorRt->getLayerIndex();
         colorBlitParams.srcRect  = clippedSourceArea;
 
         colorBlitParams.blitColorMask  = contextMtl->getColorMask();
@@ -704,6 +707,7 @@ angle::Result FramebufferMtl::getReadableViewForRenderTarget(const gl::Context *
                                                              bool readStencil,
                                                              mtl::TextureRef *readableView,
                                                              uint32_t *readableViewLevel,
+                                                             uint32_t *readableViewLayer,
                                                              gl::Rectangle *readableViewArea)
 {
     ContextMtl *contextMtl     = mtl::GetImpl(context);
@@ -734,6 +738,7 @@ angle::Result FramebufferMtl::getReadableViewForRenderTarget(const gl::Context *
         // Texture is shader readable, just use it directly
         *readableView      = srcTexture;
         *readableViewLevel = level;
+        *readableViewLayer = slice;
         *readableViewArea  = readArea;
     }
     else
@@ -753,6 +758,7 @@ angle::Result FramebufferMtl::getReadableViewForRenderTarget(const gl::Context *
         }
 
         *readableViewLevel = 0;
+        *readableViewLayer = 0;
         *readableViewArea  = gl::Rectangle(0, 0, readArea.width, readArea.height);
     }
 
@@ -1096,13 +1102,12 @@ angle::Result FramebufferMtl::readPixelsImpl(const gl::Context *context,
     const mtl::Format &readFormat        = *renderTarget->getFormat();
     const angle::Format &readAngleFormat = readFormat.actualAngleFormat();
 
-    // NOTE(hqle): resolve MSAA texture before readback
     int srcRowPitch = area.width * readAngleFormat.pixelBytes;
     angle::MemoryBuffer readPixelRowBuffer;
     ANGLE_CHECK_GL_ALLOC(contextMtl, readPixelRowBuffer.resize(srcRowPitch));
 
-    auto packPixelsRowParams  = packPixelsParams;
-    MTLRegion mtlSrcRowRegion = MTLRegionMake2D(area.x, area.y, area.width, 1);
+    auto packPixelsRowParams = packPixelsParams;
+    gl::Rectangle srcRowRegion(area.x, area.y, area.width, 1);
 
     int rowOffset = packPixelsParams.reverseRowOrder ? -1 : 1;
     int startRow  = packPixelsParams.reverseRowOrder ? (area.y1() - 1) : area.y;
@@ -1113,13 +1118,13 @@ angle::Result FramebufferMtl::readPixelsImpl(const gl::Context *context,
     for (int r = startRow, i = 0; i < area.height;
          ++i, r += rowOffset, pixels += packPixelsRowParams.outputPitch)
     {
-        mtlSrcRowRegion.origin.y   = r;
+        srcRowRegion.y             = r;
         packPixelsRowParams.area.y = packPixelsParams.area.y + i;
 
         // Read the pixels data to the row buffer
-        texture->getBytes(contextMtl, srcRowPitch, mtlSrcRowRegion,
-                          static_cast<uint32_t>(renderTarget->getLevelIndex()),
-                          readPixelRowBuffer.data());
+        ANGLE_TRY(mtl::ReadTexturePerSliceBytes(
+            context, texture, srcRowPitch, srcRowRegion, renderTarget->getLevelIndex(),
+            renderTarget->getLayerIndex(), readPixelRowBuffer.data()));
 
         // Convert to destination format
         PackPixels(packPixelsRowParams, readAngleFormat, srcRowPitch, readPixelRowBuffer.data(),

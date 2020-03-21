@@ -23,6 +23,9 @@ namespace rx
 // This is a very light-weight class that does not own to the resources it points to.
 // It's meant only to copy across some information from a FramebufferAttachment to the
 // business rendering logic.
+// NOTE: render target's layer index represents:
+//  - Slice index if the texture is Cube map/2D array.
+//  - Depth index if the texture is 3D.
 class RenderTargetMtl final : public FramebufferAttachmentRenderTarget
 {
   public:
@@ -51,7 +54,7 @@ class RenderTargetMtl final : public FramebufferAttachmentRenderTarget
         return mTextureRenderTargetInfo->getImplicitMSTextureRef();
     }
     uint32_t getLevelIndex() const { return mTextureRenderTargetInfo->level; }
-    uint32_t getLayerIndex() const { return mTextureRenderTargetInfo->slice; }
+    uint32_t getLayerIndex() const { return mTextureRenderTargetInfo->sliceOrDepth; }
     uint32_t getRenderSamples() const { return mTextureRenderTargetInfo->getRenderSamples(); }
     const mtl::Format *getFormat() const { return mFormat; }
 

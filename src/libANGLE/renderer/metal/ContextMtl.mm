@@ -225,8 +225,9 @@ angle::Result ContextMtl::ensureIncompleteTexturesCreated(const gl::Context *con
 {
     if (!mIncompleteTexturesInitialized)
     {
-        constexpr gl::TextureType supportedTextureTypes[] = {gl::TextureType::_2D,
-                                                             gl::TextureType::CubeMap};
+        constexpr gl::TextureType supportedTextureTypes[] = {
+            gl::TextureType::_2D, gl::TextureType::_2DArray, gl::TextureType::_3D,
+            gl::TextureType::CubeMap};
         for (auto texType : supportedTextureTypes)
         {
             gl::Texture *texture;

@@ -187,15 +187,31 @@ void BaseRenderPassAttachmentDescToObjC(MTLRenderPassAttachmentDescriptor *dst,
         dst.slice          = 0;
         dst.resolveTexture = ToObjC(src.texture());
         dst.resolveLevel   = src.level();
-        dst.resolveSlice   = src.slice();
-
-        ASSERT(dst.texture);
+        if (dst.resolveTexture.textureType == MTLTextureType3D)
+        {
+            dst.resolveDepthPlane = src.sliceOrDepth();
+            dst.resolveSlice      = 0;
+        }
+        else
+        {
+            dst.resolveSlice      = src.sliceOrDepth();
+            dst.resolveDepthPlane = 0;
+        }
     }
     else
     {
-        dst.texture        = ToObjC(src.texture());
-        dst.level          = src.level();
-        dst.slice          = src.slice();
+        dst.texture = ToObjC(src.texture());
+        dst.level   = src.level();
+        if (dst.texture.textureType == MTLTextureType3D)
+        {
+            dst.depthPlane = src.sliceOrDepth();
+            dst.slice      = 0;
+        }
+        else
+        {
+            dst.slice      = src.sliceOrDepth();
+            dst.depthPlane = 0;
+        }
         dst.resolveTexture = nil;
         dst.resolveLevel   = 0;
         dst.resolveSlice   = 0;
@@ -670,7 +686,8 @@ bool RenderPassAttachmentDesc::equalIgnoreLoadStoreOptions(
     const RenderPassAttachmentDesc &other) const
 {
     return renderTarget == other.renderTarget ||
-           (texture() == other.texture() && level() == other.level() && slice() == other.slice());
+           (texture() == other.texture() && level() == other.level() &&
+            sliceOrDepth() == other.sliceOrDepth());
 }
 
 bool RenderPassAttachmentDesc::operator==(const RenderPassAttachmentDesc &other) const
@@ -696,6 +713,9 @@ void RenderPassDesc::convertToMetalDesc(MTLRenderPassDescriptor *objCDesc) const
         {
             // Inactive render target
             objCDesc.colorAttachments[i].texture     = nil;
+            objCDesc.colorAttachments[i].level       = 0;
+            objCDesc.colorAttachments[i].slice       = 0;
+            objCDesc.colorAttachments[i].depthPlane  = 0;
             objCDesc.colorAttachments[i].loadAction  = MTLLoadActionDontCare;
             objCDesc.colorAttachments[i].storeAction = MTLStoreActionDontCare;
         }

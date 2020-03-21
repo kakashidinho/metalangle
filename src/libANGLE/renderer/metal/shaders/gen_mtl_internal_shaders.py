@@ -127,7 +127,7 @@ def main():
     src_files = ['blit.metal', 'clear.metal', 'gen_indices.metal', 'misc.metal']
     # auto_script parameters.
     if len(sys.argv) > 1:
-        inputs = src_files + [ 'common.h' ]
+        inputs = src_files + [ 'common.h', 'constants.h' ]
         outputs = ['compiled/mtl_default_shaders.inc']
 
         if sys.argv[1] == 'inputs':

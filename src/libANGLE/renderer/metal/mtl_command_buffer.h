@@ -421,6 +421,15 @@ class BlitCommandEncoder final : public CommandEncoder
                                     uint32_t dstLevel,
                                     MTLOrigin dstOrigin);
 
+    BlitCommandEncoder &copyTexture(const TextureRef &src,
+                                    uint32_t srcSlice,
+                                    uint32_t srcLevel,
+                                    const TextureRef &dst,
+                                    uint32_t dstSlice,
+                                    uint32_t dstLevel,
+                                    uint32_t sliceCount,
+                                    uint32_t levelCount);
+
     BlitCommandEncoder &fillBuffer(const BufferRef &buffer, NSRange range, uint8_t value);
 
     BlitCommandEncoder &generateMipmapsForTexture(const TextureRef &texture);

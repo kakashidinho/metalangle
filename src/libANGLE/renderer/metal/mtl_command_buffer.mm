@@ -1542,6 +1542,66 @@ BlitCommandEncoder &BlitCommandEncoder::copyTexture(const TextureRef &src,
     return *this;
 }
 
+BlitCommandEncoder &BlitCommandEncoder::copyTexture(const TextureRef &src,
+                                                    uint32_t srcStartSlice,
+                                                    uint32_t srcStartLevel,
+                                                    const TextureRef &dst,
+                                                    uint32_t dstStartSlice,
+                                                    uint32_t dstStartLevel,
+                                                    uint32_t sliceCount,
+                                                    uint32_t levelCount)
+{
+    if (!src || !dst)
+    {
+        return *this;
+    }
+
+    cmdBuffer().setReadDependency(src);
+    cmdBuffer().setWriteDependency(dst);
+
+#if defined(__IPHONE_13_0) || defined(__MAC_10_15)
+    if (ANGLE_APPLE_AVAILABLE_XCI(10.15, 13.0, 13.0))
+    {
+        [get() copyFromTexture:src->get()
+                   sourceSlice:srcStartSlice
+                   sourceLevel:srcStartLevel
+                     toTexture:dst->get()
+              destinationSlice:dstStartSlice
+              destinationLevel:dstStartLevel
+                    sliceCount:sliceCount
+                    levelCount:levelCount];
+    }
+    else
+#endif
+    {
+        MTLOrigin origin = MTLOriginMake(0, 0, 0);
+        for (uint32_t slice = 0; slice < sliceCount; ++slice)
+        {
+            uint32_t srcSlice = srcStartSlice + slice;
+            uint32_t dstSlice = dstStartSlice + slice;
+            for (uint32_t level = 0; level < levelCount; ++level)
+            {
+                uint32_t srcLevel = srcStartLevel + level;
+                uint32_t dstLevel = dstStartLevel + level;
+                MTLSize srcSize =
+                    MTLSizeMake(src->width(srcLevel), src->height(srcLevel), src->depth(srcLevel));
+
+                [get() copyFromTexture:src->get()
+                           sourceSlice:srcSlice
+                           sourceLevel:srcLevel
+                          sourceOrigin:origin
+                            sourceSize:srcSize
+                             toTexture:dst->get()
+                      destinationSlice:dstSlice
+                      destinationLevel:dstLevel
+                     destinationOrigin:origin];
+            }
+        }
+    }
+
+    return *this;
+}
+
 BlitCommandEncoder &BlitCommandEncoder::fillBuffer(const BufferRef &buffer,
                                                    NSRange range,
                                                    uint8_t value)

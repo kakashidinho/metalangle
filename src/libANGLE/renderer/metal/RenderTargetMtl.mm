@@ -43,7 +43,7 @@ void RenderTargetMtl::set(const mtl::TextureRef &texture,
     mTextureRenderTargetInfo->texture           = texture;
     mTextureRenderTargetInfo->implicitMSTexture = implicitMSTexture;
     mTextureRenderTargetInfo->level             = level;
-    mTextureRenderTargetInfo->slice             = layer;
+    mTextureRenderTargetInfo->sliceOrDepth      = layer;
     mFormat                                     = &format;
 }
 
@@ -61,9 +61,9 @@ void RenderTargetMtl::reset()
 {
     mTextureRenderTargetInfo->texture.reset();
     mTextureRenderTargetInfo->implicitMSTexture.reset();
-    mTextureRenderTargetInfo->level = 0;
-    mTextureRenderTargetInfo->slice = 0;
-    mFormat                         = nullptr;
+    mTextureRenderTargetInfo->level        = 0;
+    mTextureRenderTargetInfo->sliceOrDepth = 0;
+    mFormat                                = nullptr;
 }
 
 void RenderTargetMtl::toRenderPassAttachmentDesc(mtl::RenderPassAttachmentDesc *rpaDescOut) const

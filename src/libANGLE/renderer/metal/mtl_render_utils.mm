@@ -31,6 +31,10 @@ namespace
 #define SOURCE_IDX_IS_U8_CONSTANT_NAME @"kSourceIndexIsU8"
 #define SOURCE_IDX_IS_U16_CONSTANT_NAME @"kSourceIndexIsU16"
 #define SOURCE_IDX_IS_U32_CONSTANT_NAME @"kSourceIndexIsU32"
+#define PREMULTIPLY_ALPHA_CONSTANT_NAME @"kPremultiplyAlpha"
+#define UNMULTIPLY_ALPHA_CONSTANT_NAME @"kUnmultiplyAlpha"
+#define SOURCE_TEXTURE_TYPE_CONSTANT_NAME @"kSourceTextureType"
+#define SOURCE_TEXTURE2_TYPE_CONSTANT_NAME @"kSourceTexture2Type"
 
 // See libANGLE/renderer/metal/shaders/clear.metal
 struct ClearParamsUniform
@@ -46,10 +50,13 @@ struct BlitParamsUniform
     // 0: lower left, 1: lower right, 2: upper left
     float srcTexCoords[3][2];
     int srcLevel         = 0;
-    uint8_t srcLuminance = 0;  // source texture is luminance texture
+    int srcLayer         = 0;
+    int srcLevel2        = 0;
+    int srcLayer2        = 0;
     uint8_t dstFlipX     = 0;
     uint8_t dstFlipY     = 0;
     uint8_t dstLuminance = 0;  // dest texture is luminace
+    float padding[2];
 };
 
 // See libANGLE/renderer/metal/shaders/genIndices.metal
@@ -147,6 +154,31 @@ void GetFirstLastIndicesFromClientElements(GLsizei count,
     memcpy(lastOut, indices + count - 1, sizeof(indices[0]));
 }
 
+int GetShaderTextureType(const TextureRef &texture)
+{
+    if (!texture)
+    {
+        return mtl_shader::kTextureType2D;
+    }
+    switch (texture->textureType())
+    {
+        case MTLTextureType2D:
+            return mtl_shader::kTextureType2D;
+        case MTLTextureType2DArray:
+            return mtl_shader::kTextureType2DArray;
+        case MTLTextureType2DMultisample:
+            return mtl_shader::kTextureType2DMultisample;
+        case MTLTextureTypeCube:
+            return mtl_shader::kTextureTypeCube;
+        case MTLTextureType3D:
+            return mtl_shader::kTextureType3D;
+        default:
+            UNREACHABLE();
+    }
+
+    return 0;
+}
+
 }  // namespace
 
 bool IndexConversionPipelineCacheKey::operator==(const IndexConversionPipelineCacheKey &other) const
@@ -181,11 +213,33 @@ void RenderUtils::onDestroy()
     }
     for (uint32_t i = 0; i < kMaxRenderTargets; ++i)
     {
-        for (int ms = 0; ms < 2; ++ms)
+        for (RenderPipelineCache &cache : mBlitRenderPipelineCache[i])
         {
-            mBlitRenderPipelineCache[i][ms].clear();
-            mBlitPremultiplyAlphaRenderPipelineCache[i][ms].clear();
-            mBlitUnmultiplyAlphaRenderPipelineCache[i][ms].clear();
+            cache.clear();
+        }
+        for (RenderPipelineCache &cache : mBlitPremultiplyAlphaRenderPipelineCache[i])
+        {
+            cache.clear();
+        }
+        for (RenderPipelineCache &cache : mBlitUnmultiplyAlphaRenderPipelineCache[i])
+        {
+            cache.clear();
+        }
+    }
+    for (RenderPipelineCache &cache : mDepthBlitRenderPipelineCache)
+    {
+        cache.clear();
+    }
+    for (RenderPipelineCache &cache : mStencilBlitRenderPipelineCache)
+    {
+        cache.clear();
+    }
+    for (std::array<RenderPipelineCache, mtl_shader::kTextureTypeCount> &cacheArray :
+         mDepthStencilBlitRenderPipelineCache)
+    {
+        for (RenderPipelineCache &cache : cacheArray)
+        {
+            cache.clear();
         }
     }
 
@@ -260,7 +314,7 @@ void RenderUtils::initBlitResources()
         auto vertexShader  = [[shaderLib newFunctionWithName:@"blitVS"] ANGLE_MTL_AUTORELEASE];
         auto funcConstants = [[[MTLFunctionConstantValues alloc] init] ANGLE_MTL_AUTORELEASE];
 
-        RenderPipelineCacheArray *const pipelineCachePerTypePtr[] = {
+        ColorBlitRenderPipelineCacheArray *const pipelineCachePerTypePtr[] = {
             // Normal blit
             &mBlitRenderPipelineCache,
             // Blit premultiply-alpha
@@ -268,16 +322,24 @@ void RenderUtils::initBlitResources()
             // Blit unmultiply alpha
             &mBlitUnmultiplyAlphaRenderPipelineCache};
 
-        NSString *const fragmentShaderNames[][2] = {
-            // Normal blit
-            {@"blitFS", @"blitMultisampleFS"},
-            // Blit premultiply-alpha
-            {@"blitPremultiplyAlphaFS", @"blitMultisamplePremultiplyAlphaFS"},
-            // Blit unmultiply alpha
-            {@"blitUnmultiplyAlphaFS", @"blitMultisampleUnmultiplyAlphaFS"}};
+        BOOL multiplyAlphaFlags[][2] = {// premultiply, unmultiply
 
-        for (int type = 0; type < 3; ++type)
+                                        // Normal blit
+                                        {NO, NO},
+                                        // Blit premultiply-alpha
+                                        {YES, NO},
+                                        // Blit unmultiply alpha
+                                        {NO, YES}};
+
+        for (int alphaType = 0; alphaType < 3; ++alphaType)
         {
+            [funcConstants setConstantValue:&multiplyAlphaFlags[alphaType][0]
+                                       type:MTLDataTypeBool
+                                   withName:PREMULTIPLY_ALPHA_CONSTANT_NAME];
+            [funcConstants setConstantValue:&multiplyAlphaFlags[alphaType][1]
+                                       type:MTLDataTypeBool
+                                   withName:UNMULTIPLY_ALPHA_CONSTANT_NAME];
+
             // Create blit shader pipeline cache for each number of color outputs.
             // So blit k color outputs will use mBlitRenderPipelineCache[k-1] for example:
             for (uint32_t numOutputs = 1; numOutputs <= kMaxRenderTargets; ++numOutputs)
@@ -286,38 +348,78 @@ void RenderUtils::initBlitResources()
                 [funcConstants setConstantValue:&numOutputs
                                            type:MTLDataTypeUInt
                                        withName:NUM_COLOR_OUTPUTS_CONSTANT_NAME];
-                for (int multisample = 0; multisample <= 1; ++multisample)
+                // For each source color texture type
+                for (int textureType = 0; textureType < mtl_shader::kTextureTypeCount;
+                     ++textureType)
                 {
+                    [funcConstants setConstantValue:&textureType
+                                               type:MTLDataTypeInt
+                                           withName:SOURCE_TEXTURE_TYPE_CONSTANT_NAME];
+
                     RenderPipelineCache &pipelineCache =
-                        (*pipelineCachePerTypePtr)[type][numOutputs - 1][multisample];
+                        (*pipelineCachePerTypePtr)[alphaType][numOutputs - 1][textureType];
 
                     auto fragmentShader =
-                        [[shaderLib newFunctionWithName:fragmentShaderNames[type][multisample]
+                        [[shaderLib newFunctionWithName:@"blitFS"
                                          constantValues:funcConstants
                                                   error:&err] ANGLE_MTL_AUTORELEASE];
 
                     ASSERT(fragmentShader);
                     pipelineCache.setVertexShader(this, vertexShader);
                     pipelineCache.setFragmentShader(this, fragmentShader);
-                }  // for multisample
+
+                }  // for each source color texture type
             }      // for numOutputs
-        }          // for type
+        }          // for alphaType
 
         // Depth & stencil blit
-        mDepthBlitRenderPipelineCache.setVertexShader(this, vertexShader);
-        mDepthBlitRenderPipelineCache.setFragmentShader(
-            this, [[shaderLib newFunctionWithName:@"blitDepthFS"] ANGLE_MTL_AUTORELEASE]);
-
-        if (getDisplay()->getFeatures().hasStencilOutput.enabled)
+        [funcConstants reset];
+        for (int textureType = 0; textureType < mtl_shader::kTextureTypeCount; ++textureType)
         {
-            mStencilBlitRenderPipelineCache.setVertexShader(this, vertexShader);
-            mStencilBlitRenderPipelineCache.setFragmentShader(
-                this, [[shaderLib newFunctionWithName:@"blitStencilFS"] ANGLE_MTL_AUTORELEASE]);
+            // Depth blit
+            [funcConstants setConstantValue:&textureType
+                                       type:MTLDataTypeInt
+                                   withName:SOURCE_TEXTURE_TYPE_CONSTANT_NAME];
+            auto fragmentShader = [[shaderLib newFunctionWithName:@"blitDepthFS"
+                                                   constantValues:funcConstants
+                                                            error:&err] ANGLE_MTL_AUTORELEASE];
+            ASSERT(fragmentShader);
 
-            mDepthStencilBlitRenderPipelineCache.setVertexShader(this, vertexShader);
-            mDepthStencilBlitRenderPipelineCache.setFragmentShader(
-                this,
-                [[shaderLib newFunctionWithName:@"blitDepthStencilFS"] ANGLE_MTL_AUTORELEASE]);
+            mDepthBlitRenderPipelineCache[textureType].setVertexShader(this, vertexShader);
+            mDepthBlitRenderPipelineCache[textureType].setFragmentShader(this, fragmentShader);
+
+            if (!getDisplay()->getFeatures().hasStencilOutput.enabled)
+            {
+                continue;
+            }
+
+            // Stencil blit
+            [funcConstants setConstantValue:&textureType
+                                       type:MTLDataTypeInt
+                                   withName:SOURCE_TEXTURE2_TYPE_CONSTANT_NAME];
+            fragmentShader = [[shaderLib newFunctionWithName:@"blitStencilFS"
+                                              constantValues:funcConstants
+                                                       error:&err] ANGLE_MTL_AUTORELEASE];
+            ASSERT(fragmentShader);
+            mStencilBlitRenderPipelineCache[textureType].setVertexShader(this, vertexShader);
+            mStencilBlitRenderPipelineCache[textureType].setFragmentShader(this, fragmentShader);
+
+            for (int textureType2 = 0; textureType2 < mtl_shader::kTextureTypeCount; ++textureType2)
+            {
+                // Depth & stencil blit
+                [funcConstants setConstantValue:&textureType2
+                                           type:MTLDataTypeInt
+                                       withName:SOURCE_TEXTURE2_TYPE_CONSTANT_NAME];
+
+                fragmentShader = [[shaderLib newFunctionWithName:@"blitDepthStencilFS"
+                                                  constantValues:funcConstants
+                                                           error:&err] ANGLE_MTL_AUTORELEASE];
+                ASSERT(fragmentShader);
+                mDepthStencilBlitRenderPipelineCache[textureType][textureType2].setVertexShader(
+                    this, vertexShader);
+                mDepthStencilBlitRenderPipelineCache[textureType][textureType2].setFragmentShader(
+                    this, fragmentShader);
+            }
         }
     }
 }
@@ -642,19 +744,19 @@ id<MTLRenderPipelineState> RenderUtils::getColorBlitRenderPipelineState(
     pipelineDesc.inputPrimitiveTopology = kPrimitiveTopologyClassTriangle;
 
     RenderPipelineCache *pipelineCache;
-    uint32_t cacheIndex = renderPassDesc.numColorAttachments - 1;
-    int multisample     = params.src->samples() > 1 ? 1 : 0;
+    uint32_t nOutputIndex = renderPassDesc.numColorAttachments - 1;
+    int textureType       = GetShaderTextureType(params.src);
     if (params.unpackPremultiplyAlpha == params.unpackUnmultiplyAlpha)
     {
-        pipelineCache = &mBlitRenderPipelineCache[cacheIndex][multisample];
+        pipelineCache = &mBlitRenderPipelineCache[nOutputIndex][textureType];
     }
     else if (params.unpackPremultiplyAlpha)
     {
-        pipelineCache = &mBlitPremultiplyAlphaRenderPipelineCache[cacheIndex][multisample];
+        pipelineCache = &mBlitPremultiplyAlphaRenderPipelineCache[nOutputIndex][textureType];
     }
     else
     {
-        pipelineCache = &mBlitUnmultiplyAlphaRenderPipelineCache[cacheIndex][multisample];
+        pipelineCache = &mBlitUnmultiplyAlphaRenderPipelineCache[nOutputIndex][textureType];
     }
 
     return pipelineCache->getRenderPipelineState(contextMtl, pipelineDesc);
@@ -681,19 +783,22 @@ id<MTLRenderPipelineState> RenderUtils::getDepthStencilBlitRenderPipelineState(
     // NOTE(hqle): depth & stencil MSAA blitting via draw is not supported yet.
     ASSERT((!params.src || params.src->samples() <= 1) &&
            (!params.srcStencil || params.srcStencil->samples() <= 1));
+
+    int depthTextureType   = GetShaderTextureType(params.src);
+    int stencilTextureType = GetShaderTextureType(params.srcStencil);
     if (params.src && params.srcStencil)
     {
-        pipelineCache = &mDepthStencilBlitRenderPipelineCache;
+        pipelineCache = &mDepthStencilBlitRenderPipelineCache[depthTextureType][stencilTextureType];
     }
     else if (params.src)
     {
         // Only depth blit
-        pipelineCache = &mDepthBlitRenderPipelineCache;
+        pipelineCache = &mDepthBlitRenderPipelineCache[depthTextureType];
     }
     else
     {
         // Only stencil blit
-        pipelineCache = &mStencilBlitRenderPipelineCache;
+        pipelineCache = &mStencilBlitRenderPipelineCache[stencilTextureType];
     }
 
     return pipelineCache->getRenderPipelineState(contextMtl, pipelineDesc);
@@ -708,10 +813,17 @@ void RenderUtils::setupBlitWithDrawUniformData(RenderCommandEncoder *cmdEncoder,
     uniformParams.dstFlipX = params.dstFlipX ? 1 : 0;
     uniformParams.dstFlipY = params.dstFlipY ? 1 : 0;
     uniformParams.srcLevel = params.srcLevel;
+    uniformParams.srcLayer = params.srcLayer;
     if (isColorBlit)
     {
-        const ColorBlitParams *colorParams = static_cast<const ColorBlitParams *>(&params);
-        uniformParams.dstLuminance         = colorParams->dstLuminance ? 1 : 0;
+        const auto colorParams     = static_cast<const ColorBlitParams *>(&params);
+        uniformParams.dstLuminance = colorParams->dstLuminance ? 1 : 0;
+    }
+    else
+    {
+        const auto dsParams     = static_cast<const DepthStencilBlitParams *>(&params);
+        uniformParams.srcLevel2 = dsParams->srcStencilLevel;
+        uniformParams.srcLayer2 = dsParams->srcStencilLayer;
     }
 
     // Compute source texCoords
@@ -725,8 +837,8 @@ void RenderUtils::setupBlitWithDrawUniformData(RenderCommandEncoder *cmdEncoder,
     {
         const DepthStencilBlitParams *dsParams =
             static_cast<const DepthStencilBlitParams *>(&params);
-        srcWidth  = dsParams->srcStencil->width(params.srcLevel);
-        srcHeight = dsParams->srcStencil->height(params.srcLevel);
+        srcWidth  = dsParams->srcStencil->width(dsParams->srcStencilLevel);
+        srcHeight = dsParams->srcStencil->height(dsParams->srcStencilLevel);
     }
     else
     {
@@ -1221,8 +1333,8 @@ void RenderUtils::combineVisibilityResult(
     CombineVisibilityResultUniform options;
     options.keepOldValue = keepOldValue ? 1 : 0;
     // Offset is viewed as 64 bit unit in compute shader.
-    options.startOffset  = renderPassResultBufOffsets.front() / kOcclusionQueryResultSize;
-    options.numOffsets   = renderPassResultBufOffsets.size();
+    options.startOffset = renderPassResultBufOffsets.front() / kOcclusionQueryResultSize;
+    options.numOffsets  = renderPassResultBufOffsets.size();
 
     cmdEncoder->setData(options, 0);
     cmdEncoder->setBuffer(renderPassResultBuf, 0, 1);

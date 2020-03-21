@@ -256,8 +256,8 @@ struct RenderPassAttachmentTextureTargetDesc
     // Implicit multisample texture that will be rendered into and discarded at the end of
     // a render pass. Its result will be resolved into normal texture above.
     TextureWeakRef implicitMSTexture;
-    uint32_t level = 0;
-    uint32_t slice = 0;
+    uint32_t level        = 0;
+    uint32_t sliceOrDepth = 0;
 };
 
 struct RenderPassAttachmentDesc
@@ -286,7 +286,10 @@ struct RenderPassAttachmentDesc
         return renderTarget ? renderTarget->getRenderSamples() : 1;
     }
     ANGLE_INLINE uint32_t level() const { return renderTarget ? renderTarget->level : 0; }
-    ANGLE_INLINE uint32_t slice() const { return renderTarget ? renderTarget->slice : 0; }
+    ANGLE_INLINE uint32_t sliceOrDepth() const
+    {
+        return renderTarget ? renderTarget->sliceOrDepth : 0;
+    }
 
     // This is shared pointer to avoid crashing when texture deleted after bound to a frame buffer.
     std::shared_ptr<RenderPassAttachmentTextureTargetDesc> renderTarget;
