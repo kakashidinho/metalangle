@@ -194,35 +194,6 @@ void UpdateDefaultUniformBlock(GLsizei count,
     }
 }
 
-void BindNullSampler(const gl::Context *glContext,
-                     mtl::RenderCommandEncoder *encoder,
-                     gl::ShaderType shaderType,
-                     gl::TextureType textureType,
-                     int bindingPoint)
-{
-    ContextMtl *contextMtl = mtl::GetImpl(glContext);
-
-    const mtl::TextureRef &nullTex =
-        contextMtl->getDisplay()->getNullTexture(glContext, textureType);
-
-    mtl::AutoObjCPtr<id<MTLSamplerState>> nullSampler =
-        contextMtl->getDisplay()->getStateCache().getNullSamplerState(contextMtl);
-
-    switch (shaderType)
-    {
-        case gl::ShaderType::Vertex:
-            encoder->setVertexTexture(nullTex, bindingPoint);
-            encoder->setVertexSamplerState(nullSampler, 0, 0, bindingPoint);
-            break;
-        case gl::ShaderType::Fragment:
-            encoder->setFragmentTexture(nullTex, bindingPoint);
-            encoder->setFragmentSamplerState(nullSampler, 0, 0, bindingPoint);
-            break;
-        default:
-            UNREACHABLE();
-    }
-}
-
 template <typename T>
 void ReadFromDefaultUniformBlock(int componentCount,
                                  uint32_t arrayIndex,
@@ -1027,9 +998,12 @@ angle::Result ProgramMtl::updateTextures(const gl::Context *glContext,
                                          mtl::RenderCommandEncoder *cmdEncoder,
                                          bool forceUpdate)
 {
-    const auto &glState = glContext->getState();
+    ContextMtl *contextMtl     = mtl::GetImpl(glContext);
+    const auto &glState        = glContext->getState();
+    const gl::Program *program = glState.getProgram();
 
     const gl::ActiveTexturePointerArray &completeTextures = glState.getActiveTexturesCache();
+    const gl::ActiveTextureTypeArray &textureTypes        = program->getActiveSamplerTypes();
 
     for (gl::ShaderType shaderType : gl::AllGLES2ShaderTypes())
     {
@@ -1048,15 +1022,13 @@ angle::Result ProgramMtl::updateTextures(const gl::Context *glContext,
             for (uint32_t arrayElement = 0; arrayElement < samplerBinding.boundTextureUnits.size();
                  ++arrayElement)
             {
-                GLuint textureUnit    = samplerBinding.boundTextureUnits[arrayElement];
-                gl::Texture *texture  = completeTextures[textureUnit];
-                auto destBindingPoint = textureIndex + arrayElement;
+                GLuint textureUnit          = samplerBinding.boundTextureUnits[arrayElement];
+                gl::Texture *texture        = completeTextures[textureUnit];
+                gl::TextureType textureType = textureTypes[textureUnit];
+                auto destBindingPoint       = textureIndex + arrayElement;
                 if (!texture)
                 {
-                    BindNullSampler(glContext, cmdEncoder, shaderType, samplerBinding.textureType,
-                                    destBindingPoint);
-
-                    continue;
+                    ANGLE_TRY(contextMtl->getNullTexture(glContext, textureType, &texture));
                 }
 
                 TextureMtl *textureMtl = mtl::GetImpl(texture);

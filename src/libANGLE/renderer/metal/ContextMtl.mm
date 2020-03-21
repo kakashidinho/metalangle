@@ -216,6 +216,27 @@ void ContextMtl::onDestroy(const gl::Context *context)
     mTriFanIndexBuffer.destroy(this);
     mLineLoopIndexBuffer.destroy(this);
     mOcclusionQueryPool.destroy(this);
+
+    mIncompleteTextures.onDestroy(context);
+    mIncompleteTexturesInitialized = false;
+}
+
+angle::Result ContextMtl::ensureIncompleteTexturesCreated(const gl::Context *context)
+{
+    if (!mIncompleteTexturesInitialized)
+    {
+        constexpr gl::TextureType supportedTextureTypes[] = {gl::TextureType::_2D,
+                                                             gl::TextureType::CubeMap};
+        for (auto texType : supportedTextureTypes)
+        {
+            gl::Texture *texture;
+            ANGLE_UNUSED_VARIABLE(texture);
+            ANGLE_TRY(
+                mIncompleteTextures.getIncompleteTexture(context, texType, nullptr, &texture));
+        }
+        mIncompleteTexturesInitialized = true;
+    }
+    return angle::Result::Continue;
 }
 
 // Flush and finish.
@@ -1103,6 +1124,13 @@ const mtl::VertexFormat &ContextMtl::getVertexFormat(angle::FormatID angleFormat
     return getDisplay()->getVertexFormat(angleFormatId, tightlyPacked);
 }
 
+angle::Result ContextMtl::getNullTexture(const gl::Context *context,
+                                         gl::TextureType type,
+                                         gl::Texture **textureOut)
+{
+    return mIncompleteTextures.getIncompleteTexture(context, type, nullptr, textureOut);
+}
+
 void ContextMtl::endEncoding(mtl::RenderCommandEncoder *encoder)
 {
     // End any pending visibility query in the render pass
@@ -1541,6 +1569,8 @@ angle::Result ContextMtl::setupDraw(const gl::Context *context,
     GLsizei instanceCount = instances ? instances : 1;
 
     // Must be called before the render command encoder is started.
+    ANGLE_TRY(ensureIncompleteTexturesCreated(context));
+
     if (context->getStateCache().hasAnyActiveClientAttrib())
     {
         ANGLE_TRY(mVertexArray->updateClientAttribs(context, firstVertex, vertexOrIndexCount,

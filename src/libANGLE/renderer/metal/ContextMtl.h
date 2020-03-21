@@ -239,6 +239,10 @@ class ContextMtl : public ContextImpl, public mtl::Context
     const mtl::VertexFormat &getVertexFormat(angle::FormatID angleFormatId,
                                              bool tightlyPacked) const;
 
+    angle::Result getNullTexture(const gl::Context *context,
+                                 gl::TextureType type,
+                                 gl::Texture **textureOut);
+
     // Recommended to call these methods to end encoding instead of invoking the encoder's
     // endEncoding() directly.
     void endEncoding(mtl::RenderCommandEncoder *encoder);
@@ -276,6 +280,7 @@ class ContextMtl : public ContextImpl, public mtl::Context
 
   private:
     void ensureCommandBufferValid();
+    angle::Result ensureIncompleteTexturesCreated(const gl::Context *context);
     angle::Result setupDraw(const gl::Context *context,
                             gl::PrimitiveMode mode,
                             GLint firstVertex,
@@ -434,6 +439,9 @@ class ContextMtl : public ContextImpl, public mtl::Context
     DriverUniforms mDriverUniforms;
 
     DefaultAttribute mDefaultAttributes[mtl::kMaxVertexAttribs];
+
+    IncompleteTextureSet mIncompleteTextures;
+    bool mIncompleteTexturesInitialized = false;
 };
 
 }  // namespace rx
