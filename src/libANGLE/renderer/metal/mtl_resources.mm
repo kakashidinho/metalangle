@@ -90,23 +90,13 @@ bool Resource::hasPendingWorks(Context *context) const
 
 void Resource::setUsedByCommandBufferWithQueueSerial(uint64_t serial, bool writing)
 {
-    auto curSerial = mUsageRef->cmdBufferQueueSerial.load(std::memory_order_relaxed);
-    do
-    {
-        if (curSerial >= serial)
-        {
-            return;
-        }
-    } while (!mUsageRef->cmdBufferQueueSerial.compare_exchange_weak(
-        curSerial, serial, std::memory_order_release, std::memory_order_relaxed));
-
-    // NOTE(hqle): This is not thread safe, if multiple command buffers on multiple threads
-    // are writing to it.
     if (writing)
     {
         mUsageRef->cpuReadMemNeedSync = true;
         mUsageRef->cpuReadMemDirty    = true;
     }
+
+    mUsageRef->cmdBufferQueueSerial = std::max(mUsageRef->cmdBufferQueueSerial, serial);
 }
 
 // Texture implemenetation
