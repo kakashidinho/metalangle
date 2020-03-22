@@ -228,9 +228,7 @@ void SurfaceMtl::destroy(const egl::Display *display)
     mDepthTexture    = nullptr;
     mStencilTexture  = nullptr;
 
-    mMSColorTexture   = nullptr;
-    mMSDepthTexture   = nullptr;
-    mMSStencilTexture = nullptr;
+    mMSColorTexture = nullptr;
 
     mCurrentDrawable = nil;
     if (mMetalLayer && mMetalLayer.get() != mLayer)
@@ -455,46 +453,25 @@ angle::Result SurfaceMtl::ensureTexturesSizeCorrect(const gl::Context *context)
 
     if (mDepthFormat.valid() && (!mDepthTexture || mDepthTexture->size() != size))
     {
-        // Create normal texture
-        ANGLE_TRY(createTexture(context, mDepthFormat, size.width, size.height, 1, &mDepthTexture));
-        if (mSamples > 1)
-        {
-            // Implicit MS texture
-            ANGLE_TRY(createTexture(context, mDepthFormat, size.width, size.height, mSamples,
-                                    &mMSDepthTexture));
-        }
-        else
-        {
-            mMSDepthTexture = nullptr;
-        }
+        ANGLE_TRY(createTexture(context, mDepthFormat, size.width, size.height, mSamples,
+                                &mDepthTexture));
 
-        mDepthRenderTarget.set(mDepthTexture, mMSDepthTexture, 0, 0, mDepthFormat);
+        mDepthRenderTarget.set(mDepthTexture, 0, 0, mDepthFormat);
     }
 
     if (mStencilFormat.valid() && (!mStencilTexture || mStencilTexture->size() != size))
     {
         if (mUsePackedDepthStencil)
         {
-            mStencilTexture   = mDepthTexture;
-            mMSStencilTexture = mMSDepthTexture;
+            mStencilTexture = mDepthTexture;
         }
         else
         {
-            ANGLE_TRY(createTexture(context, mStencilFormat, size.width, size.height, 1,
+            ANGLE_TRY(createTexture(context, mStencilFormat, size.width, size.height, mSamples,
                                     &mStencilTexture));
-            if (mSamples > 1)
-            {
-                // Implicit MS texture
-                ANGLE_TRY(createTexture(context, mStencilFormat, size.width, size.height, mSamples,
-                                        &mMSStencilTexture));
-            }
-            else
-            {
-                mMSStencilTexture = nullptr;
-            }
         }
 
-        mStencilRenderTarget.set(mStencilTexture, mMSStencilTexture, 0, 0, mStencilFormat);
+        mStencilRenderTarget.set(mStencilTexture, 0, 0, mStencilFormat);
     }
 
     return angle::Result::Continue;
