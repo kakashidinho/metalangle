@@ -490,8 +490,9 @@ TextureRef Texture::createMipView(uint32_t level)
 {
     ANGLE_MTL_OBJC_SCOPE
     {
+        NSUInteger slices = textureType() == MTLTextureTypeCube ? 6 : arrayLength();
         return TextureRef(
-            new Texture(this, textureType(), NSMakeRange(level, 1), NSMakeRange(0, arrayLength())));
+            new Texture(this, textureType(), NSMakeRange(level, 1), NSMakeRange(0, slices)));
     }
 }
 

@@ -175,9 +175,9 @@ class RenderUtils : public Context, angle::NonCopyable
                                  const BufferRef &renderPassResultBuf,
                                  const BufferRef &finalResultBuf);
 
-    angle::Result generate3DMipmap(ContextMtl *contextMtl,
+    // Compute based mipmap generation
+    angle::Result generateMipmapCS(ContextMtl *contextMtl,
                                    const TextureRef &srcTexture,
-                                   uint32_t baseLevel,
                                    gl::TexLevelArray<mtl::TextureRef> *mipmapOutputViews);
 
     void dispatchCompute(ContextMtl *contextMtl,
@@ -245,6 +245,10 @@ class RenderUtils : public Context, angle::NonCopyable
     void ensureTriFanFromArrayGeneratorInitialized();
     void ensureVisibilityResultCombPipelineInitialized();
     void ensure3DMipGeneratorPipelineInitialized();
+    void ensure2DMipGeneratorPipelineInitialized();
+    void ensure2DArrayMipGeneratorPipelineInitialized();
+    void ensureCubeMipGeneratorPipelineInitialized();
+
     angle::Result generateTriFanBufferFromElementsArrayGPU(
         ContextMtl *contextMtl,
         gl::DrawElementsType srcType,
@@ -283,6 +287,9 @@ class RenderUtils : public Context, angle::NonCopyable
     AutoObjCPtr<id<MTLComputePipelineState>> mTriFanFromArraysGeneratorPipeline;
     AutoObjCPtr<id<MTLComputePipelineState>> mVisibilityResultCombPipeline;
     AutoObjCPtr<id<MTLComputePipelineState>> m3DMipGeneratorPipeline;
+    AutoObjCPtr<id<MTLComputePipelineState>> m2DMipGeneratorPipeline;
+    AutoObjCPtr<id<MTLComputePipelineState>> m2DArrayMipGeneratorPipeline;
+    AutoObjCPtr<id<MTLComputePipelineState>> mCubeMipGeneratorPipeline;
 };
 
 }  // namespace mtl

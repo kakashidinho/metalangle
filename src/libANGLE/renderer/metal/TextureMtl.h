@@ -164,6 +164,7 @@ class TextureMtl : public TextureImpl
     angle::Result ensureSamplerStateCreated(const gl::Context *context);
     // Ensure image at given index is created:
     angle::Result ensureImageCreated(const gl::Context *context, const gl::ImageIndex &index);
+    angle::Result ensureNativeLevelViewsCreated();
     angle::Result checkForEmulatedChannels(const gl::Context *context,
                                            const mtl::Format &mtlFormat,
                                            const mtl::TextureRef &texture);
@@ -171,6 +172,7 @@ class TextureMtl : public TextureImpl
     mtl::TextureRef &getImage(const gl::ImageIndex &imageIndex);
     RenderTargetMtl &getRenderTarget(const gl::ImageIndex &imageIndex);
     mtl::TextureRef &getImplicitMSTexture(const gl::ImageIndex &imageIndex);
+    bool isIndexWithinMinMaxLevels(const gl::ImageIndex &imageIndex) const;
 
     // If levels = 0, this function will create full mipmaps texture.
     angle::Result setStorageImpl(const gl::Context *context,
@@ -257,12 +259,13 @@ class TextureMtl : public TextureImpl
     //  because the Cube map's image is defined per face & per level.
     //  - For other texture types, there will be only one entry in the map table. All other textures
     //  except Cube map has texture image defined per level (all slices included).
+    //  - These three variables' second dimension are indexed by image index (base level included).
     std::map<int, gl::TexLevelArray<mtl::TextureRef>> mTexImages;
-
-    // NOTE: mPerLayerRenderTargets & mImplicitMSTextures's 2nd dimension is indexed by native level
-    // (not offset by configured base level)
     std::map<int, gl::TexLevelArray<RenderTargetMtl>> mPerLayerRenderTargets;
     std::map<int, gl::TexLevelArray<mtl::TextureRef>> mImplicitMSTextures;
+
+    // Mipmap views are indexed by native level (ignored base level):
+    gl::TexLevelArray<mtl::TextureRef> mNativeLevelViews;
 
     bool mIsPow2 = false;
 };

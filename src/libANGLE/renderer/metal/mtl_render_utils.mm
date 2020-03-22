@@ -288,6 +288,9 @@ void RenderUtils::onDestroy()
     mTriFanFromArraysGeneratorPipeline = nil;
     mVisibilityResultCombPipeline      = nil;
     m3DMipGeneratorPipeline            = nil;
+    m2DMipGeneratorPipeline            = nil;
+    m2DArrayMipGeneratorPipeline       = nil;
+    mCubeMipGeneratorPipeline          = nil;
 }
 
 // override ErrorHandler
@@ -1086,6 +1089,23 @@ void RenderUtils::ensure3DMipGeneratorPipelineInitialized()
     EnsureComputePipelineInitialized(getDisplay(), @"generate3DMipmaps", &m3DMipGeneratorPipeline);
 }
 
+void RenderUtils::ensure2DMipGeneratorPipelineInitialized()
+{
+    EnsureComputePipelineInitialized(getDisplay(), @"generate2DMipmaps", &m2DMipGeneratorPipeline);
+}
+
+void RenderUtils::ensure2DArrayMipGeneratorPipelineInitialized()
+{
+    EnsureComputePipelineInitialized(getDisplay(), @"generate2DArrayMipmaps",
+                                     &m2DArrayMipGeneratorPipeline);
+}
+
+void RenderUtils::ensureCubeMipGeneratorPipelineInitialized()
+{
+    EnsureComputePipelineInitialized(getDisplay(), @"generateCubeMipmaps",
+                                     &mCubeMipGeneratorPipeline);
+}
+
 angle::Result RenderUtils::convertIndexBuffer(ContextMtl *contextMtl,
                                               gl::DrawElementsType srcType,
                                               uint32_t indexCount,
@@ -1344,16 +1364,47 @@ void RenderUtils::combineVisibilityResult(
     dispatchCompute(contextMtl, cmdEncoder, mVisibilityResultCombPipeline, 1);
 }
 
-angle::Result RenderUtils::generate3DMipmap(ContextMtl *contextMtl,
+angle::Result RenderUtils::generateMipmapCS(ContextMtl *contextMtl,
                                             const TextureRef &srcTexture,
-                                            uint32_t baseLevel,
                                             gl::TexLevelArray<mtl::TextureRef> *mipmapOutputViews)
 {
-    ensure3DMipGeneratorPipelineInitialized();
     ComputeCommandEncoder *cmdEncoder = contextMtl->getComputeCommandEncoder();
     ASSERT(cmdEncoder);
 
-    cmdEncoder->setComputePipelineState(m3DMipGeneratorPipeline);
+    MTLSize threadGroupSize;
+    uint32_t slices = 1;
+    switch (srcTexture->textureType())
+    {
+        case MTLTextureType2D:
+            ensure2DMipGeneratorPipelineInitialized();
+            cmdEncoder->setComputePipelineState(m2DMipGeneratorPipeline);
+            threadGroupSize = MTLSizeMake(kGenerateMipThreadGroupSizePerDim,
+                                          kGenerateMipThreadGroupSizePerDim, 1);
+            break;
+        case MTLTextureType2DArray:
+            ensure2DArrayMipGeneratorPipelineInitialized();
+            cmdEncoder->setComputePipelineState(m2DArrayMipGeneratorPipeline);
+            slices          = srcTexture->arrayLength();
+            threadGroupSize = MTLSizeMake(kGenerateMipThreadGroupSizePerDim,
+                                          kGenerateMipThreadGroupSizePerDim, 1);
+            break;
+        case MTLTextureTypeCube:
+            ensureCubeMipGeneratorPipelineInitialized();
+            cmdEncoder->setComputePipelineState(mCubeMipGeneratorPipeline);
+            slices          = 6;
+            threadGroupSize = MTLSizeMake(kGenerateMipThreadGroupSizePerDim,
+                                          kGenerateMipThreadGroupSizePerDim, 1);
+            break;
+        case MTLTextureType3D:
+            ensure3DMipGeneratorPipelineInitialized();
+            cmdEncoder->setComputePipelineState(m3DMipGeneratorPipeline);
+            threadGroupSize =
+                MTLSizeMake(kGenerateMipThreadGroupSizePerDim, kGenerateMipThreadGroupSizePerDim,
+                            kGenerateMipThreadGroupSizePerDim);
+            break;
+        default:
+            UNREACHABLE();
+    }
 
     Generate3DMipmapUniform options;
     uint32_t maxMipsPerBatch = 4;
@@ -1362,9 +1413,10 @@ angle::Result RenderUtils::generate3DMipmap(ContextMtl *contextMtl,
     options.srcLevel    = 0;
 
     cmdEncoder->setTexture(srcTexture, 0);
+    cmdEncoder->markResourceBeingWrittenByGPU(srcTexture);
     while (remainMips)
     {
-        const TextureRef &firstMipView = mipmapOutputViews->at(options.srcLevel + 1 + baseLevel);
+        const TextureRef &firstMipView = mipmapOutputViews->at(options.srcLevel + 1);
         gl::Extents size               = firstMipView->size();
         bool isPow2 = gl::isPow2(size.width) && gl::isPow2(size.height) && gl::isPow2(size.depth);
 
@@ -1382,15 +1434,15 @@ angle::Result RenderUtils::generate3DMipmap(ContextMtl *contextMtl,
 
         for (uint32_t i = 1; i <= options.numMipmapsToGenerate; ++i)
         {
-            cmdEncoder->setTexture(mipmapOutputViews->at(options.srcLevel + i + baseLevel), i);
+            cmdEncoder->setTexture(mipmapOutputViews->at(options.srcLevel + i), i);
         }
 
-        dispatchCompute(
-            contextMtl, cmdEncoder,
-            /** allowNonUniform */ false,
-            MTLSizeMake(firstMipView->width(), firstMipView->height(), firstMipView->depth()),
-            MTLSizeMake(kGenerate3DMipThreadGroupSizePerDim, kGenerate3DMipThreadGroupSizePerDim,
-                        kGenerate3DMipThreadGroupSizePerDim));
+        uint32_t threadsPerZ = std::max(slices, firstMipView->depth());
+
+        dispatchCompute(contextMtl, cmdEncoder,
+                        /** allowNonUniform */ false,
+                        MTLSizeMake(firstMipView->width(), firstMipView->height(), threadsPerZ),
+                        threadGroupSize);
 
         remainMips -= options.numMipmapsToGenerate;
         options.srcLevel += options.numMipmapsToGenerate;

@@ -74,4 +74,25 @@ static inline MultipleColorOutputs toMultipleColorOutputs(float4 color)
     return re;
 }
 
+static inline float3 cubeTexcoords(float2 texcoords, int face)
+{
+    texcoords = 2.0 * texcoords - 1.0;
+    switch (face)
+    {
+        case 0:
+            return float3(1.0, -texcoords.y, -texcoords.x);
+        case 1:
+            return float3(-1.0, -texcoords.y, texcoords.x);
+        case 2:
+            return float3(texcoords.x, 1.0, texcoords.y);
+        case 3:
+            return float3(texcoords.x, -1.0, -texcoords.y);
+        case 4:
+            return float3(texcoords.x, -texcoords.y, 1.0);
+        case 5:
+            return float3(-texcoords.x, -texcoords.y, -1.0);
+    }
+    return float3(texcoords, 0);
+}
+
 #endif /* LIBANGLE_RENDERER_METAL_SHADERS_COMMON_H_ */

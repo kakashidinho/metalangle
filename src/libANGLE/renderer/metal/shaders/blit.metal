@@ -39,26 +39,6 @@ struct BlitVSOut
     float2 texCoords [[user(locn1)]];
 };
 
-static inline float3 cubeTexcoords(float2 texcoords, int face)
-{
-    switch (face)
-    {
-        case 0:
-            return float3(1.0, texcoords.x, texcoords.y);
-        case 1:
-            return float3(-1.0, texcoords.x, texcoords.y);
-        case 2:
-            return float3(texcoords.x, 1.0, texcoords.y);
-        case 3:
-            return float3(texcoords.x, -1.0, texcoords.y);
-        case 4:
-            return float3(texcoords.x, texcoords.y, 1.0);
-        case 5:
-            return float3(texcoords.x, texcoords.y, -1.0);
-    }
-    return float3(texcoords, 0);
-}
-
 vertex BlitVSOut blitVS(unsigned int vid [[vertex_id]], constant BlitParams &options [[buffer(0)]])
 {
     BlitVSOut output;
