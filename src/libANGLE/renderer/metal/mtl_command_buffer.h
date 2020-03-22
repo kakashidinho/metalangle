@@ -470,9 +470,11 @@ class ComputeCommandEncoder final : public CommandEncoder
     ComputeCommandEncoder &setTexture(const TextureRef &texture, uint32_t index);
     ComputeCommandEncoder &setTextureForWrite(const TextureRef &texture, uint32_t index);
 
-    ComputeCommandEncoder &dispatch(MTLSize threadGroupsPerGrid, MTLSize threadsPerGroup);
+    ComputeCommandEncoder &dispatch(const MTLSize &threadGroupsPerGrid,
+                                    const MTLSize &threadsPerGroup);
 
-    ComputeCommandEncoder &dispatchNonUniform(MTLSize threadsPerGrid, MTLSize threadsPerGroup);
+    ComputeCommandEncoder &dispatchNonUniform(const MTLSize &threadsPerGrid,
+                                              const MTLSize &threadsPerGroup);
 
   private:
     id<MTLComputeCommandEncoder> get()

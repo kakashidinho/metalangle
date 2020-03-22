@@ -1785,15 +1785,15 @@ ComputeCommandEncoder &ComputeCommandEncoder::setTextureForWrite(const TextureRe
     return setTexture(texture, index);
 }
 
-ComputeCommandEncoder &ComputeCommandEncoder::dispatch(MTLSize threadGroupsPerGrid,
-                                                       MTLSize threadsPerGroup)
+ComputeCommandEncoder &ComputeCommandEncoder::dispatch(const MTLSize &threadGroupsPerGrid,
+                                                       const MTLSize &threadsPerGroup)
 {
     [get() dispatchThreadgroups:threadGroupsPerGrid threadsPerThreadgroup:threadsPerGroup];
     return *this;
 }
 
-ComputeCommandEncoder &ComputeCommandEncoder::dispatchNonUniform(MTLSize threadsPerGrid,
-                                                                 MTLSize threadsPerGroup)
+ComputeCommandEncoder &ComputeCommandEncoder::dispatchNonUniform(const MTLSize &threadsPerGrid,
+                                                                 const MTLSize &threadsPerGroup)
 {
     [get() dispatchThreads:threadsPerGrid threadsPerThreadgroup:threadsPerGroup];
     return *this;

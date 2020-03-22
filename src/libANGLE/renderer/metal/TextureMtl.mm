@@ -774,10 +774,15 @@ angle::Result TextureMtl::generateMipmap(const gl::Context *context)
         return angle::Result::Continue;
     }
 
-    const gl::TextureCapsMap &textureCapsMap = contextMtl->getNativeTextureCaps();
-    const gl::TextureCaps &textureCaps       = textureCapsMap.get(mFormat.intendedFormatId);
+    const mtl::FormatCaps caps = mFormat.getCaps();
 
-    if (textureCaps.filterable && textureCaps.renderbuffer)
+    if (mNativeTexture->textureType() == MTLTextureType3D && caps.writable)
+    {
+        // Metal has some bugs when generating 3D mipmaps. Use our mip generation shader instead.
+        ANGLE_TRY(contextMtl->getDisplay()->getUtils().generate3DMipmap(
+            contextMtl, mNativeTexture, mState.getEffectiveBaseLevel(), &mTexImages[0]));
+    }
+    else if (caps.filterable && caps.colorRenderable)
     {
         mtl::BlitCommandEncoder *blitEncoder = contextMtl->getBlitCommandEncoder();
         blitEncoder->generateMipmapsForTexture(mNativeTexture);

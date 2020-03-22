@@ -76,6 +76,14 @@ struct CombineVisibilityResultUniform
     uint32_t padding;
 };
 
+// See libANGLE/renderer/metal/shaders/gen_mipmap.metal
+struct Generate3DMipmapUniform
+{
+    uint32_t srcLevel;
+    uint32_t numMipmapsToGenerate;
+    uint32_t padding[2];
+};
+
 // Class to automatically disable occlusion query upon entering block and re-able it upon
 // exiting block.
 struct ScopedDisableOcclusionQuery
@@ -179,6 +187,37 @@ int GetShaderTextureType(const TextureRef &texture)
     return 0;
 }
 
+ANGLE_INLINE
+void EnsureComputePipelineInitialized(DisplayMtl *display,
+                                      NSString *functionName,
+                                      AutoObjCPtr<id<MTLComputePipelineState>> *pipelineOut)
+{
+    AutoObjCPtr<id<MTLComputePipelineState>> &pipeline = *pipelineOut;
+    if (pipeline)
+    {
+        return;
+    }
+
+    ANGLE_MTL_OBJC_SCOPE
+    {
+        id<MTLDevice> metalDevice = display->getMetalDevice();
+        auto shaderLib            = display->getDefaultShadersLib();
+        NSError *err              = nil;
+        id<MTLFunction> shader    = [shaderLib newFunctionWithName:functionName];
+
+        [shader ANGLE_MTL_AUTORELEASE];
+
+        pipeline = [[metalDevice newComputePipelineStateWithFunction:shader
+                                                               error:&err] ANGLE_MTL_AUTORELEASE];
+        if (err && !pipeline)
+        {
+            ERR() << "Internal error: " << err.localizedDescription.UTF8String << "\n";
+        }
+
+        ASSERT(pipeline);
+    }
+}
+
 }  // namespace
 
 bool IndexConversionPipelineCacheKey::operator==(const IndexConversionPipelineCacheKey &other) const
@@ -248,6 +287,7 @@ void RenderUtils::onDestroy()
 
     mTriFanFromArraysGeneratorPipeline = nil;
     mVisibilityResultCombPipeline      = nil;
+    m3DMipGeneratorPipeline            = nil;
 }
 
 // override ErrorHandler
@@ -1031,58 +1071,19 @@ AutoObjCPtr<id<MTLComputePipelineState>> RenderUtils::getTriFanFromElemArrayGene
 
 void RenderUtils::ensureTriFanFromArrayGeneratorInitialized()
 {
-    if (mTriFanFromArraysGeneratorPipeline)
-    {
-        return;
-    }
-
-    ANGLE_MTL_OBJC_SCOPE
-    {
-        id<MTLDevice> metalDevice = getMetalDevice();
-        auto shaderLib            = getDisplay()->getDefaultShadersLib();
-        NSError *err              = nil;
-        id<MTLFunction> shader    = [shaderLib newFunctionWithName:@"genTriFanIndicesFromArray"];
-
-        [shader ANGLE_MTL_AUTORELEASE];
-
-        mTriFanFromArraysGeneratorPipeline =
-            [[metalDevice newComputePipelineStateWithFunction:shader
-                                                        error:&err] ANGLE_MTL_AUTORELEASE];
-        if (err && !mTriFanFromArraysGeneratorPipeline)
-        {
-            ERR() << "Internal error: " << err.localizedDescription.UTF8String << "\n";
-        }
-
-        ASSERT(mTriFanFromArraysGeneratorPipeline);
-    }
+    EnsureComputePipelineInitialized(getDisplay(), @"genTriFanIndicesFromArray",
+                                     &mTriFanFromArraysGeneratorPipeline);
 }
 
 void RenderUtils::ensureVisibilityResultCombPipelineInitialized()
 {
-    if (mVisibilityResultCombPipeline)
-    {
-        return;
-    }
+    EnsureComputePipelineInitialized(getDisplay(), @"combineVisibilityResult",
+                                     &mVisibilityResultCombPipeline);
+}
 
-    ANGLE_MTL_OBJC_SCOPE
-    {
-        id<MTLDevice> metalDevice = getMetalDevice();
-        auto shaderLib            = getDisplay()->getDefaultShadersLib();
-        NSError *err              = nil;
-        id<MTLFunction> shader    = [shaderLib newFunctionWithName:@"combineVisibilityResult"];
-
-        [shader ANGLE_MTL_AUTORELEASE];
-
-        mVisibilityResultCombPipeline =
-            [[metalDevice newComputePipelineStateWithFunction:shader
-                                                        error:&err] ANGLE_MTL_AUTORELEASE];
-        if (err && !mVisibilityResultCombPipeline)
-        {
-            ERR() << "Internal error: " << err.localizedDescription.UTF8String << "\n";
-        }
-
-        ASSERT(mVisibilityResultCombPipeline);
-    }
+void RenderUtils::ensure3DMipGeneratorPipelineInitialized()
+{
+    EnsureComputePipelineInitialized(getDisplay(), @"generate3DMipmaps", &m3DMipGeneratorPipeline);
 }
 
 angle::Result RenderUtils::convertIndexBuffer(ContextMtl *contextMtl,
@@ -1341,6 +1342,81 @@ void RenderUtils::combineVisibilityResult(
     cmdEncoder->setBufferForWrite(finalResultBuf, 0, 2);
 
     dispatchCompute(contextMtl, cmdEncoder, mVisibilityResultCombPipeline, 1);
+}
+
+angle::Result RenderUtils::generate3DMipmap(ContextMtl *contextMtl,
+                                            const TextureRef &srcTexture,
+                                            uint32_t baseLevel,
+                                            gl::TexLevelArray<mtl::TextureRef> *mipmapOutputViews)
+{
+    ensure3DMipGeneratorPipelineInitialized();
+    ComputeCommandEncoder *cmdEncoder = contextMtl->getComputeCommandEncoder();
+    ASSERT(cmdEncoder);
+
+    cmdEncoder->setComputePipelineState(m3DMipGeneratorPipeline);
+
+    Generate3DMipmapUniform options;
+    uint32_t maxMipsPerBatch = 4;
+
+    uint32_t remainMips = srcTexture->mipmapLevels() - 1;
+    options.srcLevel    = 0;
+
+    cmdEncoder->setTexture(srcTexture, 0);
+    while (remainMips)
+    {
+        const TextureRef &firstMipView = mipmapOutputViews->at(options.srcLevel + 1 + baseLevel);
+        gl::Extents size               = firstMipView->size();
+        bool isPow2 = gl::isPow2(size.width) && gl::isPow2(size.height) && gl::isPow2(size.depth);
+
+        // Currently multiple mipmaps generation is only supported for power of two base level.
+        if (isPow2)
+        {
+            options.numMipmapsToGenerate = std::min(remainMips, maxMipsPerBatch);
+        }
+        else
+        {
+            options.numMipmapsToGenerate = 1;
+        }
+
+        cmdEncoder->setData(options, 0);
+
+        for (uint32_t i = 1; i <= options.numMipmapsToGenerate; ++i)
+        {
+            cmdEncoder->setTexture(mipmapOutputViews->at(options.srcLevel + i + baseLevel), i);
+        }
+
+        dispatchCompute(
+            contextMtl, cmdEncoder,
+            /** allowNonUniform */ false,
+            MTLSizeMake(firstMipView->width(), firstMipView->height(), firstMipView->depth()),
+            MTLSizeMake(kGenerate3DMipThreadGroupSizePerDim, kGenerate3DMipThreadGroupSizePerDim,
+                        kGenerate3DMipThreadGroupSizePerDim));
+
+        remainMips -= options.numMipmapsToGenerate;
+        options.srcLevel += options.numMipmapsToGenerate;
+    }
+
+    return angle::Result::Continue;
+}
+
+void RenderUtils::dispatchCompute(ContextMtl *contextMtl,
+                                  ComputeCommandEncoder *encoder,
+                                  bool allowNonUniform,
+                                  const MTLSize &numThreads,
+                                  const MTLSize &threadsPerThreadgroup)
+{
+    if (allowNonUniform && getDisplay()->getFeatures().hasNonUniformDispatch.enabled)
+    {
+        encoder->dispatchNonUniform(numThreads, threadsPerThreadgroup);
+    }
+    else
+    {
+        MTLSize groups = MTLSizeMake(
+            (numThreads.width + threadsPerThreadgroup.width - 1) / threadsPerThreadgroup.width,
+            (numThreads.height + threadsPerThreadgroup.height - 1) / threadsPerThreadgroup.height,
+            (numThreads.depth + threadsPerThreadgroup.depth - 1) / threadsPerThreadgroup.depth);
+        encoder->dispatch(groups, threadsPerThreadgroup);
+    }
 }
 
 void RenderUtils::dispatchCompute(ContextMtl *contextMtl,
