@@ -322,15 +322,6 @@ GLint LinkProgram(GLuint program)
     return self;
 }
 
-- (id)initWithLayer:(id)layer
-{
-    if (self = [super initWithLayer:layer])
-    {
-        [self constructor];
-    }
-    return self;
-}
-
 - (id)initWithCoder:(NSCoder *)coder
 {
     if (self = [super initWithCoder:coder])

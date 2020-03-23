@@ -99,10 +99,8 @@ class SurfaceMtl : public SurfaceImpl
     mtl::TextureRef mDepthTexture;
     mtl::TextureRef mStencilTexture;
 
-    // Implicit multisample textures
+    // Implicit multisample texture
     mtl::TextureRef mMSColorTexture;
-    mtl::TextureRef mMSDepthTexture;
-    mtl::TextureRef mMSStencilTexture;
 
     bool mUsePackedDepthStencil = false;
 

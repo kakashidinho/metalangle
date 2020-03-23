@@ -8,14 +8,6 @@
 
 - (void)releaseTimer
 {
-    if (_observedWindow)
-    {
-        [[NSNotificationCenter defaultCenter] removeObserver:self
-                                                        name:NSWindowWillCloseNotification
-                                                      object:_observedWindow];
-        _observedWindow = nil;
-    }
-
     if (_displayLink)
     {
         CVDisplayLinkRelease(_displayLink);
@@ -42,14 +34,32 @@
 - (void)viewDidMoveToWindow
 {
     NSLog(@"MGLKViewController viewDidMoveToWindow");
-    [self resume];
-}
+    if (self.view.window)
+    {
+        // Call resume to reset display link's window
+        [self resume];
 
-- (void)viewDidAppear
-{
-    NSLog(@"MGLKViewController viewDidAppear");
-    [super viewDidAppear];
-    [self resume];
+        // Register callback to be called when this window is closed.
+        _observedWindow = self.view.window;
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(windowWillClose:)
+                                                     name:NSWindowWillCloseNotification
+                                                   object:self.view.window];
+    }
+    else
+    {
+        // View is removed from window
+        [self releaseTimer];
+
+        // Unregister window closed callback.
+        if (_observedWindow)
+        {
+            [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                            name:NSWindowWillCloseNotification
+                                                          object:_observedWindow];
+            _observedWindow = nil;
+        }
+    }
 }
 
 - (void)windowWillClose:(NSNotification *)notification
@@ -126,12 +136,6 @@ static CVReturn CVFrameDisplayCallback(CVDisplayLinkRef displayLink,
               [weakSelf frameStep];
             });
             dispatch_resume(_displaySource);
-
-            _observedWindow = window;
-            [[NSNotificationCenter defaultCenter] addObserver:self
-                                                     selector:@selector(windowWillClose:)
-                                                         name:NSWindowWillCloseNotification
-                                                       object:window];
         }
 
         // Sync to display refresh rate using CVDisplayLink
@@ -157,10 +161,14 @@ static CVReturn CVFrameDisplayCallback(CVDisplayLinkRef displayLink,
         ASSERT(!_displayTimer);
         NSTimeInterval frameInterval =
             (_preferredFramesPerSecond <= 0) ? 0 : (1.0 / _preferredFramesPerSecond);
-        _displayTimer = [NSTimer scheduledTimerWithTimeInterval:frameInterval
-                                                         target:self
-                                                       selector:@selector(frameStep)
-                                                       userInfo:nil
-                                                        repeats:YES];
+        _displayTimer = [NSTimer timerWithTimeInterval:frameInterval
+                                                target:self
+                                              selector:@selector(frameStep)
+                                              userInfo:nil
+                                               repeats:YES];
+        [[NSRunLoop currentRunLoop] addTimer:_displayTimer
+                                     forMode:NSDefaultRunLoopMode];
+        [[NSRunLoop currentRunLoop] addTimer:_displayTimer
+                                     forMode:NSModalPanelRunLoopMode];
     }
 }
