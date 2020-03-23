@@ -1502,7 +1502,7 @@ angle::Result TextureMtl::copySubImageCPU(const gl::Context *context,
         PackPixelsParams packParams(srcRowArea, dstFormat, dstRowPitch, false, nullptr, 0);
 
         // Read pixels from framebuffer to memory:
-        gl::Rectangle flippedSrcRowArea = framebufferMtl->getReadPixelArea(context, srcRowArea);
+        gl::Rectangle flippedSrcRowArea = framebufferMtl->getReadArea(context, srcRowArea);
         ANGLE_TRY(framebufferMtl->readPixelsImpl(context, flippedSrcRowArea, packParams,
                                                  framebufferMtl->getColorReadRenderTarget(context),
                                                  conversionRow.data()));

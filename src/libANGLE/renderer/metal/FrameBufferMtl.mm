@@ -186,7 +186,7 @@ angle::Result FramebufferMtl::readPixels(const gl::Context *context,
         // nothing to read
         return angle::Result::Continue;
     }
-    gl::Rectangle flippedArea = getReadPixelArea(context, clippedArea);
+    gl::Rectangle flippedArea = getReadArea(context, clippedArea);
 
     ContextMtl *contextMtl              = mtl::GetImpl(context);
     const gl::State &glState            = context->getState();
@@ -313,7 +313,7 @@ angle::Result FramebufferMtl::blit(const gl::Context *context,
     }
 
     // Flip source area if necessary
-    clippedSourceArea = srcFrameBuffer->getReadPixelArea(context, clippedSourceArea);
+    clippedSourceArea = srcFrameBuffer->getReadArea(context, clippedSourceArea);
 
     const bool unpackFlipX = sourceArea.isReversedX();
     const bool unpackFlipY = sourceArea.isReversedY();
@@ -1060,16 +1060,23 @@ angle::Result FramebufferMtl::invalidateImpl(ContextMtl *contextMtl,
     return angle::Result::Continue;
 }
 
-gl::Rectangle FramebufferMtl::getReadPixelArea(const gl::Context *context,
-                                               const gl::Rectangle &glArea)
+gl::Rectangle FramebufferMtl::getReadArea(const gl::Context *context, const gl::Rectangle &glArea)
 {
-    RenderTargetMtl *colorReadRT = getColorReadRenderTarget(context);
-    ASSERT(colorReadRT);
+    RenderTargetMtl *readRT = getColorReadRenderTarget(context);
+    if (!readRT)
+    {
+        readRT = mDepthRenderTarget;
+    }
+    if (!readRT)
+    {
+        readRT = mStencilRenderTarget;
+    }
+    ASSERT(readRT);
     gl::Rectangle flippedArea = glArea;
     if (mFlipY)
     {
         flippedArea.y =
-            colorReadRT->getTexture()->height(static_cast<uint32_t>(colorReadRT->getLevelIndex())) -
+            readRT->getTexture()->height(static_cast<uint32_t>(readRT->getLevelIndex())) -
             flippedArea.y - flippedArea.height;
     }
 

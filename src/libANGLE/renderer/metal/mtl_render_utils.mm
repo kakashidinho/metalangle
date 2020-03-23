@@ -823,10 +823,6 @@ id<MTLRenderPipelineState> RenderUtils::getDepthStencilBlitRenderPipelineState(
 
     RenderPipelineCache *pipelineCache;
 
-    // NOTE(hqle): depth & stencil MSAA blitting via draw is not supported yet.
-    ASSERT((!params.src || params.src->samples() <= 1) &&
-           (!params.srcStencil || params.srcStencil->samples() <= 1));
-
     int depthTextureType   = GetShaderTextureType(params.src);
     int stencilTextureType = GetShaderTextureType(params.srcStencil);
     if (params.src && params.srcStencil)

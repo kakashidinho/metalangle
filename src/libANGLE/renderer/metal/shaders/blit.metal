@@ -59,12 +59,20 @@ vertex BlitVSOut blitVS(unsigned int vid [[vertex_id]], constant BlitParams &opt
     return output;
 }
 
+template <typename SrcTexture2d>
+static uint2 getImageCoords(SrcTexture2d srcTexture, float2 texCoords)
+{
+    uint2 dimens(srcTexture.get_width(), srcTexture.get_height());
+    uint2 coords = uint2(texCoords * float2(dimens));
+
+    return coords;
+}
+
 template <typename T>
 static inline vec<T, 4> blitSampleTextureMS(texture2d_ms<T> srcTexture, float2 texCoords)
 {
-    uint2 dimens(srcTexture.get_width(), srcTexture.get_height());
+    uint2 coords = getImageCoords(srcTexture, texCoords);
     uint samples = srcTexture.get_num_samples();
-    uint2 coords = uint2(texCoords * float2(dimens));
 
     vec<T, 4> output(0);
 
@@ -146,15 +154,16 @@ blitFS(BlitVSOut input [[stage_in]],
 }
 
 // Depth & stencil blitting.
-// NOTE(hqle): MS & 3d depth/stencil texture are not supported yet.
 struct FragmentDepthOut
 {
     float depth [[depth(any)]];
 };
 
+static inline
 float sampleDepth(texture2d<float> srcTexture2d [[function_constant(kSourceTextureType2D)]],
                   texture2d_array<float> srcTexture2dArray
                   [[function_constant(kSourceTextureType2DArray)]],
+                  texture2d_ms<float> srcTexture2dMS [[function_constant(kSourceTextureType2DMS)]],
                   texturecube<float> srcTextureCube [[function_constant(kSourceTextureTypeCube)]],
                   float2 texCoords,
                   constant BlitParams &options)
@@ -172,6 +181,10 @@ float sampleDepth(texture2d<float> srcTexture2d [[function_constant(kSourceTextu
             output = srcTexture2dArray.sample(textureSampler, texCoords, options.srcLayer,
                                               level(options.srcLevel));
             break;
+        case kTextureType2DMultisample:
+            // Always use sample 0 for depth resolve:
+            output = srcTexture2dMS.read(getImageCoords(srcTexture2dMS, texCoords), 0);
+            break;
         case kTextureTypeCube:
             output =
                 srcTextureCube.sample(textureSampler, cubeTexcoords(texCoords, options.srcLayer),
@@ -187,14 +200,16 @@ fragment FragmentDepthOut blitDepthFS(BlitVSOut input [[stage_in]],
                                       [[texture(0), function_constant(kSourceTextureType2D)]],
                                       texture2d_array<float> srcTexture2dArray
                                       [[texture(0), function_constant(kSourceTextureType2DArray)]],
+                                      texture2d_ms<float> srcTexture2dMS
+                                      [[texture(0), function_constant(kSourceTextureType2DMS)]],
                                       texturecube<float> srcTextureCube
                                       [[texture(0), function_constant(kSourceTextureTypeCube)]],
                                       constant BlitParams &options [[buffer(0)]])
 {
     FragmentDepthOut re;
 
-    re.depth =
-        sampleDepth(srcTexture2d, srcTexture2dArray, srcTextureCube, input.texCoords, options);
+    re.depth = sampleDepth(srcTexture2d, srcTexture2dArray, srcTexture2dMS, srcTextureCube,
+                           input.texCoords, options);
 
     return re;
 }
@@ -203,6 +218,7 @@ fragment FragmentDepthOut blitDepthFS(BlitVSOut input [[stage_in]],
 
 constant bool kSourceTexture2Type2D      = kSourceTexture2Type == kTextureType2D;
 constant bool kSourceTexture2Type2DArray = kSourceTexture2Type == kTextureType2DArray;
+constant bool kSourceTexture2Type2DMS    = kSourceTexture2Type == kTextureType2DMultisample;
 constant bool kSourceTexture2TypeCube    = kSourceTexture2Type == kTextureTypeCube;
 
 struct FragmentStencilOut
@@ -216,14 +232,14 @@ struct FragmentDepthStencilOut
     uint32_t stencil [[stencil]];
 };
 
-uint32_t sampleStencil(texture2d<uint32_t> srcTexture2d
-                       [[function_constant(kSourceTexture2Type2D)]],
-                       texture2d_array<uint32_t> srcTexture2dArray
-                       [[function_constant(kSourceTexture2Type2DArray)]],
-                       texturecube<uint32_t> srcTextureCube
-                       [[function_constant(kSourceTexture2TypeCube)]],
-                       float2 texCoords,
-                       constant BlitParams &options)
+static inline
+uint32_t sampleStencil(
+    texture2d<uint32_t> srcTexture2d [[function_constant(kSourceTexture2Type2D)]],
+    texture2d_array<uint32_t> srcTexture2dArray [[function_constant(kSourceTexture2Type2DArray)]],
+    texture2d_ms<uint32_t> srcTexture2dMS [[function_constant(kSourceTexture2Type2DMS)]],
+    texturecube<uint32_t> srcTextureCube [[function_constant(kSourceTexture2TypeCube)]],
+    float2 texCoords,
+    constant BlitParams &options)
 {
     uint4 output;
     constexpr sampler textureSampler(mag_filter::nearest, min_filter::nearest);
@@ -236,6 +252,10 @@ uint32_t sampleStencil(texture2d<uint32_t> srcTexture2d
         case kTextureType2DArray:
             output = srcTexture2dArray.sample(textureSampler, texCoords, options.srcLayer,
                                               level(options.srcLevel));
+            break;
+        case kTextureType2DMultisample:
+            // Always use sample 0 for stencil resolve:
+            output = srcTexture2dMS.read(getImageCoords(srcTexture2dMS, texCoords), 0);
             break;
         case kTextureTypeCube:
             output =
@@ -252,13 +272,14 @@ fragment FragmentStencilOut blitStencilFS(
     texture2d<uint32_t> srcTexture2d [[texture(1), function_constant(kSourceTexture2Type2D)]],
     texture2d_array<uint32_t> srcTexture2dArray
     [[texture(1), function_constant(kSourceTexture2Type2DArray)]],
+    texture2d_ms<uint32_t> srcTexture2dMS [[texture(1), function_constant(kSourceTexture2Type2DMS)]],
     texturecube<uint32_t> srcTextureCube [[texture(1), function_constant(kSourceTexture2TypeCube)]],
     constant BlitParams &options [[buffer(0)]])
 {
     FragmentStencilOut re;
 
-    re.stencil =
-        sampleStencil(srcTexture2d, srcTexture2dArray, srcTextureCube, input.texCoords, options);
+    re.stencil = sampleStencil(srcTexture2d, srcTexture2dArray, srcTexture2dMS, srcTextureCube,
+                               input.texCoords, options);
 
     return re;
 }
@@ -269,6 +290,8 @@ fragment FragmentDepthStencilOut blitDepthStencilFS(
     texture2d<float> srcDepthTexture2d [[texture(0), function_constant(kSourceTextureType2D)]],
     texture2d_array<float> srcDepthTexture2dArray
     [[texture(0), function_constant(kSourceTextureType2DArray)]],
+    texture2d_ms<float> srcDepthTexture2dMS
+    [[texture(0), function_constant(kSourceTextureType2DMS)]],
     texturecube<float> srcDepthTextureCube
     [[texture(0), function_constant(kSourceTextureTypeCube)]],
 
@@ -277,16 +300,19 @@ fragment FragmentDepthStencilOut blitDepthStencilFS(
     [[texture(1), function_constant(kSourceTexture2Type2D)]],
     texture2d_array<uint32_t> srcStencilTexture2dArray
     [[texture(1), function_constant(kSourceTexture2Type2DArray)]],
+    texture2d_ms<uint32_t> srcStencilTexture2dMS
+    [[texture(1), function_constant(kSourceTexture2Type2DMS)]],
     texturecube<uint32_t> srcStencilTextureCube
     [[texture(1), function_constant(kSourceTexture2TypeCube)]],
+
     constant BlitParams &options [[buffer(0)]])
 {
     FragmentDepthStencilOut re;
 
-    re.depth   = sampleDepth(srcDepthTexture2d, srcDepthTexture2dArray, srcDepthTextureCube,
-                           input.texCoords, options);
-    re.stencil = sampleStencil(srcStencilTexture2d, srcStencilTexture2dArray, srcStencilTextureCube,
-                               input.texCoords, options);
+    re.depth   = sampleDepth(srcDepthTexture2d, srcDepthTexture2dArray, srcDepthTexture2dMS,
+                           srcDepthTextureCube, input.texCoords, options);
+    re.stencil = sampleStencil(srcStencilTexture2d, srcStencilTexture2dArray, srcStencilTexture2dMS,
+                               srcStencilTextureCube, input.texCoords, options);
     return re;
 }
 #endif
