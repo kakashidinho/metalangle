@@ -53,7 +53,7 @@ void EnsureContentSynced(ContextMtl *context, const std::shared_ptr<T> &resource
     // Make sure GPU & CPU contents are synchronized.
     // NOTE: Only MacOS has separated storage for resource on CPU and GPU and needs explicit
     // synchronization
-    if (resource->isCPUReadMemNeedSync())
+    if (resource->get().storageMode == MTLStorageModeManaged && resource->isCPUReadMemNeedSync())
     {
         mtl::BlitCommandEncoder *blitEncoder = context->getBlitCommandEncoder();
         SyncContent(context, blitEncoder, resource);
