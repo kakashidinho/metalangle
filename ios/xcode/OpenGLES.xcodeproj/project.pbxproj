@@ -539,6 +539,9 @@
 		0A60604523466F45005CEA98 /* loadimage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A60603E23466F45005CEA98 /* loadimage.cpp */; };
 		0A60604823466FB8005CEA98 /* libangle_image_util.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A60602A23466F1C005CEA98 /* libangle_image_util.a */; };
 		0A60604923466FB8005CEA98 /* libangle_metal_backend.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A6055C123465399005CEA98 /* libangle_metal_backend.a */; };
+		0A6AD5F8242AA458007CCD35 /* SyncMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A6AD5F6242AA458007CCD35 /* SyncMtl.mm */; };
+		0A6AD5F9242AA458007CCD35 /* SyncMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A6AD5F6242AA458007CCD35 /* SyncMtl.mm */; };
+		0A6AD5FA242AA458007CCD35 /* SyncMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A6AD5F6242AA458007CCD35 /* SyncMtl.mm */; };
 		0A90F6802405806C005BA9A8 /* MGLKitPlatform.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A90F67F2405806C005BA9A8 /* MGLKitPlatform.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		0A90F6812405806C005BA9A8 /* MGLKitPlatform.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A90F67F2405806C005BA9A8 /* MGLKitPlatform.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		0A90F6A124065A95005BA9A8 /* MemoryBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA200B723473CBC00E0B98C /* MemoryBuffer.cpp */; };
@@ -3471,6 +3474,13 @@
 		0A60603C23466F45005CEA98 /* loadimage_etc.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = loadimage_etc.cpp; path = ../../src/image_util/loadimage_etc.cpp; sourceTree = "<group>"; };
 		0A60603D23466F45005CEA98 /* copyimage.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = copyimage.cpp; path = ../../src/image_util/copyimage.cpp; sourceTree = "<group>"; };
 		0A60603E23466F45005CEA98 /* loadimage.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = loadimage.cpp; path = ../../src/image_util/loadimage.cpp; sourceTree = "<group>"; };
+		0A6AD5F1242AA41A007CCD35 /* copy_pixel_buffer.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = copy_pixel_buffer.metal; sourceTree = "<group>"; };
+		0A6AD5F2242AA41A007CCD35 /* format_autogen.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = format_autogen.h; sourceTree = "<group>"; };
+		0A6AD5F3242AA41B007CCD35 /* gen_mtl_internal_shaders.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = gen_mtl_internal_shaders.py; sourceTree = "<group>"; };
+		0A6AD5F4242AA41B007CCD35 /* constants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = constants.h; sourceTree = "<group>"; };
+		0A6AD5F5242AA41B007CCD35 /* gen_mipmap.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = gen_mipmap.metal; sourceTree = "<group>"; };
+		0A6AD5F6242AA458007CCD35 /* SyncMtl.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = SyncMtl.mm; path = ../../src/libANGLE/renderer/metal/SyncMtl.mm; sourceTree = "<group>"; };
+		0A6AD5F7242AA458007CCD35 /* SyncMtl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SyncMtl.h; path = ../../src/libANGLE/renderer/metal/SyncMtl.h; sourceTree = "<group>"; };
 		0A90F67F2405806C005BA9A8 /* MGLKitPlatform.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MGLKitPlatform.h; sourceTree = "<group>"; };
 		0A90F69124065A27005BA9A8 /* DisplayCGL.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = DisplayCGL.h; path = ../../src/libANGLE/renderer/gl/cgl/DisplayCGL.h; sourceTree = "<group>"; };
 		0A90F69224065A27005BA9A8 /* WindowSurfaceCGL.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = WindowSurfaceCGL.h; path = ../../src/libANGLE/renderer/gl/cgl/WindowSurfaceCGL.h; sourceTree = "<group>"; };
@@ -4819,6 +4829,8 @@
 				0A6055E5234655FD005CEA98 /* ShaderMtl.mm */,
 				0A6055F9234655FD005CEA98 /* mtl_state_cache.h */,
 				0A6055F2234655FD005CEA98 /* mtl_state_cache.mm */,
+				0A6AD5F7242AA458007CCD35 /* SyncMtl.h */,
+				0A6AD5F6242AA458007CCD35 /* SyncMtl.mm */,
 				0A6055F8234655FD005CEA98 /* SurfaceMtl.h */,
 				0A6055DD234655FC005CEA98 /* SurfaceMtl.mm */,
 				0A6055F3234655FD005CEA98 /* TextureMtl.h */,
@@ -4834,6 +4846,11 @@
 		0A6055E6234655FD005CEA98 /* shaders */ = {
 			isa = PBXGroup;
 			children = (
+				0A6AD5F4242AA41B007CCD35 /* constants.h */,
+				0A6AD5F1242AA41A007CCD35 /* copy_pixel_buffer.metal */,
+				0A6AD5F2242AA41A007CCD35 /* format_autogen.h */,
+				0A6AD5F5242AA41B007CCD35 /* gen_mipmap.metal */,
+				0A6AD5F3242AA41B007CCD35 /* gen_mtl_internal_shaders.py */,
 				0AC8B2DA241E9681003916D1 /* blit.metal */,
 				0AC8B2DB241E9681003916D1 /* clear.metal */,
 				0AC8B2DC241E9682003916D1 /* common.h */,
@@ -8400,6 +8417,7 @@
 				0A60565D23465667005CEA98 /* mtl_render_utils.mm in Sources */,
 				0AC8B2ED241E9761003916D1 /* mtl_occlusion_query_pool.mm in Sources */,
 				0A60565E23465667005CEA98 /* VertexArrayMtl.mm in Sources */,
+				0A6AD5F8242AA458007CCD35 /* SyncMtl.mm in Sources */,
 				0A60564B23465667005CEA98 /* FrameBufferMtl.mm in Sources */,
 				0A60565923465667005CEA98 /* ShaderMtl.mm in Sources */,
 				0AC8B2F0241E9761003916D1 /* QueryMtl.mm in Sources */,
@@ -8623,6 +8641,7 @@
 				0A90F76C24065B06005BA9A8 /* mtl_render_utils.mm in Sources */,
 				0AC8B2EE241E9761003916D1 /* mtl_occlusion_query_pool.mm in Sources */,
 				0A90F76D24065B06005BA9A8 /* VertexArrayMtl.mm in Sources */,
+				0A6AD5F9242AA458007CCD35 /* SyncMtl.mm in Sources */,
 				0A90F76E24065B06005BA9A8 /* FrameBufferMtl.mm in Sources */,
 				0A90F76F24065B06005BA9A8 /* ShaderMtl.mm in Sources */,
 				0AC8B2F1241E9761003916D1 /* QueryMtl.mm in Sources */,
@@ -9468,6 +9487,7 @@
 				0AA2FFC4234727A400E0B98C /* mtl_render_utils.mm in Sources */,
 				0AC8B2EF241E9761003916D1 /* mtl_occlusion_query_pool.mm in Sources */,
 				0AA2FFC5234727A400E0B98C /* VertexArrayMtl.mm in Sources */,
+				0A6AD5FA242AA458007CCD35 /* SyncMtl.mm in Sources */,
 				0AA2FFC6234727A400E0B98C /* FrameBufferMtl.mm in Sources */,
 				0AA2FFC8234727A400E0B98C /* ShaderMtl.mm in Sources */,
 				0AC8B2F2241E9761003916D1 /* QueryMtl.mm in Sources */,
@@ -9810,11 +9830,11 @@
 					ANGLE_ENABLE_METAL,
 					"JSON_USE_EXCEPTION=0",
 				);
-				"GCC_PREPROCESSOR_DEFINITIONS[arch=x86_64]" = (
+				"GCC_PREPROCESSOR_DEFINITIONS[arch=arm64]" = (
 					ANGLE_IS_64_BIT_CPU,
 					"$(inherited)",
 				);
-				"GCC_PREPROCESSOR_DEFINITIONS[arch=arm64]" = (
+				"GCC_PREPROCESSOR_DEFINITIONS[arch=x86_64]" = (
 					ANGLE_IS_64_BIT_CPU,
 					"$(inherited)",
 				);
@@ -9896,11 +9916,11 @@
 					ANGLE_ENABLE_METAL,
 					"JSON_USE_EXCEPTION=0",
 				);
-				"GCC_PREPROCESSOR_DEFINITIONS[arch=x86_64]" = (
+				"GCC_PREPROCESSOR_DEFINITIONS[arch=arm64]" = (
 					ANGLE_IS_64_BIT_CPU,
 					"$(inherited)",
 				);
-				"GCC_PREPROCESSOR_DEFINITIONS[arch=arm64]" = (
+				"GCC_PREPROCESSOR_DEFINITIONS[arch=x86_64]" = (
 					ANGLE_IS_64_BIT_CPU,
 					"$(inherited)",
 				);
