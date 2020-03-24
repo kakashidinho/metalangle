@@ -622,7 +622,7 @@ RenderTargetMtl &TextureMtl::getRenderTarget(const gl::ImageIndex &imageIndex)
 }
 mtl::TextureRef &TextureMtl::getImplicitMSTexture(const gl::ImageIndex &imageIndex)
 {
-    ASSERT(imageIndex.hasLayer());
+    ASSERT(imageIndex.getType() == gl::TextureType::_2D || imageIndex.hasLayer());
     return mImplicitMSTextures[GetImageLayerIndex(imageIndex)][imageIndex.getLevelIndex()];
 }
 
