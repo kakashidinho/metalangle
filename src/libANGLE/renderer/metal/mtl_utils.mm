@@ -132,6 +132,42 @@ angle::Result ReadTexturePerSliceBytes(const gl::Context *context,
     return angle::Result::Continue;
 }
 
+angle::Result ReadTexturePerSliceBytesToBuffer(const gl::Context *context,
+                                               const TextureRef &texture,
+                                               size_t bytesPerRow,
+                                               const gl::Rectangle &fromRegion,
+                                               uint32_t mipLevel,
+                                               uint32_t sliceOrDepth,
+                                               uint32_t dstOffset,
+                                               const BufferRef &dstBuffer)
+{
+    ASSERT(texture && texture->valid());
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+    GLint layer            = 0;
+    GLint startDepth       = 0;
+    switch (texture->textureType())
+    {
+        case MTLTextureTypeCube:
+        case MTLTextureType2DArray:
+            layer = sliceOrDepth;
+            break;
+        case MTLTextureType3D:
+            startDepth = sliceOrDepth;
+            break;
+        default:
+            break;
+    }
+
+    MTLRegion mtlRegion = MTLRegionMake3D(fromRegion.x, fromRegion.y, startDepth, fromRegion.width,
+                                          fromRegion.height, 1);
+
+    BlitCommandEncoder *blitEncoder = contextMtl->getBlitCommandEncoder();
+    blitEncoder->copyTextureToBuffer(texture, layer, mipLevel, mtlRegion.origin, mtlRegion.size,
+                                     dstBuffer, dstOffset, bytesPerRow, 0, MTLBlitOptionNone);
+
+    return angle::Result::Continue;
+}
+
 MTLViewport GetViewport(const gl::Rectangle &rect, double znear, double zfar)
 {
     MTLViewport re;

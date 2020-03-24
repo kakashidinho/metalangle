@@ -42,6 +42,15 @@ angle::Result ReadTexturePerSliceBytes(const gl::Context *context,
                                        uint32_t sliceOrDepth,
                                        uint8_t *dataOut);
 
+angle::Result ReadTexturePerSliceBytesToBuffer(const gl::Context *context,
+                                               const TextureRef &texture,
+                                               size_t bytesPerRow,
+                                               const gl::Rectangle &fromRegion,
+                                               uint32_t mipLevel,
+                                               uint32_t sliceOrDepth,
+                                               uint32_t dstOffset,
+                                               const BufferRef &dstBuffer);
+
 MTLViewport GetViewport(const gl::Rectangle &rect, double znear = 0, double zfar = 1);
 MTLViewport GetViewportFlipY(const gl::Rectangle &rect,
                              NSUInteger screenHeight,
@@ -112,6 +121,32 @@ bool IsFormatEmulated(const mtl::Format &mtlFormat);
 // Useful to set clear color for texture originally having no alpha in GL, but backend's format
 // has alpha channel.
 MTLClearColor EmulatedAlphaClearColor(MTLClearColor color, MTLColorWriteMask colorMask);
+
+static inline gl::Extents MTLSizeToGLExtents(const MTLSize &mtlSize)
+{
+    return gl::Extents(static_cast<int>(mtlSize.width), static_cast<int>(mtlSize.height),
+                       static_cast<int>(mtlSize.depth));
+}
+
+static inline gl::Offset MTLOriginToGLOffset(const MTLOrigin &mtlOrigin)
+{
+    return gl::Offset(static_cast<int>(mtlOrigin.x), static_cast<int>(mtlOrigin.y),
+                      static_cast<int>(mtlOrigin.z));
+}
+
+static inline gl::Box MTLRegionToGLBox(const MTLRegion &mtlRegion)
+{
+    return gl::Box(static_cast<int>(mtlRegion.origin.x), static_cast<int>(mtlRegion.origin.y),
+                   static_cast<int>(mtlRegion.origin.z), static_cast<int>(mtlRegion.size.width),
+                   static_cast<int>(mtlRegion.size.height), static_cast<int>(mtlRegion.size.depth));
+}
+
+static inline gl::Rectangle MTLRegionToGLRectangle(const MTLRegion &mtlRegion)
+{
+    return gl::Rectangle(static_cast<int>(mtlRegion.origin.x), static_cast<int>(mtlRegion.origin.y),
+                         static_cast<int>(mtlRegion.size.width),
+                         static_cast<int>(mtlRegion.size.height));
+}
 
 NS_ASSUME_NONNULL_END
 }  // namespace mtl

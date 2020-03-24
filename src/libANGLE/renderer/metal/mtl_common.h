@@ -144,6 +144,13 @@ constexpr float kEmulatedAlphaValue = 1.0f;
 
 constexpr uint32_t kOcclusionQueryResultSize = sizeof(uint64_t);
 
+// Work-around the enum is not available on macOS
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
+constexpr MTLBlitOption BlitOptionRowLinearPVRTC = MTLBlitOptionNone;
+#else
+constexpr MTLBlitOption BlitOptionRowLinearPVRTC           = MTLBlitOptionRowLinearPVRTC;
+#endif
+
 // NOTE(hqle): Support ES 3.0.
 constexpr gl::Version kMaxSupportedGLVersion = gl::Version(2, 0);
 

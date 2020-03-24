@@ -522,6 +522,15 @@ uint32_t Texture::arrayLength() const
     return static_cast<uint32_t>(get().arrayLength);
 }
 
+uint32_t Texture::cubeFacesOrArrayLength() const
+{
+    if (textureType() == MTLTextureTypeCube)
+    {
+        return 6;
+    }
+    return arrayLength();
+}
+
 uint32_t Texture::width(uint32_t level) const
 {
     return static_cast<uint32_t>(GetMipSize(get().width, level));

@@ -199,6 +199,7 @@ class TextureMtl : public TextureImpl
                                   const gl::InternalFormat &formatInfo,
                                   GLenum type,
                                   const gl::PixelUnpackState &unpack,
+                                  gl::Buffer *unpackBuffer,
                                   const uint8_t *pixels);
 
     angle::Result copySubImageImpl(const gl::Context *context,
@@ -227,6 +228,7 @@ class TextureMtl : public TextureImpl
                                       const angle::Format &pixelsFormat,
                                       size_t pixelsRowPitch,
                                       size_t pixelsDepthPitch,
+                                      gl::Buffer *unpackBuffer,
                                       const uint8_t *pixels,
                                       const mtl::TextureRef &image);
 
@@ -238,6 +240,7 @@ class TextureMtl : public TextureImpl
                                                 const angle::Format &pixelsFormat,
                                                 size_t pixelsRowPitch,
                                                 size_t pixelsDepthPitch,
+                                                gl::Buffer *unpackBuffer,
                                                 const uint8_t *pixels,
                                                 const mtl::TextureRef &image);
 

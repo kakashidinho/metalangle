@@ -8,21 +8,22 @@
 #ifndef LIBANGLE_RENDERER_METAL_SHADERS_ENUM_H_
 #define LIBANGLE_RENDERER_METAL_SHADERS_ENUM_H_
 
-#if !defined(__METAL_VERSION__)
-#    define constant constexpr
-#endif
+#include "format_autogen.h"
 
 namespace rx
 {
 namespace mtl_shader
 {
 
-constant int kTextureType2D            = 0;
-constant int kTextureType2DMultisample = 1;
-constant int kTextureType2DArray       = 2;
-constant int kTextureTypeCube          = 3;
-constant int kTextureType3D            = 4;
-constant int kTextureTypeCount         = 5;
+enum
+{
+    kTextureType2D            = 0,
+    kTextureType2DMultisample = 1,
+    kTextureType2DArray       = 2,
+    kTextureTypeCube          = 3,
+    kTextureType3D            = 4,
+    kTextureTypeCount         = 5,
+};
 
 // Metal doesn't support constexpr to be used as array size, so we need to use macro here
 #define kGenerateMipThreadGroupSizePerDim 8

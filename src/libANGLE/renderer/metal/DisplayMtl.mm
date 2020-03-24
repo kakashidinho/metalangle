@@ -580,6 +580,9 @@ void DisplayMtl::initializeExtensions() const
 
     // GL_APPLE_clip_distance
     mNativeExtensions.clipDistanceAPPLE = true;
+
+    // GL_NV_pixel_buffer_object
+    mNativeExtensions.pixelBufferObject = true;
 }
 
 void DisplayMtl::initializeTextureCaps() const

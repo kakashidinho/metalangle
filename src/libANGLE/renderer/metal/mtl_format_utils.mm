@@ -144,6 +144,26 @@ bool Format::needConversion(angle::FormatID srcFormatId) const
     return srcFormatId != actualFormatId;
 }
 
+bool Format::isPVRTC() const
+{
+    switch (metalFormat)
+    {
+#if TARGET_OS_IOS && !TARGET_OS_MACCATALYST
+        case MTLPixelFormatPVRTC_RGB_2BPP:
+        case MTLPixelFormatPVRTC_RGB_2BPP_sRGB:
+        case MTLPixelFormatPVRTC_RGB_4BPP:
+        case MTLPixelFormatPVRTC_RGB_4BPP_sRGB:
+        case MTLPixelFormatPVRTC_RGBA_2BPP:
+        case MTLPixelFormatPVRTC_RGBA_2BPP_sRGB:
+        case MTLPixelFormatPVRTC_RGBA_4BPP:
+        case MTLPixelFormatPVRTC_RGBA_4BPP_sRGB:
+            return true;
+#endif
+        default:
+            return false;
+    }
+}
+
 // FormatTable implementation
 angle::Result FormatTable::initialize(const DisplayMtl *display)
 {

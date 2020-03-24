@@ -6,6 +6,8 @@
 
 #include "common.h"
 
+using namespace rx::mtl_shader;
+
 // function_constant(0) is already used by common.h
 constant bool kSourceBufferAligned[[function_constant(1)]];
 constant bool kSourceIndexIsU8[[function_constant(2)]];

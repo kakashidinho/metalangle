@@ -4,7 +4,10 @@
 // found in the LICENSE file.
 //
 // mtl_render_utils.h:
-//    Defines the class interface for RenderUtils.
+//    Defines the class interface for RenderUtils, which contains many utility functions and shaders
+//    for converting, blitting, copying as well as generating data, and many more.
+// NOTE(hqle): Consider splitting this class into multiple classes each doing different utilities.
+// This class has become too big.
 //
 
 #ifndef LIBANGLE_RENDERER_METAL_MTL_RENDER_UTILS_H_
@@ -16,37 +19,6 @@
 #include "libANGLE/renderer/metal/mtl_command_buffer.h"
 #include "libANGLE/renderer/metal/mtl_state_cache.h"
 #include "libANGLE/renderer/metal/shaders/constants.h"
-
-namespace rx
-{
-namespace mtl
-{
-struct IndexConversionPipelineCacheKey
-{
-    gl::DrawElementsType srcType;
-    bool srcBufferOffsetAligned;
-
-    bool operator==(const IndexConversionPipelineCacheKey &other) const;
-
-    size_t hash() const;
-};
-
-}  // namespace mtl
-}  // namespace rx
-
-namespace std
-{
-
-template <>
-struct hash<rx::mtl::IndexConversionPipelineCacheKey>
-{
-    size_t operator()(const rx::mtl::IndexConversionPipelineCacheKey &key) const
-    {
-        return key.hash();
-    }
-};
-
-}  // namespace std
 
 namespace rx
 {
@@ -126,6 +98,30 @@ struct IndexGenerationParams
     uint32_t dstOffset;
 };
 
+struct CopyPixelsCommonParams
+{
+    BufferRef buffer;
+    uint32_t bufferStartOffset = 0;
+    uint32_t bufferRowPitch    = 0;
+
+    TextureRef texture;
+};
+
+struct CopyPixelsFromBufferParams : CopyPixelsCommonParams
+{
+    uint32_t bufferDepthPitch = 0;
+
+    gl::Box textureArea;
+};
+
+struct CopyPixelsToBufferParams : CopyPixelsCommonParams
+{
+    gl::Rectangle textureArea;
+    uint32_t textureLevel       = 0;
+    uint32_t textureSliceOrDeph = 0;
+    bool reverseTextureRowOrder;
+};
+
 class RenderUtils : public Context, angle::NonCopyable
 {
   public:
@@ -179,6 +175,13 @@ class RenderUtils : public Context, angle::NonCopyable
     angle::Result generateMipmapCS(ContextMtl *contextMtl,
                                    const TextureRef &srcTexture,
                                    gl::TexLevelArray<mtl::TextureRef> *mipmapOutputViews);
+
+    angle::Result unpackPixelsFromBufferToTexture(ContextMtl *contextMtl,
+                                                  const angle::Format &srcAngleFormat,
+                                                  const CopyPixelsFromBufferParams &params);
+    angle::Result packPixelsFromTextureToBuffer(ContextMtl *contextMtl,
+                                                const angle::Format &dstAngleFormat,
+                                                const CopyPixelsToBufferParams &params);
 
     void dispatchCompute(ContextMtl *contextMtl,
                          ComputeCommandEncoder *encoder,
@@ -249,6 +252,10 @@ class RenderUtils : public Context, angle::NonCopyable
     void ensure2DArrayMipGeneratorPipelineInitialized();
     void ensureCubeMipGeneratorPipelineInitialized();
 
+    AutoObjCPtr<id<MTLComputePipelineState>> getPixelsCopyPipeline(const angle::Format &angleFormat,
+                                                                   const TextureRef &texture,
+                                                                   bool bufferWrite);
+
     angle::Result generateTriFanBufferFromElementsArrayGPU(
         ContextMtl *contextMtl,
         gl::DrawElementsType srcType,
@@ -264,7 +271,10 @@ class RenderUtils : public Context, angle::NonCopyable
         ContextMtl *contextMtl,
         const IndexGenerationParams &params);
 
-    RenderPipelineCache mClearRenderPipelineCache[kMaxRenderTargets + 1];
+    // Render pipeline cache for clear with draw:
+    std::array<RenderPipelineCache, kMaxRenderTargets + 1> mClearRenderPipelineCache;
+
+    // Blit with draw pipeline caches:
     // First array dimension: number of outputs.
     // Second array dimension: source texture type (2d, ms, array, 3d, etc)
     using ColorBlitRenderPipelineCacheArray =
@@ -280,16 +290,34 @@ class RenderUtils : public Context, angle::NonCopyable
                mtl_shader::kTextureTypeCount>
         mDepthStencilBlitRenderPipelineCache;
 
-    std::unordered_map<IndexConversionPipelineCacheKey, AutoObjCPtr<id<MTLComputePipelineState>>>
-        mIndexConversionPipelineCaches;
-    std::unordered_map<IndexConversionPipelineCacheKey, AutoObjCPtr<id<MTLComputePipelineState>>>
-        mTriFanFromElemArrayGeneratorPipelineCaches;
+    // Index generator compute pipelines:
+    //  - First dimension: index type.
+    //  - second dimension: source buffer's offset is aligned or not.
+    using IndexConversionPipelineArray =
+        std::array<std::array<AutoObjCPtr<id<MTLComputePipelineState>>, 2>,
+                   angle::EnumSize<gl::DrawElementsType>()>;
+    IndexConversionPipelineArray mIndexConversionPipelineCaches;
+    IndexConversionPipelineArray mTriFanFromElemArrayGeneratorPipelineCaches;
     AutoObjCPtr<id<MTLComputePipelineState>> mTriFanFromArraysGeneratorPipeline;
+
+    // Visibility combination compute pipeline:
     AutoObjCPtr<id<MTLComputePipelineState>> mVisibilityResultCombPipeline;
+
+    // Mipmaps generating compute pipeline:
     AutoObjCPtr<id<MTLComputePipelineState>> m3DMipGeneratorPipeline;
     AutoObjCPtr<id<MTLComputePipelineState>> m2DMipGeneratorPipeline;
     AutoObjCPtr<id<MTLComputePipelineState>> m2DArrayMipGeneratorPipeline;
     AutoObjCPtr<id<MTLComputePipelineState>> mCubeMipGeneratorPipeline;
+
+    // Copy pixels between buffer and texture compute pipelines:
+    // - First dimension: pixel format.
+    // - Second dimension: texture type * (buffer read/write flag)
+    using PixelsCopyPipelineArray = std::array<
+        std::array<AutoObjCPtr<id<MTLComputePipelineState>>, mtl_shader::kTextureTypeCount * 2>,
+        angle::kNumANGLEFormats>;
+    PixelsCopyPipelineArray floatPixelsCopyPipelineCaches;
+    PixelsCopyPipelineArray intPixelsCopyPipelineCaches;
+    PixelsCopyPipelineArray uintPixelsCopyPipelineCaches;
 };
 
 }  // namespace mtl

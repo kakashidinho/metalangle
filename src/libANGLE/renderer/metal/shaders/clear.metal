@@ -7,6 +7,8 @@
 
 #include "common.h"
 
+using namespace rx::mtl_shader;
+
 struct ClearParams
 {
     float4 clearColor;

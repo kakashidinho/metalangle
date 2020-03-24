@@ -1771,7 +1771,7 @@ TEST_P(Texture2DTest, TexStorage)
 // initialized the image with a default color.
 TEST_P(Texture2DTest, TexStorageWithPBO)
 {
-    if (IsGLExtensionEnabled("NV_pixel_buffer_object"))
+    if (IsGLExtensionEnabled("GL_NV_pixel_buffer_object"))
     {
         int width  = getWindowWidth();
         int height = getWindowHeight();
@@ -1781,13 +1781,22 @@ TEST_P(Texture2DTest, TexStorageWithPBO)
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, tex2D);
 
-        // Fill with red
+        // Fill with red, with middle one as green
         std::vector<GLubyte> pixels(3 * 16 * 16);
         for (size_t pixelId = 0; pixelId < 16 * 16; ++pixelId)
         {
-            pixels[pixelId * 3 + 0] = 255;
-            pixels[pixelId * 3 + 1] = 0;
-            pixels[pixelId * 3 + 2] = 0;
+            if (pixelId == 8 * 7 + 7)
+            {
+                pixels[pixelId * 3 + 0] = 0;
+                pixels[pixelId * 3 + 1] = 255;
+                pixels[pixelId * 3 + 2] = 0;
+            }
+            else
+            {
+                pixels[pixelId * 3 + 0] = 255;
+                pixels[pixelId * 3 + 1] = 0;
+                pixels[pixelId * 3 + 2] = 0;
+            }
         }
 
         // Read 16x16 region from red backbuffer to PBO
@@ -1804,8 +1813,8 @@ TEST_P(Texture2DTest, TexStorageWithPBO)
         // Initializes the color of the upper-left 8x8 pixels, leaves the other pixels untouched.
         // glTexSubImage2D should take into account that the image is dirty.
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 8, 8, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
         setUpProgram();
 
@@ -1817,6 +1826,222 @@ TEST_P(Texture2DTest, TexStorageWithPBO)
         EXPECT_GL_NO_ERROR();
         EXPECT_PIXEL_EQ(3 * width / 4, 3 * height / 4, 0, 0, 0, 255);
         EXPECT_PIXEL_EQ(width / 4, height / 4, 255, 0, 0, 255);
+        EXPECT_PIXEL_EQ(width / 2 - 1, height / 2 - 1, 0, 255, 0, 255);
+    }
+}
+
+TEST_P(Texture2DTest, TexStorageWithLuminancePBO)
+{
+    if (IsGLExtensionEnabled("GL_NV_pixel_buffer_object"))
+    {
+        int width  = getWindowWidth();
+        int height = getWindowHeight();
+
+        GLuint tex2D;
+        glGenTextures(1, &tex2D);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tex2D);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, 16, 16, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE,
+                     nullptr);
+
+        // Fill with white, with middle one as grey
+        std::vector<GLubyte> pixels(16 * 16);
+        for (size_t pixelId = 0; pixelId < 16 * 16; ++pixelId)
+        {
+            if (pixelId == 8 * 7 + 7)
+            {
+                pixels[pixelId] = 128;
+            }
+            else
+            {
+                pixels[pixelId] = 255;
+            }
+        }
+
+        // Read 16x16 region from red backbuffer to PBO
+        GLuint pbo;
+        glGenBuffers(1, &pbo);
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
+        glBufferData(GL_PIXEL_UNPACK_BUFFER, 16 * 16, pixels.data(), GL_STATIC_DRAW);
+
+        // Initializes the color of the upper-left 8x8 pixels, leaves the other pixels untouched.
+        // glTexSubImage2D should take into account that the image is dirty.
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 8, 8, GL_LUMINANCE, GL_UNSIGNED_BYTE, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        setUpProgram();
+
+        glUseProgram(mProgram);
+        glUniform1i(mTexture2DUniformLocation, 0);
+        drawQuad(mProgram, "position", 0.5f);
+        glDeleteTextures(1, &tex2D);
+        glDeleteBuffers(1, &pbo);
+        EXPECT_GL_NO_ERROR();
+        EXPECT_PIXEL_EQ(width / 4, height / 4, 255, 255, 255, 255);
+        EXPECT_PIXEL_NEAR(width / 2 - 1, height / 2 - 1, 128, 128, 128, 255, 1);
+    }
+}
+
+TEST_P(Texture2DTest, TexStorageWithRGB565PBO)
+{
+    if (IsGLExtensionEnabled("GL_NV_pixel_buffer_object"))
+    {
+        int width  = getWindowWidth();
+        int height = getWindowHeight();
+
+        GLuint tex2D;
+        glGenTextures(1, &tex2D);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tex2D);
+
+        // Fill with red, with middle one as green
+        std::vector<GLushort> pixels(16 * 16);
+        for (size_t pixelId = 0; pixelId < 16 * 16; ++pixelId)
+        {
+            if (pixelId == 8 * 7 + 8)
+            {
+                pixels[pixelId] = 0x7E0;
+            }
+            else
+            {
+                pixels[pixelId] = 0xF800;
+            }
+        }
+
+        // Read 16x16 region from red backbuffer to PBO
+        GLuint pbo;
+        glGenBuffers(1, &pbo);
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
+        glBufferData(GL_PIXEL_UNPACK_BUFFER, 2 * 16 * 16, pixels.data(), GL_STATIC_DRAW);
+
+        glTexStorage2DEXT(GL_TEXTURE_2D, 1, GL_RGB565, 16, 16);
+
+        // Initializes the color of the upper-left 8x8 pixels, leaves the other pixels untouched.
+        // glTexSubImage2D should take into account that the image is dirty.
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 8, 8, GL_RGB, GL_UNSIGNED_SHORT_5_6_5,
+                        reinterpret_cast<void *>(2));
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        setUpProgram();
+
+        glUseProgram(mProgram);
+        glUniform1i(mTexture2DUniformLocation, 0);
+        drawQuad(mProgram, "position", 0.5f);
+        glDeleteTextures(1, &tex2D);
+        glDeleteBuffers(1, &pbo);
+        EXPECT_GL_NO_ERROR();
+        EXPECT_PIXEL_EQ(width / 4, height / 4, 255, 0, 0, 255);
+        EXPECT_PIXEL_EQ(width / 2 - 1, height / 2 - 1, 0, 255, 0, 255);
+    }
+}
+
+TEST_P(Texture2DTest, TexStorageWithRGBA4444PBO)
+{
+    if (IsGLExtensionEnabled("GL_NV_pixel_buffer_object"))
+    {
+        int width  = getWindowWidth();
+        int height = getWindowHeight();
+
+        GLuint tex2D;
+        glGenTextures(1, &tex2D);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tex2D);
+
+        // Fill with red, with middle one as green
+        std::vector<GLushort> pixels(16 * 16);
+        for (size_t pixelId = 0; pixelId < 16 * 16; ++pixelId)
+        {
+            if (pixelId == 8 * 7 + 8)
+            {
+                pixels[pixelId] = 0xF0F;
+            }
+            else
+            {
+                pixels[pixelId] = 0xF00F;
+            }
+        }
+
+        // Read 16x16 region from red backbuffer to PBO
+        GLuint pbo;
+        glGenBuffers(1, &pbo);
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
+        glBufferData(GL_PIXEL_UNPACK_BUFFER, 2 * 16 * 16, pixels.data(), GL_STATIC_DRAW);
+
+        glTexStorage2DEXT(GL_TEXTURE_2D, 1, GL_RGBA4, 16, 16);
+
+        // Initializes the color of the upper-left 8x8 pixels, leaves the other pixels untouched.
+        // glTexSubImage2D should take into account that the image is dirty.
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 8, 8, GL_RGBA, GL_UNSIGNED_SHORT_4_4_4_4,
+                        reinterpret_cast<void *>(2));
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        setUpProgram();
+
+        glUseProgram(mProgram);
+        glUniform1i(mTexture2DUniformLocation, 0);
+        drawQuad(mProgram, "position", 0.5f);
+        glDeleteTextures(1, &tex2D);
+        glDeleteBuffers(1, &pbo);
+        EXPECT_GL_NO_ERROR();
+        EXPECT_PIXEL_EQ(width / 4, height / 4, 255, 0, 0, 255);
+        EXPECT_PIXEL_EQ(width / 2 - 1, height / 2 - 1, 0, 255, 0, 255);
+    }
+}
+
+TEST_P(Texture2DTest, TexStorageWithRGBA5551PBO)
+{
+    if (IsGLExtensionEnabled("GL_NV_pixel_buffer_object"))
+    {
+        int width  = getWindowWidth();
+        int height = getWindowHeight();
+
+        GLuint tex2D;
+        glGenTextures(1, &tex2D);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tex2D);
+
+        // Fill with red, with middle one as green
+        std::vector<GLushort> pixels(16 * 16);
+        for (size_t pixelId = 0; pixelId < 16 * 16; ++pixelId)
+        {
+            if (pixelId == 8 * 7 + 7)
+            {
+                pixels[pixelId] = 0x7C1;
+            }
+            else
+            {
+                pixels[pixelId] = 0xF801;
+            }
+        }
+
+        // Read 16x16 region from red backbuffer to PBO
+        GLuint pbo;
+        glGenBuffers(1, &pbo);
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
+        glBufferData(GL_PIXEL_UNPACK_BUFFER, 2 * 16 * 16, pixels.data(), GL_STATIC_DRAW);
+
+        glTexStorage2DEXT(GL_TEXTURE_2D, 1, GL_RGB5_A1, 16, 16);
+
+        // Initializes the color of the upper-left 8x8 pixels, leaves the other pixels untouched.
+        // glTexSubImage2D should take into account that the image is dirty.
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 8, 8, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        setUpProgram();
+
+        glUseProgram(mProgram);
+        glUniform1i(mTexture2DUniformLocation, 0);
+        drawQuad(mProgram, "position", 0.5f);
+        glDeleteTextures(1, &tex2D);
+        glDeleteBuffers(1, &pbo);
+        EXPECT_GL_NO_ERROR();
+        EXPECT_PIXEL_EQ(width / 4, height / 4, 255, 0, 0, 255);
+        EXPECT_PIXEL_EQ(width / 2 - 1, height / 2 - 1, 0, 255, 0, 255);
     }
 }
 

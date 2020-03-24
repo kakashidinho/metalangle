@@ -14,6 +14,7 @@
 #include "common/MemoryBuffer.h"
 #include "common/debug.h"
 #include "common/mathutil.h"
+#include "libANGLE/renderer/metal/BufferMtl.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
 #include "libANGLE/renderer/metal/DisplayMtl.h"
 #include "libANGLE/renderer/metal/FrameBufferMtl.h"
@@ -650,7 +651,7 @@ angle::Result TextureMtl::setSubImage(const gl::Context *context,
 {
     const gl::InternalFormat &formatInfo = gl::GetInternalFormatInfo(format, type);
 
-    return setSubImageImpl(context, index, area, formatInfo, type, unpack, pixels);
+    return setSubImageImpl(context, index, area, formatInfo, type, unpack, unpackBuffer, pixels);
 }
 
 angle::Result TextureMtl::setCompressedImage(const gl::Context *context,
@@ -677,7 +678,11 @@ angle::Result TextureMtl::setCompressedSubImage(const gl::Context *context,
 
     const gl::InternalFormat &formatInfo = gl::GetInternalFormatInfo(format, GL_UNSIGNED_BYTE);
 
-    return setSubImageImpl(context, index, area, formatInfo, GL_UNSIGNED_BYTE, unpack, pixels);
+    const gl::State &glState = context->getState();
+    gl::Buffer *unpackBuffer = glState.getTargetBuffer(gl::BufferBinding::PixelUnpack);
+
+    return setSubImageImpl(context, index, area, formatInfo, GL_UNSIGNED_BYTE, unpack, unpackBuffer,
+                           pixels);
 }
 
 angle::Result TextureMtl::copyImage(const gl::Context *context,
@@ -1180,8 +1185,11 @@ angle::Result TextureMtl::setImageImpl(const gl::Context *context,
         return angle::Result::Continue;
     }
 
+    const gl::State &glState = context->getState();
+    gl::Buffer *unpackBuffer = glState.getTargetBuffer(gl::BufferBinding::PixelUnpack);
+
     return setSubImageImpl(context, index, gl::Box(0, 0, 0, size.width, size.height, size.depth),
-                           formatInfo, type, unpack, pixels);
+                           formatInfo, type, unpack, unpackBuffer, pixels);
 }
 
 angle::Result TextureMtl::setSubImageImpl(const gl::Context *context,
@@ -1190,10 +1198,12 @@ angle::Result TextureMtl::setSubImageImpl(const gl::Context *context,
                                           const gl::InternalFormat &formatInfo,
                                           GLenum type,
                                           const gl::PixelUnpackState &unpack,
+                                          gl::Buffer *unpackBuffer,
                                           const uint8_t *oriPixels)
 {
-    if (!oriPixels)
+    if (!oriPixels && !unpackBuffer)
     {
+        // If source pointer is null, and there is not any PBO bound, then ignore.
         return angle::Result::Continue;
     }
 
@@ -1254,7 +1264,7 @@ angle::Result TextureMtl::setSubImageImpl(const gl::Context *context,
             const uint8_t *srcPixels = usablePixels + slice * sourceDepthPitch;
             ANGLE_TRY(setPerSliceSubImage(context, sliceIndex, mtlRegion, formatInfo,
                                           srcAngleFormat, sourceRowPitch, sourceDepthPitch,
-                                          srcPixels, image));
+                                          unpackBuffer, srcPixels, image));
         }
     }
     else
@@ -1263,7 +1273,8 @@ angle::Result TextureMtl::setSubImageImpl(const gl::Context *context,
             MTLRegionMake3D(area.x, area.y, area.z, area.width, area.height, area.depth);
 
         ANGLE_TRY(setPerSliceSubImage(context, 0, mtlRegion, formatInfo, srcAngleFormat,
-                                      sourceRowPitch, sourceDepthPitch, usablePixels, image));
+                                      sourceRowPitch, sourceDepthPitch, unpackBuffer, usablePixels,
+                                      image));
     }
 
     return angle::Result::Continue;
@@ -1276,6 +1287,7 @@ angle::Result TextureMtl::setPerSliceSubImage(const gl::Context *context,
                                               const angle::Format &pixelsFormat,
                                               size_t pixelsRowPitch,
                                               size_t pixelsDepthPitch,
+                                              gl::Buffer *unpackBuffer,
                                               const uint8_t *pixels,
                                               const mtl::TextureRef &image)
 {
@@ -1283,11 +1295,45 @@ angle::Result TextureMtl::setPerSliceSubImage(const gl::Context *context,
     if (mFormat.needConversion(pixelsFormat.id))
     {
         return convertAndSetPerSliceSubImage(context, slice, mtlArea, internalFormat, pixelsFormat,
-                                             pixelsRowPitch, pixelsDepthPitch, pixels, image);
+                                             pixelsRowPitch, pixelsDepthPitch, unpackBuffer, pixels,
+                                             image);
     }
 
-    ANGLE_TRY(UploadTextureContents(context, mFormat.actualAngleFormat(), mtlArea, 0, slice, pixels,
-                                    pixelsRowPitch, pixelsDepthPitch, image));
+    // No conversion needed.
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+
+    if (unpackBuffer)
+    {
+        uintptr_t offset = reinterpret_cast<uintptr_t>(pixels);
+        ANGLE_MTL_CHECK(contextMtl, (offset % mFormat.actualAngleFormat().pixelBytes) == 0,
+                        GL_INVALID_OPERATION);
+        BufferMtl *unpackBufferMtl = mtl::GetImpl(unpackBuffer);
+
+        if (mFormat.hasDepthAndStencilBits())
+        {
+            // NOTE(hqle): packed depth & stencil texture cannot copy from buffer directly, needs
+            // to split its depth & stencil data and copy separately.
+            const uint8_t *clientData = unpackBufferMtl->getClientShadowCopyData(contextMtl);
+            clientData += offset;
+            ANGLE_TRY(UploadTextureContents(context, mFormat.actualAngleFormat(), mtlArea, 0, slice,
+                                            clientData, pixelsRowPitch, pixelsDepthPitch, image));
+        }
+        else
+        {
+            // Use blit encoder to copy
+            mtl::BlitCommandEncoder *blitEncoder = contextMtl->getBlitCommandEncoder();
+            blitEncoder->copyBufferToTexture(
+                unpackBufferMtl->getCurrentBuffer(), offset, pixelsRowPitch, pixelsDepthPitch,
+                mtlArea.size, image, slice, 0, mtlArea.origin,
+                mFormat.isPVRTC() ? mtl::BlitOptionRowLinearPVRTC : MTLBlitOptionNone);
+        }
+    }
+    else
+    {
+        // Upload texture data directly
+        ANGLE_TRY(UploadTextureContents(context, mFormat.actualAngleFormat(), mtlArea, 0, slice,
+                                        pixels, pixelsRowPitch, pixelsDepthPitch, image));
+    }
     return angle::Result::Continue;
 }
 
@@ -1298,6 +1344,7 @@ angle::Result TextureMtl::convertAndSetPerSliceSubImage(const gl::Context *conte
                                                         const angle::Format &pixelsFormat,
                                                         size_t pixelsRowPitch,
                                                         size_t pixelsDepthPitch,
+                                                        gl::Buffer *unpackBuffer,
                                                         const uint8_t *pixels,
                                                         const mtl::TextureRef &image)
 {
@@ -1305,33 +1352,71 @@ angle::Result TextureMtl::convertAndSetPerSliceSubImage(const gl::Context *conte
 
     ContextMtl *contextMtl = mtl::GetImpl(context);
 
-    // Create scratch buffer
-    const angle::Format &dstFormat = angle::Format::Get(mFormat.actualFormatId);
-    angle::MemoryBuffer conversionRow;
-    const size_t dstRowPitch = dstFormat.pixelBytes * mtlArea.size.width;
-    ANGLE_CHECK_GL_ALLOC(contextMtl, conversionRow.resize(dstRowPitch));
-
-    MTLRegion mtlRow   = mtlArea;
-    mtlRow.size.height = mtlRow.size.depth = 1;
-    // Convert row by row:
-    for (NSUInteger d = 0; d < mtlArea.size.depth; ++d)
+    if (unpackBuffer)
     {
-        mtlRow.origin.z = mtlArea.origin.z + d;
-        for (NSUInteger r = 0; r < mtlArea.size.height; ++r)
+        ANGLE_MTL_CHECK(contextMtl,
+                        reinterpret_cast<uintptr_t>(pixels) <= std::numeric_limits<uint32_t>::max(),
+                        GL_INVALID_OPERATION);
+
+        uint32_t offset = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(pixels));
+        ANGLE_MTL_CHECK(contextMtl, (offset % pixelsFormat.pixelBytes) == 0, GL_INVALID_OPERATION);
+
+        BufferMtl *unpackBufferMtl = mtl::GetImpl(unpackBuffer);
+        if (mFormat.hasDepthAndStencilBits())
         {
-            const uint8_t *psrc = pixels + d * pixelsDepthPitch + r * pixelsRowPitch;
-            mtlRow.origin.y     = mtlArea.origin.y + r;
+            // NOTE(hqle): packed depth & stencil texture cannot copy from buffer directly, needs
+            // to split its depth & stencil data and copy separately.
+            const uint8_t *clientData = unpackBufferMtl->getClientShadowCopyData(contextMtl);
+            clientData += offset;
+            ANGLE_TRY(convertAndSetPerSliceSubImage(context, slice, mtlArea, internalFormat,
+                                                    pixelsFormat, pixelsRowPitch, pixelsDepthPitch,
+                                                    nullptr, clientData, image));
+        }
+        else
+        {
+            // Use compute shader
+            mtl::CopyPixelsFromBufferParams params;
+            params.buffer            = unpackBufferMtl->getCurrentBuffer();
+            params.bufferStartOffset = offset;
+            params.bufferRowPitch    = static_cast<uint32_t>(pixelsRowPitch);
+            params.bufferDepthPitch  = static_cast<uint32_t>(pixelsDepthPitch);
+            params.texture           = image;
+            params.textureArea       = mtl::MTLRegionToGLBox(mtlArea);
 
-            // Convert pixels
-            CopyImageCHROMIUM(psrc, pixelsRowPitch, pixelsFormat.pixelBytes, 0,
-                              pixelsFormat.pixelReadFunction, conversionRow.data(), dstRowPitch,
-                              dstFormat.pixelBytes, 0, dstFormat.pixelWriteFunction,
-                              internalFormat.format, dstFormat.componentType, mtlRow.size.width, 1,
-                              1, false, false, false);
+            ANGLE_TRY(contextMtl->getDisplay()->getUtils().unpackPixelsFromBufferToTexture(
+                contextMtl, pixelsFormat, params));
+        }
+    }
+    else
+    {
+        // Create scratch buffer
+        const angle::Format &dstFormat = angle::Format::Get(mFormat.actualFormatId);
+        angle::MemoryBuffer conversionRow;
+        const size_t dstRowPitch = dstFormat.pixelBytes * mtlArea.size.width;
+        ANGLE_CHECK_GL_ALLOC(contextMtl, conversionRow.resize(dstRowPitch));
 
-            // Upload to texture
-            ANGLE_TRY(UploadTextureContents(context, dstFormat, mtlRow, 0, slice,
-                                            conversionRow.data(), dstRowPitch, 0, image));
+        MTLRegion mtlRow   = mtlArea;
+        mtlRow.size.height = mtlRow.size.depth = 1;
+        // Convert row by row:
+        for (NSUInteger d = 0; d < mtlArea.size.depth; ++d)
+        {
+            mtlRow.origin.z = mtlArea.origin.z + d;
+            for (NSUInteger r = 0; r < mtlArea.size.height; ++r)
+            {
+                const uint8_t *psrc = pixels + d * pixelsDepthPitch + r * pixelsRowPitch;
+                mtlRow.origin.y     = mtlArea.origin.y + r;
+
+                // Convert pixels
+                CopyImageCHROMIUM(psrc, pixelsRowPitch, pixelsFormat.pixelBytes, 0,
+                                  pixelsFormat.pixelReadFunction, conversionRow.data(), dstRowPitch,
+                                  dstFormat.pixelBytes, 0, dstFormat.pixelWriteFunction,
+                                  internalFormat.format, dstFormat.componentType, mtlRow.size.width,
+                                  1, 1, false, false, false);
+
+                // Upload to texture
+                ANGLE_TRY(UploadTextureContents(context, dstFormat, mtlRow, 0, slice,
+                                                conversionRow.data(), dstRowPitch, 0, image));
+            }
         }
     }
 

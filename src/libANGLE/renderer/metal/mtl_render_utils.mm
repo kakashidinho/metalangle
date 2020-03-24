@@ -35,6 +35,8 @@ namespace
 #define UNMULTIPLY_ALPHA_CONSTANT_NAME @"kUnmultiplyAlpha"
 #define SOURCE_TEXTURE_TYPE_CONSTANT_NAME @"kSourceTextureType"
 #define SOURCE_TEXTURE2_TYPE_CONSTANT_NAME @"kSourceTexture2Type"
+#define PIXEL_COPY_FORMAT_TYPE_CONSTANT_NAME @"kCopyFormatType"
+#define PIXEL_COPY_TEXTURE_TYPE_CONSTANT_NAME @"kCopyTextureType"
 
 // See libANGLE/renderer/metal/shaders/clear.metal
 struct ClearParamsUniform
@@ -82,6 +84,34 @@ struct Generate3DMipmapUniform
     uint32_t srcLevel;
     uint32_t numMipmapsToGenerate;
     uint32_t padding[2];
+};
+
+// See libANGLE/renderer/metal/shaders/copy_pixel_buffer.metal
+struct CopyPixelFromBufferUniforms
+{
+    uint32_t copySize[3];
+    uint32_t padding1;
+    uint32_t textureOffset[3];
+    uint32_t padding2;
+    uint32_t bufferStartOffset;
+    uint32_t pixelSize;
+    uint32_t bufferRowPitch;
+    uint32_t bufferDepthPitch;
+};
+struct WritePixelToBufferUniforms
+{
+    uint32_t copySize[2];
+    uint32_t textureOffset[2];
+
+    uint32_t bufferStartOffset;
+    uint32_t pixelSize;
+    uint32_t bufferRowPitch;
+
+    uint32_t textureLevel;
+    uint32_t textureLayer;
+    uint8_t reverseTextureRowOrder;
+
+    uint8_t padding[11];
 };
 
 // Class to automatically disable occlusion query upon entering block and re-able it upon
@@ -218,19 +248,88 @@ void EnsureComputePipelineInitialized(DisplayMtl *display,
     }
 }
 
-}  // namespace
+ANGLE_INLINE
+void EnsureSpecializedComputePipelineInitialized(
+    DisplayMtl *display,
+    NSString *functionName,
+    MTLFunctionConstantValues *funcConstants,
+    AutoObjCPtr<id<MTLComputePipelineState>> *pipelineOut)
+{
+    if (!funcConstants)
+    {
+        // Non specialized constants provided, use default creation function.
+        EnsureComputePipelineInitialized(display, functionName, pipelineOut);
+        return;
+    }
 
-bool IndexConversionPipelineCacheKey::operator==(const IndexConversionPipelineCacheKey &other) const
-{
-    return srcType == other.srcType && srcBufferOffsetAligned == other.srcBufferOffsetAligned;
+    AutoObjCPtr<id<MTLComputePipelineState>> &pipeline = *pipelineOut;
+    if (pipeline)
+    {
+        return;
+    }
+
+    ANGLE_MTL_OBJC_SCOPE
+    {
+        id<MTLDevice> metalDevice = display->getMetalDevice();
+        auto shaderLib            = display->getDefaultShadersLib();
+        NSError *err              = nil;
+
+        id<MTLFunction> shader = [shaderLib newFunctionWithName:functionName
+                                                 constantValues:funcConstants
+                                                          error:&err];
+        if (err && !shader)
+        {
+            ERR() << "Internal error: " << err.localizedDescription.UTF8String << "\n";
+        }
+        ASSERT([shader ANGLE_MTL_AUTORELEASE]);
+
+        pipeline = [[metalDevice newComputePipelineStateWithFunction:shader
+                                                               error:&err] ANGLE_MTL_AUTORELEASE];
+        if (err && !pipeline)
+        {
+            ERR() << "Internal error: " << err.localizedDescription.UTF8String << "\n";
+        }
+        ASSERT(pipeline);
+    }
 }
-size_t IndexConversionPipelineCacheKey::hash() const
+
+template <typename T>
+void ClearRenderPipelineCacheArray(T *pipelineCacheArray)
 {
-    size_t h = srcBufferOffsetAligned ? 1 : 0;
-    h        = (h << static_cast<size_t>(gl::DrawElementsType::EnumCount));
-    h        = h | static_cast<size_t>(srcType);
-    return h;
+    for (RenderPipelineCache &pipelineCache : *pipelineCacheArray)
+    {
+        pipelineCache.clear();
+    }
 }
+
+template <typename T>
+void ClearRenderPipelineCache2DArray(T *pipelineCache2DArray)
+{
+    for (auto &level1Array : *pipelineCache2DArray)
+    {
+        ClearRenderPipelineCacheArray(&level1Array);
+    }
+}
+
+template <typename T>
+void ClearComputePipelineCacheArray(T *pipelineCacheArray)
+{
+    for (AutoObjCPtr<id<MTLComputePipelineState>> &pipeline : *pipelineCacheArray)
+    {
+        pipeline = nil;
+    }
+}
+
+template <typename T>
+void ClearComputePipelineCache2DArray(T *pipelineCache2DArray)
+{
+    for (auto &level1Array : *pipelineCache2DArray)
+    {
+        ClearComputePipelineCacheArray(&level1Array);
+    }
+}
+
+}  // namespace
 
 RenderUtils::RenderUtils(DisplayMtl *display) : Context(display) {}
 
@@ -246,44 +345,21 @@ angle::Result RenderUtils::initialize()
 
 void RenderUtils::onDestroy()
 {
-    for (uint32_t i = 0; i <= kMaxRenderTargets; ++i)
-    {
-        mClearRenderPipelineCache[i].clear();
-    }
-    for (uint32_t i = 0; i < kMaxRenderTargets; ++i)
-    {
-        for (RenderPipelineCache &cache : mBlitRenderPipelineCache[i])
-        {
-            cache.clear();
-        }
-        for (RenderPipelineCache &cache : mBlitPremultiplyAlphaRenderPipelineCache[i])
-        {
-            cache.clear();
-        }
-        for (RenderPipelineCache &cache : mBlitUnmultiplyAlphaRenderPipelineCache[i])
-        {
-            cache.clear();
-        }
-    }
-    for (RenderPipelineCache &cache : mDepthBlitRenderPipelineCache)
-    {
-        cache.clear();
-    }
-    for (RenderPipelineCache &cache : mStencilBlitRenderPipelineCache)
-    {
-        cache.clear();
-    }
-    for (std::array<RenderPipelineCache, mtl_shader::kTextureTypeCount> &cacheArray :
-         mDepthStencilBlitRenderPipelineCache)
-    {
-        for (RenderPipelineCache &cache : cacheArray)
-        {
-            cache.clear();
-        }
-    }
+    ClearRenderPipelineCacheArray(&mClearRenderPipelineCache);
+    ClearRenderPipelineCache2DArray(&mBlitRenderPipelineCache);
+    ClearRenderPipelineCache2DArray(&mBlitPremultiplyAlphaRenderPipelineCache);
+    ClearRenderPipelineCache2DArray(&mBlitUnmultiplyAlphaRenderPipelineCache);
 
-    mIndexConversionPipelineCaches.clear();
-    mTriFanFromElemArrayGeneratorPipelineCaches.clear();
+    ClearRenderPipelineCacheArray(&mDepthBlitRenderPipelineCache);
+    ClearRenderPipelineCacheArray(&mStencilBlitRenderPipelineCache);
+    ClearRenderPipelineCache2DArray(&mDepthStencilBlitRenderPipelineCache);
+
+    ClearComputePipelineCache2DArray(&floatPixelsCopyPipelineCaches);
+    ClearComputePipelineCache2DArray(&intPixelsCopyPipelineCaches);
+    ClearComputePipelineCache2DArray(&uintPixelsCopyPipelineCaches);
+
+    ClearComputePipelineCache2DArray(&mIndexConversionPipelineCaches);
+    ClearComputePipelineCache2DArray(&mTriFanFromElemArrayGeneratorPipelineCaches);
 
     mTriFanFromArraysGeneratorPipeline = nil;
     mVisibilityResultCombPipeline      = nil;
@@ -934,59 +1010,41 @@ AutoObjCPtr<id<MTLComputePipelineState>> RenderUtils::getIndexConversionPipeline
     gl::DrawElementsType srcType,
     uint32_t srcOffset)
 {
-    id<MTLDevice> metalDevice = getMetalDevice();
-    size_t elementSize        = gl::GetDrawElementsTypeSize(srcType);
-    bool aligned              = (srcOffset % elementSize) == 0;
-
-    IndexConversionPipelineCacheKey key = {srcType, aligned};
-
-    auto &cache = mIndexConversionPipelineCaches[key];
+    size_t elementSize = gl::GetDrawElementsTypeSize(srcType);
+    BOOL aligned       = (srcOffset % elementSize) == 0;
+    int srcTypeKey     = static_cast<int>(srcType);
+    auto &cache        = mIndexConversionPipelineCaches[srcTypeKey][aligned ? 1 : 0];
 
     if (!cache)
     {
         ANGLE_MTL_OBJC_SCOPE
         {
-            auto shaderLib         = getDisplay()->getDefaultShadersLib();
-            id<MTLFunction> shader = nil;
             auto funcConstants = [[[MTLFunctionConstantValues alloc] init] ANGLE_MTL_AUTORELEASE];
-            NSError *err       = nil;
 
             [funcConstants setConstantValue:&aligned
                                        type:MTLDataTypeBool
                                    withName:SOURCE_BUFFER_ALIGNED_CONSTANT_NAME];
 
+            NSString *shaderName = nil;
             switch (srcType)
             {
                 case gl::DrawElementsType::UnsignedByte:
-                    shader = [shaderLib newFunctionWithName:@"convertIndexU8ToU16"];
+                    // No need for specialized shader
+                    funcConstants = nil;
+                    shaderName    = @"convertIndexU8ToU16";
                     break;
                 case gl::DrawElementsType::UnsignedShort:
-                    shader = [shaderLib newFunctionWithName:@"convertIndexU16"
-                                             constantValues:funcConstants
-                                                      error:&err];
+                    shaderName = @"convertIndexU16";
                     break;
                 case gl::DrawElementsType::UnsignedInt:
-                    shader = [shaderLib newFunctionWithName:@"convertIndexU32"
-                                             constantValues:funcConstants
-                                                      error:&err];
+                    shaderName = @"convertIndexU32";
                     break;
                 default:
                     UNREACHABLE();
             }
 
-            if (err && !shader)
-            {
-                ERR() << "Internal error: " << err.localizedDescription.UTF8String << "\n";
-            }
-            ASSERT([shader ANGLE_MTL_AUTORELEASE]);
-
-            cache = [[metalDevice newComputePipelineStateWithFunction:shader
-                                                                error:&err] ANGLE_MTL_AUTORELEASE];
-            if (err && !cache)
-            {
-                ERR() << "Internal error: " << err.localizedDescription.UTF8String << "\n";
-            }
-            ASSERT(cache);
+            EnsureSpecializedComputePipelineInitialized(getDisplay(), shaderName, funcConstants,
+                                                        &cache);
         }
     }
 
@@ -997,22 +1055,17 @@ AutoObjCPtr<id<MTLComputePipelineState>> RenderUtils::getTriFanFromElemArrayGene
     gl::DrawElementsType srcType,
     uint32_t srcOffset)
 {
-    id<MTLDevice> metalDevice = getMetalDevice();
-    size_t elementSize        = gl::GetDrawElementsTypeSize(srcType);
-    bool aligned              = (srcOffset % elementSize) == 0;
+    size_t elementSize = gl::GetDrawElementsTypeSize(srcType);
+    BOOL aligned       = (srcOffset % elementSize) == 0;
+    int srcTypeKey     = static_cast<int>(srcType);
 
-    IndexConversionPipelineCacheKey key = {srcType, aligned};
-
-    auto &cache = mTriFanFromElemArrayGeneratorPipelineCaches[key];
+    auto &cache = mTriFanFromElemArrayGeneratorPipelineCaches[srcTypeKey][aligned ? 1 : 0];
 
     if (!cache)
     {
         ANGLE_MTL_OBJC_SCOPE
         {
-            auto shaderLib         = getDisplay()->getDefaultShadersLib();
-            id<MTLFunction> shader = nil;
             auto funcConstants = [[[MTLFunctionConstantValues alloc] init] ANGLE_MTL_AUTORELEASE];
-            NSError *err       = nil;
 
             bool isU8  = false;
             bool isU16 = false;
@@ -1046,22 +1099,8 @@ AutoObjCPtr<id<MTLComputePipelineState>> RenderUtils::getTriFanFromElemArrayGene
                                        type:MTLDataTypeBool
                                    withName:SOURCE_IDX_IS_U32_CONSTANT_NAME];
 
-            shader = [shaderLib newFunctionWithName:@"genTriFanIndicesFromElements"
-                                     constantValues:funcConstants
-                                              error:&err];
-            if (err && !shader)
-            {
-                ERR() << "Internal error: " << err.localizedDescription.UTF8String << "\n";
-            }
-            ASSERT([shader ANGLE_MTL_AUTORELEASE]);
-
-            cache = [[metalDevice newComputePipelineStateWithFunction:shader
-                                                                error:&err] ANGLE_MTL_AUTORELEASE];
-            if (err && !cache)
-            {
-                ERR() << "Internal error: " << err.localizedDescription.UTF8String << "\n";
-            }
-            ASSERT(cache);
+            EnsureSpecializedComputePipelineInitialized(
+                getDisplay(), @"genTriFanIndicesFromElements", funcConstants, &cache);
         }
     }
 
@@ -1100,6 +1139,87 @@ void RenderUtils::ensureCubeMipGeneratorPipelineInitialized()
 {
     EnsureComputePipelineInitialized(getDisplay(), @"generateCubeMipmaps",
                                      &mCubeMipGeneratorPipeline);
+}
+
+AutoObjCPtr<id<MTLComputePipelineState>> RenderUtils::getPixelsCopyPipeline(
+    const angle::Format &angleFormat,
+    const TextureRef &texture,
+    bool bufferWrite)
+{
+    int formatIDValue     = static_cast<int>(angleFormat.id);
+    int shaderTextureType = GetShaderTextureType(texture);
+    int index2 = mtl_shader::kTextureTypeCount * (bufferWrite ? 1 : 0) + shaderTextureType;
+
+    PixelsCopyPipelineArray *cacheArray = nullptr;
+    if (angleFormat.isSint())
+    {
+        cacheArray = &intPixelsCopyPipelineCaches;
+    }
+    else if (angleFormat.isUint())
+    {
+        cacheArray = &uintPixelsCopyPipelineCaches;
+    }
+    else
+    {
+        cacheArray = &floatPixelsCopyPipelineCaches;
+    }
+    auto &cache = cacheArray->at(formatIDValue)[index2];
+
+    if (!cache)
+    {
+        // Pipeline not cached, create it now:
+        ANGLE_MTL_OBJC_SCOPE
+        {
+            auto funcConstants = [[[MTLFunctionConstantValues alloc] init] ANGLE_MTL_AUTORELEASE];
+
+            [funcConstants setConstantValue:&formatIDValue
+                                       type:MTLDataTypeInt
+                                   withName:PIXEL_COPY_FORMAT_TYPE_CONSTANT_NAME];
+            [funcConstants setConstantValue:&shaderTextureType
+                                       type:MTLDataTypeInt
+                                   withName:PIXEL_COPY_TEXTURE_TYPE_CONSTANT_NAME];
+
+            NSString *shaderName = nil;
+            if (angleFormat.isSint())
+            {
+                if (bufferWrite)
+                {
+                    shaderName = @"writeFromIntTextureToBuffer";
+                }
+                else
+                {
+                    shaderName = @"readFromBufferToIntTexture";
+                }
+            }
+            else if (angleFormat.isUint())
+            {
+                if (bufferWrite)
+                {
+                    shaderName = @"writeFromUIntTextureToBuffer";
+                }
+                else
+                {
+                    shaderName = @"readFromBufferToUIntTexture";
+                }
+            }
+            else
+            {
+                if (bufferWrite)
+                {
+                    shaderName = @"writeFromFloatTextureToBuffer";
+                }
+                else
+                {
+                    shaderName = @"readFromBufferToFloatTexture";
+                }
+            }
+
+            EnsureSpecializedComputePipelineInitialized(getDisplay(), shaderName, funcConstants,
+                                                        &cache);
+        }
+    }
+
+    return cache;
 }
 
 angle::Result RenderUtils::convertIndexBuffer(ContextMtl *contextMtl,
@@ -1443,6 +1563,83 @@ angle::Result RenderUtils::generateMipmapCS(ContextMtl *contextMtl,
         remainMips -= options.numMipmapsToGenerate;
         options.srcLevel += options.numMipmapsToGenerate;
     }
+
+    return angle::Result::Continue;
+}
+
+angle::Result RenderUtils::unpackPixelsFromBufferToTexture(ContextMtl *contextMtl,
+                                                           const angle::Format &srcAngleFormat,
+                                                           const CopyPixelsFromBufferParams &params)
+{
+    ComputeCommandEncoder *cmdEncoder = contextMtl->getComputeCommandEncoder();
+    ASSERT(cmdEncoder);
+
+    AutoObjCPtr<id<MTLComputePipelineState>> pipeline =
+        getPixelsCopyPipeline(srcAngleFormat, params.texture, false);
+
+    cmdEncoder->setComputePipelineState(pipeline);
+    cmdEncoder->setBuffer(params.buffer, 0, 1);
+    cmdEncoder->setTextureForWrite(params.texture, 0);
+
+    CopyPixelFromBufferUniforms options;
+    options.copySize[0]       = params.textureArea.width;
+    options.copySize[1]       = params.textureArea.height;
+    options.copySize[2]       = params.textureArea.depth;
+    options.bufferStartOffset = params.bufferStartOffset;
+    options.pixelSize         = srcAngleFormat.pixelBytes;
+    options.bufferRowPitch    = params.bufferRowPitch;
+    options.bufferDepthPitch  = params.bufferDepthPitch;
+    options.textureOffset[0]  = params.textureArea.x;
+    options.textureOffset[1]  = params.textureArea.y;
+    options.textureOffset[2]  = params.textureArea.z;
+    cmdEncoder->setData(options, 0);
+
+    NSUInteger w                  = pipeline.get().threadExecutionWidth;
+    MTLSize threadsPerThreadgroup = MTLSizeMake(w, 1, 1);
+
+    MTLSize threads =
+        MTLSizeMake(params.textureArea.width, params.textureArea.height, params.textureArea.depth);
+
+    dispatchCompute(contextMtl, cmdEncoder,
+                    /** allowNonUniform */ true, threads, threadsPerThreadgroup);
+
+    return angle::Result::Continue;
+}
+
+angle::Result RenderUtils::packPixelsFromTextureToBuffer(ContextMtl *contextMtl,
+                                                         const angle::Format &dstAngleFormat,
+                                                         const CopyPixelsToBufferParams &params)
+{
+    ComputeCommandEncoder *cmdEncoder = contextMtl->getComputeCommandEncoder();
+    ASSERT(cmdEncoder);
+
+    AutoObjCPtr<id<MTLComputePipelineState>> pipeline =
+        getPixelsCopyPipeline(dstAngleFormat, params.texture, true);
+
+    cmdEncoder->setComputePipelineState(pipeline);
+    cmdEncoder->setTexture(params.texture, 0);
+    cmdEncoder->setBufferForWrite(params.buffer, 0, 1);
+
+    WritePixelToBufferUniforms options;
+    options.copySize[0]            = params.textureArea.width;
+    options.copySize[1]            = params.textureArea.height;
+    options.bufferStartOffset      = params.bufferStartOffset;
+    options.pixelSize              = dstAngleFormat.pixelBytes;
+    options.bufferRowPitch         = params.bufferRowPitch;
+    options.textureOffset[0]       = params.textureArea.x;
+    options.textureOffset[1]       = params.textureArea.y;
+    options.textureLevel           = params.textureLevel;
+    options.textureLayer           = params.textureSliceOrDeph;
+    options.reverseTextureRowOrder = params.reverseTextureRowOrder;
+    cmdEncoder->setData(options, 0);
+
+    NSUInteger w                  = pipeline.get().threadExecutionWidth;
+    MTLSize threadsPerThreadgroup = MTLSizeMake(w, 1, 1);
+
+    MTLSize threads = MTLSizeMake(params.textureArea.width, params.textureArea.height, 1);
+
+    dispatchCompute(contextMtl, cmdEncoder,
+                    /** allowNonUniform */ true, threads, threadsPerThreadgroup);
 
     return angle::Result::Continue;
 }
