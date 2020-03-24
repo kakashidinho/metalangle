@@ -6,9 +6,10 @@
 // copy_pixel_buffer.metal: implements compute shader that copy pixel data from buffer to texture.
 //
 
-#include "common.h"
-
 #include <metal_pack>
+
+#include "common.h"
+#include "format_autogen.h"
 
 using namespace rx::mtl_shader;
 

@@ -98,18 +98,27 @@ static inline vec<T, 4> blitSampleTexture3D(texture3d<T> srcTexture,
     return srcTexture.sample(textureSampler, float3(texCoords, zCoord), level(options.srcLevel));
 }
 
-fragment MultipleColorOutputs
-blitFS(BlitVSOut input [[stage_in]],
-       texture2d<float> srcTexture2d [[texture(0), function_constant(kSourceTextureType2D)]],
-       texture2d_array<float> srcTexture2dArray
-       [[texture(0), function_constant(kSourceTextureType2DArray)]],
-       texture2d_ms<float> srcTexture2dMS [[texture(0), function_constant(kSourceTextureType2DMS)]],
-       texturecube<float> srcTextureCube [[texture(0), function_constant(kSourceTextureTypeCube)]],
-       texture3d<float> srcTexture3d [[texture(0), function_constant(kSourceTextureType3D)]],
-       sampler textureSampler [[sampler(0)]],
-       constant BlitParams &options [[buffer(0)]])
+// clang-format off
+#define BLIT_COLOR_FS_PARAMS(TYPE)                                                               \
+    BlitVSOut input [[stage_in]],                                                                \
+    texture2d<TYPE> srcTexture2d [[texture(0), function_constant(kSourceTextureType2D)]],        \
+    texture2d_array<TYPE> srcTexture2dArray                                                      \
+    [[texture(0), function_constant(kSourceTextureType2DArray)]],                                \
+    texture2d_ms<TYPE> srcTexture2dMS [[texture(0), function_constant(kSourceTextureType2DMS)]], \
+    texturecube<TYPE> srcTextureCube [[texture(0), function_constant(kSourceTextureTypeCube)]],  \
+    texture3d<TYPE> srcTexture3d [[texture(0), function_constant(kSourceTextureType3D)]],        \
+    sampler textureSampler [[sampler(0)]],                                                       \
+    constant BlitParams &options [[buffer(0)]]
+// clang-format on
+
+#define FORWARD_BLIT_COLOR_FS_PARAMS                                                      \
+    input, srcTexture2d, srcTexture2dArray, srcTexture2dMS, srcTextureCube, srcTexture3d, \
+    textureSampler, options
+
+template <typename T>
+static inline MultipleColorOutputs<T> blitFS(BLIT_COLOR_FS_PARAMS(T))
 {
-    float4 output;
+    vec<T, 4> output;
 
     switch (kSourceTextureType)
     {
@@ -141,7 +150,7 @@ blitFS(BlitVSOut input [[stage_in]],
     {
         if (output.a != 0.0)
         {
-            output.xyz *= 1.0 / output.a;
+            output.xyz /= output.a;
         }
     }
 
@@ -151,6 +160,19 @@ blitFS(BlitVSOut input [[stage_in]],
     }
 
     return toMultipleColorOutputs(output);
+}
+
+fragment MultipleColorOutputs<float> blitFloatFS(BLIT_COLOR_FS_PARAMS(float))
+{
+    return blitFS(FORWARD_BLIT_COLOR_FS_PARAMS);
+}
+fragment MultipleColorOutputs<int> blitIntFS(BLIT_COLOR_FS_PARAMS(int))
+{
+    return blitFS(FORWARD_BLIT_COLOR_FS_PARAMS);
+}
+fragment MultipleColorOutputs<uint> blitUIntFS(BLIT_COLOR_FS_PARAMS(uint))
+{
+    return blitFS(FORWARD_BLIT_COLOR_FS_PARAMS);
 }
 
 // Depth & stencil blitting.

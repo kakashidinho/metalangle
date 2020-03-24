@@ -138,6 +138,14 @@ angle::Result FramebufferMtl::clearBufferuiv(const gl::Context *context,
                                              const GLuint *values)
 {
     // NOTE(hqle): ES 3.0 feature.
+    mtl::ClearRectParams clearOpts;
+    clearOpts.colorPixelType = mtl::PixelType::UInt;
+    clearOpts.clearColor     = {
+        .red   = gl::bitCast<float>(values[0]),
+        .green = gl::bitCast<float>(values[1]),
+        .blue  = gl::bitCast<float>(values[2]),
+        .alpha = gl::bitCast<float>(values[3]),
+    };
     UNIMPLEMENTED();
     return angle::Result::Stop;
 }
@@ -147,6 +155,14 @@ angle::Result FramebufferMtl::clearBufferiv(const gl::Context *context,
                                             const GLint *values)
 {
     // NOTE(hqle): ES 3.0 feature.
+    mtl::ClearRectParams clearOpts;
+    clearOpts.colorPixelType = mtl::PixelType::Int;
+    clearOpts.clearColor     = {
+        .red   = gl::bitCast<float>(values[0]),
+        .green = gl::bitCast<float>(values[1]),
+        .blue  = gl::bitCast<float>(values[2]),
+        .alpha = gl::bitCast<float>(values[3]),
+    };
     UNIMPLEMENTED();
     return angle::Result::Stop;
 }
@@ -403,8 +419,8 @@ angle::Result FramebufferMtl::blit(const gl::Context *context,
         colorBlitParams.filter         = filter;
         colorBlitParams.dstLuminance   = srcColorRt->getFormat()->actualAngleFormat().isLUMA();
 
-        ANGLE_TRY(contextMtl->getDisplay()->getUtils().blitColorWithDraw(context, renderEncoder,
-                                                                         colorBlitParams));
+        ANGLE_TRY(contextMtl->getDisplay()->getUtils().blitColorWithDraw(
+            context, renderEncoder, srcColorRt->getFormat()->actualAngleFormat(), colorBlitParams));
     }
 
     return angle::Result::Continue;

@@ -225,7 +225,7 @@ class ContextMtl : public ContextImpl, public mtl::Context
     // NOTE: the old query's result will be retained and combined with the new result.
     angle::Result restartActiveOcclusionQueryInRenderPass();
 
-    const MTLClearColor &getClearColorValue() const;
+    const mtl::ClearColorValue &getClearColorValue() const;
     MTLColorWriteMask getColorMask() const;
     float getClearDepthValue() const;
     uint32_t getClearStencilValue() const;
@@ -420,7 +420,7 @@ class ContextMtl : public ContextImpl, public mtl::Context
     mtl::RenderPipelineDesc mRenderPipelineDesc;
     mtl::DepthStencilDesc mDepthStencilDesc;
     mtl::BlendDesc mBlendDesc;
-    MTLClearColor mClearColor;
+    mtl::ClearColorValue mClearColor;
     uint32_t mClearStencil    = 0;
     uint32_t mStencilRefFront = 0;
     uint32_t mStencilRefBack  = 0;

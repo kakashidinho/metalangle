@@ -151,6 +151,22 @@ constexpr MTLBlitOption BlitOptionRowLinearPVRTC = MTLBlitOptionNone;
 constexpr MTLBlitOption BlitOptionRowLinearPVRTC           = MTLBlitOptionRowLinearPVRTC;
 #endif
 
+struct ClearColorValue
+{
+    float red, green, blue, alpha;
+
+    // Convert to native Metal value
+    inline operator MTLClearColor() const { return MTLClearColorMake(red, green, blue, alpha); }
+};
+
+enum class PixelType
+{
+    Int,
+    UInt,
+    Float,
+    EnumCount,
+};
+
 // NOTE(hqle): Support ES 3.0.
 constexpr gl::Version kMaxSupportedGLVersion = gl::Version(2, 0);
 
@@ -297,13 +313,6 @@ class AutoObjCPtr : public WrappedObject<T>
 
 template <typename T>
 using AutoObjCObj = AutoObjCPtr<T *>;
-
-struct ClearOptions
-{
-    Optional<MTLClearColor> clearColor;
-    Optional<float> clearDepth;
-    Optional<uint32_t> clearStencil;
-};
 
 class CommandQueue;
 class ErrorHandler

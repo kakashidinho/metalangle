@@ -8,8 +8,6 @@
 #ifndef LIBANGLE_RENDERER_METAL_SHADERS_ENUM_H_
 #define LIBANGLE_RENDERER_METAL_SHADERS_ENUM_H_
 
-#include "format_autogen.h"
-
 namespace rx
 {
 namespace mtl_shader
