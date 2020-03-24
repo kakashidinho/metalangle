@@ -33,7 +33,6 @@ namespace mtl
 
 struct ClearRectParams
 {
-    PixelType colorPixelType = PixelType::Float;
     Optional<ClearColorValue> clearColor;
     Optional<float> clearDepth;
     Optional<uint32_t> clearStencil;

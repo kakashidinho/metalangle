@@ -426,7 +426,7 @@ angle::Result RenderUtils::clearWithDraw(const gl::Context *context,
                                          RenderCommandEncoder *cmdEncoder,
                                          const ClearRectParams &params)
 {
-    int index = static_cast<int>(params.colorPixelType);
+    int index = params.clearColor.valid() ? static_cast<int>(params.clearColor.value().type) : 0;
     return mClearUtils[index].clearWithDraw(context, cmdEncoder, params);
 }
 

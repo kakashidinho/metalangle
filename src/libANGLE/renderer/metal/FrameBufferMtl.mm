@@ -128,43 +128,71 @@ angle::Result FramebufferMtl::clearBufferfv(const gl::Context *context,
                                             GLint drawbuffer,
                                             const GLfloat *values)
 {
-    // NOTE(hqle): ES 3.0 feature.
-    UNIMPLEMENTED();
-    return angle::Result::Stop;
+    mtl::ClearRectParams clearOpts;
+
+    gl::DrawBufferMask clearColorBuffers;
+    if (buffer == GL_DEPTH)
+    {
+        clearOpts.clearDepth = values[0];
+    }
+    else
+    {
+        clearColorBuffers.set(drawbuffer);
+        clearOpts.clearColor = {
+            .type  = mtl::PixelType::Float,
+            .red   = values[0],
+            .green = values[1],
+            .blue  = values[2],
+            .alpha = values[3],
+        };
+    }
+
+    return clearImpl(context, clearColorBuffers, &clearOpts);
 }
 angle::Result FramebufferMtl::clearBufferuiv(const gl::Context *context,
                                              GLenum buffer,
                                              GLint drawbuffer,
                                              const GLuint *values)
 {
-    // NOTE(hqle): ES 3.0 feature.
+    gl::DrawBufferMask clearColorBuffers;
+    clearColorBuffers.set(drawbuffer);
+
     mtl::ClearRectParams clearOpts;
-    clearOpts.colorPixelType = mtl::PixelType::UInt;
-    clearOpts.clearColor     = {
-        .red   = gl::bitCast<float>(values[0]),
-        .green = gl::bitCast<float>(values[1]),
-        .blue  = gl::bitCast<float>(values[2]),
-        .alpha = gl::bitCast<float>(values[3]),
+    clearOpts.clearColor = {
+        .type   = mtl::PixelType::UInt,
+        .redU   = values[0],
+        .greenU = values[1],
+        .blueU  = values[2],
+        .alphaU = values[3],
     };
-    UNIMPLEMENTED();
-    return angle::Result::Stop;
+
+    return clearImpl(context, clearColorBuffers, &clearOpts);
 }
 angle::Result FramebufferMtl::clearBufferiv(const gl::Context *context,
                                             GLenum buffer,
                                             GLint drawbuffer,
                                             const GLint *values)
 {
-    // NOTE(hqle): ES 3.0 feature.
     mtl::ClearRectParams clearOpts;
-    clearOpts.colorPixelType = mtl::PixelType::Int;
-    clearOpts.clearColor     = {
-        .red   = gl::bitCast<float>(values[0]),
-        .green = gl::bitCast<float>(values[1]),
-        .blue  = gl::bitCast<float>(values[2]),
-        .alpha = gl::bitCast<float>(values[3]),
-    };
-    UNIMPLEMENTED();
-    return angle::Result::Stop;
+
+    gl::DrawBufferMask clearColorBuffers;
+    if (buffer == GL_STENCIL)
+    {
+        clearOpts.clearStencil = gl::clamp(values[0], 0, static_cast<GLint>(mtl::kStencilMaskAll));
+    }
+    else
+    {
+        clearColorBuffers.set(drawbuffer);
+        clearOpts.clearColor = {
+            .type   = mtl::PixelType::Int,
+            .redI   = values[0],
+            .greenI = values[1],
+            .blueI  = values[2],
+            .alphaI = values[3],
+        };
+    }
+
+    return clearImpl(context, clearColorBuffers, &clearOpts);
 }
 angle::Result FramebufferMtl::clearBufferfi(const gl::Context *context,
                                             GLenum buffer,
@@ -172,9 +200,11 @@ angle::Result FramebufferMtl::clearBufferfi(const gl::Context *context,
                                             GLfloat depth,
                                             GLint stencil)
 {
-    // NOTE(hqle): ES 3.0 feature.
-    UNIMPLEMENTED();
-    return angle::Result::Stop;
+    mtl::ClearRectParams clearOpts;
+    clearOpts.clearDepth   = depth;
+    clearOpts.clearStencil = gl::clamp(stencil, 0, static_cast<GLint>(mtl::kStencilMaskAll));
+
+    return clearImpl(context, gl::DrawBufferMask(), &clearOpts);
 }
 
 GLenum FramebufferMtl::getImplementationColorReadFormat(const gl::Context *context) const
@@ -184,7 +214,14 @@ GLenum FramebufferMtl::getImplementationColorReadFormat(const gl::Context *conte
 
 GLenum FramebufferMtl::getImplementationColorReadType(const gl::Context *context) const
 {
-    return GetReadAttachmentInfo(context, getColorReadRenderTarget(context)).type;
+    GLenum readType = GetReadAttachmentInfo(context, getColorReadRenderTarget(context)).type;
+    if (context->getClientMajorVersion() < 3 && readType == GL_HALF_FLOAT)
+    {
+        // GL_HALF_FLOAT was not introduced until GLES 3.0, and has a different value from
+        // GL_HALF_FLOAT_OES
+        readType = GL_HALF_FLOAT_OES;
+    }
+    return readType;
 }
 
 angle::Result FramebufferMtl::readPixels(const gl::Context *context,

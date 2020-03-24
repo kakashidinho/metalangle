@@ -151,20 +151,49 @@ constexpr MTLBlitOption BlitOptionRowLinearPVRTC = MTLBlitOptionNone;
 constexpr MTLBlitOption BlitOptionRowLinearPVRTC           = MTLBlitOptionRowLinearPVRTC;
 #endif
 
-struct ClearColorValue
-{
-    float red, green, blue, alpha;
-
-    // Convert to native Metal value
-    inline operator MTLClearColor() const { return MTLClearColorMake(red, green, blue, alpha); }
-};
-
 enum class PixelType
 {
     Int,
     UInt,
     Float,
     EnumCount,
+};
+
+struct ClearColorValue
+{
+    PixelType type = PixelType::Float;
+
+    union
+    {
+        struct
+        {
+            float red, green, blue, alpha;
+        };
+        struct
+        {
+            int32_t redI, greenI, blueI, alphaI;
+        };
+        struct
+        {
+            uint32_t redU, greenU, blueU, alphaU;
+        };
+    };
+    // Convert to native Metal value
+    inline operator MTLClearColor() const
+    {
+        switch (type)
+        {
+            case PixelType::Int:
+                return MTLClearColorMake(redI, greenI, blueI, alphaI);
+            case PixelType::UInt:
+                return MTLClearColorMake(redU, greenU, blueU, alphaU);
+            case PixelType::Float:
+                return MTLClearColorMake(red, green, blue, alpha);
+            default:
+                UNREACHABLE();
+                return MTLClearColorMake(0, 0, 0, 0);
+        }
+    }
 };
 
 // NOTE(hqle): Support ES 3.0.
