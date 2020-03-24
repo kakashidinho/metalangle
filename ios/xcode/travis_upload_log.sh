@@ -6,7 +6,7 @@ CURRENR_DIR=$PWD
 TAG_PREFIX=
 
 if [ ! "$TRAVIS_JOB_NAME" = "" ]; then
-    TAG_PREFIX="${TRAVIS_JOB_NAME} "
+    TAG_PREFIX=${TRAVIS_JOB_NAME// /_}
 fi
 
 cd $SCRIPT_DIR
@@ -20,7 +20,7 @@ github-release delete \
     -o kakashidinho \
     -r metalangle \
     -d true \
-    -t "errorLog" \
+    -t "${TAG_PREFIX}errorLog" \
     xcodebuild.log || true
 
 github-release upload \
