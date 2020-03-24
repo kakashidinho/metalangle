@@ -574,6 +574,150 @@ void ClearUtils::initClearResources(Context *ctx)
     }
 }
 
+id<MTLDepthStencilState> ClearUtils::getClearDepthStencilState(const gl::Context *context,
+                                                               const ClearRectParams &params)
+{
+    ContextMtl *contextMtl = GetImpl(context);
+
+    if (!params.clearDepth.valid() && !params.clearStencil.valid())
+    {
+        // Doesn't clear depth nor stencil
+        return contextMtl->getDisplay()->getStateCache().getNullDepthStencilState(contextMtl);
+    }
+
+    DepthStencilDesc desc;
+    desc.reset();
+
+    if (params.clearDepth.valid())
+    {
+        // Clear depth state
+        desc.depthWriteEnabled = true;
+    }
+    else
+    {
+        desc.depthWriteEnabled = false;
+    }
+
+    if (params.clearStencil.valid())
+    {
+        // Clear stencil state
+        desc.frontFaceStencil.depthStencilPassOperation = MTLStencilOperationReplace;
+        desc.frontFaceStencil.writeMask                 = contextMtl->getStencilMask();
+        desc.backFaceStencil.depthStencilPassOperation  = MTLStencilOperationReplace;
+        desc.backFaceStencil.writeMask                  = contextMtl->getStencilMask();
+    }
+
+    return contextMtl->getDisplay()->getStateCache().getDepthStencilState(
+        contextMtl->getMetalDevice(), desc);
+}
+
+id<MTLRenderPipelineState> ClearUtils::getClearRenderPipelineState(const gl::Context *context,
+                                                                   RenderCommandEncoder *cmdEncoder,
+                                                                   const ClearRectParams &params)
+{
+    ContextMtl *contextMtl = GetImpl(context);
+    // The color mask to be applied to every color attachment:
+    MTLColorWriteMask globalColorMask = contextMtl->getColorMask();
+    if (!params.clearColor.valid())
+    {
+        globalColorMask = MTLColorWriteMaskNone;
+    }
+
+    RenderPipelineDesc pipelineDesc;
+    const RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
+
+    renderPassDesc.populateRenderPipelineOutputDesc(globalColorMask,
+                                                    &pipelineDesc.outputDescriptor);
+
+    // Disable clear for some outputs that are not enabled
+    pipelineDesc.outputDescriptor.updateEnabledDrawBuffers(params.enabledBuffers);
+
+    pipelineDesc.inputPrimitiveTopology = kPrimitiveTopologyClassTriangle;
+
+    RenderPipelineCache &cache = mClearRenderPipelineCache[renderPassDesc.numColorAttachments];
+
+    return cache.getRenderPipelineState(contextMtl, pipelineDesc);
+}
+
+void ClearUtils::setupClearWithDraw(const gl::Context *context,
+                                    RenderCommandEncoder *cmdEncoder,
+                                    const ClearRectParams &params)
+{
+    // Generate render pipeline state
+    auto renderPipelineState = getClearRenderPipelineState(context, cmdEncoder, params);
+    ASSERT(renderPipelineState);
+    // Setup states
+    setupDrawCommonStates(cmdEncoder);
+    cmdEncoder->setRenderPipelineState(renderPipelineState);
+
+    id<MTLDepthStencilState> dsState = getClearDepthStencilState(context, params);
+    cmdEncoder->setDepthStencilState(dsState).setStencilRefVal(params.clearStencil.value());
+
+    // Viewports
+    MTLViewport viewport;
+    MTLScissorRect scissorRect;
+
+    viewport = GetViewport(params.clearArea, params.dstTextureSize.height, params.flipY);
+
+    scissorRect = GetScissorRect(params.clearArea, params.dstTextureSize.height, params.flipY);
+
+    cmdEncoder->setViewport(viewport);
+    cmdEncoder->setScissorRect(scissorRect);
+
+    // uniform
+    ClearParamsUniform uniformParams;
+    uniformParams.clearColor[0] = static_cast<float>(params.clearColor.value().red);
+    uniformParams.clearColor[1] = static_cast<float>(params.clearColor.value().green);
+    uniformParams.clearColor[2] = static_cast<float>(params.clearColor.value().blue);
+    uniformParams.clearColor[3] = static_cast<float>(params.clearColor.value().alpha);
+    uniformParams.clearDepth    = params.clearDepth.value();
+
+    cmdEncoder->setVertexData(uniformParams, 0);
+    cmdEncoder->setFragmentData(uniformParams, 0);
+}
+
+angle::Result ClearUtils::clearWithDraw(const gl::Context *context,
+                                        RenderCommandEncoder *cmdEncoder,
+                                        const ClearRectParams &params)
+{
+    auto overridedParams = params;
+    // Make sure we don't clear attachment that doesn't exist
+    const RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
+    if (renderPassDesc.numColorAttachments == 0)
+    {
+        overridedParams.clearColor.reset();
+    }
+    if (!renderPassDesc.depthAttachment.texture())
+    {
+        overridedParams.clearDepth.reset();
+    }
+    if (!renderPassDesc.stencilAttachment.texture())
+    {
+        overridedParams.clearStencil.reset();
+    }
+
+    if (!overridedParams.clearColor.valid() && !overridedParams.clearDepth.valid() &&
+        !overridedParams.clearStencil.valid())
+    {
+        return angle::Result::Continue;
+    }
+    auto contextMtl = GetImpl(context);
+    setupClearWithDraw(context, cmdEncoder, overridedParams);
+
+    angle::Result result;
+    {
+        // Need to disable occlusion query, otherwise clearing will affect the occlusion counting
+        ScopedDisableOcclusionQuery disableOcclusionQuery(contextMtl, cmdEncoder, &result);
+        // Draw the screen aligned triangle
+        cmdEncoder->draw(MTLPrimitiveTypeTriangle, 0, 3);
+    }
+
+    // Invalidate current context's state
+    contextMtl->invalidateState(context);
+
+    return result;
+}
+
 // ColorBlitUtils implementation
 ColorBlitUtils::ColorBlitUtils(const std::string &fragmentShaderName)
     : mFragmentShaderName(fragmentShaderName)
@@ -666,6 +810,95 @@ void ColorBlitUtils::initBlitResources(Context *ctx)
     }
 }
 
+id<MTLRenderPipelineState> ColorBlitUtils::getColorBlitRenderPipelineState(
+    const gl::Context *context,
+    RenderCommandEncoder *cmdEncoder,
+    const ColorBlitParams &params)
+{
+    ContextMtl *contextMtl = GetImpl(context);
+    RenderPipelineDesc pipelineDesc;
+    const RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
+
+    renderPassDesc.populateRenderPipelineOutputDesc(params.blitColorMask,
+                                                    &pipelineDesc.outputDescriptor);
+
+    // Disable blit for some outputs that are not enabled
+    pipelineDesc.outputDescriptor.updateEnabledDrawBuffers(params.enabledBuffers);
+
+    pipelineDesc.inputPrimitiveTopology = kPrimitiveTopologyClassTriangle;
+
+    RenderPipelineCache *pipelineCache;
+    uint32_t nOutputIndex = renderPassDesc.numColorAttachments - 1;
+    int textureType       = GetShaderTextureType(params.src);
+    if (params.unpackPremultiplyAlpha == params.unpackUnmultiplyAlpha)
+    {
+        pipelineCache = &mBlitRenderPipelineCache[nOutputIndex][textureType];
+    }
+    else if (params.unpackPremultiplyAlpha)
+    {
+        pipelineCache = &mBlitPremultiplyAlphaRenderPipelineCache[nOutputIndex][textureType];
+    }
+    else
+    {
+        pipelineCache = &mBlitUnmultiplyAlphaRenderPipelineCache[nOutputIndex][textureType];
+    }
+
+    return pipelineCache->getRenderPipelineState(contextMtl, pipelineDesc);
+}
+
+void ColorBlitUtils::setupColorBlitWithDraw(const gl::Context *context,
+                                            RenderCommandEncoder *cmdEncoder,
+                                            const ColorBlitParams &params)
+{
+    ASSERT(cmdEncoder->renderPassDesc().numColorAttachments >= 1 && params.src);
+
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+
+    // Generate render pipeline state
+    auto renderPipelineState = getColorBlitRenderPipelineState(context, cmdEncoder, params);
+    ASSERT(renderPipelineState);
+    // Setup states
+    cmdEncoder->setRenderPipelineState(renderPipelineState);
+    cmdEncoder->setDepthStencilState(
+        contextMtl->getDisplay()->getStateCache().getNullDepthStencilState(contextMtl));
+
+    setupCommonBlitWithDraw(context, cmdEncoder, params, true);
+
+    // Set sampler state
+    SamplerDesc samplerDesc;
+    samplerDesc.reset();
+    samplerDesc.minFilter = samplerDesc.magFilter = GetFilter(params.filter);
+
+    cmdEncoder->setFragmentSamplerState(contextMtl->getDisplay()->getStateCache().getSamplerState(
+                                            contextMtl->getMetalDevice(), samplerDesc),
+                                        0, FLT_MAX, 0);
+}
+
+angle::Result ColorBlitUtils::blitColorWithDraw(const gl::Context *context,
+                                                RenderCommandEncoder *cmdEncoder,
+                                                const ColorBlitParams &params)
+{
+    if (!params.src)
+    {
+        return angle::Result::Continue;
+    }
+    ContextMtl *contextMtl = GetImpl(context);
+    setupColorBlitWithDraw(context, cmdEncoder, params);
+
+    angle::Result result;
+    {
+        // Need to disable occlusion query, otherwise clearing will affect the occlusion counting
+        ScopedDisableOcclusionQuery disableOcclusionQuery(contextMtl, cmdEncoder, &result);
+        // Draw the screen aligned triangle
+        cmdEncoder->draw(MTLPrimitiveTypeTriangle, 0, 3);
+    }
+
+    // Invalidate current context's state
+    contextMtl->invalidateState(context);
+
+    return result;
+}
+
 // DepthStencilBlitUtils implementation
 angle::Result DepthStencilBlitUtils::initialize(Context *ctx)
 {
@@ -740,162 +973,42 @@ void DepthStencilBlitUtils::initBlitResources(Context *ctx)
     }
 }
 
-angle::Result ClearUtils::clearWithDraw(const gl::Context *context,
-                                        RenderCommandEncoder *cmdEncoder,
-                                        const ClearRectParams &params)
+id<MTLRenderPipelineState> DepthStencilBlitUtils::getDepthStencilBlitRenderPipelineState(
+    const gl::Context *context,
+    RenderCommandEncoder *cmdEncoder,
+    const DepthStencilBlitParams &params)
 {
-    auto overridedParams = params;
-    // Make sure we don't clear attachment that doesn't exist
+    ContextMtl *contextMtl = GetImpl(context);
+    RenderPipelineDesc pipelineDesc;
     const RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
-    if (renderPassDesc.numColorAttachments == 0)
-    {
-        overridedParams.clearColor.reset();
-    }
-    if (!renderPassDesc.depthAttachment.texture())
-    {
-        overridedParams.clearDepth.reset();
-    }
-    if (!renderPassDesc.stencilAttachment.texture())
-    {
-        overridedParams.clearStencil.reset();
-    }
 
-    if (!overridedParams.clearColor.valid() && !overridedParams.clearDepth.valid() &&
-        !overridedParams.clearStencil.valid())
-    {
-        return angle::Result::Continue;
-    }
-    auto contextMtl = GetImpl(context);
-    setupClearWithDraw(context, cmdEncoder, overridedParams);
+    renderPassDesc.populateRenderPipelineOutputDesc(&pipelineDesc.outputDescriptor);
 
-    angle::Result result;
+    // Disable all color outputs
+    pipelineDesc.outputDescriptor.updateEnabledDrawBuffers(gl::DrawBufferMask());
+
+    pipelineDesc.inputPrimitiveTopology = kPrimitiveTopologyClassTriangle;
+
+    RenderPipelineCache *pipelineCache;
+
+    int depthTextureType   = GetShaderTextureType(params.src);
+    int stencilTextureType = GetShaderTextureType(params.srcStencil);
+    if (params.src && params.srcStencil)
     {
-        // Need to disable occlusion query, otherwise clearing will affect the occlusion counting
-        ScopedDisableOcclusionQuery disableOcclusionQuery(contextMtl, cmdEncoder, &result);
-        // Draw the screen aligned triangle
-        cmdEncoder->draw(MTLPrimitiveTypeTriangle, 0, 3);
+        pipelineCache = &mDepthStencilBlitRenderPipelineCache[depthTextureType][stencilTextureType];
+    }
+    else if (params.src)
+    {
+        // Only depth blit
+        pipelineCache = &mDepthBlitRenderPipelineCache[depthTextureType];
+    }
+    else
+    {
+        // Only stencil blit
+        pipelineCache = &mStencilBlitRenderPipelineCache[stencilTextureType];
     }
 
-    // Invalidate current context's state
-    contextMtl->invalidateState(context);
-
-    return result;
-}
-
-angle::Result ColorBlitUtils::blitColorWithDraw(const gl::Context *context,
-                                                RenderCommandEncoder *cmdEncoder,
-                                                const ColorBlitParams &params)
-{
-    if (!params.src)
-    {
-        return angle::Result::Continue;
-    }
-    ContextMtl *contextMtl = GetImpl(context);
-    setupColorBlitWithDraw(context, cmdEncoder, params);
-
-    angle::Result result;
-    {
-        // Need to disable occlusion query, otherwise clearing will affect the occlusion counting
-        ScopedDisableOcclusionQuery disableOcclusionQuery(contextMtl, cmdEncoder, &result);
-        // Draw the screen aligned triangle
-        cmdEncoder->draw(MTLPrimitiveTypeTriangle, 0, 3);
-    }
-
-    // Invalidate current context's state
-    contextMtl->invalidateState(context);
-
-    return result;
-}
-
-angle::Result DepthStencilBlitUtils::blitDepthStencilWithDraw(const gl::Context *context,
-                                                              RenderCommandEncoder *cmdEncoder,
-                                                              const DepthStencilBlitParams &params)
-{
-    if (!params.src && !params.srcStencil)
-    {
-        return angle::Result::Continue;
-    }
-    ContextMtl *contextMtl = GetImpl(context);
-
-    setupDepthStencilBlitWithDraw(context, cmdEncoder, params);
-
-    angle::Result result;
-    {
-        // Need to disable occlusion query, otherwise clearing will affect the occlusion counting
-        ScopedDisableOcclusionQuery disableOcclusionQuery(contextMtl, cmdEncoder, &result);
-        // Draw the screen aligned triangle
-        cmdEncoder->draw(MTLPrimitiveTypeTriangle, 0, 3);
-    }
-
-    // Invalidate current context's state
-    contextMtl->invalidateState(context);
-
-    return result;
-}
-
-void ClearUtils::setupClearWithDraw(const gl::Context *context,
-                                    RenderCommandEncoder *cmdEncoder,
-                                    const ClearRectParams &params)
-{
-    // Generate render pipeline state
-    auto renderPipelineState = getClearRenderPipelineState(context, cmdEncoder, params);
-    ASSERT(renderPipelineState);
-    // Setup states
-    setupDrawCommonStates(cmdEncoder);
-    cmdEncoder->setRenderPipelineState(renderPipelineState);
-
-    id<MTLDepthStencilState> dsState = getClearDepthStencilState(context, params);
-    cmdEncoder->setDepthStencilState(dsState).setStencilRefVal(params.clearStencil.value());
-
-    // Viewports
-    MTLViewport viewport;
-    MTLScissorRect scissorRect;
-
-    viewport = GetViewport(params.clearArea, params.dstTextureSize.height, params.flipY);
-
-    scissorRect = GetScissorRect(params.clearArea, params.dstTextureSize.height, params.flipY);
-
-    cmdEncoder->setViewport(viewport);
-    cmdEncoder->setScissorRect(scissorRect);
-
-    // uniform
-    ClearParamsUniform uniformParams;
-    uniformParams.clearColor[0] = static_cast<float>(params.clearColor.value().red);
-    uniformParams.clearColor[1] = static_cast<float>(params.clearColor.value().green);
-    uniformParams.clearColor[2] = static_cast<float>(params.clearColor.value().blue);
-    uniformParams.clearColor[3] = static_cast<float>(params.clearColor.value().alpha);
-    uniformParams.clearDepth    = params.clearDepth.value();
-
-    cmdEncoder->setVertexData(uniformParams, 0);
-    cmdEncoder->setFragmentData(uniformParams, 0);
-}
-
-void ColorBlitUtils::setupColorBlitWithDraw(const gl::Context *context,
-                                            RenderCommandEncoder *cmdEncoder,
-                                            const ColorBlitParams &params)
-{
-    ASSERT(cmdEncoder->renderPassDesc().numColorAttachments >= 1 && params.src);
-
-    ContextMtl *contextMtl = mtl::GetImpl(context);
-
-    // Generate render pipeline state
-    auto renderPipelineState = getColorBlitRenderPipelineState(context, cmdEncoder, params);
-    ASSERT(renderPipelineState);
-    // Setup states
-    cmdEncoder->setRenderPipelineState(renderPipelineState);
-    cmdEncoder->setDepthStencilState(
-        contextMtl->getDisplay()->getStateCache().getNullDepthStencilState(contextMtl));
-
-    setupCommonBlitWithDraw(context, cmdEncoder, params, true);
-
-    // Set sampler state
-    SamplerDesc samplerDesc;
-    samplerDesc.reset();
-    samplerDesc.minFilter = samplerDesc.magFilter = GetFilter(params.filter);
-
-    cmdEncoder->setFragmentSamplerState(contextMtl->getDisplay()->getStateCache().getSamplerState(
-                                            contextMtl->getMetalDevice(), samplerDesc),
-                                        0, FLT_MAX, 0);
+    return pipelineCache->getRenderPipelineState(contextMtl, pipelineDesc);
 }
 
 void DepthStencilBlitUtils::setupDepthStencilBlitWithDraw(const gl::Context *context,
@@ -950,143 +1063,30 @@ void DepthStencilBlitUtils::setupDepthStencilBlitWithDraw(const gl::Context *con
         contextMtl->getMetalDevice(), dsStateDesc));
 }
 
-id<MTLDepthStencilState> ClearUtils::getClearDepthStencilState(const gl::Context *context,
-                                                               const ClearRectParams &params)
+angle::Result DepthStencilBlitUtils::blitDepthStencilWithDraw(const gl::Context *context,
+                                                              RenderCommandEncoder *cmdEncoder,
+                                                              const DepthStencilBlitParams &params)
 {
+    if (!params.src && !params.srcStencil)
+    {
+        return angle::Result::Continue;
+    }
     ContextMtl *contextMtl = GetImpl(context);
 
-    if (!params.clearDepth.valid() && !params.clearStencil.valid())
+    setupDepthStencilBlitWithDraw(context, cmdEncoder, params);
+
+    angle::Result result;
     {
-        // Doesn't clear depth nor stencil
-        return contextMtl->getDisplay()->getStateCache().getNullDepthStencilState(contextMtl);
+        // Need to disable occlusion query, otherwise clearing will affect the occlusion counting
+        ScopedDisableOcclusionQuery disableOcclusionQuery(contextMtl, cmdEncoder, &result);
+        // Draw the screen aligned triangle
+        cmdEncoder->draw(MTLPrimitiveTypeTriangle, 0, 3);
     }
 
-    DepthStencilDesc desc;
-    desc.reset();
+    // Invalidate current context's state
+    contextMtl->invalidateState(context);
 
-    if (params.clearDepth.valid())
-    {
-        // Clear depth state
-        desc.depthWriteEnabled = true;
-    }
-    else
-    {
-        desc.depthWriteEnabled = false;
-    }
-
-    if (params.clearStencil.valid())
-    {
-        // Clear stencil state
-        desc.frontFaceStencil.depthStencilPassOperation = MTLStencilOperationReplace;
-        desc.frontFaceStencil.writeMask                 = contextMtl->getStencilMask();
-        desc.backFaceStencil.depthStencilPassOperation  = MTLStencilOperationReplace;
-        desc.backFaceStencil.writeMask                  = contextMtl->getStencilMask();
-    }
-
-    return contextMtl->getDisplay()->getStateCache().getDepthStencilState(
-        contextMtl->getMetalDevice(), desc);
-}
-
-id<MTLRenderPipelineState> ClearUtils::getClearRenderPipelineState(const gl::Context *context,
-                                                                   RenderCommandEncoder *cmdEncoder,
-                                                                   const ClearRectParams &params)
-{
-    ContextMtl *contextMtl = GetImpl(context);
-    // The color mask to be applied to every color attachment:
-    MTLColorWriteMask globalColorMask = contextMtl->getColorMask();
-    if (!params.clearColor.valid())
-    {
-        globalColorMask = MTLColorWriteMaskNone;
-    }
-
-    RenderPipelineDesc pipelineDesc;
-    const RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
-
-    renderPassDesc.populateRenderPipelineOutputDesc(globalColorMask,
-                                                    &pipelineDesc.outputDescriptor);
-
-    // Disable clear for some outputs that are not enabled
-    pipelineDesc.outputDescriptor.updateEnabledDrawBuffers(params.enabledBuffers);
-
-    pipelineDesc.inputPrimitiveTopology = kPrimitiveTopologyClassTriangle;
-
-    RenderPipelineCache &cache = mClearRenderPipelineCache[renderPassDesc.numColorAttachments];
-
-    return cache.getRenderPipelineState(contextMtl, pipelineDesc);
-}
-
-id<MTLRenderPipelineState> ColorBlitUtils::getColorBlitRenderPipelineState(
-    const gl::Context *context,
-    RenderCommandEncoder *cmdEncoder,
-    const ColorBlitParams &params)
-{
-    ContextMtl *contextMtl = GetImpl(context);
-    RenderPipelineDesc pipelineDesc;
-    const RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
-
-    renderPassDesc.populateRenderPipelineOutputDesc(params.blitColorMask,
-                                                    &pipelineDesc.outputDescriptor);
-
-    // Disable blit for some outputs that are not enabled
-    pipelineDesc.outputDescriptor.updateEnabledDrawBuffers(params.enabledBuffers);
-
-    pipelineDesc.inputPrimitiveTopology = kPrimitiveTopologyClassTriangle;
-
-    RenderPipelineCache *pipelineCache;
-    uint32_t nOutputIndex = renderPassDesc.numColorAttachments - 1;
-    int textureType       = GetShaderTextureType(params.src);
-    if (params.unpackPremultiplyAlpha == params.unpackUnmultiplyAlpha)
-    {
-        pipelineCache = &mBlitRenderPipelineCache[nOutputIndex][textureType];
-    }
-    else if (params.unpackPremultiplyAlpha)
-    {
-        pipelineCache = &mBlitPremultiplyAlphaRenderPipelineCache[nOutputIndex][textureType];
-    }
-    else
-    {
-        pipelineCache = &mBlitUnmultiplyAlphaRenderPipelineCache[nOutputIndex][textureType];
-    }
-
-    return pipelineCache->getRenderPipelineState(contextMtl, pipelineDesc);
-}
-
-id<MTLRenderPipelineState> DepthStencilBlitUtils::getDepthStencilBlitRenderPipelineState(
-    const gl::Context *context,
-    RenderCommandEncoder *cmdEncoder,
-    const DepthStencilBlitParams &params)
-{
-    ContextMtl *contextMtl = GetImpl(context);
-    RenderPipelineDesc pipelineDesc;
-    const RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
-
-    renderPassDesc.populateRenderPipelineOutputDesc(&pipelineDesc.outputDescriptor);
-
-    // Disable all color outputs
-    pipelineDesc.outputDescriptor.updateEnabledDrawBuffers(gl::DrawBufferMask());
-
-    pipelineDesc.inputPrimitiveTopology = kPrimitiveTopologyClassTriangle;
-
-    RenderPipelineCache *pipelineCache;
-
-    int depthTextureType   = GetShaderTextureType(params.src);
-    int stencilTextureType = GetShaderTextureType(params.srcStencil);
-    if (params.src && params.srcStencil)
-    {
-        pipelineCache = &mDepthStencilBlitRenderPipelineCache[depthTextureType][stencilTextureType];
-    }
-    else if (params.src)
-    {
-        // Only depth blit
-        pipelineCache = &mDepthBlitRenderPipelineCache[depthTextureType];
-    }
-    else
-    {
-        // Only stencil blit
-        pipelineCache = &mStencilBlitRenderPipelineCache[stencilTextureType];
-    }
-
-    return pipelineCache->getRenderPipelineState(contextMtl, pipelineDesc);
+    return result;
 }
 
 // DrawBasedUtils implementation
