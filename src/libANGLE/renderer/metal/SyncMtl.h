@@ -63,8 +63,6 @@ class Sync
 class Sync
 {
   public:
-    Sync();
-    ~Sync();
     void onDestroy() { UNREACHABLE(); }
 
     angle::Result initialize(ContextMtl *context)
