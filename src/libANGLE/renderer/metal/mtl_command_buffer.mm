@@ -574,7 +574,7 @@ void CommandBuffer::restart()
 
 void CommandBuffer::insertDebugSign(const std::string &marker)
 {
-    mtl::CommandEncoder *currentEncoder = mActiveCommandEncoder.load(std::memory_order_relaxed);
+    mtl::CommandEncoder *currentEncoder = mActiveCommandEncoder;
     if (currentEncoder)
     {
         ANGLE_MTL_OBJC_SCOPE
@@ -599,6 +599,32 @@ void CommandBuffer::popDebugGroup()
     // NOTE(hqle): to implement this
 }
 
+void CommandBuffer::queueEventSignal(const mtl::SharedEventRef &event, uint64_t value)
+{
+    std::lock_guard<std::mutex> lg(mLock);
+
+    ASSERT(validImpl());
+
+    if (mActiveCommandEncoder && mActiveCommandEncoder->getType() == CommandEncoder::RENDER)
+    {
+        // We cannot set event when there is an active render pass, defer the setting until the
+        // pass end.
+        mPendingSignalEvents.push_back({event, value});
+    }
+    else
+    {
+        setEventImpl(event, value);
+    }
+}
+
+void CommandBuffer::serverWaitEvent(const mtl::SharedEventRef &event, uint64_t value)
+{
+    std::lock_guard<std::mutex> lg(mLock);
+    ASSERT(validImpl());
+
+    waitEventImpl(event, value);
+}
+
 /** private use only */
 void CommandBuffer::set(id<MTLCommandBuffer> metalBuffer)
 {
@@ -621,7 +647,13 @@ void CommandBuffer::setActiveCommandEncoder(CommandEncoder *encoder)
 
 void CommandBuffer::invalidateActiveCommandEncoder(CommandEncoder *encoder)
 {
-    mActiveCommandEncoder.compare_exchange_strong(encoder, nullptr);
+    if (mActiveCommandEncoder == encoder)
+    {
+        mActiveCommandEncoder = nullptr;
+
+        // No active command encoder, we can safely encode event signalling now.
+        setPendingEvents();
+    }
 }
 
 void CommandBuffer::cleanup()
@@ -649,11 +681,10 @@ void CommandBuffer::commitImpl()
     }
 
     // End the current encoder
-    if (mActiveCommandEncoder.load(std::memory_order_relaxed))
-    {
-        mActiveCommandEncoder.load(std::memory_order_relaxed)->endEncoding();
-        mActiveCommandEncoder = nullptr;
-    }
+    forceEndingCurrentEncoder();
+
+    // Encoding any pending event's signalling.
+    setPendingEvents();
 
     // Notify command queue
     mCmdQueue.onCommandBufferCommitted(get(), mQueueSerial);
@@ -662,6 +693,50 @@ void CommandBuffer::commitImpl()
     [get() commit];
 
     mCommitted = true;
+}
+
+void CommandBuffer::forceEndingCurrentEncoder()
+{
+    if (mActiveCommandEncoder)
+    {
+        mActiveCommandEncoder->endEncoding();
+        mActiveCommandEncoder = nullptr;
+    }
+}
+
+void CommandBuffer::setPendingEvents()
+{
+    for (const std::pair<mtl::SharedEventRef, uint64_t> &eventEntry : mPendingSignalEvents)
+    {
+        setEventImpl(eventEntry.first, eventEntry.second);
+    }
+    mPendingSignalEvents.clear();
+}
+
+void CommandBuffer::setEventImpl(const mtl::SharedEventRef &event, uint64_t value)
+{
+#if defined(__IPHONE_12_0) || defined(__MAC_10_14)
+    ASSERT(!mActiveCommandEncoder || mActiveCommandEncoder->getType() != CommandEncoder::RENDER);
+    // For non-render command encoder, we can safely end it, so that we can encode a signal
+    // event.
+    forceEndingCurrentEncoder();
+
+    [get() encodeSignalEvent:event value:value];
+#endif  // #if defined(__IPHONE_12_0) || defined(__MAC_10_14)
+}
+
+void CommandBuffer::waitEventImpl(const mtl::SharedEventRef &event, uint64_t value)
+{
+#if defined(__IPHONE_12_0) || defined(__MAC_10_14)
+    ASSERT(!mActiveCommandEncoder || mActiveCommandEncoder->getType() != CommandEncoder::RENDER);
+
+    forceEndingCurrentEncoder();
+
+    // Encoding any pending event's signalling.
+    setPendingEvents();
+
+    [get() encodeWaitForEvent:event value:value];
+#endif  // #if defined(__IPHONE_12_0) || defined(__MAC_10_14)
 }
 
 // CommandEncoder implementation
@@ -957,6 +1032,10 @@ RenderCommandEncoder &RenderCommandEncoder::restart(const RenderPassDesc &desc)
 
     // The actual Objective-C encoder will be created later in endEncoding(), we do so in order
     // to be able to sort the commands or do the preprocessing before the actual encoding.
+
+    // Since we defer the native encoder creation, we need to explicitly tell command buffer that
+    // this object is the active encoder:
+    cmdBuffer().setActiveCommandEncoder(this);
 
     return *this;
 }

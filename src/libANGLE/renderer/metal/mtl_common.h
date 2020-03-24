@@ -343,6 +343,13 @@ class AutoObjCPtr : public WrappedObject<T>
 template <typename T>
 using AutoObjCObj = AutoObjCPtr<T *>;
 
+// NOTE: SharedEvent is only declared on iOS 12.0+ or mac 10.14+
+#if defined(__IPHONE_12_0) || defined(__MAC_10_14)
+using SharedEventRef = AutoObjCPtr<id<MTLSharedEvent>>;
+#else
+using SharedEventRef                                       = AutoObjCObj<NSObject>;
+#endif
+
 class CommandQueue;
 class ErrorHandler
 {

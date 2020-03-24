@@ -14,6 +14,7 @@
 #include "libANGLE/renderer/glslang_wrapper_utils.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
 #include "libANGLE/renderer/metal/SurfaceMtl.h"
+#include "libANGLE/renderer/metal/SyncMtl.h"
 #include "libANGLE/renderer/metal/mtl_common.h"
 #include "libANGLE/renderer/metal/shaders/compiled/mtl_default_shaders.inc"
 #include "platform/Platform.h"
@@ -86,8 +87,11 @@ void DisplayMtl::terminate()
 {
     mUtils.onDestroy();
     mCmdQueue.reset();
-    mDefaultShaders  = nil;
-    mMetalDevice     = nil;
+    mDefaultShaders = nil;
+    mMetalDevice    = nil;
+#if defined(__IPHONE_12_0) || defined(__MAC_10_14)
+    mSharedEventListener = nil;
+#endif
     mCapsInitialized = false;
 
     GlslangRelease();
@@ -211,8 +215,7 @@ gl::Version DisplayMtl::getMaxConformantESVersion() const
 
 EGLSyncImpl *DisplayMtl::createSync(const egl::AttributeMap &attribs)
 {
-    UNIMPLEMENTED();
-    return nullptr;
+    return new EGLSyncMtl(attribs);
 }
 
 egl::Error DisplayMtl::makeCurrent(egl::Surface *drawSurface,
@@ -230,6 +233,8 @@ egl::Error DisplayMtl::makeCurrent(egl::Surface *drawSurface,
 void DisplayMtl::generateExtensions(egl::DisplayExtensions *outExtensions) const
 {
     outExtensions->flexibleSurfaceCompatibility = true;
+    outExtensions->fenceSync                    = true;
+    outExtensions->waitSync                     = true;
 }
 
 void DisplayMtl::generateCaps(egl::Caps *outCaps) const {}
@@ -583,6 +588,12 @@ void DisplayMtl::initializeExtensions() const
 
     // GL_NV_pixel_buffer_object
     mNativeExtensions.pixelBufferObject = true;
+
+    // GL_NV_fence
+    mNativeExtensions.fence = true;
+
+    // GL_OES_EGL_sync
+    mNativeExtensions.eglSync = true;
 }
 
 void DisplayMtl::initializeTextureCaps() const
@@ -812,5 +823,19 @@ bool DisplayMtl::supportEitherGPUFamily(uint8_t iOSFamily, uint8_t macFamily) co
 {
     return supportiOSGPUFamily(iOSFamily) || supportMacGPUFamily(macFamily);
 }
+
+#if defined(__IPHONE_12_0) || defined(__MAC_10_14)
+mtl::AutoObjCObj<MTLSharedEventListener> DisplayMtl::getOrCreateSharedEventListener()
+{
+    if (!mSharedEventListener)
+    {
+        ANGLE_MTL_OBJC_SCOPE
+        {
+            mSharedEventListener = [[[MTLSharedEventListener alloc] init] ANGLE_MTL_AUTORELEASE];
+        }
+    }
+    return mSharedEventListener;
+}
+#endif
 
 }  // namespace rx

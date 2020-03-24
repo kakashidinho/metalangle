@@ -112,6 +112,9 @@ class CommandBuffer final : public WrappedObject<id<MTLCommandBuffer>>, angle::N
     void pushDebugGroup(const std::string &marker);
     void popDebugGroup();
 
+    void queueEventSignal(const mtl::SharedEventRef &event, uint64_t value);
+    void serverWaitEvent(const mtl::SharedEventRef &event, uint64_t value);
+
     CommandQueue &cmdQueue() { return mCmdQueue; }
 
     // Private use only
@@ -124,18 +127,24 @@ class CommandBuffer final : public WrappedObject<id<MTLCommandBuffer>>, angle::N
 
     bool validImpl() const;
     void commitImpl();
+    void forceEndingCurrentEncoder();
+
+    void setPendingEvents();
+    void setEventImpl(const mtl::SharedEventRef &event, uint64_t value);
+    void waitEventImpl(const mtl::SharedEventRef &event, uint64_t value);
 
     using ParentClass = WrappedObject<id<MTLCommandBuffer>>;
 
     CommandQueue &mCmdQueue;
 
-    std::atomic<CommandEncoder *> mActiveCommandEncoder{nullptr};
+    CommandEncoder *mActiveCommandEncoder = nullptr;
 
     uint64_t mQueueSerial = 0;
 
     mutable std::mutex mLock;
 
     std::vector<std::string> mPendingDebugSigns;
+    std::vector<std::pair<mtl::SharedEventRef, uint64_t>> mPendingSignalEvents;
 
     bool mCommitted = false;
 };

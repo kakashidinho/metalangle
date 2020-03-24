@@ -20,6 +20,7 @@
 #include "libANGLE/renderer/metal/QueryMtl.h"
 #include "libANGLE/renderer/metal/RenderBufferMtl.h"
 #include "libANGLE/renderer/metal/ShaderMtl.h"
+#include "libANGLE/renderer/metal/SyncMtl.h"
 #include "libANGLE/renderer/metal/TextureMtl.h"
 #include "libANGLE/renderer/metal/VertexArrayMtl.h"
 #include "libANGLE/renderer/metal/mtl_command_buffer.h"
@@ -927,13 +928,11 @@ QueryImpl *ContextMtl::createQuery(gl::QueryType type)
 }
 FenceNVImpl *ContextMtl::createFenceNV()
 {
-    UNIMPLEMENTED();
-    return nullptr;
+    return new FenceNVMtl();
 }
 SyncImpl *ContextMtl::createSync()
 {
-    UNIMPLEMENTED();
-    return nullptr;
+    return new SyncMtl();
 }
 
 // Transform Feedback creation
@@ -1519,6 +1518,22 @@ angle::Result ContextMtl::startOcclusionQueryInRenderPass(QueryMtl *query, bool 
     mCmdBuffer.setWriteDependency(query->getVisibilityResultBuffer());
 
     return angle::Result::Continue;
+}
+
+void ContextMtl::queueEventSignal(const mtl::SharedEventRef &event, uint64_t value)
+{
+    ensureCommandBufferValid();
+    mCmdBuffer.queueEventSignal(event, value);
+}
+
+void ContextMtl::serverWaitEvent(const mtl::SharedEventRef &event, uint64_t value)
+{
+    ensureCommandBufferValid();
+
+    // Event waiting cannot be encoded if there is active encoder.
+    endEncoding(true);
+
+    mCmdBuffer.serverWaitEvent(event, value);
 }
 
 void ContextMtl::updateProgramExecutable(const gl::Context *context)

@@ -264,6 +264,7 @@ TEST_P(FenceSyncTest, BasicOperations)
 ANGLE_INSTANTIATE_TEST(FenceNVTest,
                        ES2_D3D9(),
                        ES2_D3D11(),
+                       ES2_METAL(),
                        ES3_D3D11(),
                        ES2_OPENGL(),
                        ES3_OPENGL(),

@@ -135,7 +135,9 @@ class DisplayMtl : public DisplayImpl
     {
         return mFormatTable.getVertexFormat(angleFormatId, tightlyPacked);
     }
-
+#if defined(__IPHONE_12_0) || defined(__MAC_10_14)
+    mtl::AutoObjCObj<MTLSharedEventListener> getOrCreateSharedEventListener();
+#endif
   protected:
     void generateExtensions(egl::DisplayExtensions *outExtensions) const override;
     void generateCaps(egl::Caps *outCaps) const override;
@@ -159,6 +161,9 @@ class DisplayMtl : public DisplayImpl
 
     // Built-in Shaders
     mtl::AutoObjCPtr<id<MTLLibrary>> mDefaultShaders = nil;
+#if defined(__IPHONE_12_0) || defined(__MAC_10_14)
+    mtl::AutoObjCObj<MTLSharedEventListener> mSharedEventListener;
+#endif
 
     mutable bool mCapsInitialized;
     mutable gl::TextureCapsMap mNativeTextureCaps;

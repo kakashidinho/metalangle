@@ -225,6 +225,10 @@ class ContextMtl : public ContextImpl, public mtl::Context
     // NOTE: the old query's result will be retained and combined with the new result.
     angle::Result restartActiveOcclusionQueryInRenderPass();
 
+    // Invoke by mtl::Sync
+    void queueEventSignal(const mtl::SharedEventRef &event, uint64_t value);
+    void serverWaitEvent(const mtl::SharedEventRef &event, uint64_t value);
+
     const mtl::ClearColorValue &getClearColorValue() const;
     MTLColorWriteMask getColorMask() const;
     float getClearDepthValue() const;
