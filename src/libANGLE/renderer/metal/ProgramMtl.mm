@@ -859,7 +859,8 @@ angle::Result ProgramMtl::updateTextures(const gl::Context *glContext,
             continue;
         }
 
-        bool hasDepthSampler = false;
+        bool hasDepthSampler         = false;
+        uint32_t currentBindingIndex = 0;
 
         for (uint32_t textureIndex = 0; textureIndex < mState.getSamplerBindings().size();
              ++textureIndex)
@@ -869,13 +870,12 @@ angle::Result ProgramMtl::updateTextures(const gl::Context *glContext,
             ASSERT(!samplerBinding.unreferenced);
 
             for (uint32_t arrayElement = 0; arrayElement < samplerBinding.boundTextureUnits.size();
-                 ++arrayElement)
+                 ++arrayElement, ++currentBindingIndex)
             {
                 GLuint textureUnit          = samplerBinding.boundTextureUnits[arrayElement];
                 gl::Texture *texture        = completeTextures[textureUnit];
                 gl::Sampler *sampler        = contextMtl->getState().getSampler(textureUnit);
                 gl::TextureType textureType = textureTypes[textureUnit];
-                auto destBindingPoint       = textureIndex + arrayElement;
                 if (!texture)
                 {
                     ANGLE_TRY(contextMtl->getNullTexture(glContext, textureType, &texture));
@@ -885,20 +885,20 @@ angle::Result ProgramMtl::updateTextures(const gl::Context *glContext,
                 TextureMtl *textureMtl = mtl::GetImpl(texture);
                 if (samplerBinding.format == gl::SamplerFormat::Shadow)
                 {
-                    hasDepthSampler                       = true;
-                    mShadowCompareModes[destBindingPoint] = mtl::MslGetShaderShadowCompareMode(
+                    hasDepthSampler                          = true;
+                    mShadowCompareModes[currentBindingIndex] = mtl::MslGetShaderShadowCompareMode(
                         samplerState->getCompareMode(), samplerState->getCompareFunc());
                 }
 
                 switch (shaderType)
                 {
                     case gl::ShaderType::Vertex:
-                        ANGLE_TRY(textureMtl->bindVertexShader(glContext, cmdEncoder,
-                                                               destBindingPoint, destBindingPoint));
+                        ANGLE_TRY(textureMtl->bindVertexShader(
+                            glContext, cmdEncoder, currentBindingIndex, currentBindingIndex));
                         break;
                     case gl::ShaderType::Fragment:
                         ANGLE_TRY(textureMtl->bindFragmentShader(
-                            glContext, cmdEncoder, destBindingPoint, destBindingPoint));
+                            glContext, cmdEncoder, currentBindingIndex, currentBindingIndex));
                         break;
                     default:
                         UNREACHABLE();
@@ -922,7 +922,7 @@ angle::Result ProgramMtl::updateTextures(const gl::Context *glContext,
                     UNREACHABLE();
             }
         }
-    }          // for shader types
+    }  // for shader types
 
     return angle::Result::Continue;
 }
