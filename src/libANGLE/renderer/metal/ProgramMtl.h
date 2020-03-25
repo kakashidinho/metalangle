@@ -173,7 +173,7 @@ class ProgramMtl : public ProgramImpl
 
     gl::ShaderMap<std::string> mTranslatedMslShader;
 
-    uint32_t mShadowCompareModes[mtl::kMaxShaderSamplers];
+    uint32_t mShadowCompareModes[mtl::kMaxShaderSamplers] = {0};
 
     mtl::RenderPipelineCache mMetalRenderPipelineCache;
 };
