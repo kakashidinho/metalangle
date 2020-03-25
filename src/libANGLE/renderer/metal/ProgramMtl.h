@@ -25,6 +25,12 @@ namespace rx
 {
 class ContextMtl;
 
+struct SamplerBindingMtl
+{
+    uint32_t textureBinding = 0;
+    uint32_t samplerBinding = 0;
+};
+
 class ProgramMtl : public ProgramImpl
 {
   public:
@@ -139,6 +145,9 @@ class ProgramMtl : public ProgramImpl
     void saveTranslatedShaders(gl::BinaryOutputStream *stream);
     void loadTranslatedShaders(gl::BinaryInputStream *stream);
 
+    void saveAssignedSamplerBindings(gl::BinaryOutputStream *stream);
+    void loadAssignedSamplerBindings(gl::BinaryInputStream *stream);
+
     void linkResources(const gl::ProgramLinkedResources &resources);
     angle::Result linkImpl(const gl::Context *glContext,
                            const gl::ShaderMap<std::string> &shaderSource,
@@ -177,6 +186,8 @@ class ProgramMtl : public ProgramImpl
     gl::ShaderMap<DefaultUniformBlock> mDefaultUniformBlocks;
 
     gl::ShaderMap<std::string> mTranslatedMslShader;
+
+    gl::ShaderMap<std::array<SamplerBindingMtl, mtl::kMaxShaderSamplers>> mActualSamplerBindings;
 
     mtl::RenderPipelineCache mMetalRenderPipelineCache;
 };
