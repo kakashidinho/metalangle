@@ -8,6 +8,12 @@
 
 #include "libANGLE/renderer/metal/mtl_glslang_utils.h"
 
+#include <regex>
+
+#include <spirv_msl.hpp>
+
+#include "common/apple_platform_utils.h"
+#include "compiler/translator/TranslatorMetal.h"
 #include "libANGLE/renderer/glslang_wrapper_utils.h"
 
 namespace rx
@@ -16,6 +22,9 @@ namespace mtl
 {
 namespace
 {
+
+constexpr char kShadowSamplerCompareModesVarName[] = "ANGLEShadowCompareModes";
+
 angle::Result HandleError(ErrorHandler *context, GlslangError)
 {
     ANGLE_MTL_TRY(context, false);
@@ -39,6 +48,611 @@ GlslangSourceOptions CreateSourceOptions()
 
     return options;
 }
+
+spv::ExecutionModel ShaderTypeToSpvExecutionModel(gl::ShaderType shaderType)
+{
+    switch (shaderType)
+    {
+        case gl::ShaderType::Vertex:
+            return spv::ExecutionModelVertex;
+        case gl::ShaderType::Fragment:
+            return spv::ExecutionModelFragment;
+        default:
+            UNREACHABLE();
+            return spv::ExecutionModelMax;
+    }
+}
+
+// Some GLSL variables need 2 binding points in metal. For example,
+// glsl sampler will be converted to 2 metal objects: texture and sampler.
+// Thus we need to set 2 binding points for one glsl sampler variable.
+using BindingField = uint32_t spirv_cross::MSLResourceBinding::*;
+template <BindingField bindingField1, BindingField bindingField2 = bindingField1>
+angle::Result BindResources(spirv_cross::CompilerMSL *compiler,
+                            const spirv_cross::SmallVector<spirv_cross::Resource> &resources,
+                            gl::ShaderType shaderType)
+{
+    auto &compilerMsl = *compiler;
+
+    for (const spirv_cross::Resource &resource : resources)
+    {
+        spirv_cross::MSLResourceBinding resBinding;
+        resBinding.stage = ShaderTypeToSpvExecutionModel(shaderType);
+
+        if (compilerMsl.has_decoration(resource.id, spv::DecorationDescriptorSet))
+        {
+            resBinding.desc_set =
+                compilerMsl.get_decoration(resource.id, spv::DecorationDescriptorSet);
+        }
+
+        if (!compilerMsl.has_decoration(resource.id, spv::DecorationBinding))
+        {
+            continue;
+        }
+
+        resBinding.binding = compilerMsl.get_decoration(resource.id, spv::DecorationBinding);
+
+        uint32_t bindingPoint;
+        // NOTE(hqle): We use separate discrete binding point for now, in future, we should use
+        // one argument buffer for each descriptor set.
+        switch (resBinding.desc_set)
+        {
+            case 0:
+                // Use resBinding.binding as binding point.
+                bindingPoint = resBinding.binding;
+                break;
+            case kDriverUniformsBindingIndex:
+                bindingPoint = kDriverUniformsBindingIndex;
+                break;
+            case kDefaultUniformsBindingIndex:
+                // NOTE(hqle): Properly handle transform feedbacks and UBO binding once ES 3.0 is
+                // implemented.
+                bindingPoint = kDefaultUniformsBindingIndex;
+                break;
+            case kShadowSamplerCompareModesBindingIndex:
+                bindingPoint = kShadowSamplerCompareModesBindingIndex;
+                break;
+            default:
+                // We don't support this descriptor set.
+                continue;
+        }
+
+        // bindingField can be buffer or texture, which will be translated to [[buffer(d)]] or
+        // [[texture(d)]] or [[sampler(d)]]
+        resBinding.*bindingField1 = bindingPoint;
+        if (bindingField1 != bindingField2)
+        {
+            resBinding.*bindingField2 = bindingPoint;
+        }
+
+        compilerMsl.add_msl_resource_binding(resBinding);
+    }
+
+    return angle::Result::Continue;
+}
+
+std::string PostProcessTranslatedMsl(bool hasDepthSampler, const std::string &translatedSource)
+{
+    std::string source;
+    if (hasDepthSampler)
+    {
+        // Add ANGLEShadowCompareModes variable to main(), We need to add here because it is the
+        // only way without modifying spirv-cross.
+        std::regex mainDeclareRegex(
+            R"(((vertex|fragment|kernel)\s+[_a-zA-Z0-9<>]+\s+main[^\(]*\())");
+        std::string mainDeclareReplaceStr = std::string("$1constant uint *") +
+                                            kShadowSamplerCompareModesVarName + "[[buffer(" +
+                                            Str(kShadowSamplerCompareModesBindingIndex) + ")]], ";
+        source = std::regex_replace(translatedSource, mainDeclareRegex, mainDeclareReplaceStr);
+    }
+    else
+    {
+        source = translatedSource;
+    }
+
+    // Add function_constant attribute to gl_SampleMask.
+    // Even though this varying is only used when ANGLECoverageMaskEnabled is true,
+    // the spirv-cross doesn't assign function_constant attribute to it. Thus it won't be dead-code
+    // removed when ANGLECoverageMaskEnabled=false.
+    std::string sampleMaskReplaceStr = std::string("[[sample_mask, function_constant(") +
+                                       sh::TranslatorMetal::GetCoverageMaskEnabledConstName() +
+                                       ")]]";
+
+    // This replaces "gl_SampleMask [[sample_mask]]"
+    //          with "gl_SampleMask [[sample_mask, function_constant(ANGLECoverageMaskEnabled)]]"
+    std::regex sampleMaskDeclareRegex(R"(\[\s*\[\s*sample_mask\s*\]\s*\])");
+    return std::regex_replace(source, sampleMaskDeclareRegex, sampleMaskReplaceStr);
+}
+
+// Customized spirv-cross compiler
+class SpirvToMslCompiler : public spirv_cross::CompilerMSL
+{
+  public:
+    SpirvToMslCompiler(std::vector<uint32_t> &&spriv) : spirv_cross::CompilerMSL(spriv) {}
+
+    std::string compile() override
+    {
+        addBuiltInResources();
+        analyzeShaderVariables();
+        return PostProcessTranslatedMsl(mHasDepthSampler, spirv_cross::CompilerMSL::compile());
+    }
+
+  private:
+    // Override CompilerMSL
+    void emit_header() override
+    {
+        spirv_cross::CompilerMSL::emit_header();
+        if (!mHasDepthSampler)
+        {
+            return;
+        }
+        // Work around code for these issues:
+        // - spriv_cross always translates shadow texture's sampling to sample_compare() and doesn't
+        // take into account GL_TEXTURE_COMPARE_MODE=GL_NONE.
+        // - on macOS, explicit level of detail parameter is not supported in sample_compare().
+        statement("enum class ANGLECompareMode : uint");
+        statement("{");
+        statement("    None = 0,");
+        statement("    Less,");
+        statement("    LessEqual,");
+        statement("    Greater,");
+        statement("    GreaterEqual,");
+        statement("    Never,");
+        statement("    Always,");
+        statement("    Equal,");
+        statement("    NotEqual,");
+        statement("};");
+        statement("");
+
+        statement("template <typename T>");
+        statement("inline T ANGLEcompare(T depth, T dref, uint compareMode)");
+        statement("{");
+        statement("   ANGLECompareMode mode = static_cast<ANGLECompareMode>(compareMode);");
+        statement("   switch (mode)");
+        statement("   {");
+        statement("        case ANGLECompareMode::Less:");
+        statement("            return dref < depth;");
+        statement("        case ANGLECompareMode::LessEqual:");
+        statement("            return dref <= depth;");
+        statement("        case ANGLECompareMode::Greater:");
+        statement("            return dref > depth;");
+        statement("        case ANGLECompareMode::GreaterEqual:");
+        statement("            return dref >= depth;");
+        statement("        case ANGLECompareMode::Never:");
+        statement("            return 0;");
+        statement("        case ANGLECompareMode::Always:");
+        statement("            return 1;");
+        statement("        case ANGLECompareMode::Equal:");
+        statement("            return dref == depth;");
+        statement("        case ANGLECompareMode::NotEqual:");
+        statement("            return dref != depth;");
+        statement("        default:");
+        statement("            return 1;");
+        statement("   }");
+        statement("}");
+        statement("");
+
+        statement("// Wrapper functions for shadow texture functions");
+        // 2D PCF sampling
+        statement("template <typename T, typename Opt>");
+        statement("inline T ANGLEtexturePCF(depth2d<T> texture, sampler s, float2 coord, float "
+                  "compare_value, Opt options, int2 offset, uint shadowCompareMode)");
+        statement("{");
+        statement("    float2 dims = float2(texture.get_width(), texture.get_height());");
+        statement("    float2 imgCoord = coord * dims;");
+        statement("    float2 texelSize = 1.0 / dims;");
+        statement("    float2 weight = fract(imgCoord);");
+        statement("    float tl = ANGLEcompare(texture.sample(s, coord, options, offset), "
+                  "compare_value, shadowCompareMode);");
+        statement("    float tr = ANGLEcompare(texture.sample(s, coord + float2(texelSize.x, 0.0), "
+                  "options, offset), compare_value, shadowCompareMode);");
+        statement("    float bl = ANGLEcompare(texture.sample(s, coord + float2(0.0, texelSize.y), "
+                  "options, offset), compare_value, shadowCompareMode);");
+        statement("    float br = ANGLEcompare(texture.sample(s, coord + texelSize, options, "
+                  "offset), compare_value, shadowCompareMode);");
+        statement("    float top = mix(tl, tr, weight.x);");
+        statement("    float bottom = mix(bl, br, weight.x);");
+        statement("    return mix(top, bottom, weight.y);");
+        statement("}");
+        statement("");
+
+        // Cube PCF sampling
+        statement("template <typename T, typename Opt>");
+        statement("inline T ANGLEtexturePCF(depthcube<T> texture, sampler s, float3 coord, float "
+                  "compare_value, Opt options, uint shadowCompareMode)");
+        statement("{");
+        statement("    // NOTE(hqle): to implement");
+        statement("    return ANGLEcompare(texture.sample(s, coord, options), compare_value, "
+                  "shadowCompareMode);");
+        statement("}");
+        statement("");
+
+        // 2D array PCF sampling
+        statement("template <typename T, typename Opt>");
+        statement(
+            "inline T ANGLEtexturePCF(depth2d_array<T> texture, sampler s, float2 coord, uint "
+            "array, float compare_value, Opt options, int2 offset, uint shadowCompareMode)");
+        statement("{");
+        statement("    float2 dims = float2(texture.get_width(), texture.get_height());");
+        statement("    float2 imgCoord = coord * dims;");
+        statement("    float2 texelSize = 1.0 / dims;");
+        statement("    float2 weight = fract(imgCoord);");
+        statement("    float tl = ANGLEcompare(texture.sample(s, coord, array, options, offset), "
+                  "compare_value, shadowCompareMode);");
+        statement("    float tr = ANGLEcompare(texture.sample(s, coord + float2(texelSize.x, 0.0), "
+                  "array, options, offset), compare_value, shadowCompareMode);");
+        statement("    float bl = ANGLEcompare(texture.sample(s, coord + float2(0.0, texelSize.y), "
+                  "array, options, offset), compare_value, shadowCompareMode);");
+        statement("    float br = ANGLEcompare(texture.sample(s, coord + texelSize, options, "
+                  "offset), array, compare_value, shadowCompareMode);");
+        statement("    float top = mix(tl, tr, weight.x);");
+        statement("    float bottom = mix(bl, br, weight.x);");
+        statement("    return mix(top, bottom, weight.y);");
+        statement("}");
+        statement("");
+
+        // 2D texture's sample_compare() wrapper
+        statement("template <typename T, typename Opt>");
+        statement("inline T ANGLEtextureCompare(depth2d<T> texture, sampler s, float2 coord, float "
+                  "compare_value, Opt options, int2 offset, uint shadowCompareMode)");
+        statement("{");
+        statement("#ifdef __METAL_MACOS__");
+        statement("    return ANGLEtexturePCF(texture, s, coord, compare_value, options, offset, "
+                  "shadowCompareMode);");
+        statement("#else");
+        statement("    return texture.sample_compare(s, coord, compare_value, options, offset);");
+        statement("#endif");
+        statement("}");
+        statement("");
+
+        statement("template <typename T, typename Opt>");
+        statement("inline T ANGLEtextureCompare(depth2d<T> texture, sampler s, float2 coord, float "
+                  "compare_value, Opt options, uint shadowCompareMode)");
+        statement("{");
+        statement("    return ANGLEtextureCompare(texture, s, coord, compare_value, options, "
+                  "int2(0), shadowCompareMode);");
+        statement("}");
+        statement("");
+
+        // Cube texture's sample_compare() wrapper
+        statement("template <typename T, typename Opt>");
+        statement(
+            "inline T ANGLEtextureCompare(depthcube<T> texture, sampler s, float3 coord, float "
+            "compare_value, Opt options, uint shadowCompareMode)");
+        statement("{");
+        statement("#ifdef __METAL_MACOS__");
+        statement("    return ANGLEtexturePCF(texture, s, coord, compare_value, options, "
+                  "shadowCompareMode);");
+        statement("#else");
+        statement("    return texture.sample_compare(s, coord, compare_value, options);");
+        statement("#endif");
+        statement("}");
+        statement("");
+
+        // 2D array texture's sample_compare() wrapper
+        statement("// Wrapper functions for shadow texture functions");
+        statement("template <typename T, typename Opt>");
+        statement(
+            "inline T ANGLEtextureCompare(depth2d_array<T> texture, sampler s, float2 coord, "
+            "uint array, float compare_value, Opt options, int2 offset, uint shadowCompareMode)");
+        statement("{");
+        statement("#ifdef __METAL_MACOS__");
+        statement("    return ANGLEtexturePCF(texture, s, coord, array, compare_value, options, "
+                  "offset, shadowCompareMode);");
+        statement("#else");
+        statement(
+            "    return texture.sample_compare(s, coord, array, compare_value, options, offset);");
+        statement("#endif");
+        statement("}");
+        statement("");
+
+        statement("template <typename T, typename Opt>");
+        statement("inline T ANGLEtextureCompare(depth2d_array<T> texture, sampler s, float2 coord, "
+                  "uint array, float compare_value, Opt options, uint shadowCompareMode)");
+        statement("{");
+        statement("    return ANGLEtextureCompare(texture, s, coord, array, compare_value, "
+                  "options, int2(0), shadowCompareMode);");
+        statement("}");
+        statement("");
+
+        // 2D texture's generic sampling function
+        statement("template <typename T>");
+        statement("inline T ANGLEtexture(depth2d<T> texture, sampler s, float2 coord, int2 offset, "
+                  "float compare_value, uint shadowCompareMode)");
+        statement("{");
+        statement("    if (shadowCompareMode)");
+        statement("    {");
+        statement("        return texture.sample_compare(s, coord, compare_value, offset);");
+        statement("    }");
+        statement("    else");
+        statement("    {");
+        statement("        return texture.sample(s, coord, offset);");
+        statement("    }");
+        statement("}");
+        statement("");
+
+        statement("template <typename T>");
+        statement("inline T ANGLEtexture(depth2d<T> texture, sampler s, float2 coord, float "
+                  "compare_value, uint shadowCompareMode)");
+        statement("{");
+        statement("    return ANGLEtexture(texture, s, coord, int2(0), compare_value, "
+                  "shadowCompareMode);");
+        statement("}");
+        statement("");
+
+        statement("template <typename T, typename Opt>");
+        statement("inline T ANGLEtexture(depth2d<T> texture, sampler s, float2 coord, Opt options, "
+                  "int2 offset, float compare_value, uint shadowCompareMode)");
+        statement("{");
+        statement("    if (shadowCompareMode)");
+        statement("    {");
+        statement("        return ANGLEtextureCompare(texture, s, coord, compare_value, options, "
+                  "offset, shadowCompareMode);");
+        statement("    }");
+        statement("    else");
+        statement("    {");
+        statement("        return texture.sample(s, coord, options, offset);");
+        statement("    }");
+        statement("}");
+        statement("");
+
+        statement("template <typename T, typename Opt>");
+        statement("inline T ANGLEtexture(depth2d<T> texture, sampler s, float2 coord, Opt options, "
+                  "float compare_value, uint shadowCompareMode)");
+        statement("{");
+        statement("    return ANGLEtexture(texture, s, coord, options, int2(0), compare_value, "
+                  "shadowCompareMode);");
+        statement("}");
+        statement("");
+
+        // Cube texture's generic sampling function
+        statement("template <typename T>");
+        statement("inline T ANGLEtexture(depthcube<T> texture, sampler s, float3 coord, float "
+                  "compare_value, uint shadowCompareMode)");
+        statement("{");
+        statement("    if (shadowCompareMode)");
+        statement("    {");
+        statement("        return texture.sample_compare(s, coord, compare_value);");
+        statement("    }");
+        statement("    else");
+        statement("    {");
+        statement("        return texture.sample(s, coord);");
+        statement("    }");
+        statement("}");
+        statement("");
+
+        statement("template <typename T, typename Opt>");
+        statement("inline T ANGLEtexture(depthcube<T> texture, sampler s, float2 coord, Opt "
+                  "options, float compare_value, uint shadowCompareMode)");
+        statement("{");
+        statement("    if (shadowCompareMode)");
+        statement("    {");
+        statement("        return ANGLEtextureCompare(texture, s, coord, compare_value, options, "
+                  "shadowCompareMode);");
+        statement("    }");
+        statement("    else");
+        statement("    {");
+        statement("        return texture.sample(s, coord, options);");
+        statement("    }");
+        statement("}");
+        statement("");
+
+        // 2D array texture's generic sampling function
+        statement("template <typename T>");
+        statement("inline T ANGLEtexture(depth2d_array<T> texture, sampler s, float2 coord, uint "
+                  "array, int2 offset, "
+                  "float compare_value, uint shadowCompareMode)");
+        statement("{");
+        statement("    if (shadowCompareMode)");
+        statement("    {");
+        statement("        return texture.sample_compare(s, coord, array, compare_value, offset);");
+        statement("    }");
+        statement("    else");
+        statement("    {");
+        statement("        return texture.sample(s, coord, array, offset);");
+        statement("    }");
+        statement("}");
+        statement("");
+
+        statement("template <typename T>");
+        statement("inline T ANGLEtexture(depth2d_array<T> texture, sampler s, float2 coord, uint "
+                  "array, float compare_value, uint shadowCompareMode)");
+        statement("{");
+        statement("    return ANGLEtexture(texture, s, coord, array, int2(0), compare_value, "
+                  "shadowCompareMode);");
+        statement("}");
+        statement("");
+
+        statement("template <typename T, typename Opt>");
+        statement("inline T ANGLEtexture(depth2d_array<T> texture, sampler s, float2 coord, uint "
+                  "array, Opt options, int2 offset, "
+                  "float compare_value, uint shadowCompareMode)");
+        statement("{");
+        statement("    if (shadowCompareMode)");
+        statement("    {");
+        statement("        return ANGLEtextureCompare(texture, s, coord, array, compare_value, "
+                  "options, offset, shadowCompareMode);");
+        statement("    }");
+        statement("    else");
+        statement("    {");
+        statement("        return texture.sample(s, coord, array, options, offset);");
+        statement("    }");
+        statement("}");
+        statement("");
+
+        statement("template <typename T, typename Opt>");
+        statement("inline T ANGLEtexture(depth2d_array<T> texture, sampler s, float2 coord, uint "
+                  "array, Opt options, float compare_value, uint shadowCompareMode)");
+        statement("{");
+        statement("    return ANGLEtexture(texture, s, coord, array, options, int2(0), "
+                  "compare_value, shadowCompareMode);");
+        statement("}");
+        statement("");
+    }
+
+    std::string to_function_name(spirv_cross::VariableID img,
+                                 const spirv_cross::SPIRType &imgType,
+                                 bool isFetch,
+                                 bool isGather,
+                                 bool isProj,
+                                 bool hasArrayOffsets,
+                                 bool hasOffset,
+                                 bool hasGrad,
+                                 bool hasDref,
+                                 uint32_t lod,
+                                 uint32_t minLod) override
+    {
+        if (!hasDref)
+        {
+            return spirv_cross::CompilerMSL::to_function_name(img, imgType, isFetch, isGather,
+                                                              isProj, hasArrayOffsets, hasOffset,
+                                                              hasGrad, hasDref, lod, minLod);
+        }
+
+        // Use custom ANGLEtexture function instead of using built-in sample_compare()
+        return "ANGLEtexture";
+    }
+
+    std::string to_function_args(spirv_cross::VariableID img,
+                                 const spirv_cross::SPIRType &imgType,
+                                 bool isFetch,
+                                 bool isGather,
+                                 bool isProj,
+                                 uint32_t coord,
+                                 uint32_t coordComponents,
+                                 uint32_t dref,
+                                 uint32_t gradX,
+                                 uint32_t gradY,
+                                 uint32_t lod,
+                                 uint32_t coffset,
+                                 uint32_t offset,
+                                 uint32_t bias,
+                                 uint32_t comp,
+                                 uint32_t sample,
+                                 uint32_t minlod,
+                                 bool *pForward) override
+    {
+        bool forward;
+        std::string argsWithoutDref = spirv_cross::CompilerMSL::to_function_args(
+            img, imgType, isFetch, isGather, isProj, coord, coordComponents, 0, gradX, gradY, lod,
+            coffset, offset, bias, comp, sample, minlod, &forward);
+
+        if (!dref)
+        {
+            if (pForward)
+            {
+                *pForward = forward;
+            }
+            return argsWithoutDref;
+        }
+        // Convert to arguments to ANGLEtexture.
+        std::string args = to_expression(img);
+        args += ", ";
+        args += argsWithoutDref;
+        args += ", ";
+
+        forward                               = forward && should_forward(dref);
+        const spirv_cross::SPIRType &drefType = expression_type(dref);
+        std::string drefExpr;
+        uint32_t altCoordComponent = 0;
+        switch (imgType.image.dim)
+        {
+            case spv::Dim2D:
+                altCoordComponent = 2;
+                break;
+            case spv::Dim3D:
+            case spv::DimCube:
+                altCoordComponent = 3;
+                break;
+            default:
+                UNREACHABLE();
+                break;
+        }
+        if (isProj)
+            drefExpr = spirv_cross::join(to_enclosed_expression(dref), " / ",
+                                         to_extract_component_expression(coord, altCoordComponent));
+        else
+            drefExpr = to_expression(dref);
+
+        if (drefType.basetype == spirv_cross::SPIRType::Half)
+            drefExpr = convert_to_f32(drefExpr, 1);
+
+        args += drefExpr;
+        args += ", ";
+        args += toShadowCompareModeExpression(img);
+
+        if (pForward)
+        {
+            *pForward = forward;
+        }
+
+        return args;
+    }
+
+    // Additional functions
+    void addBuiltInResources()
+    {
+        uint32_t varId = build_constant_uint_array_pointer();
+        set_name(varId, kShadowSamplerCompareModesVarName);
+        // This should never match anything.
+        set_decoration(varId, spv::DecorationDescriptorSet, kShadowSamplerCompareModesBindingIndex);
+        set_decoration(varId, spv::DecorationBinding, 0);
+        set_extended_decoration(varId, spirv_cross::SPIRVCrossDecorationResourceIndexPrimary, 0);
+        mANGLEShadowCompareModesVarId = varId;
+    }
+
+    void analyzeShaderVariables()
+    {
+        ir.for_each_typed_id<spirv_cross::SPIRVariable>([this](uint32_t,
+                                                               spirv_cross::SPIRVariable &var) {
+            auto &type     = get_variable_data_type(var);
+            uint32_t varId = var.self;
+
+            if (var.storage == spv::StorageClassUniformConstant && !is_hidden_variable(var))
+            {
+                if (is_sampled_image_type(type) && type.image.depth)
+                {
+                    mHasDepthSampler = true;
+
+                    auto &entry_func = this->get<spirv_cross::SPIRFunction>(ir.default_entry_point);
+                    entry_func.fixup_hooks_in.push_back([this, &type, &var, varId]() {
+                        bool isArrayType = !type.array.empty();
+
+                        statement("constant uint", isArrayType ? "* " : "& ",
+                                  toShadowCompareModeExpression(varId),
+                                  isArrayType ? " = &" : " = ",
+                                  to_name(mANGLEShadowCompareModesVarId), "[",
+                                  spirv_cross::convert_to_string(
+                                      get_metal_resource_index(var, spirv_cross::SPIRType::Image)),
+                                  "];");
+                    });
+                }
+            }
+        });
+    }
+
+    std::string toShadowCompareModeExpression(uint32_t id)
+    {
+        constexpr char kCompareModeSuffix[] = "_CompMode";
+        auto *combined                      = maybe_get<spirv_cross::SPIRCombinedImageSampler>(id);
+
+        auto expr  = to_expression(combined ? combined->image : spirv_cross::VariableID(id));
+        auto index = expr.find_first_of('[');
+
+        if (index == std::string::npos)
+            return expr + kCompareModeSuffix;
+        else
+        {
+            auto imageExpr = expr.substr(0, index);
+            auto arrayExpr = expr.substr(index);
+            return imageExpr + kCompareModeSuffix + arrayExpr;
+        }
+    }
+
+    uint32_t mANGLEShadowCompareModesVarId = 0;
+    bool mHasDepthSampler                  = false;
+};
+
 }  // namespace
 
 void GlslangGetShaderSource(const gl::ProgramState &programState,
@@ -59,5 +673,93 @@ angle::Result GlslangGetShaderSpirvCode(ErrorHandler *context,
         [context](GlslangError error) { return HandleError(context, error); }, glCaps,
         enableLineRasterEmulation, shaderSources, shaderCodeOut);
 }
+
+angle::Result SpirvCodeToMsl(ErrorHandler *context,
+                             gl::ShaderMap<std::vector<uint32_t>> *shaderCode,
+                             gl::ShaderMap<std::string> *mslCodeOut)
+{
+    for (gl::ShaderType shaderType : gl::AllGLES2ShaderTypes())
+    {
+        std::vector<uint32_t> &sprivCode = shaderCode->at(shaderType);
+        SpirvToMslCompiler compilerMsl(std::move(sprivCode));
+
+        spirv_cross::CompilerMSL::Options compOpt;
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
+        compOpt.platform = spirv_cross::CompilerMSL::Options::macOS;
+#else
+        compOpt.platform = spirv_cross::CompilerMSL::Options::iOS;
+#endif
+
+        if (ANGLE_APPLE_AVAILABLE_XCI(10.14, 13.0, 12))
+        {
+            // Use Metal 2.1
+            compOpt.set_msl_version(2, 1);
+        }
+        else
+        {
+            // Always use at least Metal 2.0.
+            compOpt.set_msl_version(2);
+        }
+
+        compilerMsl.set_msl_options(compOpt);
+
+        // Tell spirv-cross to map default & driver uniform blocks & samplers as we want
+        spirv_cross::ShaderResources mslRes = compilerMsl.get_shader_resources();
+
+        ANGLE_TRY(BindResources<&spirv_cross::MSLResourceBinding::msl_buffer>(
+            &compilerMsl, mslRes.uniform_buffers, shaderType));
+
+        ANGLE_TRY((BindResources<&spirv_cross::MSLResourceBinding::msl_sampler,
+                                 &spirv_cross::MSLResourceBinding::msl_texture>(
+            &compilerMsl, mslRes.sampled_images, shaderType)));
+
+        // NOTE(hqle): spirv-cross uses exceptions to report error, what should we do here
+        // in case of error?
+        std::string translatedMsl = compilerMsl.compile();
+        if (translatedMsl.size() == 0)
+        {
+            ANGLE_MTL_CHECK(context, false, GL_INVALID_OPERATION);
+        }
+
+        mslCodeOut->at(shaderType) = std::move(translatedMsl);
+    }  // for (gl::ShaderType shaderType
+
+    return angle::Result::Continue;
+}
+
+uint MslGetShaderShadowCompareMode(GLenum mode, GLenum func)
+{
+    // See SpirvToMslCompiler::emit_header()
+    if (mode == GL_NONE)
+    {
+        return 0;
+    }
+    else
+    {
+        switch (func)
+        {
+            case GL_LESS:
+                return 1;
+            case GL_LEQUAL:
+                return 2;
+            case GL_GREATER:
+                return 3;
+            case GL_GEQUAL:
+                return 4;
+            case GL_NEVER:
+                return 5;
+            case GL_ALWAYS:
+                return 6;
+            case GL_EQUAL:
+                return 7;
+            case GL_NOTEQUAL:
+                return 8;
+            default:
+                UNREACHABLE();
+                return 1;
+        }
+    }
+}
+
 }  // namespace mtl
 }  // namespace rx

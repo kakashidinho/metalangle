@@ -148,11 +148,6 @@ class ProgramMtl : public ProgramImpl
                                         gl::BinaryInputStream *stream,
                                         gl::InfoLog &infoLog);
 
-    angle::Result convertToMsl(const gl::Context *glContext,
-                               gl::ShaderType shaderType,
-                               gl::InfoLog &infoLog,
-                               std::vector<uint32_t> *sprivCode);
-
     angle::Result createMslShader(const gl::Context *glContext,
                                   gl::ShaderType shaderType,
                                   gl::InfoLog &infoLog,
@@ -177,6 +172,8 @@ class ProgramMtl : public ProgramImpl
     gl::ShaderMap<DefaultUniformBlock> mDefaultUniformBlocks;
 
     gl::ShaderMap<std::string> mTranslatedMslShader;
+
+    uint32_t mShadowCompareModes[mtl::kMaxShaderSamplers];
 
     mtl::RenderPipelineCache mMetalRenderPipelineCache;
 };

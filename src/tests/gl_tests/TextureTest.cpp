@@ -898,6 +898,101 @@ class Texture3DTestES3 : public Texture3DTestES2
     }
 };
 
+class ShadowSamplerTestES3 : public TexCoordDrawTest
+{
+  protected:
+    ShadowSamplerTestES3()
+        : TexCoordDrawTest(),
+          mTextureShadow(0),
+          mTextureShadowUniformLocation(-1),
+          mDepthRefUniformLocation(-1)
+    {}
+
+    const char *getVertexShaderSource() override
+    {
+        return "#version 300 es\n"
+               "out vec2 texcoord;\n"
+               "in vec4 position;\n"
+               "void main()\n"
+               "{\n"
+               "    gl_Position = vec4(position.xy, 0.0, 1.0);\n"
+               "    texcoord = (position.xy * 0.5) + 0.5;\n"
+               "}\n";
+    }
+
+    const char *getFragmentShaderSource() override
+    {
+        return "#version 300 es\n"
+               "precision highp float;\n"
+               "uniform highp sampler2DShadow tex2DShadow;\n"
+               "in vec2 texcoord;\n"
+               "uniform float depthRef;\n"
+               "out vec4 fragColor;\n"
+               "void main()\n"
+               "{\n"
+               "    fragColor = vec4(texture(tex2DShadow, vec3(texcoord, depthRef)) * 0.5);\n"
+               "    fragColor.a = 1.0;\n"
+               "}\n";
+    }
+
+    void setupLodProgram()
+    {
+        const char kFS[] =
+            "#version 300 es\n"
+            "precision highp float;\n"
+            "uniform highp sampler2DShadow tex2DShadow;\n"
+            "in vec2 texcoord;\n"
+            "uniform float depthRef;\n"
+            "uniform float lod;\n"
+            "out vec4 fragColor;\n"
+            "void main()\n"
+            "{\n"
+            "    fragColor = vec4(textureLod(tex2DShadow, vec3(texcoord, depthRef), lod) * 0.5);\n"
+            "    fragColor.a = 1.0;\n"
+            "}\n";
+
+        mLodProgram = CompileProgram(getVertexShaderSource(), kFS);
+    }
+
+    void testSetUp() override
+    {
+        TexCoordDrawTest::testSetUp();
+
+        glGenTextures(1, &mTextureShadow);
+        glBindTexture(GL_TEXTURE_2D, mTextureShadow);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+
+        setUpProgram();
+        setupLodProgram();
+
+        mTextureShadowUniformLocation = glGetUniformLocation(mProgram, "tex2DShadow");
+        ASSERT_NE(-1, mTextureShadowUniformLocation);
+        mDepthRefUniformLocation = glGetUniformLocation(mProgram, "depthRef");
+        ASSERT_NE(-1, mDepthRefUniformLocation);
+
+        mLodProgramTextureShadowUniformLocation = glGetUniformLocation(mLodProgram, "tex2DShadow");
+        ASSERT_NE(-1, mLodProgramTextureShadowUniformLocation);
+        mLodProgramDepthRefUniformLocation = glGetUniformLocation(mLodProgram, "depthRef");
+        ASSERT_NE(-1, mLodProgramDepthRefUniformLocation);
+        mLodProgramLodUniformLocation = glGetUniformLocation(mLodProgram, "lod");
+        ASSERT_NE(-1, mLodProgramLodUniformLocation);
+    }
+
+    void testTearDown() override
+    {
+        glDeleteTextures(1, &mTextureShadow);
+        TexCoordDrawTest::testTearDown();
+    }
+
+    GLuint mLodProgram;
+    GLuint mTextureShadow;
+    GLint mTextureShadowUniformLocation;
+    GLint mDepthRefUniformLocation;
+    GLint mLodProgramTextureShadowUniformLocation;
+    GLint mLodProgramDepthRefUniformLocation;
+    GLint mLodProgramLodUniformLocation;
+};
+
 class ShadowSamplerPlusSampler3DTestES3 : public TexCoordDrawTest
 {
   protected:
@@ -3022,6 +3117,319 @@ TEST_P(Texture2DArrayTestES3, RedefineInittableArray)
     EXPECT_PIXEL_COLOR_EQ(0, 0, GLColor::green);
 
     ASSERT_GL_NO_ERROR();
+}
+
+// Test that shadow sampler with compare mode = GL_COMPARE_REF_TO_TEXTURE will return comparison
+// value
+TEST_P(ShadowSamplerTestES3, ShadowSamplerCompareOn)
+{
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, mTextureShadow);
+    GLfloat depthTexData[1];
+    depthTexData[0] = 0.5f;
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, 1, 1, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
+                 depthTexData);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+
+    glUseProgram(mProgram);
+    glUniform1f(mDepthRefUniformLocation, 0.3f);
+    glUniform1i(mTextureShadowUniformLocation, 1);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+    drawQuad(mProgram, "position", 0.5f);
+    EXPECT_GL_NO_ERROR();
+    // The shader writes 0.5 * <comparison result (1.0)>
+    EXPECT_PIXEL_NEAR(0, 0, 128, 128, 128, 255, 2);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_GREATER);
+    drawQuad(mProgram, "position", 0.5f);
+    EXPECT_GL_NO_ERROR();
+    // The shader writes 0.5 * <comparison result (0.0)>
+    EXPECT_PIXEL_NEAR(0, 0, 0, 0, 0, 255, 2);
+}
+
+// Test that shadow sampler with compare mode = GL_NONE will return depth value
+TEST_P(ShadowSamplerTestES3, ShadowSamplerCompareOff)
+{
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, mTextureShadow);
+    GLfloat depthTexData[1];
+    depthTexData[0] = 0.5f;
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, 1, 1, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
+                 depthTexData);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+
+    glUseProgram(mProgram);
+    glUniform1f(mDepthRefUniformLocation, 0.3f);
+    glUniform1i(mTextureShadowUniformLocation, 1);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+    drawQuad(mProgram, "position", 0.5f);
+    EXPECT_GL_NO_ERROR();
+    // The shader writes 0.5 * <depth texture value>
+    EXPECT_PIXEL_NEAR(0, 0, 64, 64, 64, 255, 2);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_GREATER);
+    drawQuad(mProgram, "position", 0.5f);
+    EXPECT_GL_NO_ERROR();
+    // The shader writes 0.5 * <depth texture value>
+    EXPECT_PIXEL_NEAR(0, 0, 64, 64, 64, 255, 2);
+}
+
+// Test that shadow sampler with compare mode = GL_COMPARE_REF_TO_TEXTURE and lod=1 will return
+// correct comparison value
+TEST_P(ShadowSamplerTestES3, ShadowSamplerLodCompareOn)
+{
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, mTextureShadow);
+    GLfloat depthTexData[5];
+    depthTexData[0] = 0.5f;
+    depthTexData[1] = 0.5f;
+    depthTexData[2] = 0.5f;
+    depthTexData[3] = 0.5f;
+    depthTexData[4] = 0.4f;
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, 2, 2, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
+                 depthTexData);
+    glTexImage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, 1, 1, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
+                 depthTexData + 4);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+
+    glUseProgram(mLodProgram);
+    glUniform1f(mLodProgramDepthRefUniformLocation, 0.45f);
+    glUniform1i(mLodProgramTextureShadowUniformLocation, 1);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+    glUniform1f(mLodProgramLodUniformLocation, 0);
+    drawQuad(mLodProgram, "position", 0.5f);
+    EXPECT_GL_NO_ERROR();
+    // The shader writes 0.5 * <comparison result (1.0)>
+    EXPECT_PIXEL_NEAR(0, 0, 128, 128, 128, 255, 2);
+
+    glUniform1f(mLodProgramLodUniformLocation, 1);
+    drawQuad(mLodProgram, "position", 0.5f);
+    EXPECT_GL_NO_ERROR();
+    // The shader writes 0.5 * <comparison result (0.0)>
+    EXPECT_PIXEL_NEAR(0, 0, 0, 0, 0, 255, 2);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_GREATER);
+    glUniform1f(mLodProgramLodUniformLocation, 1);
+    drawQuad(mLodProgram, "position", 0.5f);
+    EXPECT_GL_NO_ERROR();
+    // The shader writes 0.5 * <comparison result (1.0)>
+    EXPECT_PIXEL_NEAR(0, 0, 128, 128, 128, 255, 2);
+}
+
+// Test that shadow sampler with compare mode = GL_NONE and lod=1 will return depth value
+TEST_P(ShadowSamplerTestES3, ShadowSamplerLodCompareOff)
+{
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, mTextureShadow);
+    GLfloat depthTexData[5];
+    depthTexData[0] = 0.5f;
+    depthTexData[1] = 0.5f;
+    depthTexData[2] = 0.5f;
+    depthTexData[3] = 0.5f;
+    depthTexData[4] = 0.4f;
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, 2, 2, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
+                 depthTexData);
+    glTexImage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, 1, 1, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
+                 depthTexData + 4);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+
+    glUseProgram(mLodProgram);
+    glUniform1f(mLodProgramDepthRefUniformLocation, 0.45f);
+    glUniform1i(mLodProgramTextureShadowUniformLocation, 1);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+    glUniform1f(mLodProgramLodUniformLocation, 0);
+    drawQuad(mLodProgram, "position", 0.5f);
+    EXPECT_GL_NO_ERROR();
+    // The shader writes 0.5 * <depth value>
+    EXPECT_PIXEL_NEAR(0, 0, 64, 64, 64, 255, 2);
+
+    glUniform1f(mLodProgramLodUniformLocation, 1);
+    drawQuad(mLodProgram, "position", 0.5f);
+    EXPECT_GL_NO_ERROR();
+    // The shader writes 0.5 * <depth value>
+    EXPECT_PIXEL_NEAR(0, 0, 51, 51, 51, 255, 2);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_GREATER);
+    glUniform1f(mLodProgramLodUniformLocation, 1);
+    drawQuad(mLodProgram, "position", 0.5f);
+    EXPECT_GL_NO_ERROR();
+    // The shader writes 0.5 * <depth value>
+    EXPECT_PIXEL_NEAR(0, 0, 51, 51, 51, 255, 2);
+}
+
+// Test that an array of shadow sampler with compare mode = GL_COMPARE_REF_TO_TEXTURE and lod=1 will
+// return correct comparison value
+TEST_P(ShadowSamplerTestES3, ArrayOfShadowSamplerLodCompareOn)
+{
+    const char kFS[] =
+        "#version 300 es\n"
+        "precision highp float;\n"
+        "uniform highp sampler2DShadow tex2DShadow[2];\n"
+        "in vec2 texcoord;\n"
+        "uniform float depthRef;\n"
+        "uniform float lod;\n"
+        "uniform int index;\n"
+        "out vec4 fragColor;\n"
+        "void main()\n"
+        "{\n"
+        "    fragColor = vec4(textureLod(tex2DShadow[index], vec3(texcoord, depthRef), lod) * "
+        "0.5);\n"
+        "    fragColor.a = 1.0;\n"
+        "}\n";
+
+    GLProgram program;
+    program.makeRaster(getVertexShaderSource(), kFS);
+
+    GLint depthRefLocation = glGetUniformLocation(program, "depthRef");
+    GLint sampler0Location = glGetUniformLocation(program, "tex2DShadow[0]");
+    GLint sampler1Location = glGetUniformLocation(program, "tex2DShadow[1]");
+    GLint lodLocation      = glGetUniformLocation(program, "lod");
+    GLint indexLocation    = glGetUniformLocation(program, "index");
+
+    EXPECT_NE(depthRefLocation, -1);
+    EXPECT_NE(sampler0Location, -1);
+    EXPECT_NE(sampler1Location, -1);
+    EXPECT_NE(lodLocation, -1);
+    EXPECT_NE(indexLocation, -1);
+
+    glActiveTexture(GL_TEXTURE0);
+    GLTexture tempTex;
+    glBindTexture(GL_TEXTURE_2D, tempTex);
+    GLfloat tempDepthTexData = 0.0f;
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, 1, 1, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
+                 &tempDepthTexData);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, mTextureShadow);
+    GLfloat depthTexData[5];
+    depthTexData[0] = 0.5f;
+    depthTexData[1] = 0.5f;
+    depthTexData[2] = 0.5f;
+    depthTexData[3] = 0.5f;
+    depthTexData[4] = 0.4f;
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, 2, 2, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
+                 depthTexData);
+    glTexImage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, 1, 1, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
+                 depthTexData + 4);
+
+    glUseProgram(program);
+    glUniform1f(depthRefLocation, 0.45f);
+    glUniform1i(sampler0Location, 0);
+    glUniform1i(sampler1Location, 1);
+    glUniform1i(indexLocation, 1);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+    glUniform1f(lodLocation, 0);
+    drawQuad(program, "position", 0.5f);
+    EXPECT_GL_NO_ERROR();
+    // The shader writes 0.5 * <comparison result (1.0)>
+    EXPECT_PIXEL_NEAR(0, 0, 128, 128, 128, 255, 2);
+
+    glUniform1f(lodLocation, 1);
+    drawQuad(program, "position", 0.5f);
+    EXPECT_GL_NO_ERROR();
+    // The shader writes 0.5 * <comparison result (0.0)>
+    EXPECT_PIXEL_NEAR(0, 0, 0, 0, 0, 255, 2);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_GREATER);
+    glUniform1f(lodLocation, 1);
+    drawQuad(program, "position", 0.5f);
+    EXPECT_GL_NO_ERROR();
+    // The shader writes 0.5 * <comparison result (1.0)>
+    EXPECT_PIXEL_NEAR(0, 0, 128, 128, 128, 255, 2);
+}
+
+// Test that an array of shadow sampler with different compare modes and lod=1 will
+// return correct comparison value
+TEST_P(ShadowSamplerTestES3, ArrayOfShadowSamplerDifferentModes)
+{
+    const char kFS[] =
+        "#version 300 es\n"
+        "precision highp float;\n"
+        "uniform highp sampler2DShadow tex2DShadow[2];\n"
+        "in vec2 texcoord;\n"
+        "uniform float depthRef;\n"
+        "out vec4 fragColor;\n"
+        "void main()\n"
+        "{\n"
+        "    vec2 dx = dFdx(texcoord);\n"
+        "    vec2 dy = dFdy(texcoord);\n"
+        "    fragColor.r = textureGrad(tex2DShadow[0], vec3(texcoord, depthRef), dx, dy);\n"
+        "    fragColor.g = textureGrad(tex2DShadow[1], vec3(texcoord, depthRef), dx, dy);\n"
+        "    fragColor.b = 0.0;\n"
+        "    fragColor.a = 1.0;\n"
+        "}\n";
+
+    GLProgram program;
+    program.makeRaster(getVertexShaderSource(), kFS);
+
+    GLint depthRefLocation = glGetUniformLocation(program, "depthRef");
+    GLint sampler0Location = glGetUniformLocation(program, "tex2DShadow[0]");
+    GLint sampler1Location = glGetUniformLocation(program, "tex2DShadow[1]");
+
+    EXPECT_NE(depthRefLocation, -1);
+    EXPECT_NE(sampler0Location, -1);
+    EXPECT_NE(sampler1Location, -1);
+
+    // First texture: compare dref != depth
+    glActiveTexture(GL_TEXTURE0);
+    GLTexture tempTex;
+    glBindTexture(GL_TEXTURE_2D, tempTex);
+    GLfloat tempDepthTexData = 0.0f;
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, 1, 1, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
+                 &tempDepthTexData);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_NOTEQUAL);
+
+    // Second texture: compare = none.
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, mTextureShadow);
+    GLfloat depthTexData[5];
+    depthTexData[0] = 0.5f;
+    depthTexData[1] = 0.5f;
+    depthTexData[2] = 0.5f;
+    depthTexData[3] = 0.5f;
+    depthTexData[4] = 0.4f;
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, 2, 2, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
+                 depthTexData);
+    glTexImage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, 1, 1, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
+                 depthTexData + 4);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+
+    glUseProgram(program);
+    glUniform1f(depthRefLocation, 0.45f);
+    glUniform1i(sampler0Location, 0);
+    glUniform1i(sampler1Location, 1);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+    drawQuad(program, "position", 0.5f);
+    EXPECT_GL_NO_ERROR();
+    // The shader writes <comparison result (1.0)>, <2nd texture's depth value>, 0, 1
+    EXPECT_PIXEL_NEAR(0, 0, 255, 128, 0, 255, 2);
 }
 
 // Test shadow sampler and regular non-shadow sampler coexisting in the same shader.
@@ -6095,6 +6503,11 @@ ANGLE_INSTANTIATE_TEST(Texture2DUnsignedIntegerAlpha1TestES3,
                        ES3_OPENGL(),
                        ES3_OPENGLES(),
                        ES3_VULKAN());
+ANGLE_INSTANTIATE_TEST(ShadowSamplerTestES3,
+                       ES3_D3D11(),
+                       ES3_OPENGL(),
+                       ES3_OPENGLES(),
+                       ES3_METAL());
 ANGLE_INSTANTIATE_TEST(ShadowSamplerPlusSampler3DTestES3,
                        ES3_D3D11(),
                        ES3_OPENGL(),
