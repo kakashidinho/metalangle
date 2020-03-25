@@ -36,13 +36,11 @@ struct FormatBase
 
     inline bool operator!=(const FormatBase &rhs) const { return !((*this) == rhs); }
 
-    const angle::Format &actualAngleFormat() const { return *pActualAngleFormat; }
+    const angle::Format &actualAngleFormat() const;
     const angle::Format &intendedAngleFormat() const;
 
     angle::FormatID actualFormatId   = angle::FormatID::NONE;
     angle::FormatID intendedFormatId = angle::FormatID::NONE;
-
-    const angle::Format *pActualAngleFormat = nullptr;
 };
 
 struct FormatCaps
@@ -69,10 +67,6 @@ struct Format : public FormatBase
     bool hasDepthAndStencilBits() const
     {
         return actualAngleFormat().depthBits && actualAngleFormat().stencilBits;
-    }
-    bool hasDepthOrStencilBits() const
-    {
-        return actualAngleFormat().depthBits || actualAngleFormat().stencilBits;
     }
     bool isPVRTC() const;
 
