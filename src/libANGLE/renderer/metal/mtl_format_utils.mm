@@ -114,11 +114,6 @@ void GenerateTextureCapsMap(const FormatTable &formatTable,
 }  // namespace
 
 // FormatBase implementation
-const angle::Format &FormatBase::actualAngleFormat() const
-{
-    return angle::Format::Get(actualFormatId);
-}
-
 const angle::Format &FormatBase::intendedAngleFormat() const
 {
     return angle::Format::Get(intendedFormatId);
@@ -177,9 +172,17 @@ angle::Result FormatTable::initialize(const DisplayMtl *display)
         const auto formatId = static_cast<angle::FormatID>(i);
 
         mPixelFormatTable[i].init(display, formatId);
+        mPixelFormatTable[i].pActualAngleFormat =
+            &angle::Format::Get(mPixelFormatTable[i].actualFormatId);
         mPixelFormatTable[i].caps = &mNativePixelFormatCapsTable[mPixelFormatTable[i].metalFormat];
+
         mVertexFormatTables[0][i].init(formatId, false);
+        mVertexFormatTables[0][i].pActualAngleFormat =
+            &angle::Format::Get(mVertexFormatTables[0][i].actualFormatId);
+
         mVertexFormatTables[1][i].init(formatId, true);
+        mVertexFormatTables[1][i].pActualAngleFormat =
+            &angle::Format::Get(mVertexFormatTables[1][i].actualFormatId);
     }
 
     return angle::Result::Continue;
