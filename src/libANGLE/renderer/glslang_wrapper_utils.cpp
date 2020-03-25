@@ -847,16 +847,7 @@ void AssignTextureBindings(const GlslangSourceOptions &options,
         }
 
         const std::string bindingString =
-            texturesDescriptorSet + ", binding = " + Str(bindingIndex);
-
-        if (!useOldRewriteStructSamplers)
-        {
-            bindingIndex += samplerUniform.getArraySizeProduct();
-        }
-        else
-        {
-            bindingIndex++;
-        }
+            texturesDescriptorSet + ", binding = " + Str(bindingIndex++);
 
         // Samplers in structs are extracted and renamed.
         const std::string samplerName = useOldRewriteStructSamplers
