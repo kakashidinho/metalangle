@@ -18,6 +18,7 @@
 #include "common/utilities.h"
 #include "libANGLE/renderer/ProgramImpl.h"
 #include "libANGLE/renderer/metal/mtl_command_buffer.h"
+#include "libANGLE/renderer/metal/mtl_glslang_utils.h"
 #include "libANGLE/renderer/metal/mtl_resources.h"
 #include "libANGLE/renderer/metal/mtl_state_cache.h"
 
@@ -139,6 +140,9 @@ class ProgramMtl : public ProgramImpl
     void saveTranslatedShaders(gl::BinaryOutputStream *stream);
     void loadTranslatedShaders(gl::BinaryInputStream *stream);
 
+    void saveAssignedSamplerBindings(gl::BinaryOutputStream *stream);
+    void loadAssignedSamplerBindings(gl::BinaryInputStream *stream);
+
     void linkResources(const gl::ProgramLinkedResources &resources);
     angle::Result linkImpl(const gl::Context *glContext,
                            const gl::ShaderMap<std::string> &shaderSource,
@@ -172,6 +176,8 @@ class ProgramMtl : public ProgramImpl
     gl::ShaderMap<DefaultUniformBlock> mDefaultUniformBlocks;
 
     gl::ShaderMap<std::string> mTranslatedMslShader;
+
+    gl::ShaderMap<std::array<mtl::SamplerBindingMtl, mtl::kMaxShaderSamplers>> mActualSamplerBindings;
 
     uint32_t mShadowCompareModes[mtl::kMaxShaderSamplers] = {0};
 

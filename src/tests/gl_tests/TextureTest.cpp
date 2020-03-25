@@ -2313,6 +2313,64 @@ TEST_P(Texture2DTest, NPOTSubImageParameters)
     EXPECT_GL_NO_ERROR();
 }
 
+// Test mixing array of textures and single texture work correctly
+TEST_P(Texture2DTest, MultipleArrayAndTextures)
+{
+    const char kFS[] =
+        "precision highp float;\n"
+        "uniform highp sampler2D tex2D[2];\n"
+        "uniform highp sampler2D tex2D2;\n"
+        "varying vec2 texcoord;\n"
+        "void main()\n"
+        "{\n"
+        "    gl_FragColor.r = texture2D(tex2D[0], texcoord).r;\n"
+        "    gl_FragColor.g = texture2D(tex2D[1], texcoord).g;\n"
+        "    gl_FragColor.b = texture2D(tex2D2, texcoord).b;\n"
+        "    gl_FragColor.a = 1.0;\n"
+        "}\n";
+
+    GLProgram program;
+    program.makeRaster(getVertexShaderSource(), kFS);
+
+    GLint sampler0Location = glGetUniformLocation(program, "tex2D[0]");
+    GLint sampler1Location = glGetUniformLocation(program, "tex2D[1]");
+    GLint sampler2Location = glGetUniformLocation(program, "tex2D2");
+
+    EXPECT_NE(sampler0Location, -1);
+    EXPECT_NE(sampler1Location, -1);
+    EXPECT_NE(sampler2Location, -1);
+
+    // First texture
+    glActiveTexture(GL_TEXTURE0);
+    GLTexture tempTex;
+    glBindTexture(GL_TEXTURE_2D, tempTex);
+    GLColor tempTexData = GLColor(125, 125, 125, 255);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, tempTexData.data());
+
+    // Second texture
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, mTexture2D);
+    tempTexData = GLColor(200, 200, 200, 255);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, tempTexData.data());
+
+    // Third texture
+    glActiveTexture(GL_TEXTURE10);
+    GLTexture tempTex2;
+    glBindTexture(GL_TEXTURE_2D, tempTex2);
+    tempTexData = GLColor(64, 64, 64, 255);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, tempTexData.data());
+
+    glUseProgram(program);
+    glUniform1i(sampler0Location, 0);
+    glUniform1i(sampler1Location, 1);
+    glUniform1i(sampler2Location, 10);
+
+    drawQuad(program, "position", 0.5f);
+    EXPECT_GL_NO_ERROR();
+    // This writes <comparison result (1.0)>, <depth value>, <comparison result (1.0)>, 1
+    EXPECT_PIXEL_NEAR(0, 0, 125, 200, 64, 255, 2);
+}
+
 // Test that drawing works correctly RGBA 3D texture
 TEST_P(Texture3DTestES2, RGBA)
 {

@@ -152,6 +152,14 @@ void ProgramMtl::reset(ContextMtl *context)
         block.uniformLayout.clear();
     }
 
+    for (gl::ShaderType shaderType : gl::AllGLES2ShaderTypes())
+    {
+        for (mtl::SamplerBindingMtl &binding : mActualSamplerBindings[shaderType])
+        {
+            binding.textureBinding = mtl::kMaxShaderSamplers;
+        }
+    }
+
     mMetalRenderPipelineCache.clear();
 }
 
@@ -184,6 +192,7 @@ std::unique_ptr<rx::LinkEvent> ProgramMtl::load(const gl::Context *context,
 void ProgramMtl::save(const gl::Context *context, gl::BinaryOutputStream *stream)
 {
     saveTranslatedShaders(stream);
+    saveAssignedSamplerBindings(stream);
     saveDefaultUniformBlocksInfo(stream);
 }
 
@@ -229,7 +238,8 @@ angle::Result ProgramMtl::linkImpl(const gl::Context *glContext,
                                              &shaderCodes));
 
     // Convert spirv code to MSL
-    ANGLE_TRY(mtl::SpirvCodeToMsl(contextMtl, &shaderCodes, &mTranslatedMslShader));
+    ANGLE_TRY(mtl::SpirvCodeToMsl(contextMtl, &shaderCodes, &mActualSamplerBindings,
+                                  &mTranslatedMslShader));
 
     for (gl::ShaderType shaderType : gl::AllGLES2ShaderTypes())
     {
@@ -251,6 +261,7 @@ angle::Result ProgramMtl::linkTranslatedShaders(const gl::Context *glContext,
     reset(contextMtl);
 
     loadTranslatedShaders(stream);
+    loadAssignedSamplerBindings(stream);
     ANGLE_TRY(loadDefaultUniformBlocksInfo(glContext, stream));
 
     ANGLE_TRY(createMslShader(glContext, gl::ShaderType::Vertex, infoLog,
@@ -406,6 +417,30 @@ angle::Result ProgramMtl::loadDefaultUniformBlocksInfo(const gl::Context *glCont
     }
 
     return resizeDefaultUniformBlocksMemory(glContext, requiredBufferSize);
+}
+
+void ProgramMtl::saveAssignedSamplerBindings(gl::BinaryOutputStream *stream)
+{
+    for (gl::ShaderType shaderType : gl::AllShaderTypes())
+    {
+        for (const mtl::SamplerBindingMtl &binding : mActualSamplerBindings[shaderType])
+        {
+            stream->writeInt<uint32_t>(binding.textureBinding);
+            stream->writeInt<uint32_t>(binding.samplerBinding);
+        }
+    }
+}
+
+void ProgramMtl::loadAssignedSamplerBindings(gl::BinaryInputStream *stream)
+{
+    for (gl::ShaderType shaderType : gl::AllShaderTypes())
+    {
+        for (mtl::SamplerBindingMtl &binding : mActualSamplerBindings[shaderType])
+        {
+            binding.textureBinding = stream->readInt<uint32_t>();
+            binding.samplerBinding = stream->readInt<uint32_t>();
+        }
+    }
 }
 
 angle::Result ProgramMtl::createMslShader(const gl::Context *glContext,
@@ -868,6 +903,14 @@ angle::Result ProgramMtl::updateTextures(const gl::Context *glContext,
 
             ASSERT(!samplerBinding.unreferenced);
 
+            const mtl::SamplerBindingMtl &mslBinding =
+                mActualSamplerBindings[shaderType][textureIndex];
+            if (mslBinding.textureBinding >= mtl::kMaxShaderSamplers)
+            {
+                // No binding assigned
+                continue;
+            }
+
             for (uint32_t arrayElement = 0; arrayElement < samplerBinding.boundTextureUnits.size();
                  ++arrayElement)
             {
@@ -875,7 +918,8 @@ angle::Result ProgramMtl::updateTextures(const gl::Context *glContext,
                 gl::Texture *texture        = completeTextures[textureUnit];
                 gl::Sampler *sampler        = contextMtl->getState().getSampler(textureUnit);
                 gl::TextureType textureType = textureTypes[textureUnit];
-                auto destBindingPoint       = textureIndex + arrayElement;
+                uint32_t textureSlot        = mslBinding.textureBinding + arrayElement;
+                uint32_t samplerSlot        = mslBinding.samplerBinding + arrayElement;
                 if (!texture)
                 {
                     ANGLE_TRY(contextMtl->getNullTexture(glContext, textureType, &texture));
@@ -885,20 +929,20 @@ angle::Result ProgramMtl::updateTextures(const gl::Context *glContext,
                 TextureMtl *textureMtl = mtl::GetImpl(texture);
                 if (samplerBinding.format == gl::SamplerFormat::Shadow)
                 {
-                    hasDepthSampler                       = true;
-                    mShadowCompareModes[destBindingPoint] = mtl::MslGetShaderShadowCompareMode(
+                    hasDepthSampler                  = true;
+                    mShadowCompareModes[textureSlot] = mtl::MslGetShaderShadowCompareMode(
                         samplerState->getCompareMode(), samplerState->getCompareFunc());
                 }
 
                 switch (shaderType)
                 {
                     case gl::ShaderType::Vertex:
-                        ANGLE_TRY(textureMtl->bindVertexShader(glContext, cmdEncoder,
-                                                               destBindingPoint, destBindingPoint));
+                        ANGLE_TRY(textureMtl->bindVertexShader(glContext, cmdEncoder, textureSlot,
+                                                               samplerSlot));
                         break;
                     case gl::ShaderType::Fragment:
-                        ANGLE_TRY(textureMtl->bindFragmentShader(
-                            glContext, cmdEncoder, destBindingPoint, destBindingPoint));
+                        ANGLE_TRY(textureMtl->bindFragmentShader(glContext, cmdEncoder, textureSlot,
+                                                                 samplerSlot));
                         break;
                     default:
                         UNREACHABLE();
@@ -922,7 +966,7 @@ angle::Result ProgramMtl::updateTextures(const gl::Context *glContext,
                     UNREACHABLE();
             }
         }
-    }          // for shader types
+    }  // for shader types
 
     return angle::Result::Continue;
 }

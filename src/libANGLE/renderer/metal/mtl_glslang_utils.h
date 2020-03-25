@@ -18,6 +18,13 @@ namespace rx
 {
 namespace mtl
 {
+
+struct SamplerBindingMtl
+{
+    uint32_t textureBinding = 0;
+    uint32_t samplerBinding = 0;
+};
+
 void GlslangGetShaderSource(const gl::ProgramState &programState,
                             const gl::ProgramLinkedResources &resources,
                             gl::ShaderMap<std::string> *shaderSourcesOut);
@@ -28,9 +35,11 @@ angle::Result GlslangGetShaderSpirvCode(ErrorHandler *context,
                                         const gl::ShaderMap<std::string> &shaderSources,
                                         gl::ShaderMap<std::vector<uint32_t>> *shaderCodeOut);
 
-angle::Result SpirvCodeToMsl(ErrorHandler *context,
-                             gl::ShaderMap<std::vector<uint32_t>> *shaderCode,
-                             gl::ShaderMap<std::string> *mslCodeOut);
+angle::Result SpirvCodeToMsl(
+    ErrorHandler *context,
+    gl::ShaderMap<std::vector<uint32_t>> *shaderCode,
+    gl::ShaderMap<std::array<SamplerBindingMtl, mtl::kMaxShaderSamplers>> *mslSamplerBindingsOut,
+    gl::ShaderMap<std::string> *mslCodeOut);
 
 // Get equivalent shadow compare mode that is used in translated msl shader.
 uint MslGetShaderShadowCompareMode(GLenum mode, GLenum func);

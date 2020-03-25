@@ -63,11 +63,8 @@ spv::ExecutionModel ShaderTypeToSpvExecutionModel(gl::ShaderType shaderType)
     }
 }
 
-// Some GLSL variables need 2 binding points in metal. For example,
-// glsl sampler will be converted to 2 metal objects: texture and sampler.
-// Thus we need to set 2 binding points for one glsl sampler variable.
 using BindingField = uint32_t spirv_cross::MSLResourceBinding::*;
-template <BindingField bindingField1, BindingField bindingField2 = bindingField1>
+template <BindingField bindingField>
 angle::Result BindResources(spirv_cross::CompilerMSL *compiler,
                             const spirv_cross::SmallVector<spirv_cross::Resource> &resources,
                             gl::ShaderType shaderType)
@@ -98,19 +95,16 @@ angle::Result BindResources(spirv_cross::CompilerMSL *compiler,
         switch (resBinding.desc_set)
         {
             case 0:
-                // Use resBinding.binding as binding point.
-                bindingPoint = resBinding.binding;
+                // Texture binding point is ignored. We let spirv-cross automatically assign it and
+                // retrieve it later
+                continue;
+            case mtl::kDriverUniformsBindingIndex:
+                bindingPoint = mtl::kDriverUniformsBindingIndex;
                 break;
-            case kDriverUniformsBindingIndex:
-                bindingPoint = kDriverUniformsBindingIndex;
-                break;
-            case kDefaultUniformsBindingIndex:
+            case mtl::kDefaultUniformsBindingIndex:
                 // NOTE(hqle): Properly handle transform feedbacks and UBO binding once ES 3.0 is
                 // implemented.
-                bindingPoint = kDefaultUniformsBindingIndex;
-                break;
-            case kShadowSamplerCompareModesBindingIndex:
-                bindingPoint = kShadowSamplerCompareModesBindingIndex;
+                bindingPoint = mtl::kDefaultUniformsBindingIndex;
                 break;
             default:
                 // We don't support this descriptor set.
@@ -119,15 +113,37 @@ angle::Result BindResources(spirv_cross::CompilerMSL *compiler,
 
         // bindingField can be buffer or texture, which will be translated to [[buffer(d)]] or
         // [[texture(d)]] or [[sampler(d)]]
-        resBinding.*bindingField1 = bindingPoint;
-        if (bindingField1 != bindingField2)
-        {
-            resBinding.*bindingField2 = bindingPoint;
-        }
+        resBinding.*bindingField = bindingPoint;
 
         compilerMsl.add_msl_resource_binding(resBinding);
     }
 
+    return angle::Result::Continue;
+}
+
+angle::Result GetAssignedSamplerBindings(
+    const spirv_cross::CompilerMSL &compilerMsl,
+    std::array<SamplerBindingMtl, mtl::kMaxShaderSamplers> *bindings)
+{
+    for (const spirv_cross::Resource &resource : compilerMsl.get_shader_resources().sampled_images)
+    {
+        uint32_t descriptorSet = 0;
+        if (compilerMsl.has_decoration(resource.id, spv::DecorationDescriptorSet))
+        {
+            descriptorSet = compilerMsl.get_decoration(resource.id, spv::DecorationDescriptorSet);
+        }
+
+        // We already assigned descriptor set 0 to textures. Just to double check.
+        ASSERT(descriptorSet == 0);
+        ASSERT(compilerMsl.has_decoration(resource.id, spv::DecorationBinding));
+
+        uint32_t binding = compilerMsl.get_decoration(resource.id, spv::DecorationBinding);
+
+        SamplerBindingMtl &actualBinding = bindings->at(binding);
+        actualBinding.textureBinding = compilerMsl.get_automatic_msl_resource_binding(resource.id);
+        actualBinding.samplerBinding =
+            compilerMsl.get_automatic_msl_resource_binding_secondary(resource.id);
+    }
     return angle::Result::Continue;
 }
 
@@ -674,9 +690,11 @@ angle::Result GlslangGetShaderSpirvCode(ErrorHandler *context,
         enableLineRasterEmulation, shaderSources, shaderCodeOut);
 }
 
-angle::Result SpirvCodeToMsl(ErrorHandler *context,
-                             gl::ShaderMap<std::vector<uint32_t>> *shaderCode,
-                             gl::ShaderMap<std::string> *mslCodeOut)
+angle::Result SpirvCodeToMsl(
+    ErrorHandler *context,
+    gl::ShaderMap<std::vector<uint32_t>> *shaderCode,
+    gl::ShaderMap<std::array<SamplerBindingMtl, mtl::kMaxShaderSamplers>> *mslSamplerBindingsOut,
+    gl::ShaderMap<std::string> *mslCodeOut)
 {
     for (gl::ShaderType shaderType : gl::AllGLES2ShaderTypes())
     {
@@ -709,10 +727,6 @@ angle::Result SpirvCodeToMsl(ErrorHandler *context,
         ANGLE_TRY(BindResources<&spirv_cross::MSLResourceBinding::msl_buffer>(
             &compilerMsl, mslRes.uniform_buffers, shaderType));
 
-        ANGLE_TRY((BindResources<&spirv_cross::MSLResourceBinding::msl_sampler,
-                                 &spirv_cross::MSLResourceBinding::msl_texture>(
-            &compilerMsl, mslRes.sampled_images, shaderType)));
-
         // NOTE(hqle): spirv-cross uses exceptions to report error, what should we do here
         // in case of error?
         std::string translatedMsl = compilerMsl.compile();
@@ -720,6 +734,9 @@ angle::Result SpirvCodeToMsl(ErrorHandler *context,
         {
             ANGLE_MTL_CHECK(context, false, GL_INVALID_OPERATION);
         }
+
+        // Retrieve automatic texture slot assignments
+        ANGLE_TRY(GetAssignedSamplerBindings(compilerMsl, &mslSamplerBindingsOut->at(shaderType)));
 
         mslCodeOut->at(shaderType) = std::move(translatedMsl);
     }  // for (gl::ShaderType shaderType
