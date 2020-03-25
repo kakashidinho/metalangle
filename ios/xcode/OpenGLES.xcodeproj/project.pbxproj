@@ -21,6 +21,9 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		0A0546CF242C1DD200FC05D0 /* TransformFeedbackMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A0546CE242C1DD200FC05D0 /* TransformFeedbackMtl.mm */; };
+		0A0546D0242C1DD200FC05D0 /* TransformFeedbackMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A0546CE242C1DD200FC05D0 /* TransformFeedbackMtl.mm */; };
+		0A0546D1242C1DD200FC05D0 /* TransformFeedbackMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A0546CE242C1DD200FC05D0 /* TransformFeedbackMtl.mm */; };
 		0A117E302347B3FE00211C71 /* MetalANGLE.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0A60525323464F51005CEA98 /* MetalANGLE.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		0A6052792346502A005CEA98 /* libGLESv2_autogen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A6052602346502A005CEA98 /* libGLESv2_autogen.cpp */; };
 		0A60527A2346502A005CEA98 /* entry_points_gles_ext_autogen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A6052612346502A005CEA98 /* entry_points_gles_ext_autogen.cpp */; };
@@ -2898,6 +2901,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0A0546CD242C1DD200FC05D0 /* TransformFeedbackMtl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TransformFeedbackMtl.h; path = ../../src/libANGLE/renderer/metal/TransformFeedbackMtl.h; sourceTree = "<group>"; };
+		0A0546CE242C1DD200FC05D0 /* TransformFeedbackMtl.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = TransformFeedbackMtl.mm; path = ../../src/libANGLE/renderer/metal/TransformFeedbackMtl.mm; sourceTree = "<group>"; };
 		0A28CCD0235717C30081BB84 /* MGLContext+Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MGLContext+Private.h"; sourceTree = "<group>"; };
 		0A28CCD1235719CC0081BB84 /* MGLLayer+Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MGLLayer+Private.h"; sourceTree = "<group>"; };
 		0A60525323464F51005CEA98 /* MetalANGLE.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MetalANGLE.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -4827,6 +4832,8 @@
 				0A6055CE234655FB005CEA98 /* RenderTargetMtl.mm */,
 				0A605604234655FE005CEA98 /* ShaderMtl.h */,
 				0A6055E5234655FD005CEA98 /* ShaderMtl.mm */,
+				0A0546CD242C1DD200FC05D0 /* TransformFeedbackMtl.h */,
+				0A0546CE242C1DD200FC05D0 /* TransformFeedbackMtl.mm */,
 				0A6055F9234655FD005CEA98 /* mtl_state_cache.h */,
 				0A6055F2234655FD005CEA98 /* mtl_state_cache.mm */,
 				0A6AD5F7242AA458007CCD35 /* SyncMtl.h */,
@@ -8420,6 +8427,7 @@
 				0A6AD5F8242AA458007CCD35 /* SyncMtl.mm in Sources */,
 				0A60564B23465667005CEA98 /* FrameBufferMtl.mm in Sources */,
 				0A60565923465667005CEA98 /* ShaderMtl.mm in Sources */,
+				0A0546CF242C1DD200FC05D0 /* TransformFeedbackMtl.mm in Sources */,
 				0AC8B2F0241E9761003916D1 /* QueryMtl.mm in Sources */,
 				0A60564723465667005CEA98 /* BufferMtl.mm in Sources */,
 			);
@@ -8644,6 +8652,7 @@
 				0A6AD5F9242AA458007CCD35 /* SyncMtl.mm in Sources */,
 				0A90F76E24065B06005BA9A8 /* FrameBufferMtl.mm in Sources */,
 				0A90F76F24065B06005BA9A8 /* ShaderMtl.mm in Sources */,
+				0A0546D0242C1DD200FC05D0 /* TransformFeedbackMtl.mm in Sources */,
 				0AC8B2F1241E9761003916D1 /* QueryMtl.mm in Sources */,
 				0A90F77024065B06005BA9A8 /* BufferMtl.mm in Sources */,
 			);
@@ -9490,6 +9499,7 @@
 				0A6AD5FA242AA458007CCD35 /* SyncMtl.mm in Sources */,
 				0AA2FFC6234727A400E0B98C /* FrameBufferMtl.mm in Sources */,
 				0AA2FFC8234727A400E0B98C /* ShaderMtl.mm in Sources */,
+				0A0546D1242C1DD200FC05D0 /* TransformFeedbackMtl.mm in Sources */,
 				0AC8B2F2241E9761003916D1 /* QueryMtl.mm in Sources */,
 				0AA2FFC9234727A400E0B98C /* BufferMtl.mm in Sources */,
 			);
