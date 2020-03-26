@@ -937,12 +937,12 @@ angle::Result ProgramMtl::updateTextures(const gl::Context *glContext,
                 switch (shaderType)
                 {
                     case gl::ShaderType::Vertex:
-                        ANGLE_TRY(textureMtl->bindVertexShader(glContext, cmdEncoder, textureSlot,
-                                                               samplerSlot));
+                        ANGLE_TRY(textureMtl->bindVertexShader(glContext, cmdEncoder, sampler,
+                                                               textureSlot, samplerSlot));
                         break;
                     case gl::ShaderType::Fragment:
-                        ANGLE_TRY(textureMtl->bindFragmentShader(glContext, cmdEncoder, textureSlot,
-                                                                 samplerSlot));
+                        ANGLE_TRY(textureMtl->bindFragmentShader(glContext, cmdEncoder, sampler,
+                                                                 textureSlot, samplerSlot));
                         break;
                     default:
                         UNREACHABLE();

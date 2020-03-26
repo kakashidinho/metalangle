@@ -150,10 +150,12 @@ class TextureMtl : public TextureImpl
 
     angle::Result bindVertexShader(const gl::Context *context,
                                    mtl::RenderCommandEncoder *cmdEncoder,
+                                   gl::Sampler *sampler,  /** nullable */
                                    int textureSlotIndex,
                                    int samplerSlotIndex);
     angle::Result bindFragmentShader(const gl::Context *context,
                                      mtl::RenderCommandEncoder *cmdEncoder,
+                                     gl::Sampler *sampler,  /** nullable */
                                      int textureSlotIndex,
                                      int samplerSlotIndex);
 

@@ -70,6 +70,7 @@ class Image;
     PROC(MemoryObject)           \
     PROC(Query)                  \
     PROC(Program)                \
+    PROC(Sampler)                \
     PROC(Semaphore)              \
     PROC(Texture)                \
     PROC(TransformFeedback)      \
@@ -94,6 +95,8 @@ class BufferMtl;
 class VertexArrayMtl;
 class TextureMtl;
 class ProgramMtl;
+class SamplerMtl;
+class TransformFeedbackMtl;
 
 ANGLE_GL_OBJECTS_X(ANGLE_PRE_DECLARE_MTL_OBJECT)
 

@@ -18,6 +18,7 @@
 #include "libANGLE/renderer/metal/ContextMtl.h"
 #include "libANGLE/renderer/metal/DisplayMtl.h"
 #include "libANGLE/renderer/metal/FrameBufferMtl.h"
+#include "libANGLE/renderer/metal/SamplerMtl.h"
 #include "libANGLE/renderer/metal/mtl_common.h"
 #include "libANGLE/renderer/metal/mtl_format_utils.h"
 #include "libANGLE/renderer/metal/mtl_utils.h"
@@ -919,10 +920,7 @@ angle::Result TextureMtl::generateMipmapCPU(const gl::Context *context)
 
 angle::Result TextureMtl::setBaseLevel(const gl::Context *context, GLuint baseLevel)
 {
-    // NOTE(hqle): ES 3.0
-    UNIMPLEMENTED();
-
-    return angle::Result::Stop;
+    return angle::Result::Continue;
 }
 
 angle::Result TextureMtl::bindTexImage(const gl::Context *context, egl::Surface *surface)
@@ -1014,6 +1012,14 @@ angle::Result TextureMtl::syncState(const gl::Context *context,
                 // Recreate sampler state
                 mMetalSamplerState = nil;
                 break;
+            case gl::Texture::DIRTY_BIT_MAX_LEVEL:
+            case gl::Texture::DIRTY_BIT_BASE_LEVEL:
+                if (mNativeTexture)
+                {
+                    // Recreate the texture
+                    releaseTexture(false);
+                }
+                break;
             case gl::Texture::DIRTY_BIT_SWIZZLE_RED:
             case gl::Texture::DIRTY_BIT_SWIZZLE_GREEN:
             case gl::Texture::DIRTY_BIT_SWIZZLE_BLUE:
@@ -1033,30 +1039,68 @@ angle::Result TextureMtl::syncState(const gl::Context *context,
 
 angle::Result TextureMtl::bindVertexShader(const gl::Context *context,
                                            mtl::RenderCommandEncoder *cmdEncoder,
+                                           gl::Sampler *sampler,
                                            int textureSlotIndex,
                                            int samplerSlotIndex)
 {
     ASSERT(mNativeTexture);
 
-    float maxLodClamp = FLT_MAX;
+    float minLodClamp;
+    float maxLodClamp;
+    id<MTLSamplerState> samplerState;
+
+    if (!sampler)
+    {
+        samplerState = mMetalSamplerState;
+        minLodClamp  = mState.getSamplerState().getMinLod();
+        maxLodClamp  = mState.getSamplerState().getMaxLod();
+    }
+    else
+    {
+        SamplerMtl *samplerMtl = mtl::GetImpl(sampler);
+        samplerState           = samplerMtl->getSampler(mtl::GetImpl(context));
+        minLodClamp            = sampler->getSamplerState().getMinLod();
+        maxLodClamp            = sampler->getSamplerState().getMaxLod();
+    }
+
+    minLodClamp = std::max(minLodClamp, 0.f);
 
     cmdEncoder->setVertexTexture(mNativeTexture, textureSlotIndex);
-    cmdEncoder->setVertexSamplerState(mMetalSamplerState, 0, maxLodClamp, samplerSlotIndex);
+    cmdEncoder->setVertexSamplerState(samplerState, minLodClamp, maxLodClamp, samplerSlotIndex);
 
     return angle::Result::Continue;
 }
 
 angle::Result TextureMtl::bindFragmentShader(const gl::Context *context,
                                              mtl::RenderCommandEncoder *cmdEncoder,
+                                             gl::Sampler *sampler,
                                              int textureSlotIndex,
                                              int samplerSlotIndex)
 {
     ASSERT(mNativeTexture);
 
-    float maxLodClamp = FLT_MAX;
+    float minLodClamp;
+    float maxLodClamp;
+    id<MTLSamplerState> samplerState;
+
+    if (!sampler)
+    {
+        samplerState = mMetalSamplerState;
+        minLodClamp  = mState.getSamplerState().getMinLod();
+        maxLodClamp  = mState.getSamplerState().getMaxLod();
+    }
+    else
+    {
+        SamplerMtl *samplerMtl = mtl::GetImpl(sampler);
+        samplerState           = samplerMtl->getSampler(mtl::GetImpl(context));
+        minLodClamp            = sampler->getSamplerState().getMinLod();
+        maxLodClamp            = sampler->getSamplerState().getMaxLod();
+    }
+
+    minLodClamp = std::max(minLodClamp, 0.f);
 
     cmdEncoder->setFragmentTexture(mNativeTexture, textureSlotIndex);
-    cmdEncoder->setFragmentSamplerState(mMetalSamplerState, 0, maxLodClamp, samplerSlotIndex);
+    cmdEncoder->setFragmentSamplerState(samplerState, minLodClamp, maxLodClamp, samplerSlotIndex);
 
     return angle::Result::Continue;
 }
