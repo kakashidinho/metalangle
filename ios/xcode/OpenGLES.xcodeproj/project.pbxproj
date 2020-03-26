@@ -1497,6 +1497,9 @@
 		0A9DB587234A4FA500A35262 /* OutputVulkanGLSLForMetal.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A9DB584234A4FA400A35262 /* OutputVulkanGLSLForMetal.mm */; };
 		0A9DB588234A4FA500A35262 /* OutputVulkanGLSLForMetal.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A9DB585234A4FA400A35262 /* OutputVulkanGLSLForMetal.h */; };
 		0A9DB589234A4FA500A35262 /* OutputVulkanGLSLForMetal.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A9DB585234A4FA400A35262 /* OutputVulkanGLSLForMetal.h */; };
+		0A9E0A7C242D060000688588 /* SamplerMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A9E0A7B242D060000688588 /* SamplerMtl.mm */; };
+		0A9E0A7D242D060000688588 /* SamplerMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A9E0A7B242D060000688588 /* SamplerMtl.mm */; };
+		0A9E0A7E242D060000688588 /* SamplerMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A9E0A7B242D060000688588 /* SamplerMtl.mm */; };
 		0AA2001C234734F600E0B98C /* OSWindow.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA2FFFB234734F400E0B98C /* OSWindow.cpp */; };
 		0AA2001D234734F600E0B98C /* EGLWindow.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA2FFFE234734F400E0B98C /* EGLWindow.cpp */; };
 		0AA2001E234734F600E0B98C /* random_utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA20000234734F400E0B98C /* random_utils.cpp */; };
@@ -3696,6 +3699,8 @@
 		0A9D1D8F23467034008D63F7 /* entry_points_gles_3_1_autogen.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = entry_points_gles_3_1_autogen.cpp; sourceTree = "<group>"; };
 		0A9DB584234A4FA400A35262 /* OutputVulkanGLSLForMetal.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = OutputVulkanGLSLForMetal.mm; sourceTree = "<group>"; };
 		0A9DB585234A4FA400A35262 /* OutputVulkanGLSLForMetal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OutputVulkanGLSLForMetal.h; sourceTree = "<group>"; };
+		0A9E0A7A242D060000688588 /* SamplerMtl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SamplerMtl.h; path = ../../src/libANGLE/renderer/metal/SamplerMtl.h; sourceTree = "<group>"; };
+		0A9E0A7B242D060000688588 /* SamplerMtl.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = SamplerMtl.mm; path = ../../src/libANGLE/renderer/metal/SamplerMtl.mm; sourceTree = "<group>"; };
 		0AA20000234734F400E0B98C /* random_utils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = random_utils.cpp; path = ../../util/random_utils.cpp; sourceTree = "<group>"; };
 		0AA20001234734F400E0B98C /* Timer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Timer.h; path = ../../util/Timer.h; sourceTree = "<group>"; };
 		0AA20002234734F400E0B98C /* Matrix.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Matrix.cpp; path = ../../util/Matrix.cpp; sourceTree = "<group>"; };
@@ -4830,6 +4835,8 @@
 				0A6055CD234655FB005CEA98 /* RenderBufferMtl.mm */,
 				0A6055DF234655FC005CEA98 /* RenderTargetMtl.h */,
 				0A6055CE234655FB005CEA98 /* RenderTargetMtl.mm */,
+				0A9E0A7A242D060000688588 /* SamplerMtl.h */,
+				0A9E0A7B242D060000688588 /* SamplerMtl.mm */,
 				0A605604234655FE005CEA98 /* ShaderMtl.h */,
 				0A6055E5234655FD005CEA98 /* ShaderMtl.mm */,
 				0A0546CD242C1DD200FC05D0 /* TransformFeedbackMtl.h */,
@@ -8430,6 +8437,7 @@
 				0A0546CF242C1DD200FC05D0 /* TransformFeedbackMtl.mm in Sources */,
 				0AC8B2F0241E9761003916D1 /* QueryMtl.mm in Sources */,
 				0A60564723465667005CEA98 /* BufferMtl.mm in Sources */,
+				0A9E0A7C242D060000688588 /* SamplerMtl.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -8655,6 +8663,7 @@
 				0A0546D0242C1DD200FC05D0 /* TransformFeedbackMtl.mm in Sources */,
 				0AC8B2F1241E9761003916D1 /* QueryMtl.mm in Sources */,
 				0A90F77024065B06005BA9A8 /* BufferMtl.mm in Sources */,
+				0A9E0A7D242D060000688588 /* SamplerMtl.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -9502,6 +9511,7 @@
 				0A0546D1242C1DD200FC05D0 /* TransformFeedbackMtl.mm in Sources */,
 				0AC8B2F2241E9761003916D1 /* QueryMtl.mm in Sources */,
 				0AA2FFC9234727A400E0B98C /* BufferMtl.mm in Sources */,
+				0A9E0A7E242D060000688588 /* SamplerMtl.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
