@@ -1541,10 +1541,9 @@ angle::Result TextureMtl::convertAndSetPerSliceSubImage(const gl::Context *conte
                         GL_INVALID_OPERATION);
 
         BufferMtl *unpackBufferMtl = mtl::GetImpl(unpackBuffer);
-        if (mFormat.hasDepthAndStencilBits())
+        if (!mFormat.getCaps().writable || mFormat.hasDepthOrStencilBits() ||
+            mFormat.intendedAngleFormat().isBlock)
         {
-            // NOTE(hqle): packed depth & stencil texture cannot copy from buffer directly, needs
-            // to split its depth & stencil data and copy separately.
             const uint8_t *clientData = unpackBufferMtl->getClientShadowCopyData(contextMtl);
             clientData += offset;
             ANGLE_TRY(convertAndSetPerSliceSubImage(context, slice, mtlArea, internalFormat, type,

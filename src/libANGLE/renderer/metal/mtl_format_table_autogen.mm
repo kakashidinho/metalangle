@@ -1263,6 +1263,15 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             break;
 
 #endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
+        case angle::FormatID::R8G8B8_SNORM:
+
+            this->metalFormat    = MTLPixelFormatRGBA8Snorm;
+            this->actualFormatId = angle::FormatID::R8G8B8A8_SNORM;
+            this->initFunction   = Initialize4ComponentData<GLbyte, 0x00, 0x00, 0x00, 0x7F>;
+
+            this->swizzled = false;
+            break;
+
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R8G8B8_UINT:
 
@@ -1439,6 +1448,105 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
                 this->swizzled = false;
             }
+            break;
+
+        case angle::FormatID::EAC_R11G11_SNORM_BLOCK:
+
+            this->metalFormat    = MTLPixelFormatRG16Snorm;
+            this->actualFormatId = angle::FormatID::R16G16_SNORM;
+            this->initFunction   = nullptr;
+
+            this->swizzled = false;
+            break;
+
+        case angle::FormatID::EAC_R11G11_UNORM_BLOCK:
+
+            this->metalFormat    = MTLPixelFormatRG16Unorm;
+            this->actualFormatId = angle::FormatID::R16G16_UNORM;
+            this->initFunction   = nullptr;
+
+            this->swizzled = false;
+            break;
+
+        case angle::FormatID::EAC_R11_SNORM_BLOCK:
+
+            this->metalFormat    = MTLPixelFormatR16Snorm;
+            this->actualFormatId = angle::FormatID::R16_SNORM;
+            this->initFunction   = nullptr;
+
+            this->swizzled = false;
+            break;
+
+        case angle::FormatID::EAC_R11_UNORM_BLOCK:
+
+            this->metalFormat    = MTLPixelFormatR16Unorm;
+            this->actualFormatId = angle::FormatID::R16_UNORM;
+            this->initFunction   = nullptr;
+
+            this->swizzled = false;
+            break;
+
+        case angle::FormatID::ETC1_R8G8B8_UNORM_BLOCK:
+
+            this->metalFormat    = MTLPixelFormatRGBA8Unorm;
+            this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM;
+            this->initFunction   = Initialize4ComponentData<GLubyte, 0x00, 0x00, 0x00, 0xFF>;
+
+            this->swizzled = false;
+            break;
+
+        case angle::FormatID::ETC2_R8G8B8A1_SRGB_BLOCK:
+
+            this->metalFormat    = MTLPixelFormatRGBA8Unorm_sRGB;
+            this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM_SRGB;
+            this->initFunction   = nullptr;
+
+            this->swizzled = false;
+            break;
+
+        case angle::FormatID::ETC2_R8G8B8A1_UNORM_BLOCK:
+
+            this->metalFormat    = MTLPixelFormatRGBA8Unorm;
+            this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM;
+            this->initFunction   = Initialize4ComponentData<GLubyte, 0x00, 0x00, 0x00, 0xFF>;
+
+            this->swizzled = false;
+            break;
+
+        case angle::FormatID::ETC2_R8G8B8A8_SRGB_BLOCK:
+
+            this->metalFormat    = MTLPixelFormatRGBA8Unorm_sRGB;
+            this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM_SRGB;
+            this->initFunction   = nullptr;
+
+            this->swizzled = false;
+            break;
+
+        case angle::FormatID::ETC2_R8G8B8A8_UNORM_BLOCK:
+
+            this->metalFormat    = MTLPixelFormatRGBA8Unorm;
+            this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM;
+            this->initFunction   = nullptr;
+
+            this->swizzled = false;
+            break;
+
+        case angle::FormatID::ETC2_R8G8B8_SRGB_BLOCK:
+
+            this->metalFormat    = MTLPixelFormatRGBA8Unorm_sRGB;
+            this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM_SRGB;
+            this->initFunction   = Initialize4ComponentData<GLubyte, 0x00, 0x00, 0x00, 0xFF>;
+
+            this->swizzled = false;
+            break;
+
+        case angle::FormatID::ETC2_R8G8B8_UNORM_BLOCK:
+
+            this->metalFormat    = MTLPixelFormatRGBA8Unorm;
+            this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM;
+            this->initFunction   = Initialize4ComponentData<GLubyte, 0x00, 0x00, 0x00, 0xFF>;
+
+            this->swizzled = false;
             break;
 
         case angle::FormatID::R4G4B4A4_UNORM:

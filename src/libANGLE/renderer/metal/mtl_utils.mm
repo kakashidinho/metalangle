@@ -32,8 +32,7 @@ angle::Result InitializeTextureContents(const gl::Context *context,
 
     // This function is called in many places to initialize the content of a texture.
     // So it's better we do the sanity check here instead of let the callers do it themselves:
-    if (!textureObjFormat.valid() || intendedInternalFormat.compressed ||
-        intendedInternalFormat.depthBits > 0 || intendedInternalFormat.stencilBits > 0)
+    if (!textureObjFormat.valid())
     {
         return angle::Result::Continue;
     }
@@ -47,12 +46,19 @@ angle::Result InitializeTextureContents(const gl::Context *context,
     angle::MemoryBuffer conversionRow;
     ANGLE_CHECK_GL_ALLOC(contextMtl, conversionRow.resize(dstRowPitch));
 
-    if (dstFormat.isInt() && textureObjFormat.initFunction)
+    if (textureObjFormat.initFunction)
     {
         textureObjFormat.initFunction(size.width, 1, 1, conversionRow.data(), dstRowPitch, 0);
     }
     else
     {
+        if (!textureObjFormat.valid() || intendedInternalFormat.compressed ||
+            intendedInternalFormat.depthBits > 0 || intendedInternalFormat.stencilBits > 0)
+        {
+            // If source format is compressed, ignore.
+            return angle::Result::Continue;
+        }
+
         const angle::Format &srcFormat = angle::Format::Get(intendedInternalFormat.alphaBits > 0
                                                                 ? angle::FormatID::R8G8B8A8_UNORM
                                                                 : angle::FormatID::R8G8B8_UNORM);

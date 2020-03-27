@@ -69,6 +69,10 @@ struct Format : public FormatBase
     {
         return actualAngleFormat().depthBits && actualAngleFormat().stencilBits;
     }
+    bool hasDepthOrStencilBits() const
+    {
+        return actualAngleFormat().depthBits || actualAngleFormat().stencilBits;
+    }
     bool isPVRTC() const;
 
     const FormatCaps &getCaps() const { return *caps; }
