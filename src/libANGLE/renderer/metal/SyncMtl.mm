@@ -133,9 +133,10 @@ angle::Result FenceNVMtl::test(const gl::Context *context, GLboolean *outFinishe
 angle::Result FenceNVMtl::finish(const gl::Context *context)
 {
     ContextMtl *contextMtl = mtl::GetImpl(context);
-    uint64_t timeout = 1000000000ul;
+    uint64_t timeout       = 1000000000ul;
     GLenum result;
-    do {
+    do
+    {
         ANGLE_TRY(mSync.clientWait(contextMtl, true, timeout, &result));
     } while (result == GL_TIMEOUT_EXPIRED);
 

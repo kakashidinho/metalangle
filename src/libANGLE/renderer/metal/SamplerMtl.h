@@ -34,6 +34,6 @@ class SamplerMtl : public SamplerImpl
     GLenum mCompareFunc = 0;
 };
 
-}
+}  // namespace rx
 
 #endif

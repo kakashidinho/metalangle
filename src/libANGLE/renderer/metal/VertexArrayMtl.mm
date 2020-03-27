@@ -351,9 +351,8 @@ angle::Result VertexArrayMtl::setupDraw(const gl::Context *glContext,
 
                 if (mCurrentArrayBuffers[v])
                 {
-                    cmdEncoder->setVertexBuffer(
-                        mCurrentArrayBuffers[v]->getCurrentBuffer(), bufferOffset,
-                        bufferIdx);
+                    cmdEncoder->setVertexBuffer(mCurrentArrayBuffers[v]->getCurrentBuffer(),
+                                                bufferOffset, bufferIdx);
                 }
                 else
                 {
@@ -420,11 +419,10 @@ angle::Result VertexArrayMtl::updateClientAttribs(const gl::Context *context,
         size_t bytesIntendedToUse = (startElement + elementCount) * binding.getStride();
 
         const mtl::VertexFormat &format = contextMtl->getVertexFormat(attrib.format->id, false);
-        bool needStreaming =
-            format.actualFormatId != format.intendedFormatId ||
-            (binding.getStride() % mtl::kVertexAttribBufferStrideAlignment) != 0 ||
-            (binding.getStride() < format.actualAngleFormat().pixelBytes) ||
-            bytesIntendedToUse > mtl::kInlineConstDataMaxSize;
+        bool needStreaming              = format.actualFormatId != format.intendedFormatId ||
+                             (binding.getStride() % mtl::kVertexAttribBufferStrideAlignment) != 0 ||
+                             (binding.getStride() < format.actualAngleFormat().pixelBytes) ||
+                             bytesIntendedToUse > mtl::kInlineConstDataMaxSize;
 
         if (!needStreaming)
         {
