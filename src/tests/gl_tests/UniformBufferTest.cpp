@@ -269,9 +269,9 @@ TEST_P(UniformBufferTest, ManyUniformBufferRange)
         stride += alignment;
     } while (stride < vec4Size);
 
-    std::vector<char> v(8 * stride);
+    std::vector<char> v(20 * stride);
 
-    for (size_t i = 0; i < 8; ++i)
+    for (size_t i = 0; i < 20; ++i)
     {
         float *data = reinterpret_cast<float *>(v.data() + i * stride);
 
@@ -289,7 +289,7 @@ TEST_P(UniformBufferTest, ManyUniformBufferRange)
     EXPECT_GL_NO_ERROR();
 
     // Bind each possible offset
-    for (size_t i = 0; i < 8; ++i)
+    for (size_t i = 0; i < 20; ++i)
     {
         glBindBufferRange(GL_UNIFORM_BUFFER, 0, mUniformBuffer, i * stride, stride);
         drawQuad(mProgram, essl3_shaders::PositionAttrib(), 0.5f);

@@ -1135,17 +1135,18 @@ angle::Result ProgramMtl::legalizeUniformBufferOffsets(
         }
 
         BufferMtl *bufferMtl = mtl::GetImpl(bufferBinding.get());
-        if (bufferBinding.getOffset() % mtl::kUniformBufferSettingOffsetMinAlignment)
+        size_t srcOffset = std::min<size_t>(bufferBinding.getOffset(), bufferMtl->size());
+        size_t offsetModulo = srcOffset % mtl::kUniformBufferSettingOffsetMinAlignment;
+        if (offsetModulo)
         {
             ConversionBufferMtl *conversion =
-                bufferMtl->getUniformConversionBuffer(context, bufferBinding.getOffset());
+                bufferMtl->getUniformConversionBuffer(context, offsetModulo);
             // Has the content of the buffer has changed since last conversion?
             if (conversion->dirty)
             {
                 const uint8_t *srcBytes = bufferMtl->getClientShadowCopyData(context);
-                size_t srcOffset = std::min<size_t>(bufferBinding.getOffset(), bufferMtl->size());
-                srcBytes += srcOffset;
-                size_t sizeToCopy      = bufferMtl->size() - srcOffset;
+                srcBytes += offsetModulo;
+                size_t sizeToCopy      = bufferMtl->size() - offsetModulo;
                 size_t bytesToAllocate = roundUp<size_t>(sizeToCopy, 16u);
                 ANGLE_TRY(StreamUniformBufferData(
                     context, &conversion->data, srcBytes, bytesToAllocate, sizeToCopy,
@@ -1154,7 +1155,7 @@ angle::Result ProgramMtl::legalizeUniformBufferOffsets(
                 ANGLE_MTL_OBJC_SCOPE
                 {
                     conversion->convertedBuffer->get().label = [NSString
-                        stringWithFormat:@"Converted from %p offset=%zu", bufferMtl, srcOffset];
+                        stringWithFormat:@"Converted from %p offset=%zu", bufferMtl, offsetModulo];
                 }
 #endif
                 conversion->dirty = false;
@@ -1162,7 +1163,7 @@ angle::Result ProgramMtl::legalizeUniformBufferOffsets(
             // reuse the converted buffer
             mLegalizedOffsetedUniformBuffers[bufferIndex].first = conversion->convertedBuffer;
             mLegalizedOffsetedUniformBuffers[bufferIndex].second =
-                static_cast<uint32_t>(conversion->convertedOffset);
+                static_cast<uint32_t>(conversion->convertedOffset + srcOffset - offsetModulo);
             return angle::Result::Continue;
         }
         else
