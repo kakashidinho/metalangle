@@ -30,6 +30,8 @@ class SamplerMtl : public SamplerImpl
 
   private:
     mtl::AutoObjCPtr<id<MTLSamplerState>> mSamplerState;
+    GLenum mCompareMode = 0;
+    GLenum mCompareFunc = 0;
 };
 
 }

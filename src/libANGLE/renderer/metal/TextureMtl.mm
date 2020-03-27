@@ -993,10 +993,18 @@ angle::Result TextureMtl::getAttachmentRenderTarget(const gl::Context *context,
 angle::Result TextureMtl::syncState(const gl::Context *context,
                                     const gl::Texture::DirtyBits &dirtyBits)
 {
+    ContextMtl *contextMtl = mtl::GetImpl(context);
     for (size_t dirtyBit : dirtyBits)
     {
         switch (dirtyBit)
         {
+            case gl::Texture::DIRTY_BIT_COMPARE_MODE:
+            case gl::Texture::DIRTY_BIT_COMPARE_FUNC:
+                // Tell context to rebind textures so that ProgramMtl has a chance to verify
+                // depth texture compare mode.
+                contextMtl->invalidateCurrentTextures();
+                // fall through
+                OS_FALLTHROUGH;
             case gl::Texture::DIRTY_BIT_MIN_FILTER:
             case gl::Texture::DIRTY_BIT_MAG_FILTER:
             case gl::Texture::DIRTY_BIT_WRAP_S:
@@ -1005,8 +1013,6 @@ angle::Result TextureMtl::syncState(const gl::Context *context,
             case gl::Texture::DIRTY_BIT_MAX_ANISOTROPY:
             case gl::Texture::DIRTY_BIT_MIN_LOD:
             case gl::Texture::DIRTY_BIT_MAX_LOD:
-            case gl::Texture::DIRTY_BIT_COMPARE_MODE:
-            case gl::Texture::DIRTY_BIT_COMPARE_FUNC:
             case gl::Texture::DIRTY_BIT_SRGB_DECODE:
             case gl::Texture::DIRTY_BIT_BORDER_COLOR:
                 // Recreate sampler state
@@ -1018,6 +1024,8 @@ angle::Result TextureMtl::syncState(const gl::Context *context,
                 {
                     // Recreate the texture
                     releaseTexture(false);
+                    // Tell context to rebind textures
+                    contextMtl->invalidateCurrentTextures();
                 }
                 break;
             case gl::Texture::DIRTY_BIT_SWIZZLE_RED:

@@ -48,6 +48,18 @@ angle::Result SamplerMtl::syncState(const gl::Context *context, const bool dirty
     {
         // Recreate sampler
         mSamplerState = nil;
+
+        if (mCompareMode != mState.getCompareMode() || mCompareFunc != mState.getCompareFunc())
+        {
+            ContextMtl *contextMtl = mtl::GetImpl(context);
+
+            mCompareMode = mState.getCompareMode();
+            mCompareFunc = mState.getCompareFunc();
+
+            // Tell context to rebind textures so that ProgramMtl has a chance to verify
+            // depth texture compare mode.
+            contextMtl->invalidateCurrentTextures();
+        }
     }
     return angle::Result::Continue;
 }
