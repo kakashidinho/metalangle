@@ -11,9 +11,14 @@
 #import <Metal/Metal.h>
 #include <TargetConditionals.h>
 
+#include "image_util/copyimage.h"
+#include "image_util/generatemip.h"
+#include "image_util/loadimage.h"
 #include "libANGLE/renderer/Format.h"
 #include "libANGLE/renderer/metal/DisplayMtl.h"
 #include "libANGLE/renderer/metal/mtl_format_utils.h"
+
+using namespace angle;
 
 namespace rx
 {
@@ -33,6 +38,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatA8Unorm;
             this->actualFormatId = angle::FormatID::A8_UNORM;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -44,11 +50,13 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             {
                 this->metalFormat    = MTLPixelFormatBGRA8Unorm;
                 this->actualFormatId = angle::FormatID::B8G8R8A8_UNORM;
+                this->initFunction   = nullptr;
             }
             else
             {
                 this->metalFormat    = MTLPixelFormatRGBA8Unorm;
                 this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM;
+                this->initFunction   = nullptr;
             }
 
             this->swizzled = false;
@@ -59,6 +67,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatBGRA8Unorm;
             this->actualFormatId = angle::FormatID::B8G8R8A8_UNORM;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -68,6 +77,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatBGRA8Unorm_sRGB;
             this->actualFormatId = angle::FormatID::B8G8R8A8_UNORM_SRGB;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -76,6 +86,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatDepth32Float;
             this->actualFormatId = angle::FormatID::D32_FLOAT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -84,6 +95,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatDepth32Float_Stencil8;
             this->actualFormatId = angle::FormatID::D32_FLOAT_S8X24_UINT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -92,6 +104,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatInvalid;
             this->actualFormatId = angle::FormatID::NONE;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -100,6 +113,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGB10A2Uint;
             this->actualFormatId = angle::FormatID::R10G10B10A2_UINT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -108,6 +122,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGB10A2Unorm;
             this->actualFormatId = angle::FormatID::R10G10B10A2_UNORM;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -116,6 +131,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRG11B10Float;
             this->actualFormatId = angle::FormatID::R11G11B10_FLOAT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -127,11 +143,13 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             {
                 this->metalFormat    = MTLPixelFormatRGBA16Float;
                 this->actualFormatId = angle::FormatID::R16G16B16A16_FLOAT;
+                this->initFunction   = nullptr;
             }
             else
             {
                 this->metalFormat    = MTLPixelFormatInvalid;
                 this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
             }
 
             this->swizzled = false;
@@ -142,6 +160,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGBA16Float;
             this->actualFormatId = angle::FormatID::R16G16B16A16_FLOAT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -154,11 +173,13 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             {
                 this->metalFormat    = MTLPixelFormatRGBA16Sint;
                 this->actualFormatId = angle::FormatID::R16G16B16A16_SINT;
+                this->initFunction   = nullptr;
             }
             else
             {
                 this->metalFormat    = MTLPixelFormatInvalid;
                 this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
             }
 
             this->swizzled = false;
@@ -169,6 +190,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGBA16Sint;
             this->actualFormatId = angle::FormatID::R16G16B16A16_SINT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -178,6 +200,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGBA16Snorm;
             this->actualFormatId = angle::FormatID::R16G16B16A16_SNORM;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -189,11 +212,13 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             {
                 this->metalFormat    = MTLPixelFormatRGBA16Uint;
                 this->actualFormatId = angle::FormatID::R16G16B16A16_UINT;
+                this->initFunction   = nullptr;
             }
             else
             {
                 this->metalFormat    = MTLPixelFormatInvalid;
                 this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
             }
 
             this->swizzled = false;
@@ -204,6 +229,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGBA16Uint;
             this->actualFormatId = angle::FormatID::R16G16B16A16_UINT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -213,6 +239,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGBA16Unorm;
             this->actualFormatId = angle::FormatID::R16G16B16A16_UNORM;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -221,6 +248,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRG16Float;
             this->actualFormatId = angle::FormatID::R16G16_FLOAT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -229,6 +257,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRG16Sint;
             this->actualFormatId = angle::FormatID::R16G16_SINT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -237,6 +266,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRG16Snorm;
             this->actualFormatId = angle::FormatID::R16G16_SNORM;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -245,6 +275,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRG16Uint;
             this->actualFormatId = angle::FormatID::R16G16_UINT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -253,6 +284,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRG16Unorm;
             this->actualFormatId = angle::FormatID::R16G16_UNORM;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -264,11 +296,13 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             {
                 this->metalFormat    = MTLPixelFormatR16Float;
                 this->actualFormatId = angle::FormatID::R16_FLOAT;
+                this->initFunction   = nullptr;
             }
             else
             {
                 this->metalFormat    = MTLPixelFormatRG16Float;
                 this->actualFormatId = angle::FormatID::R16G16_FLOAT;
+                this->initFunction   = nullptr;
             }
 
             this->swizzled = false;
@@ -279,6 +313,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatR16Float;
             this->actualFormatId = angle::FormatID::R16_FLOAT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -291,11 +326,13 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             {
                 this->metalFormat    = MTLPixelFormatR16Sint;
                 this->actualFormatId = angle::FormatID::R16_SINT;
+                this->initFunction   = nullptr;
             }
             else
             {
                 this->metalFormat    = MTLPixelFormatRG16Sint;
                 this->actualFormatId = angle::FormatID::R16G16_SINT;
+                this->initFunction   = nullptr;
             }
 
             this->swizzled = false;
@@ -306,6 +343,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatR16Sint;
             this->actualFormatId = angle::FormatID::R16_SINT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -315,6 +353,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatR16Snorm;
             this->actualFormatId = angle::FormatID::R16_SNORM;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -326,11 +365,13 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             {
                 this->metalFormat    = MTLPixelFormatR16Uint;
                 this->actualFormatId = angle::FormatID::R16_UINT;
+                this->initFunction   = nullptr;
             }
             else
             {
                 this->metalFormat    = MTLPixelFormatRG16Uint;
                 this->actualFormatId = angle::FormatID::R16G16_UINT;
+                this->initFunction   = nullptr;
             }
 
             this->swizzled = false;
@@ -341,6 +382,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatR16Uint;
             this->actualFormatId = angle::FormatID::R16_UINT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -350,6 +392,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatR16Unorm;
             this->actualFormatId = angle::FormatID::R16_UNORM;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -361,11 +404,13 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             {
                 this->metalFormat    = MTLPixelFormatRGBA32Float;
                 this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
+                this->initFunction   = nullptr;
             }
             else
             {
                 this->metalFormat    = MTLPixelFormatInvalid;
                 this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
             }
 
             this->swizzled = false;
@@ -376,6 +421,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGBA32Float;
             this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -388,11 +434,13 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             {
                 this->metalFormat    = MTLPixelFormatRGBA32Sint;
                 this->actualFormatId = angle::FormatID::R32G32B32A32_SINT;
+                this->initFunction   = nullptr;
             }
             else
             {
                 this->metalFormat    = MTLPixelFormatInvalid;
                 this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
             }
 
             this->swizzled = false;
@@ -403,6 +451,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGBA32Sint;
             this->actualFormatId = angle::FormatID::R32G32B32A32_SINT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -415,11 +464,13 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             {
                 this->metalFormat    = MTLPixelFormatRGBA32Uint;
                 this->actualFormatId = angle::FormatID::R32G32B32A32_UINT;
+                this->initFunction   = nullptr;
             }
             else
             {
                 this->metalFormat    = MTLPixelFormatInvalid;
                 this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
             }
 
             this->swizzled = false;
@@ -430,6 +481,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGBA32Uint;
             this->actualFormatId = angle::FormatID::R32G32B32A32_UINT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -439,6 +491,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRG32Float;
             this->actualFormatId = angle::FormatID::R32G32_FLOAT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -447,6 +500,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRG32Sint;
             this->actualFormatId = angle::FormatID::R32G32_SINT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -455,6 +509,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRG32Uint;
             this->actualFormatId = angle::FormatID::R32G32_UINT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -466,11 +521,13 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             {
                 this->metalFormat    = MTLPixelFormatR32Float;
                 this->actualFormatId = angle::FormatID::R32_FLOAT;
+                this->initFunction   = nullptr;
             }
             else
             {
                 this->metalFormat    = MTLPixelFormatRG32Float;
                 this->actualFormatId = angle::FormatID::R32G32_FLOAT;
+                this->initFunction   = nullptr;
             }
 
             this->swizzled = false;
@@ -481,6 +538,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatR32Float;
             this->actualFormatId = angle::FormatID::R32_FLOAT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -493,11 +551,13 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             {
                 this->metalFormat    = MTLPixelFormatR32Sint;
                 this->actualFormatId = angle::FormatID::R32_SINT;
+                this->initFunction   = nullptr;
             }
             else
             {
                 this->metalFormat    = MTLPixelFormatRG32Sint;
                 this->actualFormatId = angle::FormatID::R32G32_SINT;
+                this->initFunction   = nullptr;
             }
 
             this->swizzled = false;
@@ -508,6 +568,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatR32Sint;
             this->actualFormatId = angle::FormatID::R32_SINT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -520,11 +581,13 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             {
                 this->metalFormat    = MTLPixelFormatR32Uint;
                 this->actualFormatId = angle::FormatID::R32_UINT;
+                this->initFunction   = nullptr;
             }
             else
             {
                 this->metalFormat    = MTLPixelFormatRG32Uint;
                 this->actualFormatId = angle::FormatID::R32G32_UINT;
+                this->initFunction   = nullptr;
             }
 
             this->swizzled = false;
@@ -535,6 +598,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatR32Uint;
             this->actualFormatId = angle::FormatID::R32_UINT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -547,11 +611,13 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             {
                 this->metalFormat    = MTLPixelFormatRGBA8Sint;
                 this->actualFormatId = angle::FormatID::R8G8B8A8_SINT;
+                this->initFunction   = nullptr;
             }
             else
             {
                 this->metalFormat    = MTLPixelFormatInvalid;
                 this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
             }
 
             this->swizzled = false;
@@ -562,6 +628,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGBA8Sint;
             this->actualFormatId = angle::FormatID::R8G8B8A8_SINT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -571,6 +638,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGBA8Snorm;
             this->actualFormatId = angle::FormatID::R8G8B8A8_SNORM;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -582,11 +650,13 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             {
                 this->metalFormat    = MTLPixelFormatRGBA8Uint;
                 this->actualFormatId = angle::FormatID::R8G8B8A8_UINT;
+                this->initFunction   = nullptr;
             }
             else
             {
                 this->metalFormat    = MTLPixelFormatInvalid;
                 this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
             }
 
             this->swizzled = false;
@@ -597,6 +667,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGBA8Uint;
             this->actualFormatId = angle::FormatID::R8G8B8A8_UINT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -606,6 +677,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGBA8Unorm;
             this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -614,6 +686,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGBA8Unorm_sRGB;
             this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM_SRGB;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -622,6 +695,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRG8Sint;
             this->actualFormatId = angle::FormatID::R8G8_SINT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -630,6 +704,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRG8Snorm;
             this->actualFormatId = angle::FormatID::R8G8_SNORM;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -638,6 +713,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRG8Uint;
             this->actualFormatId = angle::FormatID::R8G8_UINT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -646,6 +722,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRG8Unorm;
             this->actualFormatId = angle::FormatID::R8G8_UNORM;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -654,6 +731,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatR8Sint;
             this->actualFormatId = angle::FormatID::R8_SINT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -662,6 +740,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatR8Snorm;
             this->actualFormatId = angle::FormatID::R8_SNORM;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -673,11 +752,13 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             {
                 this->metalFormat    = MTLPixelFormatR8Uint;
                 this->actualFormatId = angle::FormatID::R8_UINT;
+                this->initFunction   = nullptr;
             }
             else
             {
                 this->metalFormat    = MTLPixelFormatRG8Uint;
                 this->actualFormatId = angle::FormatID::R8G8_UINT;
+                this->initFunction   = nullptr;
             }
 
             this->swizzled = false;
@@ -688,6 +769,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatR8Uint;
             this->actualFormatId = angle::FormatID::R8_UINT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -700,11 +782,13 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             {
                 this->metalFormat    = MTLPixelFormatR8Unorm;
                 this->actualFormatId = angle::FormatID::R8_UNORM;
+                this->initFunction   = nullptr;
             }
             else
             {
                 this->metalFormat    = MTLPixelFormatR16Unorm;
                 this->actualFormatId = angle::FormatID::R16_UNORM;
+                this->initFunction   = nullptr;
             }
 
             this->swizzled = false;
@@ -715,6 +799,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatR8Unorm;
             this->actualFormatId = angle::FormatID::R8_UNORM;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -724,6 +809,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGB9E5Float;
             this->actualFormatId = angle::FormatID::R9G9B9E5_SHAREDEXP;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -732,6 +818,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatStencil8;
             this->actualFormatId = angle::FormatID::S8_UINT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -743,11 +830,13 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             {
                 this->metalFormat    = MTLPixelFormatRGBA16Float;
                 this->actualFormatId = angle::FormatID::R16G16B16A16_FLOAT;
+                this->initFunction   = nullptr;
             }
             else
             {
                 this->metalFormat    = MTLPixelFormatInvalid;
                 this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
             }
 
             this->swizzled = false;
@@ -758,6 +847,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGBA16Float;
             this->actualFormatId = angle::FormatID::R16G16B16A16_FLOAT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -770,11 +860,13 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             {
                 this->metalFormat    = MTLPixelFormatRGBA32Float;
                 this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
+                this->initFunction   = nullptr;
             }
             else
             {
                 this->metalFormat    = MTLPixelFormatInvalid;
                 this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
             }
 
             this->swizzled = false;
@@ -785,6 +877,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGBA32Float;
             this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -794,6 +887,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatDepth32Float;
             this->actualFormatId = angle::FormatID::D32_FLOAT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -802,6 +896,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatDepth32Float;
             this->actualFormatId = angle::FormatID::D32_FLOAT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -813,11 +908,13 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             {
                 this->metalFormat    = MTLPixelFormatRGBA16Float;
                 this->actualFormatId = angle::FormatID::R16G16B16A16_FLOAT;
+                this->initFunction   = nullptr;
             }
             else
             {
                 this->metalFormat    = MTLPixelFormatInvalid;
                 this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
             }
 
             this->swizzled = false;
@@ -828,6 +925,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGBA16Float;
             this->actualFormatId = angle::FormatID::R16G16B16A16_FLOAT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -840,11 +938,14 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             {
                 this->metalFormat    = MTLPixelFormatRGBA16Float;
                 this->actualFormatId = angle::FormatID::R16G16B16A16_FLOAT;
+                this->initFunction =
+                    Initialize4ComponentData<GLhalf, 0x0000, 0x0000, 0x0000, gl::Float16One>;
             }
             else
             {
                 this->metalFormat    = MTLPixelFormatInvalid;
                 this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
             }
 
             this->swizzled = false;
@@ -855,6 +956,8 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGBA16Float;
             this->actualFormatId = angle::FormatID::R16G16B16A16_FLOAT;
+            this->initFunction =
+                Initialize4ComponentData<GLhalf, 0x0000, 0x0000, 0x0000, gl::Float16One>;
 
             this->swizzled = false;
             break;
@@ -867,11 +970,13 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             {
                 this->metalFormat    = MTLPixelFormatRGBA32Float;
                 this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
+                this->initFunction   = nullptr;
             }
             else
             {
                 this->metalFormat    = MTLPixelFormatInvalid;
                 this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
             }
 
             this->swizzled = false;
@@ -882,6 +987,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGBA32Float;
             this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -894,11 +1000,14 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             {
                 this->metalFormat    = MTLPixelFormatRGBA32Float;
                 this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
+                this->initFunction   = Initialize4ComponentData<GLfloat, 0x00000000, 0x00000000,
+                                                              0x00000000, gl::Float32One>;
             }
             else
             {
                 this->metalFormat    = MTLPixelFormatInvalid;
                 this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
             }
 
             this->swizzled = false;
@@ -909,6 +1018,8 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGBA32Float;
             this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
+            this->initFunction   = Initialize4ComponentData<GLfloat, 0x00000000, 0x00000000,
+                                                          0x00000000, gl::Float32One>;
 
             this->swizzled = false;
             break;
@@ -918,6 +1029,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGBA8Unorm;
             this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -926,6 +1038,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGBA8Unorm;
             this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM;
+            this->initFunction   = Initialize4ComponentData<GLubyte, 0x00, 0x00, 0x00, 0xFF>;
 
             this->swizzled = false;
             break;
@@ -937,11 +1050,14 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             {
                 this->metalFormat    = MTLPixelFormatRGBA16Float;
                 this->actualFormatId = angle::FormatID::R16G16B16A16_FLOAT;
+                this->initFunction =
+                    Initialize4ComponentData<GLhalf, 0x0000, 0x0000, 0x0000, gl::Float16One>;
             }
             else
             {
                 this->metalFormat    = MTLPixelFormatInvalid;
                 this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
             }
 
             this->swizzled = false;
@@ -952,6 +1068,70 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGBA16Float;
             this->actualFormatId = angle::FormatID::R16G16B16A16_FLOAT;
+            this->initFunction =
+                Initialize4ComponentData<GLhalf, 0x0000, 0x0000, 0x0000, gl::Float16One>;
+
+            this->swizzled = false;
+            break;
+
+#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
+        case angle::FormatID::R16G16B16_SINT:
+
+            if (metalDevice.depth24Stencil8PixelFormatSupported)
+            {
+                this->metalFormat    = MTLPixelFormatRGBA16Sint;
+                this->actualFormatId = angle::FormatID::R16G16B16A16_SINT;
+                this->initFunction =
+                    Initialize4ComponentData<GLshort, 0x0000, 0x0000, 0x0000, 0x0001>;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
+
+            this->swizzled = false;
+            break;
+
+#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
+        case angle::FormatID::R16G16B16_SINT:
+
+            this->metalFormat    = MTLPixelFormatRGBA16Sint;
+            this->actualFormatId = angle::FormatID::R16G16B16A16_SINT;
+            this->initFunction = Initialize4ComponentData<GLshort, 0x0000, 0x0000, 0x0000, 0x0001>;
+
+            this->swizzled = false;
+            break;
+
+#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
+        case angle::FormatID::R16G16B16_UINT:
+
+            if (metalDevice.depth24Stencil8PixelFormatSupported)
+            {
+                this->metalFormat    = MTLPixelFormatRGBA16Uint;
+                this->actualFormatId = angle::FormatID::R16G16B16A16_UINT;
+                this->initFunction =
+                    Initialize4ComponentData<GLushort, 0x0000, 0x0000, 0x0000, 0x0001>;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
+
+            this->swizzled = false;
+            break;
+
+#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
+        case angle::FormatID::R16G16B16_UINT:
+
+            this->metalFormat    = MTLPixelFormatRGBA16Uint;
+            this->actualFormatId = angle::FormatID::R16G16B16A16_UINT;
+            this->initFunction = Initialize4ComponentData<GLushort, 0x0000, 0x0000, 0x0000, 0x0001>;
 
             this->swizzled = false;
             break;
@@ -964,11 +1144,14 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             {
                 this->metalFormat    = MTLPixelFormatRGBA32Float;
                 this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
+                this->initFunction   = Initialize4ComponentData<GLfloat, 0x00000000, 0x00000000,
+                                                              0x00000000, gl::Float32One>;
             }
             else
             {
                 this->metalFormat    = MTLPixelFormatInvalid;
                 this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
             }
 
             this->swizzled = false;
@@ -979,6 +1162,132 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGBA32Float;
             this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
+            this->initFunction   = Initialize4ComponentData<GLfloat, 0x00000000, 0x00000000,
+                                                          0x00000000, gl::Float32One>;
+
+            this->swizzled = false;
+            break;
+
+#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
+        case angle::FormatID::R32G32B32_SINT:
+
+            if (metalDevice.depth24Stencil8PixelFormatSupported)
+            {
+                this->metalFormat    = MTLPixelFormatRGBA32Sint;
+                this->actualFormatId = angle::FormatID::R32G32B32A32_SINT;
+                this->initFunction =
+                    Initialize4ComponentData<GLint, 0x00000000, 0x00000000, 0x00000000, 0x00000001>;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
+
+            this->swizzled = false;
+            break;
+
+#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
+        case angle::FormatID::R32G32B32_SINT:
+
+            this->metalFormat    = MTLPixelFormatRGBA32Sint;
+            this->actualFormatId = angle::FormatID::R32G32B32A32_SINT;
+            this->initFunction =
+                Initialize4ComponentData<GLint, 0x00000000, 0x00000000, 0x00000000, 0x00000001>;
+
+            this->swizzled = false;
+            break;
+
+#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
+        case angle::FormatID::R32G32B32_UINT:
+
+            if (metalDevice.depth24Stencil8PixelFormatSupported)
+            {
+                this->metalFormat    = MTLPixelFormatRGBA32Uint;
+                this->actualFormatId = angle::FormatID::R32G32B32A32_UINT;
+                this->initFunction   = Initialize4ComponentData<GLuint, 0x00000000, 0x00000000,
+                                                              0x00000000, 0x00000001>;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
+
+            this->swizzled = false;
+            break;
+
+#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
+        case angle::FormatID::R32G32B32_UINT:
+
+            this->metalFormat    = MTLPixelFormatRGBA32Uint;
+            this->actualFormatId = angle::FormatID::R32G32B32A32_UINT;
+            this->initFunction =
+                Initialize4ComponentData<GLuint, 0x00000000, 0x00000000, 0x00000000, 0x00000001>;
+
+            this->swizzled = false;
+            break;
+
+#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
+        case angle::FormatID::R8G8B8_SINT:
+
+            if (metalDevice.depth24Stencil8PixelFormatSupported)
+            {
+                this->metalFormat    = MTLPixelFormatRGBA8Sint;
+                this->actualFormatId = angle::FormatID::R8G8B8A8_SINT;
+                this->initFunction   = Initialize4ComponentData<GLbyte, 0x00, 0x00, 0x00, 0x01>;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
+
+            this->swizzled = false;
+            break;
+
+#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
+        case angle::FormatID::R8G8B8_SINT:
+
+            this->metalFormat    = MTLPixelFormatRGBA8Sint;
+            this->actualFormatId = angle::FormatID::R8G8B8A8_SINT;
+            this->initFunction   = Initialize4ComponentData<GLbyte, 0x00, 0x00, 0x00, 0x01>;
+
+            this->swizzled = false;
+            break;
+
+#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
+        case angle::FormatID::R8G8B8_UINT:
+
+            if (metalDevice.depth24Stencil8PixelFormatSupported)
+            {
+                this->metalFormat    = MTLPixelFormatRGBA8Uint;
+                this->actualFormatId = angle::FormatID::R8G8B8A8_UINT;
+                this->initFunction   = Initialize4ComponentData<GLubyte, 0x00, 0x00, 0x00, 0x01>;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
+
+            this->swizzled = false;
+            break;
+
+#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
+        case angle::FormatID::R8G8B8_UINT:
+
+            this->metalFormat    = MTLPixelFormatRGBA8Uint;
+            this->actualFormatId = angle::FormatID::R8G8B8A8_UINT;
+            this->initFunction   = Initialize4ComponentData<GLubyte, 0x00, 0x00, 0x00, 0x01>;
 
             this->swizzled = false;
             break;
@@ -988,6 +1297,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGBA8Unorm;
             this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM;
+            this->initFunction   = Initialize4ComponentData<GLubyte, 0x00, 0x00, 0x00, 0xFF>;
 
             this->swizzled = false;
             break;
@@ -996,6 +1306,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGBA8Unorm_sRGB;
             this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM_SRGB;
+            this->initFunction   = Initialize4ComponentData<GLubyte, 0x00, 0x00, 0x00, 0xFF>;
 
             this->swizzled = false;
             break;
@@ -1005,6 +1316,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatBC1_RGBA;
             this->actualFormatId = angle::FormatID::BC1_RGBA_UNORM_BLOCK;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1013,6 +1325,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatBC1_RGBA_sRGB;
             this->actualFormatId = angle::FormatID::BC1_RGBA_UNORM_SRGB_BLOCK;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1021,6 +1334,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatBC2_RGBA;
             this->actualFormatId = angle::FormatID::BC2_RGBA_UNORM_BLOCK;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1029,6 +1343,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatBC2_RGBA_sRGB;
             this->actualFormatId = angle::FormatID::BC2_RGBA_UNORM_SRGB_BLOCK;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1037,6 +1352,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatBC3_RGBA;
             this->actualFormatId = angle::FormatID::BC3_RGBA_UNORM_BLOCK;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1045,6 +1361,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatBC3_RGBA_sRGB;
             this->actualFormatId = angle::FormatID::BC3_RGBA_UNORM_SRGB_BLOCK;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1053,6 +1370,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatDepth16Unorm;
             this->actualFormatId = angle::FormatID::D16_UNORM;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1063,11 +1381,13 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             {
                 this->metalFormat    = MTLPixelFormatDepth24Unorm_Stencil8;
                 this->actualFormatId = angle::FormatID::D24_UNORM_S8_UINT;
+                this->initFunction   = nullptr;
             }
             else
             {
                 this->metalFormat    = MTLPixelFormatDepth32Float_Stencil8;
                 this->actualFormatId = angle::FormatID::D32_FLOAT_S8X24_UINT;
+                this->initFunction   = nullptr;
             }
 
             this->swizzled = false;
@@ -1080,6 +1400,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
                 this->metalFormat    = MTLPixelFormatBC1_RGBA;
                 this->actualFormatId = angle::FormatID::BC1_RGBA_UNORM_BLOCK;
+                this->initFunction   = nullptr;
 
                 this->swizzled = true;
                 this->swizzle  = {GL_RED, GL_GREEN, GL_BLUE, GL_ONE};
@@ -1090,6 +1411,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
                 this->metalFormat    = MTLPixelFormatInvalid;
                 this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
 
                 this->swizzled = false;
             }
@@ -1102,6 +1424,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
                 this->metalFormat    = MTLPixelFormatBC1_RGBA_sRGB;
                 this->actualFormatId = angle::FormatID::BC1_RGBA_UNORM_SRGB_BLOCK;
+                this->initFunction   = nullptr;
 
                 this->swizzled = true;
                 this->swizzle  = {GL_RED, GL_GREEN, GL_BLUE, GL_ONE};
@@ -1112,6 +1435,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
                 this->metalFormat    = MTLPixelFormatInvalid;
                 this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
 
                 this->swizzled = false;
             }
@@ -1121,6 +1445,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGBA8Unorm;
             this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1129,6 +1454,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGBA8Unorm;
             this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1137,6 +1463,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatRGBA8Unorm;
             this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM;
+            this->initFunction   = Initialize4ComponentData<GLubyte, 0x00, 0x00, 0x00, 0xFF>;
 
             this->swizzled = false;
             break;
@@ -1146,6 +1473,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatEAC_RG11Snorm;
             this->actualFormatId = angle::FormatID::EAC_R11G11_SNORM_BLOCK;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1154,6 +1482,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatEAC_R11Unorm;
             this->actualFormatId = angle::FormatID::EAC_R11G11_UNORM_BLOCK;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1162,6 +1491,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatEAC_R11Snorm;
             this->actualFormatId = angle::FormatID::EAC_R11_SNORM_BLOCK;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1170,6 +1500,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatEAC_R11Unorm;
             this->actualFormatId = angle::FormatID::EAC_R11_UNORM_BLOCK;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1178,6 +1509,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatETC2_RGB8;
             this->actualFormatId = angle::FormatID::ETC1_R8G8B8_UNORM_BLOCK;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1186,6 +1518,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatETC2_RGB8A1_sRGB;
             this->actualFormatId = angle::FormatID::ETC2_R8G8B8A1_SRGB_BLOCK;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1194,6 +1527,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatETC2_RGB8A1;
             this->actualFormatId = angle::FormatID::ETC2_R8G8B8A1_UNORM_BLOCK;
+            this->initFunction   = Initialize4ComponentData<GLubyte, 0x00, 0x00, 0x00, 0xFF>;
 
             this->swizzled = false;
             break;
@@ -1202,6 +1536,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatEAC_RGBA8_sRGB;
             this->actualFormatId = angle::FormatID::ETC2_R8G8B8A8_SRGB_BLOCK;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1210,6 +1545,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatEAC_RGBA8;
             this->actualFormatId = angle::FormatID::ETC2_R8G8B8A8_UNORM_BLOCK;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1218,6 +1554,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatETC2_RGB8_sRGB;
             this->actualFormatId = angle::FormatID::ETC2_R8G8B8_SRGB_BLOCK;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1226,6 +1563,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatETC2_RGB8;
             this->actualFormatId = angle::FormatID::ETC2_R8G8B8_UNORM_BLOCK;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1234,6 +1572,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatPVRTC_RGBA_2BPP;
             this->actualFormatId = angle::FormatID::PVRTC1_RGBA_2BPP_UNORM_BLOCK;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1242,6 +1581,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatPVRTC_RGBA_2BPP_sRGB;
             this->actualFormatId = angle::FormatID::PVRTC1_RGBA_2BPP_UNORM_SRGB_BLOCK;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1250,6 +1590,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatPVRTC_RGBA_4BPP;
             this->actualFormatId = angle::FormatID::PVRTC1_RGBA_4BPP_UNORM_BLOCK;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1258,6 +1599,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatPVRTC_RGBA_4BPP_sRGB;
             this->actualFormatId = angle::FormatID::PVRTC1_RGBA_4BPP_UNORM_SRGB_BLOCK;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1266,6 +1608,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatPVRTC_RGB_2BPP;
             this->actualFormatId = angle::FormatID::PVRTC1_RGB_2BPP_UNORM_BLOCK;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1274,6 +1617,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatPVRTC_RGB_2BPP_sRGB;
             this->actualFormatId = angle::FormatID::PVRTC1_RGB_2BPP_UNORM_SRGB_BLOCK;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1282,6 +1626,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatPVRTC_RGB_4BPP;
             this->actualFormatId = angle::FormatID::PVRTC1_RGB_4BPP_UNORM_BLOCK;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1290,6 +1635,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatPVRTC_RGB_4BPP_sRGB;
             this->actualFormatId = angle::FormatID::PVRTC1_RGB_4BPP_UNORM_SRGB_BLOCK;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1298,6 +1644,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatABGR4Unorm;
             this->actualFormatId = angle::FormatID::R4G4B4A4_UNORM;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1306,6 +1653,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatA1BGR5Unorm;
             this->actualFormatId = angle::FormatID::R5G5B5A1_UNORM;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1314,6 +1662,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatB5G6R5Unorm;
             this->actualFormatId = angle::FormatID::R5G6B5_UNORM;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1322,6 +1671,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatDepth32Float;
             this->actualFormatId = angle::FormatID::D32_FLOAT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;
@@ -1330,6 +1680,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatDepth32Float_Stencil8;
             this->actualFormatId = angle::FormatID::D32_FLOAT_S8X24_UINT;
+            this->initFunction   = nullptr;
 
             this->swizzled = false;
             break;

@@ -12,6 +12,7 @@
 
 #include "common/debug.h"
 #include "libANGLE/renderer/Format.h"
+#include "libANGLE/renderer/load_functions_table.h"
 #include "libANGLE/renderer/metal/DisplayMtl.h"
 
 namespace rx
@@ -178,6 +179,14 @@ angle::Result FormatTable::initialize(const DisplayMtl *display)
 
         mPixelFormatTable[i].init(display, formatId);
         mPixelFormatTable[i].caps = &mNativePixelFormatCapsTable[mPixelFormatTable[i].metalFormat];
+
+        if (!mPixelFormatTable[i].caps->depthRenderable)
+        {
+            mPixelFormatTable[i].textureLoadFunctions = angle::GetLoadFunctionsMap(
+                mPixelFormatTable[i].intendedAngleFormat().glInternalFormat,
+                mPixelFormatTable[i].actualFormatId);
+        }
+
         mVertexFormatTables[0][i].init(formatId, false);
         mVertexFormatTables[1][i].init(formatId, true);
     }

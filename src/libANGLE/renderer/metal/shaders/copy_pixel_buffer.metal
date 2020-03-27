@@ -583,6 +583,28 @@ static inline void writeR8G8_UINT(COMMON_WRITE_UINT_FUNC_PARAMS)
     buffer[bufferOffset + 1] = static_cast<uchar>(color.g);
 }
 
+// R8G8B8_SINT
+static inline int4 readR8G8B8_SINT(COMMON_READ_FUNC_PARAMS)
+{
+    int4 color;
+    color.r = as_type<char>(buffer[bufferOffset]);
+    color.g = as_type<char>(buffer[bufferOffset + 1]);
+    color.b = as_type<char>(buffer[bufferOffset + 2]);
+    color.a = 1;
+    return color;
+}
+
+// R8G8B8_UINT
+static inline uint4 readR8G8B8_UINT(COMMON_READ_FUNC_PARAMS)
+{
+    uint4 color;
+    color.r = as_type<uchar>(buffer[bufferOffset]);
+    color.g = as_type<uchar>(buffer[bufferOffset + 1]);
+    color.b = as_type<uchar>(buffer[bufferOffset + 2]);
+    color.a = 1;
+    return color;
+}
+
 // R8G8G8A8_SINT
 static inline int4 readR8G8B8A8_SINT(COMMON_READ_FUNC_PARAMS)
 {
@@ -747,6 +769,38 @@ static inline void writeR16G16_UINT(COMMON_WRITE_UINT_FUNC_PARAMS)
 {
     shortToBytes(static_cast<ushort>(color.r), bufferOffset, buffer);
     shortToBytes(static_cast<ushort>(color.g), bufferOffset + 2, buffer);
+}
+
+// R16G16B16_FLOAT
+static inline float4 readR16G16B16_FLOAT(COMMON_READ_FUNC_PARAMS)
+{
+    float4 color;
+    color.r = as_type<half>(bytesToShort<ushort>(buffer, bufferOffset));
+    color.g = as_type<half>(bytesToShort<ushort>(buffer, bufferOffset + 2));
+    color.b = as_type<half>(bytesToShort<ushort>(buffer, bufferOffset + 4));
+    color.a = 1.0;
+    return color;
+}
+// R16G16B16_SINT
+static inline int4 readR16G16B16_SINT(COMMON_READ_FUNC_PARAMS)
+{
+    int4 color;
+    color.r = bytesToShort<short>(buffer, bufferOffset);
+    color.g = bytesToShort<short>(buffer, bufferOffset + 2);
+    color.b = bytesToShort<short>(buffer, bufferOffset + 4);
+    color.a = 1;
+    return color;
+}
+
+// R16G16B16_UINT
+static inline uint4 readR16G16B16_UINT(COMMON_READ_FUNC_PARAMS)
+{
+    uint4 color;
+    color.r = bytesToShort<ushort>(buffer, bufferOffset);
+    color.g = bytesToShort<ushort>(buffer, bufferOffset + 2);
+    color.b = bytesToShort<ushort>(buffer, bufferOffset + 4);
+    color.a = 1;
+    return color;
 }
 
 // R16G16B16A16_FLOAT
@@ -933,6 +987,38 @@ static inline void writeR32G32_UINT(COMMON_WRITE_UINT_FUNC_PARAMS)
     intToBytes(color.g, bufferOffset + 4, buffer);
 }
 
+// R32G32B32_FLOAT
+static inline float4 readR32G32B32_FLOAT(COMMON_READ_FUNC_PARAMS)
+{
+    float4 color;
+    color.r = as_type<float>(bytesToInt<uint>(buffer, bufferOffset));
+    color.g = as_type<float>(bytesToInt<uint>(buffer, bufferOffset + 4));
+    color.b = as_type<float>(bytesToInt<uint>(buffer, bufferOffset + 8));
+    color.a = 1.0;
+    return color;
+}
+// R32G32B32_SINT
+static inline int4 readR32G32B32_SINT(COMMON_READ_FUNC_PARAMS)
+{
+    int4 color;
+    color.r = bytesToInt<int>(buffer, bufferOffset);
+    color.g = bytesToInt<int>(buffer, bufferOffset + 4);
+    color.b = bytesToInt<int>(buffer, bufferOffset + 8);
+    color.a = 1;
+    return color;
+}
+
+// R32G32B32_UINT
+static inline uint4 readR32G32B32_UINT(COMMON_READ_FUNC_PARAMS)
+{
+    uint4 color;
+    color.r = bytesToInt<uint>(buffer, bufferOffset);
+    color.g = bytesToInt<uint>(buffer, bufferOffset + 4);
+    color.b = bytesToInt<uint>(buffer, bufferOffset + 8);
+    color.a = 1;
+    return color;
+}
+
 // R32G32B32A32_FLOAT
 static inline float4 readR32G32B32A32_FLOAT(COMMON_READ_FUNC_PARAMS)
 {
@@ -1015,12 +1101,14 @@ kernel void readFromBufferToFloatTexture(COMMON_READ_KERNEL_PARAMS(float))
     PROC(L16_FLOAT)             \
     PROC(L16A16_FLOAT)          \
     PROC(R16G16_FLOAT)          \
+    PROC(R16G16B16_FLOAT)       \
     PROC(R16G16B16A16_FLOAT)    \
     PROC(R32_FLOAT)             \
     PROC(A32_FLOAT)             \
     PROC(L32_FLOAT)             \
     PROC(L32A32_FLOAT)          \
     PROC(R32G32_FLOAT)          \
+    PROC(R32G32B32_FLOAT)       \
     PROC(R32G32B32A32_FLOAT)
 
     uint bufferOffset = CALC_BUFFER_READ_OFFSET(options.pixelSize);
@@ -1040,12 +1128,15 @@ kernel void readFromBufferToIntTexture(COMMON_READ_KERNEL_PARAMS(int))
 #define SUPPORTED_FORMATS(PROC) \
     PROC(R8_SINT)               \
     PROC(R8G8_SINT)             \
+    PROC(R8G8B8_SINT)           \
     PROC(R8G8B8A8_SINT)         \
     PROC(R16_SINT)              \
     PROC(R16G16_SINT)           \
+    PROC(R16G16B16_SINT)        \
     PROC(R16G16B16A16_SINT)     \
     PROC(R32_SINT)              \
     PROC(R32G32_SINT)           \
+    PROC(R32G32B32_SINT)        \
     PROC(R32G32B32A32_SINT)
 
     uint bufferOffset = CALC_BUFFER_READ_OFFSET(options.pixelSize);
@@ -1065,12 +1156,15 @@ kernel void readFromBufferToUIntTexture(COMMON_READ_KERNEL_PARAMS(uint))
 #define SUPPORTED_FORMATS(PROC) \
     PROC(R8_UINT)               \
     PROC(R8G8_UINT)             \
+    PROC(R8G8B8_UINT)           \
     PROC(R8G8B8A8_UINT)         \
     PROC(R16_UINT)              \
     PROC(R16G16_UINT)           \
+    PROC(R16G16B16_UINT)        \
     PROC(R16G16B16A16_UINT)     \
     PROC(R32_UINT)              \
     PROC(R32G32_UINT)           \
+    PROC(R32G32B32_UINT)        \
     PROC(R32G32B32A32_UINT)
 
     uint bufferOffset = CALC_BUFFER_READ_OFFSET(options.pixelSize);

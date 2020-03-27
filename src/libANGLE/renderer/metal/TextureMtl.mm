@@ -1362,7 +1362,7 @@ angle::Result TextureMtl::setSubImageImpl(const gl::Context *context,
         {
             int sliceIndex           = slice + area.z;
             const uint8_t *srcPixels = usablePixels + slice * sourceDepthPitch;
-            ANGLE_TRY(setPerSliceSubImage(context, sliceIndex, mtlRegion, formatInfo,
+            ANGLE_TRY(setPerSliceSubImage(context, sliceIndex, mtlRegion, formatInfo, type,
                                           srcAngleFormat, sourceRowPitch, sourceDepthPitch,
                                           unpackBuffer, srcPixels, image));
         }
@@ -1372,7 +1372,7 @@ angle::Result TextureMtl::setSubImageImpl(const gl::Context *context,
         auto mtlRegion =
             MTLRegionMake3D(area.x, area.y, area.z, area.width, area.height, area.depth);
 
-        ANGLE_TRY(setPerSliceSubImage(context, 0, mtlRegion, formatInfo, srcAngleFormat,
+        ANGLE_TRY(setPerSliceSubImage(context, 0, mtlRegion, formatInfo, type, srcAngleFormat,
                                       sourceRowPitch, sourceDepthPitch, unpackBuffer, usablePixels,
                                       image));
     }
@@ -1384,7 +1384,8 @@ angle::Result TextureMtl::setPerSliceSubImage(const gl::Context *context,
                                               int slice,
                                               const MTLRegion &mtlArea,
                                               const gl::InternalFormat &internalFormat,
-                                              const angle::Format &pixelsFormat,
+                                              GLenum type,
+                                              const angle::Format &pixelsAngleFormat,
                                               size_t pixelsRowPitch,
                                               size_t pixelsDepthPitch,
                                               gl::Buffer *unpackBuffer,
@@ -1392,11 +1393,11 @@ angle::Result TextureMtl::setPerSliceSubImage(const gl::Context *context,
                                               const mtl::TextureRef &image)
 {
     // If source pixels are luminance or RGB8, we need to convert them to RGBA
-    if (mFormat.needConversion(pixelsFormat.id))
+    if (mFormat.needConversion(pixelsAngleFormat.id))
     {
-        return convertAndSetPerSliceSubImage(context, slice, mtlArea, internalFormat, pixelsFormat,
-                                             pixelsRowPitch, pixelsDepthPitch, unpackBuffer, pixels,
-                                             image);
+        return convertAndSetPerSliceSubImage(context, slice, mtlArea, internalFormat, type,
+                                             pixelsAngleFormat, pixelsRowPitch, pixelsDepthPitch,
+                                             unpackBuffer, pixels, image);
     }
 
     // No conversion needed.
@@ -1441,7 +1442,8 @@ angle::Result TextureMtl::convertAndSetPerSliceSubImage(const gl::Context *conte
                                                         int slice,
                                                         const MTLRegion &mtlArea,
                                                         const gl::InternalFormat &internalFormat,
-                                                        const angle::Format &pixelsFormat,
+                                                        GLenum type,
+                                                        const angle::Format &pixelsAngleFormat,
                                                         size_t pixelsRowPitch,
                                                         size_t pixelsDepthPitch,
                                                         gl::Buffer *unpackBuffer,
@@ -1459,7 +1461,8 @@ angle::Result TextureMtl::convertAndSetPerSliceSubImage(const gl::Context *conte
                         GL_INVALID_OPERATION);
 
         uint32_t offset = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(pixels));
-        ANGLE_MTL_CHECK(contextMtl, (offset % pixelsFormat.pixelBytes) == 0, GL_INVALID_OPERATION);
+        ANGLE_MTL_CHECK(contextMtl, (offset % pixelsAngleFormat.pixelBytes) == 0,
+                        GL_INVALID_OPERATION);
 
         BufferMtl *unpackBufferMtl = mtl::GetImpl(unpackBuffer);
         if (mFormat.hasDepthAndStencilBits())
@@ -1468,9 +1471,9 @@ angle::Result TextureMtl::convertAndSetPerSliceSubImage(const gl::Context *conte
             // to split its depth & stencil data and copy separately.
             const uint8_t *clientData = unpackBufferMtl->getClientShadowCopyData(contextMtl);
             clientData += offset;
-            ANGLE_TRY(convertAndSetPerSliceSubImage(context, slice, mtlArea, internalFormat,
-                                                    pixelsFormat, pixelsRowPitch, pixelsDepthPitch,
-                                                    nullptr, clientData, image));
+            ANGLE_TRY(convertAndSetPerSliceSubImage(context, slice, mtlArea, internalFormat, type,
+                                                    pixelsAngleFormat, pixelsRowPitch,
+                                                    pixelsDepthPitch, nullptr, clientData, image));
         }
         else
         {
@@ -1484,11 +1487,14 @@ angle::Result TextureMtl::convertAndSetPerSliceSubImage(const gl::Context *conte
             params.textureArea       = mtl::MTLRegionToGLBox(mtlArea);
 
             ANGLE_TRY(contextMtl->getDisplay()->getUtils().unpackPixelsFromBufferToTexture(
-                contextMtl, pixelsFormat, params));
+                contextMtl, pixelsAngleFormat, params));
         }
     }
     else
     {
+        LoadImageFunctionInfo loadFunctionInfo = mFormat.textureLoadFunctions
+                                                     ? mFormat.textureLoadFunctions(type)
+                                                     : LoadImageFunctionInfo();
         // Create scratch buffer
         const angle::Format &dstFormat = angle::Format::Get(mFormat.actualFormatId);
         angle::MemoryBuffer conversionRow;
@@ -1507,11 +1513,20 @@ angle::Result TextureMtl::convertAndSetPerSliceSubImage(const gl::Context *conte
                 mtlRow.origin.y     = mtlArea.origin.y + r;
 
                 // Convert pixels
-                CopyImageCHROMIUM(psrc, pixelsRowPitch, pixelsFormat.pixelBytes, 0,
-                                  pixelsFormat.pixelReadFunction, conversionRow.data(), dstRowPitch,
-                                  dstFormat.pixelBytes, 0, dstFormat.pixelWriteFunction,
-                                  internalFormat.format, dstFormat.componentType, mtlRow.size.width,
-                                  1, 1, false, false, false);
+                if (loadFunctionInfo.loadFunction)
+                {
+                    loadFunctionInfo.loadFunction(mtlRow.size.width, 1, 1, psrc, pixelsRowPitch, 0,
+                                                  conversionRow.data(), dstRowPitch, 0);
+                }
+                else
+                {
+                    CopyImageCHROMIUM(psrc, pixelsRowPitch, pixelsAngleFormat.pixelBytes, 0,
+                                      pixelsAngleFormat.pixelReadFunction, conversionRow.data(),
+                                      dstRowPitch, dstFormat.pixelBytes, 0,
+                                      dstFormat.pixelWriteFunction, internalFormat.format,
+                                      dstFormat.componentType, mtlRow.size.width, 1, 1, false,
+                                      false, false);
+                }
 
                 // Upload to texture
                 ANGLE_TRY(UploadTextureContents(context, dstFormat, mtlRow, 0, slice,

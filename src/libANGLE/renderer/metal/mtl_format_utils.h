@@ -19,6 +19,7 @@
 #include "libANGLE/Caps.h"
 #include "libANGLE/formatutils.h"
 #include "libANGLE/renderer/copyvertex.h"
+#include "libANGLE/renderer/renderer_utils.h"
 
 namespace rx
 {
@@ -76,6 +77,9 @@ struct Format : public FormatBase
     bool needConversion(angle::FormatID srcFormatId) const;
 
     MTLPixelFormat metalFormat = MTLPixelFormatInvalid;
+
+    LoadFunctionMap textureLoadFunctions       = nullptr;
+    InitializeTextureDataFunction initFunction = nullptr;
 
     const FormatCaps *caps = nullptr;
 
