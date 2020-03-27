@@ -21,6 +21,12 @@
 namespace rx
 {
 
+struct ImageDefinitionMtl
+{
+    mtl::TextureRef image;
+    angle::FormatID formatID = angle::FormatID::NONE;
+};
+
 class TextureMtl : public TextureImpl
 {
   public:
@@ -159,15 +165,21 @@ class TextureMtl : public TextureImpl
 
   private:
     void releaseTexture(bool releaseImages);
+    void releaseTexture(bool releaseImages, bool releaseTextureObjectsOnly);
+    angle::Result onBaseMaxLevelsChanged(const gl::Context *context);
     angle::Result ensureSamplerStateCreated(const gl::Context *context);
     // Ensure image at given index is created:
     angle::Result ensureImageCreated(const gl::Context *context, const gl::ImageIndex &index);
+    // Ensure all image views at all faces/levels are retained.
+    void retainImageDefinitions();
+    mtl::TextureRef createImageViewFromNativeTexture(GLuint cubeFaceOrZero, GLuint nativeLevel);
     angle::Result ensureNativeLevelViewsCreated();
     angle::Result checkForEmulatedChannels(const gl::Context *context,
                                            const mtl::Format &mtlFormat,
                                            const mtl::TextureRef &texture);
     int getNativeLevel(const gl::ImageIndex &imageIndex) const;
     mtl::TextureRef &getImage(const gl::ImageIndex &imageIndex);
+    ImageDefinitionMtl &getImageDefinition(const gl::ImageIndex &imageIndex);
     RenderTargetMtl &getRenderTarget(const gl::ImageIndex &imageIndex);
     mtl::TextureRef &getImplicitMSTexture(const gl::ImageIndex &imageIndex);
     bool isIndexWithinMinMaxLevels(const gl::ImageIndex &imageIndex) const;
@@ -263,7 +275,7 @@ class TextureMtl : public TextureImpl
     //  - For other texture types, there will be only one entry in the map table. All other textures
     //  except Cube map has texture image defined per level (all slices included).
     //  - These three variables' second dimension are indexed by image index (base level included).
-    std::map<int, gl::TexLevelArray<mtl::TextureRef>> mTexImages;
+    std::map<int, gl::TexLevelArray<ImageDefinitionMtl>> mTexImageDefs;
     std::map<int, gl::TexLevelArray<RenderTargetMtl>> mPerLayerRenderTargets;
     std::map<int, gl::TexLevelArray<mtl::TextureRef>> mImplicitMSTextures;
 
@@ -272,6 +284,8 @@ class TextureMtl : public TextureImpl
 
     // The swizzled view used for shader sampling.
     mtl::TextureRef mNativeSwizzleSamplingView;
+
+    GLuint mCurrentBaseLevel = 0;
 
     bool mIsPow2 = false;
 };

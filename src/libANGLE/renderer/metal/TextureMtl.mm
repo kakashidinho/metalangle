@@ -405,18 +405,27 @@ void TextureMtl::onDestroy(const gl::Context *context)
 
 void TextureMtl::releaseTexture(bool releaseImages)
 {
-    mFormat = mtl::Format();
+    releaseTexture(releaseImages, false);
+}
 
-    mNativeTexture             = nullptr;
-    mNativeSwizzleSamplingView = nullptr;
-    mMetalSamplerState         = nil;
+void TextureMtl::releaseTexture(bool releaseImages, bool releaseTextureObjectsOnly)
+{
 
     if (releaseImages)
     {
-        mTexImages.clear();
+        mTexImageDefs.clear();
+    }
+    else if (mNativeTexture)
+    {
+        // Release native texture but keep its old per face per mipmap level image views.
+        retainImageDefinitions();
     }
 
+    mNativeTexture             = nullptr;
+    mNativeSwizzleSamplingView = nullptr;
+
     mImplicitMSTextures.clear();
+
     // Clear render target cache for each texture's image. We don't erase them because they
     // might still be referenced by a framebuffer.
     for (auto &sliceRenderTargets : mPerLayerRenderTargets)
@@ -432,7 +441,12 @@ void TextureMtl::releaseTexture(bool releaseImages)
         view.reset();
     }
 
-    mIsPow2 = false;
+    if (!releaseTextureObjectsOnly)
+    {
+        mMetalSamplerState = nil;
+        mFormat            = mtl::Format();
+        mIsPow2            = false;
+    }
 }
 
 angle::Result TextureMtl::ensureTextureCreated(const gl::Context *context)
@@ -445,15 +459,18 @@ angle::Result TextureMtl::ensureTextureCreated(const gl::Context *context)
     ContextMtl *contextMtl = mtl::GetImpl(context);
 
     // Create actual texture object:
-    const GLuint baseLevel = mState.getEffectiveBaseLevel();
-    const GLuint mips      = mState.getMipmapMaxLevel() - baseLevel + 1;
-    gl::ImageDesc desc     = mState.getBaseLevelDesc();
+    mCurrentBaseLevel = mState.getEffectiveBaseLevel();
+    // Base level image should already be defined:
+    ANGLE_MTL_CHECK(contextMtl, mTexImageDefs[0][mCurrentBaseLevel].image, GL_INVALID_OPERATION);
+
+    const GLuint mips  = mState.getMipmapMaxLevel() - mCurrentBaseLevel + 1;
+    gl::ImageDesc desc = mState.getBaseLevelDesc();
+    mFormat            = contextMtl->getPixelFormat(mTexImageDefs[0][mCurrentBaseLevel].formatID);
 
     mIsPow2 =
         gl::isPow2(desc.size.width) && gl::isPow2(desc.size.height) && gl::isPow2(desc.size.depth);
-    mSlices           = 1;
-    int slicesOrDepth = 1;
-    int numCubeFaces  = 1;
+    mSlices          = 1;
+    int numCubeFaces = 1;
     switch (mState.getType())
     {
         case gl::TextureType::_2D:
@@ -463,22 +480,19 @@ angle::Result TextureMtl::ensureTextureCreated(const gl::Context *context)
                                                   /** allowFormatView */ false, &mNativeTexture));
             break;
         case gl::TextureType::CubeMap:
-            mSlices = slicesOrDepth = numCubeFaces = 6;
+            mSlices = numCubeFaces = 6;
             ANGLE_TRY(mtl::Texture::MakeCubeTexture(contextMtl, mFormat, desc.size.width, mips,
                                                     /** renderTargetOnly */ false,
                                                     /** allowFormatView */ false, &mNativeTexture));
             break;
         case gl::TextureType::_3D:
-            slicesOrDepth = desc.size.depth;
             ANGLE_TRY(mtl::Texture::Make3DTexture(contextMtl, mFormat, desc.size.width,
                                                   desc.size.height, desc.size.depth, mips,
                                                   /** renderTargetOnly */ false,
                                                   /** allowFormatView */ false, &mNativeTexture));
             break;
         case gl::TextureType::_2DArray:
-            // Base level image should already be defined:
-            ANGLE_MTL_CHECK(contextMtl, mTexImages[0][baseLevel], GL_INVALID_OPERATION);
-            mSlices = slicesOrDepth = mTexImages[0][baseLevel]->arrayLength();
+            mSlices = mTexImageDefs[0][mCurrentBaseLevel].image->arrayLength();
             ANGLE_TRY(mtl::Texture::Make2DArrayTexture(
                 contextMtl, mFormat, desc.size.width, desc.size.height, mips, mSlices,
                 /** renderTargetOnly */ false,
@@ -496,8 +510,8 @@ angle::Result TextureMtl::ensureTextureCreated(const gl::Context *context)
     {
         for (GLuint mip = 0; mip < mips; ++mip)
         {
-            GLuint imageMipLevel             = mip + baseLevel;
-            mtl::TextureRef &imageToTransfer = mTexImages[face][imageMipLevel];
+            GLuint imageMipLevel             = mip + mCurrentBaseLevel;
+            mtl::TextureRef &imageToTransfer = mTexImageDefs[face][imageMipLevel].image;
 
             // Only transfer if this mip & slice image has been defined and in correct size &
             // format.
@@ -556,6 +570,25 @@ angle::Result TextureMtl::ensureSamplerStateCreated(const gl::Context *context)
     return angle::Result::Continue;
 }
 
+angle::Result TextureMtl::onBaseMaxLevelsChanged(const gl::Context *context)
+{
+    if (!mNativeTexture)
+    {
+        return angle::Result::Continue;
+    }
+
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+
+    // Release native texture but keep old image definitions so that it can be recreated from old
+    // image definitions with different base level
+    releaseTexture(false, true);
+
+    // Tell context to rebind textures
+    contextMtl->invalidateCurrentTextures();
+
+    return angle::Result::Continue;
+}
+
 angle::Result TextureMtl::ensureImageCreated(const gl::Context *context,
                                              const gl::ImageIndex &index)
 {
@@ -580,10 +613,11 @@ angle::Result TextureMtl::ensureNativeLevelViewsCreated()
             continue;
         }
 
-        if (mNativeTexture->textureType() != MTLTextureTypeCube && mTexImages[0][mip + baseLevel])
+        if (mNativeTexture->textureType() != MTLTextureTypeCube &&
+            mTexImageDefs[0][mip + baseLevel].image)
         {
             // Reuse texture image view.
-            mNativeLevelViews[mip] = mTexImages[0][mip + baseLevel];
+            mNativeLevelViews[mip] = mTexImageDefs[0][mip + baseLevel].image;
         }
         else
         {
@@ -591,6 +625,66 @@ angle::Result TextureMtl::ensureNativeLevelViewsCreated()
         }
     }
     return angle::Result::Continue;
+}
+
+mtl::TextureRef TextureMtl::createImageViewFromNativeTexture(GLuint cubeFaceOrZero,
+                                                             GLuint nativeLevel)
+{
+    mtl::TextureRef image;
+    if (mNativeTexture->textureType() == MTLTextureTypeCube)
+    {
+        // Cube texture's image is per face.
+        image = mNativeTexture->createSliceMipView(cubeFaceOrZero, nativeLevel);
+    }
+    else
+    {
+        if (mNativeLevelViews[nativeLevel])
+        {
+            // Reuse the native level view
+            image = mNativeLevelViews[nativeLevel];
+        }
+        else
+        {
+            image = mNativeTexture->createMipView(nativeLevel);
+        }
+    }
+
+    return image;
+}
+
+void TextureMtl::retainImageDefinitions()
+{
+    if (!mNativeTexture)
+    {
+        return;
+    }
+    const GLuint mips = mNativeTexture->mipmapLevels();
+
+    int numCubeFaces = 1;
+    switch (mState.getType())
+    {
+        case gl::TextureType::CubeMap:
+            numCubeFaces = 6;
+            break;
+        default:
+            break;
+    }
+
+    // Create image view per cube face, per mip level
+    for (int face = 0; face < numCubeFaces; ++face)
+    {
+        for (GLuint mip = 0; mip < mips; ++mip)
+        {
+            GLuint imageMipLevel         = mip + mCurrentBaseLevel;
+            ImageDefinitionMtl &imageDef = mTexImageDefs[face][imageMipLevel];
+            if (imageDef.image)
+            {
+                continue;
+            }
+            imageDef.image    = createImageViewFromNativeTexture(face, mip);
+            imageDef.formatID = mFormat.intendedFormatId;
+        }
+    }
 }
 
 bool TextureMtl::isIndexWithinMinMaxLevels(const gl::ImageIndex &imageIndex) const
@@ -608,10 +702,15 @@ int TextureMtl::getNativeLevel(const gl::ImageIndex &imageIndex) const
 
 mtl::TextureRef &TextureMtl::getImage(const gl::ImageIndex &imageIndex)
 {
-    GLuint cubeFaceOrZero  = GetImageCubeFaceIndexOrZero(imageIndex);
-    mtl::TextureRef &image = mTexImages[cubeFaceOrZero][imageIndex.getLevelIndex()];
+    return getImageDefinition(imageIndex).image;
+}
 
-    if (!image && mNativeTexture)
+ImageDefinitionMtl &TextureMtl::getImageDefinition(const gl::ImageIndex &imageIndex)
+{
+    GLuint cubeFaceOrZero        = GetImageCubeFaceIndexOrZero(imageIndex);
+    ImageDefinitionMtl &imageDef = mTexImageDefs[cubeFaceOrZero][imageIndex.getLevelIndex()];
+
+    if (!imageDef.image && mNativeTexture)
     {
         // If native texture is already created, and the image at this index is not available,
         // then create a view of native texture at this index, so that modifications of the image
@@ -619,31 +718,15 @@ mtl::TextureRef &TextureMtl::getImage(const gl::ImageIndex &imageIndex)
         if (!isIndexWithinMinMaxLevels(imageIndex))
         {
             // Image below base level are skipped.
-            return image;
+            return imageDef;
         }
 
-        int nativeLevel = getNativeLevel(imageIndex);
-
-        if (imageIndex.getType() == gl::TextureType::CubeMap)
-        {
-            // Cube texture's image is per face.
-            image = mNativeTexture->createSliceMipView(cubeFaceOrZero, nativeLevel);
-        }
-        else
-        {
-            if (mNativeLevelViews[nativeLevel])
-            {
-                // Reuse the native level view
-                image = mNativeLevelViews[nativeLevel];
-            }
-            else
-            {
-                image = mNativeTexture->createMipView(nativeLevel);
-            }
-        }
+        int nativeLevel   = getNativeLevel(imageIndex);
+        imageDef.image    = createImageViewFromNativeTexture(cubeFaceOrZero, nativeLevel);
+        imageDef.formatID = mFormat.intendedFormatId;
     }
 
-    return image;
+    return imageDef;
 }
 RenderTargetMtl &TextureMtl::getRenderTarget(const gl::ImageIndex &imageIndex)
 {
@@ -877,7 +960,7 @@ angle::Result TextureMtl::generateMipmap(const gl::Context *context)
         return angle::Result::Continue;
     }
 
-    const mtl::FormatCaps caps = mFormat.getCaps();
+    const mtl::FormatCaps &caps = mFormat.getCaps();
 
     if (caps.writable)
     {
@@ -969,7 +1052,7 @@ angle::Result TextureMtl::generateMipmapCPU(const gl::Context *context)
 
 angle::Result TextureMtl::setBaseLevel(const gl::Context *context, GLuint baseLevel)
 {
-    return angle::Result::Continue;
+    return onBaseMaxLevelsChanged(context);
 }
 
 angle::Result TextureMtl::bindTexImage(const gl::Context *context, egl::Surface *surface)
@@ -1069,13 +1152,7 @@ angle::Result TextureMtl::syncState(const gl::Context *context,
                 break;
             case gl::Texture::DIRTY_BIT_MAX_LEVEL:
             case gl::Texture::DIRTY_BIT_BASE_LEVEL:
-                if (mNativeTexture)
-                {
-                    // Recreate the texture
-                    releaseTexture(false);
-                    // Tell context to rebind textures
-                    contextMtl->invalidateCurrentTextures();
-                }
+                ANGLE_TRY(onBaseMaxLevelsChanged(context));
                 break;
             case gl::Texture::DIRTY_BIT_SWIZZLE_RED:
             case gl::Texture::DIRTY_BIT_SWIZZLE_GREEN:
@@ -1106,8 +1183,6 @@ angle::Result TextureMtl::bindToShader(const gl::Context *context,
 {
     ASSERT(mNativeTexture);
 
-    ContextMtl *contextMtl = mtl::GetImpl(context);
-
     float minLodClamp;
     float maxLodClamp;
     id<MTLSamplerState> samplerState;
@@ -1115,6 +1190,8 @@ angle::Result TextureMtl::bindToShader(const gl::Context *context,
     if (!mNativeSwizzleSamplingView)
     {
 #if defined(__IPHONE_13_0) || defined(__MAC_10_15)
+        ContextMtl *contextMtl = mtl::GetImpl(context);
+
         if ((mState.getSwizzleState().swizzleRequired() || mFormat.actualAngleFormat().depthBits ||
              mFormat.swizzled) &&
             contextMtl->getDisplay()->getFeatures().hasTextureSwizzle.enabled)
@@ -1191,39 +1268,41 @@ angle::Result TextureMtl::redefineImage(const gl::Context *context,
 
     ContextMtl *contextMtl = mtl::GetImpl(context);
     // Cache last defined image format:
-    mFormat                = mtlFormat;
-    mtl::TextureRef &image = getImage(index);
+    mFormat                      = mtlFormat;
+    ImageDefinitionMtl &imageDef = getImageDefinition(index);
 
     // If native texture still exists, it means the size hasn't been changed, no need to create new
     // image
-    if (mNativeTexture && image && imageWithinLevelRange)
+    if (mNativeTexture && imageDef.image && imageWithinLevelRange)
     {
-        ASSERT(image->textureType() == mtl::GetTextureType(GetTextureImageType(index.getType())) &&
-               image->pixelFormat() == mFormat.metalFormat && image->size() == size);
+        ASSERT(imageDef.image->textureType() ==
+                   mtl::GetTextureType(GetTextureImageType(index.getType())) &&
+               imageDef.formatID == mFormat.intendedFormatId && imageDef.image->size() == size);
     }
     else
     {
+        imageDef.formatID = mtlFormat.intendedFormatId;
         // Create image to hold texture's data at this level & slice:
         switch (index.getType())
         {
             case gl::TextureType::_2D:
             case gl::TextureType::CubeMap:
-                ANGLE_TRY(mtl::Texture::Make2DTexture(contextMtl, mtlFormat, size.width,
-                                                      size.height, 1,
-                                                      /** renderTargetOnly */ false,
-                                                      /** allowFormatView */ false, &image));
+                ANGLE_TRY(
+                    mtl::Texture::Make2DTexture(contextMtl, mtlFormat, size.width, size.height, 1,
+                                                /** renderTargetOnly */ false,
+                                                /** allowFormatView */ false, &imageDef.image));
                 break;
             case gl::TextureType::_2DArray:
-                ANGLE_TRY(mtl::Texture::Make2DArrayTexture(contextMtl, mtlFormat, size.width,
-                                                           size.height, 1, size.depth,
-                                                           /** renderTargetOnly */ false,
-                                                           /** allowFormatView */ false, &image));
+                ANGLE_TRY(mtl::Texture::Make2DArrayTexture(
+                    contextMtl, mtlFormat, size.width, size.height, 1, size.depth,
+                    /** renderTargetOnly */ false,
+                    /** allowFormatView */ false, &imageDef.image));
                 break;
             case gl::TextureType::_3D:
-                ANGLE_TRY(mtl::Texture::Make3DTexture(contextMtl, mtlFormat, size.width,
-                                                      size.height, size.depth, 1,
-                                                      /** renderTargetOnly */ false,
-                                                      /** allowFormatView */ false, &image));
+                ANGLE_TRY(mtl::Texture::Make3DTexture(
+                    contextMtl, mtlFormat, size.width, size.height, size.depth, 1,
+                    /** renderTargetOnly */ false,
+                    /** allowFormatView */ false, &imageDef.image));
                 break;
             default:
                 UNREACHABLE();
@@ -1231,7 +1310,7 @@ angle::Result TextureMtl::redefineImage(const gl::Context *context,
     }
 
     // Make sure emulated channels are properly initialized
-    ANGLE_TRY(checkForEmulatedChannels(context, mtlFormat, image));
+    ANGLE_TRY(checkForEmulatedChannels(context, mtlFormat, imageDef.image));
 
     // Tell context to rebind textures
     contextMtl->invalidateCurrentTextures();
@@ -1246,11 +1325,8 @@ angle::Result TextureMtl::setStorageImpl(const gl::Context *context,
                                          const mtl::Format &mtlFormat,
                                          const gl::Extents &size)
 {
-    if (mNativeTexture)
-    {
-        // Don't need to hold old images data.
-        releaseTexture(true);
-    }
+    // Don't need to hold old images data.
+    releaseTexture(true);
 
     ContextMtl *contextMtl = mtl::GetImpl(context);
 
