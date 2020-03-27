@@ -23,6 +23,11 @@ namespace mtl
 namespace
 {
 
+constexpr uint32_t kGlslangTextureDescSet        = 0;
+constexpr uint32_t kGlslangDefaultUniformDescSet = 1;
+constexpr uint32_t kGlslangDriverUniformsDescSet = 2;
+constexpr uint32_t kGlslangShaderResourceDescSet = 3;
+
 constexpr char kShadowSamplerCompareModesVarName[] = "ANGLEShadowCompareModes";
 
 angle::Result HandleError(ErrorHandler *context, GlslangError)
@@ -34,14 +39,14 @@ angle::Result HandleError(ErrorHandler *context, GlslangError)
 GlslangSourceOptions CreateSourceOptions()
 {
     GlslangSourceOptions options;
-    // We don't actually use descriptor set for now, the actual binding will be done inside
-    // ProgramMtl using spirv-cross.
-    options.uniformsAndXfbDescriptorSetIndex = kDefaultUniformsBindingIndex;
-    options.textureDescriptorSetIndex        = 0;
-    options.driverUniformsDescriptorSetIndex = kDriverUniformsBindingIndex;
-    // NOTE(hqle): Unused for now, until we support ES 3.0
-    options.shaderResourceDescriptorSetIndex = -1;
-    options.xfbBindingIndexStart             = -1;
+    // These are binding options passed to glslang. The actual binding might be changed later
+    // by spirv-cross.
+    options.uniformsAndXfbDescriptorSetIndex = kGlslangDefaultUniformDescSet;
+    options.textureDescriptorSetIndex        = kGlslangTextureDescSet;
+    options.driverUniformsDescriptorSetIndex = kGlslangDriverUniformsDescSet;
+    options.shaderResourceDescriptorSetIndex = kGlslangShaderResourceDescSet;
+    // NOTE(hqle): Unused for now, until we support XFB
+    options.xfbBindingIndexStart = 1;
 
     static_assert(kDefaultUniformsBindingIndex != 0, "kDefaultUniformsBindingIndex must not be 0");
     static_assert(kDriverUniformsBindingIndex != 0, "kDriverUniformsBindingIndex must not be 0");
@@ -67,9 +72,12 @@ using BindingField = uint32_t spirv_cross::MSLResourceBinding::*;
 template <BindingField bindingField>
 angle::Result BindResources(spirv_cross::CompilerMSL *compiler,
                             const spirv_cross::SmallVector<spirv_cross::Resource> &resources,
-                            gl::ShaderType shaderType)
+                            gl::ShaderType shaderType,
+                            bool *argumentBufferUsed)
 {
     auto &compilerMsl = *compiler;
+
+    *argumentBufferUsed = false;
 
     for (const spirv_cross::Resource &resource : resources)
     {
@@ -89,22 +97,32 @@ angle::Result BindResources(spirv_cross::CompilerMSL *compiler,
 
         resBinding.binding = compilerMsl.get_decoration(resource.id, spv::DecorationBinding);
 
-        uint32_t bindingPoint;
+        uint32_t bindingPoint = 0;
         // NOTE(hqle): We use separate discrete binding point for now, in future, we should use
         // one argument buffer for each descriptor set.
         switch (resBinding.desc_set)
         {
-            case 0:
+            case kGlslangTextureDescSet:
                 // Texture binding point is ignored. We let spirv-cross automatically assign it and
                 // retrieve it later
                 continue;
-            case mtl::kDriverUniformsBindingIndex:
+            case kGlslangDriverUniformsDescSet:
                 bindingPoint = mtl::kDriverUniformsBindingIndex;
                 break;
-            case mtl::kDefaultUniformsBindingIndex:
-                // NOTE(hqle): Properly handle transform feedbacks and UBO binding once ES 3.0 is
-                // implemented.
-                bindingPoint = mtl::kDefaultUniformsBindingIndex;
+            case kGlslangDefaultUniformDescSet:
+                // NOTE(hqle): Properly handle transform feedbacks binding.
+                if (resBinding.binding == 0)
+                {
+                    bindingPoint = mtl::kDefaultUniformsBindingIndex;
+                }
+                else
+                {
+                    continue;
+                }
+                break;
+            case kGlslangShaderResourceDescSet:
+                bindingPoint        = resBinding.binding;
+                *argumentBufferUsed = true;
                 break;
             default:
                 // We don't support this descriptor set.
@@ -123,7 +141,7 @@ angle::Result BindResources(spirv_cross::CompilerMSL *compiler,
 
 angle::Result GetAssignedSamplerBindings(
     const spirv_cross::CompilerMSL &compilerMsl,
-    std::array<SamplerBindingMtl, mtl::kMaxShaderSamplers> *bindings)
+    std::array<SamplerBinding, mtl::kMaxShaderSamplers> *bindings)
 {
     for (const spirv_cross::Resource &resource : compilerMsl.get_shader_resources().sampled_images)
     {
@@ -134,13 +152,13 @@ angle::Result GetAssignedSamplerBindings(
         }
 
         // We already assigned descriptor set 0 to textures. Just to double check.
-        ASSERT(descriptorSet == 0);
+        ASSERT(descriptorSet == kGlslangTextureDescSet);
         ASSERT(compilerMsl.has_decoration(resource.id, spv::DecorationBinding));
 
         uint32_t binding = compilerMsl.get_decoration(resource.id, spv::DecorationBinding);
 
-        SamplerBindingMtl &actualBinding = bindings->at(binding);
-        actualBinding.textureBinding = compilerMsl.get_automatic_msl_resource_binding(resource.id);
+        SamplerBinding &actualBinding = bindings->at(binding);
+        actualBinding.textureBinding  = compilerMsl.get_automatic_msl_resource_binding(resource.id);
         actualBinding.samplerBinding =
             compilerMsl.get_automatic_msl_resource_binding_secondary(resource.id);
     }
@@ -188,6 +206,35 @@ class SpirvToMslCompiler : public spirv_cross::CompilerMSL
 
     std::string compile() override
     {
+        spirv_cross::CompilerMSL::Options compOpt;
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
+        compOpt.platform = spirv_cross::CompilerMSL::Options::macOS;
+#else
+        compOpt.platform = spirv_cross::CompilerMSL::Options::iOS;
+#endif
+
+        if (ANGLE_APPLE_AVAILABLE_XCI(10.14, 13.0, 12))
+        {
+            // Use Metal 2.1
+            compOpt.set_msl_version(2, 1);
+        }
+        else
+        {
+            // Always use at least Metal 2.0.
+            compOpt.set_msl_version(2);
+        }
+
+        // Enable argument buffer for UBO.
+        compOpt.argument_buffers = true;
+
+        spirv_cross::CompilerMSL::set_msl_options(compOpt);
+
+        // Force discrete slot bindings for textures, default uniforms & driver uniforms
+        // instead of using argument buffer.
+        spirv_cross::CompilerMSL::add_discrete_descriptor_set(kGlslangTextureDescSet);
+        spirv_cross::CompilerMSL::add_discrete_descriptor_set(kGlslangDefaultUniformDescSet);
+        spirv_cross::CompilerMSL::add_discrete_descriptor_set(kGlslangDriverUniformsDescSet);
+
         addBuiltInResources();
         analyzeShaderVariables();
         return PostProcessTranslatedMsl(mHasDepthSampler, spirv_cross::CompilerMSL::compile());
@@ -691,42 +738,31 @@ angle::Result GlslangGetShaderSpirvCode(ErrorHandler *context,
         enableLineRasterEmulation, shaderSources, shaderCodeOut);
 }
 
-angle::Result SpirvCodeToMsl(
-    ErrorHandler *context,
-    gl::ShaderMap<std::vector<uint32_t>> *shaderCode,
-    gl::ShaderMap<std::array<SamplerBindingMtl, mtl::kMaxShaderSamplers>> *mslSamplerBindingsOut,
-    gl::ShaderMap<std::string> *mslCodeOut)
+angle::Result SpirvCodeToMsl(ErrorHandler *context,
+                             gl::ShaderMap<std::vector<uint32_t>> *sprivShaderCode,
+                             gl::ShaderMap<TranslatedShaderInfo> *mslShaderInfoOut,
+                             gl::ShaderMap<std::string> *mslCodeOut)
 {
     for (gl::ShaderType shaderType : gl::AllGLES2ShaderTypes())
     {
-        std::vector<uint32_t> &sprivCode = shaderCode->at(shaderType);
+        std::vector<uint32_t> &sprivCode = sprivShaderCode->at(shaderType);
         SpirvToMslCompiler compilerMsl(std::move(sprivCode));
 
-        spirv_cross::CompilerMSL::Options compOpt;
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        compOpt.platform = spirv_cross::CompilerMSL::Options::macOS;
-#else
-        compOpt.platform = spirv_cross::CompilerMSL::Options::iOS;
-#endif
-
-        if (ANGLE_APPLE_AVAILABLE_XCI(10.14, 13.0, 12))
-        {
-            // Use Metal 2.1
-            compOpt.set_msl_version(2, 1);
-        }
-        else
-        {
-            // Always use at least Metal 2.0.
-            compOpt.set_msl_version(2);
-        }
-
-        compilerMsl.set_msl_options(compOpt);
-
-        // Tell spirv-cross to map default & driver uniform blocks & samplers as we want
+        // Tell spirv-cross to map default & driver uniform blocks as we want
         spirv_cross::ShaderResources mslRes = compilerMsl.get_shader_resources();
 
         ANGLE_TRY(BindResources<&spirv_cross::MSLResourceBinding::msl_buffer>(
-            &compilerMsl, mslRes.uniform_buffers, shaderType));
+            &compilerMsl, mslRes.uniform_buffers, shaderType,
+            &mslShaderInfoOut->at(shaderType).hasArgumentBuffer));
+
+        // Force UBO argument buffer binding to start at kUBOArgumentBufferBindingIndex.
+        spirv_cross::MSLResourceBinding argBufferBinding = {};
+        argBufferBinding.stage    = ShaderTypeToSpvExecutionModel(shaderType);
+        argBufferBinding.desc_set = kGlslangShaderResourceDescSet;
+        argBufferBinding.binding =
+            spirv_cross::kArgumentBufferBinding;  // spirv-cross built-in binding.
+        argBufferBinding.msl_buffer = kUBOArgumentBufferBindingIndex;  // Actual binding.
+        compilerMsl.add_msl_resource_binding(argBufferBinding);
 
         // NOTE(hqle): spirv-cross uses exceptions to report error, what should we do here
         // in case of error?
@@ -737,7 +773,8 @@ angle::Result SpirvCodeToMsl(
         }
 
         // Retrieve automatic texture slot assignments
-        ANGLE_TRY(GetAssignedSamplerBindings(compilerMsl, &mslSamplerBindingsOut->at(shaderType)));
+        ANGLE_TRY(GetAssignedSamplerBindings(
+            compilerMsl, &mslShaderInfoOut->at(shaderType).actualSamplerBindings));
 
         mslCodeOut->at(shaderType) = std::move(translatedMsl);
     }  // for (gl::ShaderType shaderType

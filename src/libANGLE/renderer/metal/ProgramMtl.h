@@ -17,6 +17,7 @@
 #include "common/Optional.h"
 #include "common/utilities.h"
 #include "libANGLE/renderer/ProgramImpl.h"
+#include "libANGLE/renderer/metal/mtl_buffer_pool.h"
 #include "libANGLE/renderer/metal/mtl_command_buffer.h"
 #include "libANGLE/renderer/metal/mtl_glslang_utils.h"
 #include "libANGLE/renderer/metal/mtl_resources.h"
@@ -25,6 +26,12 @@
 namespace rx
 {
 class ContextMtl;
+
+struct ProgramArgumentBufferEncoderMtl
+{
+    mtl::AutoObjCPtr<id<MTLArgumentEncoder>> metalArgBufferEncoder;
+    mtl::BufferPool bufferPool;
+};
 
 class ProgramMtl : public ProgramImpl
 {
@@ -109,7 +116,9 @@ class ProgramMtl : public ProgramImpl
     angle::Result setupDraw(const gl::Context *glContext,
                             mtl::RenderCommandEncoder *cmdEncoder,
                             const Optional<mtl::RenderPipelineDesc> &changedPipelineDesc,
-                            bool forceTexturesSetting);
+                            bool forceTexturesSetting,
+                            bool coverageMaskEnabled,
+                            bool uniformBuffersDirty);
 
   private:
     template <int cols, int rows>
@@ -135,13 +144,17 @@ class ProgramMtl : public ProgramImpl
                                  mtl::RenderCommandEncoder *cmdEncoder,
                                  bool forceUpdate);
 
+    angle::Result updateUniformBuffers(ContextMtl *context,
+                                       mtl::RenderCommandEncoder *cmdEncoder,
+                                       bool coverageMaskEnabled);
+
     void reset(ContextMtl *context);
 
     void saveTranslatedShaders(gl::BinaryOutputStream *stream);
     void loadTranslatedShaders(gl::BinaryInputStream *stream);
 
-    void saveAssignedSamplerBindings(gl::BinaryOutputStream *stream);
-    void loadAssignedSamplerBindings(gl::BinaryInputStream *stream);
+    void saveShaderInternalInfo(gl::BinaryOutputStream *stream);
+    void loadShaderInternalInfo(gl::BinaryInputStream *stream);
 
     void linkResources(const gl::ProgramLinkedResources &resources);
     angle::Result linkImpl(const gl::Context *glContext,
@@ -177,9 +190,19 @@ class ProgramMtl : public ProgramImpl
 
     gl::ShaderMap<std::string> mTranslatedMslShader;
 
-    gl::ShaderMap<std::array<mtl::SamplerBindingMtl, mtl::kMaxShaderSamplers>> mActualSamplerBindings;
+    gl::ShaderMap<mtl::TranslatedShaderInfo> mMslShaderTranslateInfo;
 
     uint32_t mShadowCompareModes[mtl::kMaxShaderSamplers] = {0};
+
+    // Argument buffer encoder per shader stage. Use array of 2 elements since there are 2
+    // variances of shaders, one with sample coverage mask enabled, and one with it disabled.
+    // These are just pointers pointing to m(Vertex|Fragment)ArgumentBufferEncoder below.
+    // Since only fragment shader has two sample coverage mask variances. Storing pointers in
+    // gl::ShaderMap for easier indexing by shaderType and coverage mask enable flag later.
+    gl::ShaderMap<std::array<ProgramArgumentBufferEncoderMtl*, 2>> mArgumentBufferEncoders;
+
+    ProgramArgumentBufferEncoderMtl mVertexArgumentBufferEncoder;
+    std::array<ProgramArgumentBufferEncoderMtl, 2> mFragmentArgumentBufferEncoders;
 
     mtl::RenderPipelineCache mMetalRenderPipelineCache;
 };

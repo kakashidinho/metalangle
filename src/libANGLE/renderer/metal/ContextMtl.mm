@@ -775,7 +775,7 @@ angle::Result ContextMtl::syncState(const gl::Context *context,
                 // NOTE(hqle): ES 3.0 feature.
                 break;
             case gl::State::DIRTY_BIT_UNIFORM_BUFFER_BINDINGS:
-                // NOTE(hqle): ES 3.0 feature.
+                mDirtyBits.set(DIRTY_BIT_UNIFORM_BUFFERS_BINDING);
                 break;
             case gl::State::DIRTY_BIT_ATOMIC_COUNTER_BUFFER_BINDING:
                 break;
@@ -1624,6 +1624,7 @@ angle::Result ContextMtl::setupDraw(const gl::Context *context,
     Optional<mtl::RenderPipelineDesc> changedPipelineDesc;
     ANGLE_TRY(checkIfPipelineChanged(context, mode, &changedPipelineDesc));
 
+    bool uniformBuffersDirty = false;
     for (size_t bit : mDirtyBits)
     {
         switch (bit)
@@ -1669,6 +1670,9 @@ angle::Result ContextMtl::setupDraw(const gl::Context *context,
             case DIRTY_BIT_RENDER_PIPELINE:
                 // Already handled. See checkIfPipelineChanged().
                 break;
+            case DIRTY_BIT_UNIFORM_BUFFERS_BINDING:
+                uniformBuffersDirty = true;
+                break;
             default:
                 UNREACHABLE();
                 break;
@@ -1677,7 +1681,8 @@ angle::Result ContextMtl::setupDraw(const gl::Context *context,
 
     mDirtyBits.reset();
 
-    ANGLE_TRY(mProgram->setupDraw(context, &mRenderEncoder, changedPipelineDesc, textureChanged));
+    ANGLE_TRY(mProgram->setupDraw(context, &mRenderEncoder, changedPipelineDesc, textureChanged,
+                                  mRenderPipelineDesc.coverageMaskEnabled, uniformBuffersDirty));
 
     return angle::Result::Continue;
 }

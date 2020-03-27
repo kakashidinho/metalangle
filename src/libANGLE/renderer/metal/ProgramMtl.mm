@@ -17,6 +17,7 @@
 #include "compiler/translator/TranslatorMetal.h"
 #include "libANGLE/Context.h"
 #include "libANGLE/ProgramLinkedResources.h"
+#include "libANGLE/renderer/metal/BufferMtl.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
 #include "libANGLE/renderer/metal/DisplayMtl.h"
 #include "libANGLE/renderer/metal/TextureMtl.h"
@@ -127,6 +128,19 @@ class Std140BlockLayoutEncoderFactory : public gl::CustomBlockLayoutEncoderFacto
     sh::BlockLayoutEncoder *makeEncoder() override { return new sh::Std140BlockEncoder(); }
 };
 
+void InitArgumentBufferEncoder(ContextMtl *context,
+                               id<MTLFunction> function,
+                               ProgramArgumentBufferEncoderMtl *encoder)
+{
+    encoder->metalArgBufferEncoder =
+        [function newArgumentEncoderWithBufferIndex:mtl::kUBOArgumentBufferBindingIndex];
+    if (encoder->metalArgBufferEncoder)
+    {
+        encoder->bufferPool.initialize(context, encoder->metalArgBufferEncoder.get().encodedLength,
+                                       4);
+    }
+}
+
 }  // namespace
 
 // ProgramMtl implementation
@@ -134,7 +148,16 @@ ProgramMtl::DefaultUniformBlock::DefaultUniformBlock() {}
 
 ProgramMtl::DefaultUniformBlock::~DefaultUniformBlock() = default;
 
-ProgramMtl::ProgramMtl(const gl::ProgramState &state) : ProgramImpl(state) {}
+ProgramMtl::ProgramMtl(const gl::ProgramState &state) : ProgramImpl(state)
+{
+    // Storing pointer to m(Vertex|Fragment)ArgumentBufferEncoder for easier indexing by
+    // shader type and coverage sample mask flag enable later.
+    mArgumentBufferEncoders[gl::ShaderType::Vertex][0] =
+        mArgumentBufferEncoders[gl::ShaderType::Vertex][1] = &mVertexArgumentBufferEncoder;
+
+    mArgumentBufferEncoders[gl::ShaderType::Fragment][0] = &mFragmentArgumentBufferEncoders[0];
+    mArgumentBufferEncoders[gl::ShaderType::Fragment][1] = &mFragmentArgumentBufferEncoders[1];
+}
 
 ProgramMtl::~ProgramMtl() {}
 
@@ -154,9 +177,17 @@ void ProgramMtl::reset(ContextMtl *context)
 
     for (gl::ShaderType shaderType : gl::AllGLES2ShaderTypes())
     {
-        for (mtl::SamplerBindingMtl &binding : mActualSamplerBindings[shaderType])
+        mMslShaderTranslateInfo[shaderType].hasArgumentBuffer = false;
+        for (mtl::SamplerBinding &binding :
+             mMslShaderTranslateInfo[shaderType].actualSamplerBindings)
         {
             binding.textureBinding = mtl::kMaxShaderSamplers;
+        }
+
+        for (ProgramArgumentBufferEncoderMtl *encoder : mArgumentBufferEncoders[shaderType])
+        {
+            encoder->metalArgBufferEncoder = nil;
+            encoder->bufferPool.destroy(context);
         }
     }
 
@@ -192,7 +223,7 @@ std::unique_ptr<rx::LinkEvent> ProgramMtl::load(const gl::Context *context,
 void ProgramMtl::save(const gl::Context *context, gl::BinaryOutputStream *stream)
 {
     saveTranslatedShaders(stream);
-    saveAssignedSamplerBindings(stream);
+    saveShaderInternalInfo(stream);
     saveDefaultUniformBlocksInfo(stream);
 }
 
@@ -238,7 +269,7 @@ angle::Result ProgramMtl::linkImpl(const gl::Context *glContext,
                                              &shaderCodes));
 
     // Convert spirv code to MSL
-    ANGLE_TRY(mtl::SpirvCodeToMsl(contextMtl, &shaderCodes, &mActualSamplerBindings,
+    ANGLE_TRY(mtl::SpirvCodeToMsl(contextMtl, &shaderCodes, &mMslShaderTranslateInfo,
                                   &mTranslatedMslShader));
 
     for (gl::ShaderType shaderType : gl::AllGLES2ShaderTypes())
@@ -261,7 +292,7 @@ angle::Result ProgramMtl::linkTranslatedShaders(const gl::Context *glContext,
     reset(contextMtl);
 
     loadTranslatedShaders(stream);
-    loadAssignedSamplerBindings(stream);
+    loadShaderInternalInfo(stream);
     ANGLE_TRY(loadDefaultUniformBlocksInfo(glContext, stream));
 
     ANGLE_TRY(createMslShader(glContext, gl::ShaderType::Vertex, infoLog,
@@ -419,11 +450,13 @@ angle::Result ProgramMtl::loadDefaultUniformBlocksInfo(const gl::Context *glCont
     return resizeDefaultUniformBlocksMemory(glContext, requiredBufferSize);
 }
 
-void ProgramMtl::saveAssignedSamplerBindings(gl::BinaryOutputStream *stream)
+void ProgramMtl::saveShaderInternalInfo(gl::BinaryOutputStream *stream)
 {
     for (gl::ShaderType shaderType : gl::AllShaderTypes())
     {
-        for (const mtl::SamplerBindingMtl &binding : mActualSamplerBindings[shaderType])
+        stream->writeInt<int>(mMslShaderTranslateInfo[shaderType].hasArgumentBuffer);
+        for (const mtl::SamplerBinding &binding :
+             mMslShaderTranslateInfo[shaderType].actualSamplerBindings)
         {
             stream->writeInt<uint32_t>(binding.textureBinding);
             stream->writeInt<uint32_t>(binding.samplerBinding);
@@ -431,11 +464,13 @@ void ProgramMtl::saveAssignedSamplerBindings(gl::BinaryOutputStream *stream)
     }
 }
 
-void ProgramMtl::loadAssignedSamplerBindings(gl::BinaryInputStream *stream)
+void ProgramMtl::loadShaderInternalInfo(gl::BinaryInputStream *stream)
 {
     for (gl::ShaderType shaderType : gl::AllShaderTypes())
     {
-        for (mtl::SamplerBindingMtl &binding : mActualSamplerBindings[shaderType])
+        mMslShaderTranslateInfo[shaderType].hasArgumentBuffer = stream->readInt<int>() != 0;
+        for (mtl::SamplerBinding &binding :
+             mMslShaderTranslateInfo[shaderType].actualSamplerBindings)
         {
             binding.textureBinding = stream->readInt<uint32_t>();
             binding.samplerBinding = stream->readInt<uint32_t>();
@@ -478,6 +513,11 @@ angle::Result ProgramMtl::createMslShader(const gl::Context *glContext,
             ASSERT(mtlShader);
 
             mMetalRenderPipelineCache.setVertexShader(contextMtl, mtlShader);
+
+            if (mMslShaderTranslateInfo[shaderType].hasArgumentBuffer)
+            {
+                InitArgumentBufferEncoder(contextMtl, mtlShader, &mVertexArgumentBufferEncoder);
+            }
         }
         else if (shaderType == gl::ShaderType::Fragment)
         {
@@ -491,6 +531,7 @@ angle::Result ProgramMtl::createMslShader(const gl::Context *glContext,
                                  kSpirvCrossSpecConstSuffix];
 
             BOOL enables[] = {NO, YES};
+            static_assert(YES == 1, "YES should have value of 1");
             for (auto enable : enables)
             {
                 [funcConstants setConstantValue:&enable
@@ -515,6 +556,12 @@ angle::Result ProgramMtl::createMslShader(const gl::Context *glContext,
                 }
 
                 mMetalRenderPipelineCache.setFragmentShader(contextMtl, mtlShader, enable);
+
+                if (mMslShaderTranslateInfo[shaderType].hasArgumentBuffer)
+                {
+                    InitArgumentBufferEncoder(contextMtl, mtlShader,
+                                              &mFragmentArgumentBufferEncoders[enable]);
+                }
             }
         }  // gl::ShaderType::Fragment
 
@@ -813,7 +860,9 @@ void ProgramMtl::getUniformuiv(const gl::Context *context, GLint location, GLuin
 angle::Result ProgramMtl::setupDraw(const gl::Context *glContext,
                                     mtl::RenderCommandEncoder *cmdEncoder,
                                     const Optional<mtl::RenderPipelineDesc> &changedPipelineDescOpt,
-                                    bool forceTexturesSetting)
+                                    bool forceTexturesSetting,
+                                    bool coverageMaskEnabled,
+                                    bool uniformBuffersDirty)
 {
     ContextMtl *context = mtl::GetImpl(glContext);
     if (changedPipelineDescOpt.valid())
@@ -836,6 +885,11 @@ angle::Result ProgramMtl::setupDraw(const gl::Context *glContext,
 
     ANGLE_TRY(commitUniforms(context, cmdEncoder));
     ANGLE_TRY(updateTextures(glContext, cmdEncoder, forceTexturesSetting));
+
+    if (uniformBuffersDirty)
+    {
+        ANGLE_TRY(updateUniformBuffers(context, cmdEncoder, coverageMaskEnabled));
+    }
 
     return angle::Result::Continue;
 }
@@ -903,8 +957,8 @@ angle::Result ProgramMtl::updateTextures(const gl::Context *glContext,
 
             ASSERT(!samplerBinding.unreferenced);
 
-            const mtl::SamplerBindingMtl &mslBinding =
-                mActualSamplerBindings[shaderType][textureIndex];
+            const mtl::SamplerBinding &mslBinding =
+                mMslShaderTranslateInfo[shaderType].actualSamplerBindings[textureIndex];
             if (mslBinding.textureBinding >= mtl::kMaxShaderSamplers)
             {
                 // No binding assigned
@@ -967,6 +1021,114 @@ angle::Result ProgramMtl::updateTextures(const gl::Context *glContext,
             }
         }
     }  // for shader types
+
+    return angle::Result::Continue;
+}
+
+angle::Result ProgramMtl::updateUniformBuffers(ContextMtl *context,
+                                               mtl::RenderCommandEncoder *cmdEncoder,
+                                               bool coverageMaskEnabled)
+{
+    const std::vector<gl::InterfaceBlock> &blocks = mState.getUniformBlocks();
+    if (blocks.empty())
+    {
+        return angle::Result::Continue;
+    }
+
+    const gl::State &glState = context->getState();
+
+    int coverageMaskEnabledIdx = coverageMaskEnabled ? 1 : 0;
+
+    // Encoder all uniform buffers into an argument buffer.
+    for (gl::ShaderType shaderType : gl::AllGLES2ShaderTypes())
+    {
+        ProgramArgumentBufferEncoderMtl &bufferEncoder =
+            *mArgumentBufferEncoders[shaderType][coverageMaskEnabledIdx];
+        if (!bufferEncoder.metalArgBufferEncoder)
+        {
+            continue;
+        }
+        mtl::BufferRef argumentBuffer;
+        size_t argumentBufferOffset;
+        bufferEncoder.bufferPool.releaseInFlightBuffers(context);
+        ANGLE_TRY(bufferEncoder.bufferPool.allocate(
+            context, bufferEncoder.metalArgBufferEncoder.get().encodedLength, nullptr,
+            &argumentBuffer, &argumentBufferOffset));
+
+        [bufferEncoder.metalArgBufferEncoder setArgumentBuffer:argumentBuffer->get()
+                                                        offset:argumentBufferOffset];
+
+        for (uint32_t bufferIndex = 0; bufferIndex < blocks.size(); ++bufferIndex)
+        {
+            const gl::InterfaceBlock &block = blocks[bufferIndex];
+            const gl::OffsetBindingPointer<gl::Buffer> &bufferBinding =
+                glState.getIndexedUniformBuffer(block.binding);
+
+            if (bufferBinding.get() == nullptr)
+            {
+                continue;
+            }
+
+            BufferMtl *bufferMtl = mtl::GetImpl(bufferBinding.get());
+            [bufferEncoder.metalArgBufferEncoder setBuffer:bufferMtl->getCurrentBuffer()->get()
+                                                    offset:bufferBinding.getOffset()
+                                                   atIndex:bufferIndex];
+        }
+
+        ANGLE_TRY(bufferEncoder.bufferPool.commit(context));
+
+        switch (shaderType)
+        {
+            case gl::ShaderType::Vertex:
+                cmdEncoder->setVertexBuffer(argumentBuffer,
+                                            static_cast<uint32_t>(argumentBufferOffset),
+                                            mtl::kUBOArgumentBufferBindingIndex);
+                break;
+            case gl::ShaderType::Fragment:
+                cmdEncoder->setFragmentBuffer(argumentBuffer,
+                                              static_cast<uint32_t>(argumentBufferOffset),
+                                              mtl::kUBOArgumentBufferBindingIndex);
+                break;
+            default:
+                UNREACHABLE();
+        }
+    }  // for shader types
+
+    // After encode the uniform buffers into an argument buffer, we need to tell Metal that
+    // the buffers are being used by what shader stages.
+    for (uint32_t bufferIndex = 0; bufferIndex < blocks.size(); ++bufferIndex)
+    {
+        const gl::InterfaceBlock &block = blocks[bufferIndex];
+        const gl::OffsetBindingPointer<gl::Buffer> &bufferBinding =
+            glState.getIndexedUniformBuffer(block.binding);
+        if (bufferBinding.get() == nullptr)
+        {
+            continue;
+        }
+
+        int stages = 0;
+        static_assert(
+            MTLRenderStageVertex == (0x1 << static_cast<uint32_t>(gl::ShaderType::Vertex)),
+            "Expected gl ShaderType enum and Metal enum to relative to each other");
+        static_assert(
+            MTLRenderStageFragment == (0x1 << static_cast<uint32_t>(gl::ShaderType::Fragment)),
+            "Expected gl ShaderType enum and Metal enum to relative to each other");
+        for (gl::ShaderType shaderType : block.activeShaders())
+        {
+            stages |= 0x1 << static_cast<uint32_t>(shaderType);
+        }
+
+        // Remove any other stages other than vertex and fragment.
+        stages = stages & (MTLRenderStageVertex | MTLRenderStageFragment);
+
+        if (stages == 0)
+        {
+            continue;
+        }
+        BufferMtl *bufferMtl = mtl::GetImpl(bufferBinding.get());
+        cmdEncoder->useResource(bufferMtl->getCurrentBuffer(), MTLResourceUsageRead,
+                                static_cast<MTLRenderStages>(stages));
+    }
 
     return angle::Result::Continue;
 }

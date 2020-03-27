@@ -108,6 +108,8 @@ constexpr uint32_t kMaxVertexAttribs = gl::MAX_VERTEX_ATTRIBS;
 // NOTE(hqle): support variable max number of render targets
 constexpr uint32_t kMaxRenderTargets = 4;
 
+constexpr uint32_t kMaxShaderUBOs = 12;
+
 constexpr size_t kDefaultAttributeSize = 4 * sizeof(float);
 
 // Metal limits
@@ -125,6 +127,7 @@ constexpr uint32_t kUniformBufferSettingOffsetMinAlignment = 256;
 constexpr uint32_t kUniformBufferSettingOffsetMinAlignment = 4;
 #endif
 constexpr uint32_t kIndexBufferOffsetAlignment = 4;
+constexpr uint32_t kUniformBufferOffsetAlignment = 4;
 
 // Binding index start for vertex data buffers:
 constexpr uint32_t kVboBindingIndexStart = 0;
@@ -137,6 +140,8 @@ constexpr uint32_t kDriverUniformsBindingIndex = kDefaultAttribsBindingIndex + 1
 constexpr uint32_t kDefaultUniformsBindingIndex = kDefaultAttribsBindingIndex + 3;
 // Binding index for shadow samplers' compare modes
 constexpr uint32_t kShadowSamplerCompareModesBindingIndex = kDefaultUniformsBindingIndex + 1;
+// Binding index for UBO's argument buffer
+constexpr uint32_t kUBOArgumentBufferBindingIndex = kShadowSamplerCompareModesBindingIndex + 1;
 
 constexpr uint32_t kStencilMaskAll = 0xff;  // Only 8 bits stencil is supported
 

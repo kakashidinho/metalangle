@@ -52,6 +52,7 @@ namespace
     PROC(DrawIndexedInstanced)           \
     PROC(DrawIndexedInstancedBaseVertex) \
     PROC(SetVisibilityResultMode)        \
+    PROC(UseResource)                    \
     PROC(InsertDebugsign)                \
     PROC(PushDebugGroup)                 \
     PROC(PopDebugGroup)
@@ -294,6 +295,14 @@ void SetVisibilityResultModeCmd(id<MTLRenderCommandEncoder> encoder,
     auto mode   = stream->fetch<MTLVisibilityResultMode>();
     auto offset = stream->fetch<size_t>();
     [encoder setVisibilityResultMode:mode offset:offset];
+}
+
+void UseResourceCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
+{
+    auto resource = stream->fetch<id<MTLResource>>();
+    auto usage    = stream->fetch<MTLResourceUsage>();
+    auto stages   = stream->fetch<MTLRenderStages>();
+    [encoder useResource:resource usage:usage stages:stages];
 }
 
 void InsertDebugsignCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
@@ -1362,6 +1371,25 @@ RenderCommandEncoder &RenderCommandEncoder::setVisibilityResultMode(MTLVisibilit
                                                                     size_t offset)
 {
     mCommands.push(CmdType::SetVisibilityResultMode).push(mode).push(offset);
+    return *this;
+}
+
+RenderCommandEncoder &RenderCommandEncoder::useResource(const BufferRef &resource,
+                                                        MTLResourceUsage usage,
+                                                        MTLRenderStages states)
+{
+    if (!resource)
+    {
+        return *this;
+    }
+
+    cmdBuffer().setReadDependency(resource);
+
+    mCommands.push(CmdType::UseResource)
+        .push([resource->get() ANGLE_MTL_RETAIN])
+        .push(usage)
+        .push(states);
+
     return *this;
 }
 

@@ -1598,7 +1598,12 @@ TEST_P(UniformBufferTest, SizeOverMaxBlockSize)
 
 // Use this to select which configurations (e.g. which renderer, which GLES major version) these
 // tests should be run against.
-ANGLE_INSTANTIATE_TEST(UniformBufferTest, ES3_D3D11(), ES3_OPENGL(), ES3_OPENGLES(), ES3_VULKAN());
+ANGLE_INSTANTIATE_TEST(UniformBufferTest,
+                       ES3_D3D11(),
+                       ES3_METAL(),
+                       ES3_OPENGL(),
+                       ES3_OPENGLES(),
+                       ES3_VULKAN());
 ANGLE_INSTANTIATE_TEST(UniformBufferTest31,
                        ES31_D3D11(),
                        ES31_OPENGL(),

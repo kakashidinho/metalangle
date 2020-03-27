@@ -367,6 +367,7 @@ class ContextMtl : public ContextImpl, public mtl::Context
         DIRTY_BIT_CULL_MODE,
         DIRTY_BIT_WINDING,
         DIRTY_BIT_RENDER_PIPELINE,
+        DIRTY_BIT_UNIFORM_BUFFERS_BINDING,
         DIRTY_BIT_MAX,
     };
 
