@@ -187,6 +187,8 @@ class Texture final : public Resource,
     TextureRef createMipView(uint32_t level);
     // Create a view with different format
     TextureRef createViewWithDifferentFormat(MTLPixelFormat format);
+    // Create a swizzled view
+    TextureRef createSwizzleView(const TextureSwizzleChannels &swizzle);
 
     MTLTextureType textureType() const;
     MTLPixelFormat pixelFormat() const;
@@ -250,6 +252,7 @@ class Texture final : public Resource,
     // Create a texture view
     Texture(Texture *original, MTLPixelFormat format);
     Texture(Texture *original, MTLTextureType type, NSRange mipmapLevelRange, NSRange slices);
+    Texture(Texture *original, const TextureSwizzleChannels &swizzle);
 
     void syncContent(ContextMtl *context);
 

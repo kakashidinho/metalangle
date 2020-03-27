@@ -1082,9 +1082,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
                 this->actualFormatId = angle::FormatID::BC1_RGBA_UNORM_BLOCK;
 
                 this->swizzled = true;
-                this->swizzle =
-                    MTLTextureSwizzleChannelsMake(MTLTextureSwizzleRed, MTLTextureSwizzleGreen,
-                                                  MTLTextureSwizzleBlue, MTLTextureSwizzleOne);
+                this->swizzle  = {GL_RED, GL_GREEN, GL_BLUE, GL_ONE};
             }
             else
 #    endif  // #if defined(__IPHONE_13_0) || defined(__MAC_10_15)
@@ -1106,9 +1104,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
                 this->actualFormatId = angle::FormatID::BC1_RGBA_UNORM_SRGB_BLOCK;
 
                 this->swizzled = true;
-                this->swizzle =
-                    MTLTextureSwizzleChannelsMake(MTLTextureSwizzleRed, MTLTextureSwizzleGreen,
-                                                  MTLTextureSwizzleBlue, MTLTextureSwizzleOne);
+                this->swizzle  = {GL_RED, GL_GREEN, GL_BLUE, GL_ONE};
             }
             else
 #    endif  // #if defined(__IPHONE_13_0) || defined(__MAC_10_15)

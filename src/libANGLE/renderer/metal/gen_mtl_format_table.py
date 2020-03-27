@@ -190,15 +190,15 @@ def gen_image_map_switch_case(angle_format, actual_angle_format_info, angle_to_m
             swizzle_channels = swizzle_info[0]
             swizzled_actual_angle_format = swizzle_info[1]
             swizzle_map = {
-                'R': 'MTLTextureSwizzleRed',
-                'G': 'MTLTextureSwizzleGreen',
-                'B': 'MTLTextureSwizzleBlue',
-                'A': 'MTLTextureSwizzleAlpha',
-                '1': 'MTLTextureSwizzleOne',
-                '0': 'MTLTextureSwizzleZero',
+                'R': 'GL_RED',
+                'G': 'GL_GREEN',
+                'B': 'GL_BLUE',
+                'A': 'GL_ALPHA',
+                '1': 'GL_ONE',
+                '0': 'GL_ZERO',
             }
 
-            mtl_swizzle_make = 'MTLTextureSwizzleChannelsMake({r}, {g}, {b}, {a})'.format(
+            mtl_swizzle_make = '{{{r}, {g}, {b}, {a}}}'.format(
                 r=swizzle_map[swizzle_channels[0:1]],
                 g=swizzle_map[swizzle_channels[1:2]],
                 b=swizzle_map[swizzle_channels[2:3]],

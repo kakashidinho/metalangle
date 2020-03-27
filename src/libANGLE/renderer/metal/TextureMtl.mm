@@ -343,6 +343,54 @@ angle::Result UploadTextureContents(const gl::Context *context,
     return angle::Result::Continue;
 }
 
+GLenum OverrideSwizzleValue(const gl::Context *context, GLenum swizzle, const mtl::Format &format)
+{
+    if (format.actualAngleFormat().depthBits)
+    {
+        ASSERT(!format.swizzled);
+        if (context->getState().getClientMajorVersion() >= 3)
+        {
+            // ES 3.0 spec: treat depth texture as red texture during sampling.
+            if (swizzle == GL_GREEN || swizzle == GL_BLUE || swizzle == GL_ALPHA)
+            {
+                return GL_NONE;
+            }
+        }
+        else
+        {
+            // https://www.khronos.org/registry/OpenGL/extensions/OES/OES_depth_texture.txt
+            // Treat depth texture as luminance texture during sampling.
+            if (swizzle == GL_GREEN || swizzle == GL_BLUE)
+            {
+                return GL_RED;
+            }
+            if (swizzle == GL_ALPHA)
+            {
+                return GL_ONE;
+            }
+        }
+    }
+    else if (format.swizzled)
+    {
+        // Combine the swizzles
+        switch (swizzle)
+        {
+            case GL_RED:
+                return format.swizzle[0];
+            case GL_GREEN:
+                return format.swizzle[1];
+            case GL_BLUE:
+                return format.swizzle[2];
+            case GL_ALPHA:
+                return format.swizzle[3];
+            default:
+                break;
+        }
+    }
+
+    return swizzle;
+}
+
 }  // namespace
 
 // TextureMtl implementation
@@ -359,8 +407,9 @@ void TextureMtl::releaseTexture(bool releaseImages)
 {
     mFormat = mtl::Format();
 
-    mNativeTexture     = nullptr;
-    mMetalSamplerState = nil;
+    mNativeTexture             = nullptr;
+    mNativeSwizzleSamplingView = nullptr;
+    mMetalSamplerState         = nil;
 
     if (releaseImages)
     {
@@ -1032,8 +1081,11 @@ angle::Result TextureMtl::syncState(const gl::Context *context,
             case gl::Texture::DIRTY_BIT_SWIZZLE_GREEN:
             case gl::Texture::DIRTY_BIT_SWIZZLE_BLUE:
             case gl::Texture::DIRTY_BIT_SWIZZLE_ALPHA:
-                // NOTE(hqle): ES 3.0.
-                break;
+            {
+                // Recreate swizzle view.
+                mNativeSwizzleSamplingView = nullptr;
+            }
+            break;
             default:
                 break;
         }
@@ -1054,9 +1106,37 @@ angle::Result TextureMtl::bindToShader(const gl::Context *context,
 {
     ASSERT(mNativeTexture);
 
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+
     float minLodClamp;
     float maxLodClamp;
     id<MTLSamplerState> samplerState;
+
+    if (!mNativeSwizzleSamplingView)
+    {
+#if defined(__IPHONE_13_0) || defined(__MAC_10_15)
+        if ((mState.getSwizzleState().swizzleRequired() || mFormat.actualAngleFormat().depthBits ||
+             mFormat.swizzled) &&
+            contextMtl->getDisplay()->getFeatures().hasTextureSwizzle.enabled)
+        {
+            MTLTextureSwizzleChannels swizzle = MTLTextureSwizzleChannelsMake(
+                mtl::GetTextureSwizzle(
+                    OverrideSwizzleValue(context, mState.getSwizzleState().swizzleRed, mFormat)),
+                mtl::GetTextureSwizzle(
+                    OverrideSwizzleValue(context, mState.getSwizzleState().swizzleGreen, mFormat)),
+                mtl::GetTextureSwizzle(
+                    OverrideSwizzleValue(context, mState.getSwizzleState().swizzleBlue, mFormat)),
+                mtl::GetTextureSwizzle(
+                    OverrideSwizzleValue(context, mState.getSwizzleState().swizzleAlpha, mFormat)));
+
+            mNativeSwizzleSamplingView = mNativeTexture->createSwizzleView(swizzle);
+        }
+        else
+#endif  // defined(__IPHONE_13_0) || defined(__MAC_10_15)
+        {
+            mNativeSwizzleSamplingView = mNativeTexture;
+        }
+    }
 
     if (!sampler)
     {
@@ -1074,7 +1154,7 @@ angle::Result TextureMtl::bindToShader(const gl::Context *context,
 
     minLodClamp = std::max(minLodClamp, 0.f);
 
-    cmdEncoder->setTexture(shaderType, mNativeTexture, textureSlotIndex);
+    cmdEncoder->setTexture(shaderType, mNativeSwizzleSamplingView, textureSlotIndex);
     cmdEncoder->setSamplerState(shaderType, samplerState, minLodClamp, maxLodClamp,
                                 samplerSlotIndex);
 

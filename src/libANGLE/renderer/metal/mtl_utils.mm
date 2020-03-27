@@ -524,6 +524,30 @@ MTLIndexType GetIndexType(gl::DrawElementsType type)
     }
 }
 
+#if defined(__IPHONE_13_0) || defined(__MAC_10_15)
+MTLTextureSwizzle GetTextureSwizzle(GLenum swizzle)
+{
+    switch (swizzle)
+    {
+        case GL_RED:
+            return MTLTextureSwizzleRed;
+        case GL_GREEN:
+            return MTLTextureSwizzleGreen;
+        case GL_BLUE:
+            return MTLTextureSwizzleBlue;
+        case GL_ALPHA:
+            return MTLTextureSwizzleAlpha;
+        case GL_ZERO:
+            return MTLTextureSwizzleZero;
+        case GL_ONE:
+            return MTLTextureSwizzleOne;
+        default:
+            UNREACHABLE();
+            return MTLTextureSwizzleZero;
+    }
+}
+#endif
+
 MTLColorWriteMask GetEmulatedColorWriteMask(const mtl::Format &mtlFormat, bool *emulatedChannelsOut)
 {
     const angle::Format &intendedFormat = mtlFormat.intendedAngleFormat();

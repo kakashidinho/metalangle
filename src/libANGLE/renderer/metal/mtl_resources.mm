@@ -233,12 +233,6 @@ angle::Result Texture::MakeTexture(ContextMtl *context,
                                    bool allowFormatView,
                                    TextureRef *refOut)
 {
-#if defined(__IPHONE_13_0) || defined(__MAC_10_15)
-    if (mtlFormat.swizzled)
-    {
-        desc.swizzle = mtlFormat.swizzle;
-    }
-#endif
     refOut->reset(new Texture(context, desc, mips, renderTargetOnly, allowFormatView));
 
     if (!refOut || !refOut->get())
@@ -339,6 +333,27 @@ Texture::Texture(Texture *original, MTLTextureType type, NSRange mipmapLevelRang
 
         set([view ANGLE_MTL_AUTORELEASE]);
     }
+}
+
+Texture::Texture(Texture *original, const TextureSwizzleChannels &swizzle)
+    : Resource(original),
+      mColorWritableMask(original->mColorWritableMask)  // Share color write mask property
+{
+#if defined(__IPHONE_13_0) || defined(__MAC_10_15)
+    ANGLE_MTL_OBJC_SCOPE
+    {
+        auto view =
+            [original->get() newTextureViewWithPixelFormat:original->pixelFormat()
+                                               textureType:original->textureType()
+                                                    levels:NSMakeRange(0, original->mipmapLevels())
+                                                    slices:NSMakeRange(0, original->arrayLength())
+                                                   swizzle:swizzle];
+
+        set([view ANGLE_MTL_AUTORELEASE]);
+    }
+#else
+    UNREACHABLE();
+#endif
 }
 
 void Texture::syncContent(ContextMtl *context, mtl::BlitCommandEncoder *blitEncoder)
@@ -500,6 +515,17 @@ TextureRef Texture::createViewWithDifferentFormat(MTLPixelFormat format)
 {
     ASSERT(supportFormatView());
     return TextureRef(new Texture(this, format));
+}
+
+TextureRef Texture::createSwizzleView(const TextureSwizzleChannels &swizzle)
+{
+#if defined(__IPHONE_13_0) || defined(__MAC_10_15)
+    return TextureRef(new Texture(this, swizzle));
+#else
+    WARN() << "Texture swizzle is not supported on pre iOS 13.0 and macOS 15.0";
+    UNIMPLEMENTED();
+    return shared_from_this();
+#endif
 }
 
 MTLPixelFormat Texture::pixelFormat() const

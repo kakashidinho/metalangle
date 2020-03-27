@@ -80,9 +80,7 @@ struct Format : public FormatBase
     const FormatCaps *caps = nullptr;
 
     bool swizzled = false;
-#if defined(__IPHONE_13_0) || defined(__MAC_10_15)
-    MTLTextureSwizzleChannels swizzle;
-#endif
+    std::array<GLenum, 4> swizzle;
 
   private:
     void init(const DisplayMtl *display, angle::FormatID intendedFormatId);
