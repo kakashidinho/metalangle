@@ -840,9 +840,11 @@ RenderPipelineCache::RenderPipelineCache() {}
 
 RenderPipelineCache::~RenderPipelineCache() {}
 
-void RenderPipelineCache::setVertexShader(Context *context, id<MTLFunction> shader)
+void RenderPipelineCache::setVertexShader(Context *context,
+                                          id<MTLFunction> shader,
+                                          bool emulatedRasterDiscard)
 {
-    mVertexShader.retainAssign(shader);
+    mVertexShaders[emulatedRasterDiscard ? 1 : 0].retainAssign(shader);
 
     if (!shader)
     {
@@ -926,6 +928,7 @@ AutoObjCPtr<id<MTLRenderPipelineState>> RenderPipelineCache::createRenderPipelin
         // Disable coverage if the render pipeline's sample count is only 1.
         int coverageMaskEnabled     = desc.coverageMaskEnabled;
         bool alphaToCoverageEnabled = desc.alphaToCoverageEnabled;
+        bool emulatedRasterDiscard  = desc.emulatedRasterizatonDiscard;
         if (desc.outputDescriptor.sampleCount == 1)
         {
             coverageMaskEnabled    = 0;
@@ -935,8 +938,8 @@ AutoObjCPtr<id<MTLRenderPipelineState>> RenderPipelineCache::createRenderPipelin
         auto metalDevice = context->getMetalDevice();
 
         // Convert to Objective-C desc:
-        AutoObjCObj<MTLRenderPipelineDescriptor> objCDesc =
-            ToObjC(mVertexShader, mFragmentShaders[coverageMaskEnabled], desc);
+        AutoObjCObj<MTLRenderPipelineDescriptor> objCDesc = ToObjC(
+            mVertexShaders[emulatedRasterDiscard], mFragmentShaders[coverageMaskEnabled], desc);
 
         // MSAA settings
         objCDesc.get().alphaToCoverageEnabled = alphaToCoverageEnabled;
@@ -985,7 +988,8 @@ void RenderPipelineCache::recreatePipelineStates(Context *context)
 
 void RenderPipelineCache::clear()
 {
-    mVertexShader       = nil;
+    mVertexShaders[0]   = nil;
+    mVertexShaders[1]   = nil;
     mFragmentShaders[0] = nil;
     mFragmentShaders[1] = nil;
     clearPipelineStates();

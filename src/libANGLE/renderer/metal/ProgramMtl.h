@@ -115,9 +115,9 @@ class ProgramMtl : public ProgramImpl
     // shader program changed.
     angle::Result setupDraw(const gl::Context *glContext,
                             mtl::RenderCommandEncoder *cmdEncoder,
-                            const Optional<mtl::RenderPipelineDesc> &changedPipelineDesc,
+                            const mtl::RenderPipelineDesc &pipelineDesc,
+                            bool pipelineDescChanged,
                             bool forceTexturesSetting,
-                            bool coverageMaskEnabled,
                             bool uniformBuffersDirty);
 
   private:
@@ -146,7 +146,7 @@ class ProgramMtl : public ProgramImpl
 
     angle::Result updateUniformBuffers(ContextMtl *context,
                                        mtl::RenderCommandEncoder *cmdEncoder,
-                                       bool coverageMaskEnabled);
+                                       const mtl::RenderPipelineDesc &pipelineDesc);
     angle::Result legalizeUniformBufferOffsets(ContextMtl *context,
                                                const std::vector<gl::InterfaceBlock> &blocks);
     angle::Result bindUniformBuffersToDiscreteSlots(ContextMtl *context,
@@ -157,8 +157,7 @@ class ProgramMtl : public ProgramImpl
         ContextMtl *context,
         mtl::RenderCommandEncoder *cmdEncoder,
         const std::vector<gl::InterfaceBlock> &blocks,
-        gl::ShaderType shaderType,
-        int coverageMaskEnabledIdx);
+        gl::ShaderType shaderType);
 
     void reset(ContextMtl *context);
 
@@ -206,15 +205,11 @@ class ProgramMtl : public ProgramImpl
 
     uint32_t mShadowCompareModes[mtl::kMaxShaderSamplers] = {0};
 
-    // Argument buffer encoder per shader stage. Use array of 2 elements since there are 2
-    // variances of shaders, one with sample coverage mask enabled, and one with it disabled.
-    // These are just pointers pointing to m(Vertex|Fragment)ArgumentBufferEncoder below.
-    // Since only fragment shader has two sample coverage mask variances. Storing pointers in
-    // gl::ShaderMap for easier indexing by shaderType and coverage mask enable flag later.
-    gl::ShaderMap<std::array<ProgramArgumentBufferEncoderMtl *, 2>> mArgumentBufferEncoders;
-
-    ProgramArgumentBufferEncoderMtl mVertexArgumentBufferEncoder;
+    // One with emulated rasterization discard, one without.
+    std::array<ProgramArgumentBufferEncoderMtl, 2> mVertexArgumentBufferEncoders;
+    // One for sample coverage mask enabled, one with it disabled.
     std::array<ProgramArgumentBufferEncoderMtl, 2> mFragmentArgumentBufferEncoders;
+    gl::ShaderMap<ProgramArgumentBufferEncoderMtl *> mCurrentArgumentBufferEncoders;
 
     // Scratch data:
     // Legalized buffers and their offsets. For example, uniform buffer's offset=1 is not a valid

@@ -709,7 +709,7 @@ angle::Result ContextMtl::syncState(const gl::Context *context,
                 updateDepthBias(glState);
                 break;
             case gl::State::DIRTY_BIT_RASTERIZER_DISCARD_ENABLED:
-                // NOTE(hqle): ES 3.0 feature.
+                invalidateRenderPipeline();
                 break;
             case gl::State::DIRTY_BIT_LINE_WIDTH:
                 // Do nothing
@@ -1621,8 +1621,8 @@ angle::Result ContextMtl::setupDraw(const gl::Context *context,
         ANGLE_TRY(startOcclusionQueryInRenderPass(mOcclusionQuery, false));
     }
 
-    Optional<mtl::RenderPipelineDesc> changedPipelineDesc;
-    ANGLE_TRY(checkIfPipelineChanged(context, mode, &changedPipelineDesc));
+    bool changedPipeline;
+    ANGLE_TRY(checkIfPipelineChanged(context, mode, &changedPipeline));
 
     bool uniformBuffersDirty = false;
     for (size_t bit : mDirtyBits)
@@ -1681,8 +1681,8 @@ angle::Result ContextMtl::setupDraw(const gl::Context *context,
 
     mDirtyBits.reset();
 
-    ANGLE_TRY(mProgram->setupDraw(context, &mRenderEncoder, changedPipelineDesc, textureChanged,
-                                  mRenderPipelineDesc.coverageMaskEnabled, uniformBuffersDirty));
+    ANGLE_TRY(mProgram->setupDraw(context, &mRenderEncoder, mRenderPipelineDesc, changedPipeline,
+                                  textureChanged, uniformBuffersDirty));
 
     return angle::Result::Continue;
 }
@@ -1822,7 +1822,7 @@ angle::Result ContextMtl::handleDirtyDepthBias(const gl::Context *context)
 angle::Result ContextMtl::checkIfPipelineChanged(
     const gl::Context *context,
     gl::PrimitiveMode primitiveMode,
-    Optional<mtl::RenderPipelineDesc> *changedPipelineDesc)
+    bool *pipelineDescChanged)
 {
     ASSERT(mRenderEncoder.valid());
     mtl::PrimitiveTopologyClass topologyClass = mtl::GetPrimitiveTopologyClass(primitiveMode);
@@ -1841,15 +1841,16 @@ angle::Result ContextMtl::checkIfPipelineChanged(
         renderPassDesc.populateRenderPipelineOutputDesc(mBlendDesc,
                                                         &mRenderPipelineDesc.outputDescriptor);
 
-        mRenderPipelineDesc.inputPrimitiveTopology = topologyClass;
-        mRenderPipelineDesc.alphaToCoverageEnabled = mState.isSampleAlphaToCoverageEnabled();
-        mRenderPipelineDesc.coverageMaskEnabled    = mState.isSampleCoverageEnabled();
+        mRenderPipelineDesc.inputPrimitiveTopology      = topologyClass;
+        mRenderPipelineDesc.emulatedRasterizatonDiscard = mState.isRasterizerDiscardEnabled();
+        mRenderPipelineDesc.alphaToCoverageEnabled      = mState.isSampleAlphaToCoverageEnabled();
+        mRenderPipelineDesc.coverageMaskEnabled         = mState.isSampleCoverageEnabled();
 
         mRenderPipelineDesc.outputDescriptor.updateEnabledDrawBuffers(
             mDrawFramebuffer->getState().getEnabledDrawBuffers());
-
-        *changedPipelineDesc = mRenderPipelineDesc;
     }
+
+    *pipelineDescChanged = rppChange;
 
     return angle::Result::Continue;
 }

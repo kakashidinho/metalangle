@@ -26,6 +26,7 @@ class TranslatorMetal : public TranslatorVulkan
     TranslatorMetal(sh::GLenum type, ShShaderSpec spec);
 
     static const char *GetCoverageMaskEnabledConstName();
+    static const char *GetRasterizationDiscardEnabledConstName();
 
   protected:
     ANGLE_NO_DISCARD bool translate(TIntermBlock *root,
@@ -39,6 +40,7 @@ class TranslatorMetal : public TranslatorVulkan
 
     ANGLE_NO_DISCARD bool insertSampleMaskWritingLogic(TIntermBlock *root,
                                                        const TVariable *driverUniforms);
+    ANGLE_NO_DISCARD bool insertRasterizationDiscardLogic(TIntermBlock *root);
 };
 
 }  // namespace sh

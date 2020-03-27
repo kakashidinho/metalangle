@@ -22,6 +22,7 @@
 #include "compiler/translator/tree_util/BuiltIn.h"
 #include "compiler/translator/tree_util/FindMain.h"
 #include "compiler/translator/tree_util/FindSymbolNode.h"
+#include "compiler/translator/tree_util/IntermNode_util.h"
 #include "compiler/translator/tree_util/RunAtTheEndOfShader.h"
 #include "compiler/translator/util.h"
 
@@ -31,6 +32,8 @@ namespace sh
 namespace
 {
 
+constexpr ImmutableString kRasterizationDiscardEnabledConstName =
+    ImmutableString("ANGLERasterizationDisabled");
 constexpr ImmutableString kCoverageMaskEnabledConstName =
     ImmutableString("ANGLECoverageMaskEnabled");
 constexpr ImmutableString kCoverageMaskField       = ImmutableString("coverageMask");
@@ -121,6 +124,12 @@ const char *TranslatorMetal::GetCoverageMaskEnabledConstName()
     return kCoverageMaskEnabledConstName.data();
 }
 
+/** static */
+const char *TranslatorMetal::GetRasterizationDiscardEnabledConstName()
+{
+    return kRasterizationDiscardEnabledConstName.data();
+}
+
 TranslatorMetal::TranslatorMetal(sh::GLenum type, ShShaderSpec spec) : TranslatorVulkan(type, spec)
 {}
 
@@ -147,6 +156,12 @@ bool TranslatorMetal::translate(TIntermBlock *root,
         // Append gl_Position.y correction to main
         if (!AppendVertexShaderPositionYCorrectionToMain(this, root, &getSymbolTable(),
                                                          negViewportYScale))
+        {
+            return false;
+        }
+
+        // Insert rasterization discard logic
+        if (!insertRasterizationDiscardLogic(root))
         {
             return false;
         }
@@ -274,6 +289,54 @@ ANGLE_NO_DISCARD bool TranslatorMetal::insertSampleMaskWritingLogic(TIntermBlock
 
     TIntermSymbol *coverageMaskEnabled = new TIntermSymbol(coverageMaskEnabledVar);
     TIntermIfElse *ifCall              = new TIntermIfElse(coverageMaskEnabled, callBlock, nullptr);
+
+    return RunAtTheEndOfShader(this, root, ifCall, symbolTable);
+}
+
+ANGLE_NO_DISCARD bool TranslatorMetal::insertRasterizationDiscardLogic(TIntermBlock *root)
+{
+    TInfoSinkBase &sink       = getInfoSink().obj;
+    TSymbolTable *symbolTable = &getSymbolTable();
+
+    // Insert rasterizationDisabled specialization constant.
+    sink << "layout (constant_id=0) const bool " << kRasterizationDiscardEnabledConstName;
+    sink << " = false;\n";
+
+    // Create kRasterizationDiscardEnabledConstName and kRasterizationDiscardFuncName variable
+    // references.
+    TType *boolType = new TType(EbtBool);
+    boolType->setQualifier(EvqConst);
+    TVariable *discardEnabledVar = new TVariable(symbolTable, kRasterizationDiscardEnabledConstName,
+                                                 boolType, SymbolType::AngleInternal);
+
+    // Insert this code to the end of main()
+    // if (ANGLERasterizationDisabled)
+    // {
+    //      gl_Position = vec4(-3.0, -3.0, -3.0, 1.0);
+    // }
+    // Create a symbol reference to "gl_Position"
+    const TVariable *position  = BuiltInVariable::gl_Position();
+    TIntermSymbol *positionRef = new TIntermSymbol(position);
+
+    // Create vec4(-3, -3, -3, 1):
+    auto vec4Type             = new TType(EbtFloat, 4);
+    TIntermSequence *vec4Args = new TIntermSequence();
+    vec4Args->push_back(CreateFloatNode(-3.0f));
+    vec4Args->push_back(CreateFloatNode(-3.0f));
+    vec4Args->push_back(CreateFloatNode(-3.0f));
+    vec4Args->push_back(CreateFloatNode(1.0f));
+    TIntermAggregate *constVarConstructor =
+        TIntermAggregate::CreateConstructor(*vec4Type, vec4Args);
+
+    // Create the assignment "gl_Position = vec4(-3, -3, -3, 1)"
+    TIntermBinary *assignment =
+        new TIntermBinary(TOperator::EOpAssign, positionRef->deepCopy(), constVarConstructor);
+
+    TIntermBlock *discardBlock = new TIntermBlock;
+    discardBlock->appendStatement(assignment);
+
+    TIntermSymbol *discardEnabled = new TIntermSymbol(discardEnabledVar);
+    TIntermIfElse *ifCall         = new TIntermIfElse(discardEnabled, discardBlock, nullptr);
 
     return RunAtTheEndOfShader(this, root, ifCall, symbolTable);
 }

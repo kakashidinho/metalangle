@@ -257,6 +257,7 @@ struct alignas(4) RenderPipelineDesc
     uint8_t inputPrimitiveTopology : 2;
 
     bool rasterizationEnabled : 1;
+    bool emulatedRasterizatonDiscard : 1;
     bool alphaToCoverageEnabled : 1;
     bool coverageMaskEnabled : 1;
 };
@@ -428,14 +429,19 @@ class RenderPipelineCache final : angle::NonCopyable
     RenderPipelineCache();
     ~RenderPipelineCache();
 
-    void setVertexShader(Context *context, id<MTLFunction> shader);
+    void setVertexShader(Context *context, id<MTLFunction> shader)
+    {
+        setVertexShader(context, shader, false);
+    }
     void setFragmentShader(Context *context, id<MTLFunction> shader)
     {
         setFragmentShader(context, shader, false);
     }
+    void setVertexShader(Context *context, id<MTLFunction> shader, bool emulatedRasterDiscard);
     void setFragmentShader(Context *context, id<MTLFunction> shader, bool withCoverageMaskWrite);
 
-    id<MTLFunction> getVertexShader() { return mVertexShader.get(); }
+    id<MTLFunction> getVertexShader() { return mVertexShaders[0].get(); }
+    id<MTLFunction> getVertexShaderWithEmulatedRasterDiscard() { return mVertexShaders[1].get(); }
     id<MTLFunction> getFragmentShader() { return mFragmentShaders[0].get(); }
     id<MTLFunction> getFragmentShaderWithCoverageMaskWrite() { return mFragmentShaders[1].get(); }
 
@@ -445,7 +451,8 @@ class RenderPipelineCache final : angle::NonCopyable
     void clear();
 
   protected:
-    AutoObjCPtr<id<MTLFunction>> mVertexShader = nil;
+    // On shader with emulated rasterization discard, one without
+    AutoObjCPtr<id<MTLFunction>> mVertexShaders[2] = {};
     // On shader with coverage mask disabled, one with coverage mask enabled
     AutoObjCPtr<id<MTLFunction>> mFragmentShaders[2] = {};
 
