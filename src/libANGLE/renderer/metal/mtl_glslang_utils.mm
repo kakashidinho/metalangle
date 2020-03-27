@@ -112,7 +112,7 @@ void BindBuffers(spirv_cross::CompilerMSL *compiler,
                 break;
             case kGlslangDefaultUniformDescSet:
                 // NOTE(hqle): Properly handle transform feedbacks binding.
-                if (resBinding.binding == 0)
+                if (shaderType != gl::ShaderType::Vertex || resBinding.binding == 0)
                 {
                     bindingPoint = mtl::kDefaultUniformsBindingIndex;
                 }
