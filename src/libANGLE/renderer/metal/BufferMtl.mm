@@ -495,6 +495,7 @@ angle::Result BufferMtl::commitShadowCopy(const gl::Context *context, size_t siz
     else
     {
         uint8_t *ptr = nullptr;
+        mBufferPool.releaseInFlightBuffers(contextMtl);
         ANGLE_TRY(
             mBufferPool.allocate(contextMtl, mShadowCopy.size(), &ptr, &mBuffer, nullptr, nullptr));
 
