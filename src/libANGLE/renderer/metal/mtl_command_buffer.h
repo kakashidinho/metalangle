@@ -279,8 +279,14 @@ class RenderCommandEncoder final : public CommandEncoder
 
     RenderCommandEncoder &setBlendColor(float r, float g, float b, float a);
 
-    RenderCommandEncoder &setVertexBuffer(const BufferRef &buffer, uint32_t offset, uint32_t index);
-    RenderCommandEncoder &setVertexBytes(const uint8_t *bytes, size_t size, uint32_t index);
+    RenderCommandEncoder &setVertexBuffer(const BufferRef &buffer, uint32_t offset, uint32_t index)
+    {
+        return setBuffer(gl::ShaderType::Vertex, buffer, offset, index);
+    }
+    RenderCommandEncoder &setVertexBytes(const uint8_t *bytes, size_t size, uint32_t index)
+    {
+        return setBytes(gl::ShaderType::Vertex, bytes, size, index);
+    }
     template <typename T>
     RenderCommandEncoder &setVertexData(const T &data, uint32_t index)
     {
@@ -289,13 +295,25 @@ class RenderCommandEncoder final : public CommandEncoder
     RenderCommandEncoder &setVertexSamplerState(id<MTLSamplerState> state,
                                                 float lodMinClamp,
                                                 float lodMaxClamp,
-                                                uint32_t index);
-    RenderCommandEncoder &setVertexTexture(const TextureRef &texture, uint32_t index);
+                                                uint32_t index)
+    {
+        return setSamplerState(gl::ShaderType::Vertex, state, lodMinClamp, lodMaxClamp, index);
+    }
+    RenderCommandEncoder &setVertexTexture(const TextureRef &texture, uint32_t index)
+    {
+        return setTexture(gl::ShaderType::Vertex, texture, index);
+    }
 
     RenderCommandEncoder &setFragmentBuffer(const BufferRef &buffer,
                                             uint32_t offset,
-                                            uint32_t index);
-    RenderCommandEncoder &setFragmentBytes(const uint8_t *bytes, size_t size, uint32_t index);
+                                            uint32_t index)
+    {
+        return setBuffer(gl::ShaderType::Fragment, buffer, offset, index);
+    }
+    RenderCommandEncoder &setFragmentBytes(const uint8_t *bytes, size_t size, uint32_t index)
+    {
+        return setBytes(gl::ShaderType::Fragment, bytes, size, index);
+    }
     template <typename T>
     RenderCommandEncoder &setFragmentData(const T &data, uint32_t index)
     {
@@ -304,8 +322,36 @@ class RenderCommandEncoder final : public CommandEncoder
     RenderCommandEncoder &setFragmentSamplerState(id<MTLSamplerState> state,
                                                   float lodMinClamp,
                                                   float lodMaxClamp,
-                                                  uint32_t index);
-    RenderCommandEncoder &setFragmentTexture(const TextureRef &texture, uint32_t index);
+                                                  uint32_t index)
+    {
+        return setSamplerState(gl::ShaderType::Fragment, state, lodMinClamp, lodMaxClamp, index);
+    }
+    RenderCommandEncoder &setFragmentTexture(const TextureRef &texture, uint32_t index)
+    {
+        return setTexture(gl::ShaderType::Fragment, texture, index);
+    }
+
+    RenderCommandEncoder &setBuffer(gl::ShaderType shaderType,
+                                    const BufferRef &buffer,
+                                    uint32_t offset,
+                                    uint32_t index);
+    RenderCommandEncoder &setBytes(gl::ShaderType shaderType,
+                                   const uint8_t *bytes,
+                                   size_t size,
+                                   uint32_t index);
+    template <typename T>
+    RenderCommandEncoder &setData(gl::ShaderType shaderType, const T &data, uint32_t index)
+    {
+        return setBytes(shaderType, reinterpret_cast<const uint8_t *>(&data), sizeof(T), index);
+    }
+    RenderCommandEncoder &setSamplerState(gl::ShaderType shaderType,
+                                          id<MTLSamplerState> state,
+                                          float lodMinClamp,
+                                          float lodMaxClamp,
+                                          uint32_t index);
+    RenderCommandEncoder &setTexture(gl::ShaderType shaderType,
+                                     const TextureRef &texture,
+                                     uint32_t index);
 
     RenderCommandEncoder &draw(MTLPrimitiveType primitiveType,
                                uint32_t vertexStart,
@@ -386,6 +432,11 @@ class RenderCommandEncoder final : public CommandEncoder
     bool mRecording    = false;
     bool mHasDrawCalls = false;
     IntermediateCommandStream mCommands;
+
+    gl::ShaderMap<uint8_t> mSetBufferCmds;
+    gl::ShaderMap<uint8_t> mSetBytesCmds;
+    gl::ShaderMap<uint8_t> mSetTextureCmds;
+    gl::ShaderMap<uint8_t> mSetSamplerCmds;
 };
 
 class BlitCommandEncoder final : public CommandEncoder

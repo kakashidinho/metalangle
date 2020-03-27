@@ -1045,11 +1045,12 @@ angle::Result TextureMtl::syncState(const gl::Context *context,
     return angle::Result::Continue;
 }
 
-angle::Result TextureMtl::bindVertexShader(const gl::Context *context,
-                                           mtl::RenderCommandEncoder *cmdEncoder,
-                                           gl::Sampler *sampler,
-                                           int textureSlotIndex,
-                                           int samplerSlotIndex)
+angle::Result TextureMtl::bindToShader(const gl::Context *context,
+                                       mtl::RenderCommandEncoder *cmdEncoder,
+                                       gl::ShaderType shaderType,
+                                       gl::Sampler *sampler,
+                                       int textureSlotIndex,
+                                       int samplerSlotIndex)
 {
     ASSERT(mNativeTexture);
 
@@ -1073,42 +1074,9 @@ angle::Result TextureMtl::bindVertexShader(const gl::Context *context,
 
     minLodClamp = std::max(minLodClamp, 0.f);
 
-    cmdEncoder->setVertexTexture(mNativeTexture, textureSlotIndex);
-    cmdEncoder->setVertexSamplerState(samplerState, minLodClamp, maxLodClamp, samplerSlotIndex);
-
-    return angle::Result::Continue;
-}
-
-angle::Result TextureMtl::bindFragmentShader(const gl::Context *context,
-                                             mtl::RenderCommandEncoder *cmdEncoder,
-                                             gl::Sampler *sampler,
-                                             int textureSlotIndex,
-                                             int samplerSlotIndex)
-{
-    ASSERT(mNativeTexture);
-
-    float minLodClamp;
-    float maxLodClamp;
-    id<MTLSamplerState> samplerState;
-
-    if (!sampler)
-    {
-        samplerState = mMetalSamplerState;
-        minLodClamp  = mState.getSamplerState().getMinLod();
-        maxLodClamp  = mState.getSamplerState().getMaxLod();
-    }
-    else
-    {
-        SamplerMtl *samplerMtl = mtl::GetImpl(sampler);
-        samplerState           = samplerMtl->getSampler(mtl::GetImpl(context));
-        minLodClamp            = sampler->getSamplerState().getMinLod();
-        maxLodClamp            = sampler->getSamplerState().getMaxLod();
-    }
-
-    minLodClamp = std::max(minLodClamp, 0.f);
-
-    cmdEncoder->setFragmentTexture(mNativeTexture, textureSlotIndex);
-    cmdEncoder->setFragmentSamplerState(samplerState, minLodClamp, maxLodClamp, samplerSlotIndex);
+    cmdEncoder->setTexture(shaderType, mNativeTexture, textureSlotIndex);
+    cmdEncoder->setSamplerState(shaderType, samplerState, minLodClamp, maxLodClamp,
+                                samplerSlotIndex);
 
     return angle::Result::Continue;
 }

@@ -937,21 +937,8 @@ angle::Result ProgramMtl::commitUniforms(ContextMtl *context, mtl::RenderCommand
         {
             continue;
         }
-        switch (shaderType)
-        {
-            case gl::ShaderType::Vertex:
-                cmdEncoder->setVertexBytes(uniformBlock.uniformData.data(),
-                                           uniformBlock.uniformData.size(),
-                                           mtl::kDefaultUniformsBindingIndex);
-                break;
-            case gl::ShaderType::Fragment:
-                cmdEncoder->setFragmentBytes(uniformBlock.uniformData.data(),
-                                             uniformBlock.uniformData.size(),
-                                             mtl::kDefaultUniformsBindingIndex);
-                break;
-            default:
-                UNREACHABLE();
-        }
+        cmdEncoder->setBytes(shaderType, uniformBlock.uniformData.data(),
+                             uniformBlock.uniformData.size(), mtl::kDefaultUniformsBindingIndex);
 
         mDefaultUniformBlocksDirty.reset(shaderType);
     }
@@ -1017,37 +1004,15 @@ angle::Result ProgramMtl::updateTextures(const gl::Context *glContext,
                         samplerState->getCompareMode(), samplerState->getCompareFunc());
                 }
 
-                switch (shaderType)
-                {
-                    case gl::ShaderType::Vertex:
-                        ANGLE_TRY(textureMtl->bindVertexShader(glContext, cmdEncoder, sampler,
-                                                               textureSlot, samplerSlot));
-                        break;
-                    case gl::ShaderType::Fragment:
-                        ANGLE_TRY(textureMtl->bindFragmentShader(glContext, cmdEncoder, sampler,
-                                                                 textureSlot, samplerSlot));
-                        break;
-                    default:
-                        UNREACHABLE();
-                }
+                ANGLE_TRY(textureMtl->bindToShader(glContext, cmdEncoder, shaderType, sampler,
+                                                   textureSlot, samplerSlot));
             }  // for array elements
         }      // for sampler bindings
 
         if (hasDepthSampler)
         {
-            switch (shaderType)
-            {
-                case gl::ShaderType::Vertex:
-                    cmdEncoder->setVertexData(mShadowCompareModes,
-                                              mtl::kShadowSamplerCompareModesBindingIndex);
-                    break;
-                case gl::ShaderType::Fragment:
-                    cmdEncoder->setFragmentData(mShadowCompareModes,
-                                                mtl::kShadowSamplerCompareModesBindingIndex);
-                    break;
-                default:
-                    UNREACHABLE();
-            }
+            cmdEncoder->setData(shaderType, mShadowCompareModes,
+                                mtl::kShadowSamplerCompareModesBindingIndex);
         }
     }  // for shader types
 
@@ -1135,8 +1100,8 @@ angle::Result ProgramMtl::legalizeUniformBufferOffsets(
         }
 
         BufferMtl *bufferMtl = mtl::GetImpl(bufferBinding.get());
-        size_t srcOffset = std::min<size_t>(bufferBinding.getOffset(), bufferMtl->size());
-        size_t offsetModulo = srcOffset % mtl::kUniformBufferSettingOffsetMinAlignment;
+        size_t srcOffset     = std::min<size_t>(bufferBinding.getOffset(), bufferMtl->size());
+        size_t offsetModulo  = srcOffset % mtl::kUniformBufferSettingOffsetMinAlignment;
         if (offsetModulo)
         {
             ConversionBufferMtl *conversion =
@@ -1196,19 +1161,8 @@ angle::Result ProgramMtl::bindUniformBuffersToDiscreteSlots(
 
         mtl::BufferRef mtlBuffer = mLegalizedOffsetedUniformBuffers[bufferIndex].first;
         uint32_t offset          = mLegalizedOffsetedUniformBuffers[bufferIndex].second;
-        switch (shaderType)
-        {
-            case gl::ShaderType::Vertex:
-                cmdEncoder->setVertexBuffer(mtlBuffer, offset,
-                                            mtl::kUBOArgumentBufferBindingIndex + bufferIndex);
-                break;
-            case gl::ShaderType::Fragment:
-                cmdEncoder->setFragmentBuffer(mtlBuffer, offset,
-                                              mtl::kUBOArgumentBufferBindingIndex + bufferIndex);
-                break;
-            default:
-                UNREACHABLE();
-        }
+        cmdEncoder->setBuffer(shaderType, mtlBuffer, offset,
+                              mtl::kUBOArgumentBufferBindingIndex + bufferIndex);
     }
     return angle::Result::Continue;
 }
@@ -1264,20 +1218,8 @@ angle::Result ProgramMtl::encodeUniformBuffersInfoArgumentBuffer(
 
     ANGLE_TRY(bufferEncoder.bufferPool.commit(context));
 
-    switch (shaderType)
-    {
-        case gl::ShaderType::Vertex:
-            cmdEncoder->setVertexBuffer(argumentBuffer, static_cast<uint32_t>(argumentBufferOffset),
-                                        mtl::kUBOArgumentBufferBindingIndex);
-            break;
-        case gl::ShaderType::Fragment:
-            cmdEncoder->setFragmentBuffer(argumentBuffer,
-                                          static_cast<uint32_t>(argumentBufferOffset),
-                                          mtl::kUBOArgumentBufferBindingIndex);
-            break;
-        default:
-            UNREACHABLE();
-    }
+    cmdEncoder->setBuffer(shaderType, argumentBuffer, static_cast<uint32_t>(argumentBufferOffset),
+                          mtl::kUBOArgumentBufferBindingIndex);
     return angle::Result::Continue;
 }
 

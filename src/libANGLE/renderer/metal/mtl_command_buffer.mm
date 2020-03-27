@@ -28,6 +28,7 @@ namespace
 {
 
 #define ANGLE_MTL_CMD_X(PROC)            \
+    PROC(Invalid)                        \
     PROC(SetRenderPipelineState)         \
     PROC(SetTriangleFillMode)            \
     PROC(SetFrontFacingWinding)          \
@@ -66,6 +67,11 @@ enum class CmdType : uint8_t
 };
 
 // Commands decoder
+void InvalidCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
+{
+    UNREACHABLE();
+}
+
 void SetRenderPipelineStateCmd(id<MTLRenderCommandEncoder> encoder,
                                IntermediateCommandStream *stream)
 {
@@ -811,6 +817,28 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer *cmdBuffer,
     {
         mCachedRenderPassDescObjC = [MTLRenderPassDescriptor renderPassDescriptor];
     }
+
+    static_assert(sizeof(uint8_t) == sizeof(CmdType), "CmdType was expected to be 8 bit");
+    for (gl::ShaderType shaderType : gl::AllShaderTypes())
+    {
+        mSetBufferCmds[shaderType]  = static_cast<uint8_t>(CmdType::Invalid);
+        mSetBytesCmds[shaderType]   = static_cast<uint8_t>(CmdType::Invalid);
+        mSetTextureCmds[shaderType] = static_cast<uint8_t>(CmdType::Invalid);
+        mSetSamplerCmds[shaderType] = static_cast<uint8_t>(CmdType::Invalid);
+    }
+
+    mSetBufferCmds[gl::ShaderType::Vertex]   = static_cast<uint8_t>(CmdType::SetVertexBuffer);
+    mSetBufferCmds[gl::ShaderType::Fragment] = static_cast<uint8_t>(CmdType::SetFragmentBuffer);
+
+    mSetBytesCmds[gl::ShaderType::Vertex]   = static_cast<uint8_t>(CmdType::SetVertexBytes);
+    mSetBytesCmds[gl::ShaderType::Fragment] = static_cast<uint8_t>(CmdType::SetFragmentBytes);
+
+    mSetTextureCmds[gl::ShaderType::Vertex]   = static_cast<uint8_t>(CmdType::SetVertexTexture);
+    mSetTextureCmds[gl::ShaderType::Fragment] = static_cast<uint8_t>(CmdType::SetFragmentTexture);
+
+    mSetSamplerCmds[gl::ShaderType::Vertex] = static_cast<uint8_t>(CmdType::SetVertexSamplerState);
+    mSetSamplerCmds[gl::ShaderType::Fragment] =
+        static_cast<uint8_t>(CmdType::SetFragmentSamplerState);
 }
 RenderCommandEncoder::~RenderCommandEncoder() {}
 
@@ -1125,51 +1153,57 @@ RenderCommandEncoder &RenderCommandEncoder::setBlendColor(float r, float g, floa
     return *this;
 }
 
-RenderCommandEncoder &RenderCommandEncoder::setVertexBuffer(const BufferRef &buffer,
-                                                            uint32_t offset,
+RenderCommandEncoder &RenderCommandEncoder::setBuffer(gl::ShaderType shaderType,
+                                                      const BufferRef &buffer,
+                                                      uint32_t offset,
+                                                      uint32_t index)
+{
+    if (index >= kMaxShaderBuffers)
+    {
+        return *this;
+    }
+
+    cmdBuffer().setReadDependency(buffer);
+
+    id<MTLBuffer> mtlBuffer = (buffer ? buffer->get() : nil);
+    mCommands.push(static_cast<CmdType>(mSetBufferCmds[shaderType]))
+        .push([mtlBuffer ANGLE_MTL_RETAIN])
+        .push(offset)
+        .push(index);
+
+    return *this;
+}
+
+RenderCommandEncoder &RenderCommandEncoder::setBytes(gl::ShaderType shaderType,
+                                                     const uint8_t *bytes,
+                                                     size_t size,
+                                                     uint32_t index)
+{
+    if (index >= kMaxShaderBuffers)
+    {
+        return *this;
+    }
+
+    mCommands.push(static_cast<CmdType>(mSetBytesCmds[shaderType]))
+        .push(size)
+        .push(bytes, size)
+        .push(index);
+
+    return *this;
+}
+
+RenderCommandEncoder &RenderCommandEncoder::setSamplerState(gl::ShaderType shaderType,
+                                                            id<MTLSamplerState> state,
+                                                            float lodMinClamp,
+                                                            float lodMaxClamp,
                                                             uint32_t index)
 {
-    if (index >= kMaxShaderBuffers)
-    {
-        return *this;
-    }
-
-    cmdBuffer().setReadDependency(buffer);
-
-    id<MTLBuffer> mtlBuffer = (buffer ? buffer->get() : nil);
-    mCommands.push(CmdType::SetVertexBuffer)
-        .push([mtlBuffer ANGLE_MTL_RETAIN])
-        .push(offset)
-        .push(index);
-
-    return *this;
-}
-
-RenderCommandEncoder &RenderCommandEncoder::setVertexBytes(const uint8_t *bytes,
-                                                           size_t size,
-                                                           uint32_t index)
-{
-    if (index >= kMaxShaderBuffers)
-    {
-        return *this;
-    }
-
-    mCommands.push(CmdType::SetVertexBytes).push(size).push(bytes, size).push(index);
-
-    return *this;
-}
-
-RenderCommandEncoder &RenderCommandEncoder::setVertexSamplerState(id<MTLSamplerState> state,
-                                                                  float lodMinClamp,
-                                                                  float lodMaxClamp,
-                                                                  uint32_t index)
-{
     if (index >= kMaxShaderSamplers)
     {
         return *this;
     }
 
-    mCommands.push(CmdType::SetVertexSamplerState)
+    mCommands.push(static_cast<CmdType>(mSetSamplerCmds[shaderType]))
         .push([state ANGLE_MTL_RETAIN])
         .push(lodMinClamp)
         .push(lodMaxClamp)
@@ -1177,8 +1211,9 @@ RenderCommandEncoder &RenderCommandEncoder::setVertexSamplerState(id<MTLSamplerS
 
     return *this;
 }
-RenderCommandEncoder &RenderCommandEncoder::setVertexTexture(const TextureRef &texture,
-                                                             uint32_t index)
+RenderCommandEncoder &RenderCommandEncoder::setTexture(gl::ShaderType shaderType,
+                                                       const TextureRef &texture,
+                                                       uint32_t index)
 {
     if (index >= kMaxShaderSamplers)
     {
@@ -1189,76 +1224,9 @@ RenderCommandEncoder &RenderCommandEncoder::setVertexTexture(const TextureRef &t
 
     id<MTLTexture> mtlTexture = (texture ? texture->get() : nil);
 
-    mCommands.push(CmdType::SetVertexTexture).push([mtlTexture ANGLE_MTL_RETAIN]).push(index);
-
-    return *this;
-}
-
-RenderCommandEncoder &RenderCommandEncoder::setFragmentBuffer(const BufferRef &buffer,
-                                                              uint32_t offset,
-                                                              uint32_t index)
-{
-    if (index >= kMaxShaderBuffers)
-    {
-        return *this;
-    }
-
-    cmdBuffer().setReadDependency(buffer);
-
-    id<MTLBuffer> mtlBuffer = (buffer ? buffer->get() : nil);
-    mCommands.push(CmdType::SetFragmentBuffer)
-        .push([mtlBuffer ANGLE_MTL_RETAIN])
-        .push(offset)
+    mCommands.push(static_cast<CmdType>(mSetTextureCmds[shaderType]))
+        .push([mtlTexture ANGLE_MTL_RETAIN])
         .push(index);
-
-    return *this;
-}
-
-RenderCommandEncoder &RenderCommandEncoder::setFragmentBytes(const uint8_t *bytes,
-                                                             size_t size,
-                                                             uint32_t index)
-{
-    if (index >= kMaxShaderBuffers)
-    {
-        return *this;
-    }
-
-    mCommands.push(CmdType::SetFragmentBytes).push(size).push(bytes, size).push(index);
-
-    return *this;
-}
-
-RenderCommandEncoder &RenderCommandEncoder::setFragmentSamplerState(id<MTLSamplerState> state,
-                                                                    float lodMinClamp,
-                                                                    float lodMaxClamp,
-                                                                    uint32_t index)
-{
-    if (index >= kMaxShaderSamplers)
-    {
-        return *this;
-    }
-
-    mCommands.push(CmdType::SetFragmentSamplerState)
-        .push([state ANGLE_MTL_RETAIN])
-        .push(lodMinClamp)
-        .push(lodMaxClamp)
-        .push(index);
-
-    return *this;
-}
-RenderCommandEncoder &RenderCommandEncoder::setFragmentTexture(const TextureRef &texture,
-                                                               uint32_t index)
-{
-    if (index >= kMaxShaderSamplers)
-    {
-        return *this;
-    }
-
-    cmdBuffer().setReadDependency(texture);
-
-    id<MTLTexture> mtlTexture = (texture ? texture->get() : nil);
-
-    mCommands.push(CmdType::SetFragmentTexture).push([mtlTexture ANGLE_MTL_RETAIN]).push(index);
 
     return *this;
 }
