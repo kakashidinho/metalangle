@@ -259,7 +259,7 @@ void BufferPool::releaseInFlightBuffers(ContextMtl *contextMtl)
     mInFlightBuffers.clear();
 }
 
-void BufferPool::destroyBufferList(ContextMtl *contextMtl, std::vector<BufferRef> *buffers)
+void BufferPool::destroyBufferList(ContextMtl *contextMtl, std::deque<BufferRef> *buffers)
 {
     ASSERT(mBuffersAllocated >= buffers->size());
     mBuffersAllocated -= buffers->size();

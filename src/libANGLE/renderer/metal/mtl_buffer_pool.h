@@ -12,6 +12,8 @@
 
 #include "libANGLE/renderer/metal/mtl_resources.h"
 
+#include <deque>
+
 namespace rx
 {
 
@@ -98,7 +100,7 @@ class BufferPool
     bool shouldAllocateInSharedMem() const;
     void reset();
     angle::Result allocateNewBuffer(ContextMtl *contextMtl);
-    void destroyBufferList(ContextMtl *contextMtl, std::vector<BufferRef> *buffers);
+    void destroyBufferList(ContextMtl *contextMtl, std::deque<BufferRef> *buffers);
 
     size_t mInitialSize;
     BufferRef mBuffer;
@@ -106,8 +108,8 @@ class BufferPool
     size_t mSize;
     size_t mAlignment;
 
-    std::vector<BufferRef> mInFlightBuffers;
-    std::vector<BufferRef> mBufferFreeList;
+    std::deque<BufferRef> mInFlightBuffers;
+    std::deque<BufferRef> mBufferFreeList;
 
     size_t mBuffersAllocated;
     size_t mMaxBuffers;
