@@ -160,6 +160,18 @@ constexpr MTLBlitOption BlitOptionRowLinearPVRTC = MTLBlitOptionNone;
 constexpr MTLBlitOption BlitOptionRowLinearPVRTC           = MTLBlitOptionRowLinearPVRTC;
 #endif
 
+#if defined(__IPHONE_13_0) || defined(__MAC_10_15)
+using TextureSwizzleChannels                  = MTLTextureSwizzleChannels;
+using RenderStages                            = MTLRenderStages;
+constexpr MTLRenderStages RenderStageVertex   = MTLRenderStageVertex;
+constexpr MTLRenderStages RenderStageFragment = MTLRenderStageFragment;
+#else
+using TextureSwizzleChannels                               = int;
+using RenderStages                                         = int;
+constexpr RenderStages RenderStageVertex                   = 1;
+constexpr RenderStages RenderStageFragment                 = 2;
+#endif
+
 enum class PixelType
 {
     Int,

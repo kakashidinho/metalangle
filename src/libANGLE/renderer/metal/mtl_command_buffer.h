@@ -383,7 +383,7 @@ class RenderCommandEncoder final : public CommandEncoder
 
     RenderCommandEncoder &useResource(const BufferRef &resource,
                                       MTLResourceUsage usage,
-                                      MTLRenderStages states);
+                                      mtl::RenderStages states);
 
     RenderCommandEncoder &setColorStoreAction(MTLStoreAction action, uint32_t colorAttachmentIndex);
     // Set store action for every color attachment.

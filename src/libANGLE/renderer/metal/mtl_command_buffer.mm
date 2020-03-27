@@ -307,8 +307,17 @@ void UseResourceCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStre
 {
     auto resource = stream->fetch<id<MTLResource>>();
     auto usage    = stream->fetch<MTLResourceUsage>();
-    auto stages   = stream->fetch<MTLRenderStages>();
-    [encoder useResource:resource usage:usage stages:stages];
+    auto stages   = stream->fetch<mtl::RenderStages>();
+#if defined(__IPHONE_13_0) || defined(__MAC_10_15)
+    if (ANGLE_APPLE_AVAILABLE_XCI(10.15, 13.0, 13.0))
+    {
+        [encoder useResource:resource usage:usage stages:stages];
+    }
+    else
+#endif
+    {
+        [encoder useResource:resource usage:usage];
+    }
 }
 
 void InsertDebugsignCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
@@ -1344,7 +1353,7 @@ RenderCommandEncoder &RenderCommandEncoder::setVisibilityResultMode(MTLVisibilit
 
 RenderCommandEncoder &RenderCommandEncoder::useResource(const BufferRef &resource,
                                                         MTLResourceUsage usage,
-                                                        MTLRenderStages states)
+                                                        mtl::RenderStages states)
 {
     if (!resource)
     {

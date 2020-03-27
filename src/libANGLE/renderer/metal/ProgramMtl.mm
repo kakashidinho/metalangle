@@ -1097,7 +1097,7 @@ angle::Result ProgramMtl::updateUniformBuffers(ContextMtl *context,
 
         // Remove any other stages other than vertex and fragment.
         uint32_t stages = mArgumentBufferRenderStageUsages[bufferIndex] &
-                          (MTLRenderStageVertex | MTLRenderStageFragment);
+                          (mtl::RenderStageVertex | mtl::RenderStageFragment);
 
         if (stages == 0)
         {
@@ -1105,7 +1105,7 @@ angle::Result ProgramMtl::updateUniformBuffers(ContextMtl *context,
         }
 
         cmdEncoder->useResource(mLegalizedOffsetedUniformBuffers[bufferIndex].first,
-                                MTLResourceUsageRead, static_cast<MTLRenderStages>(stages));
+                                MTLResourceUsageRead, static_cast<mtl::RenderStages>(stages));
     }
 
     return angle::Result::Continue;
