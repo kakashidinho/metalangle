@@ -23,6 +23,8 @@ namespace mtl
 namespace
 {
 
+constexpr uint32_t kMaxUBODiscreteBindingSlots = kMaxShaderBuffers - kUBOArgumentBufferBindingIndex;
+
 constexpr uint32_t kGlslangTextureDescSet        = 0;
 constexpr uint32_t kGlslangDefaultUniformDescSet = 1;
 constexpr uint32_t kGlslangDriverUniformsDescSet = 2;
@@ -68,16 +70,15 @@ spv::ExecutionModel ShaderTypeToSpvExecutionModel(gl::ShaderType shaderType)
     }
 }
 
-using BindingField = uint32_t spirv_cross::MSLResourceBinding::*;
-template <BindingField bindingField>
-angle::Result BindResources(spirv_cross::CompilerMSL *compiler,
-                            const spirv_cross::SmallVector<spirv_cross::Resource> &resources,
-                            gl::ShaderType shaderType,
-                            bool *argumentBufferUsed)
+void BindBuffers(spirv_cross::CompilerMSL *compiler,
+                 const spirv_cross::SmallVector<spirv_cross::Resource> &resources,
+                 gl::ShaderType shaderType,
+                 bool *argumentBufferUsed)
 {
     auto &compilerMsl = *compiler;
 
-    *argumentBufferUsed = false;
+    uint32_t totalUniformBufferSlots = 0;
+    std::vector<spirv_cross::MSLResourceBinding> uniformBufferBindings;
 
     for (const spirv_cross::Resource &resource : resources)
     {
@@ -121,22 +122,54 @@ angle::Result BindResources(spirv_cross::CompilerMSL *compiler,
                 }
                 break;
             case kGlslangShaderResourceDescSet:
-                bindingPoint        = resBinding.binding;
-                *argumentBufferUsed = true;
-                break;
+            {
+                const spirv_cross::SPIRType &type = compilerMsl.get_type_from_variable(resource.id);
+                if (!type.array.empty())
+                {
+                    totalUniformBufferSlots += type.array[0];
+                }
+                else
+                {
+                    totalUniformBufferSlots++;
+                }
+                uniformBufferBindings.push_back(resBinding);
+            }
+                continue;
             default:
                 // We don't support this descriptor set.
                 continue;
         }
 
-        // bindingField can be buffer or texture, which will be translated to [[buffer(d)]] or
-        // [[texture(d)]] or [[sampler(d)]]
-        resBinding.*bindingField = bindingPoint;
+        resBinding.msl_buffer = bindingPoint;
 
         compilerMsl.add_msl_resource_binding(resBinding);
     }
 
-    return angle::Result::Continue;
+    if (totalUniformBufferSlots > kMaxUBODiscreteBindingSlots)
+    {
+        // If shader more than kMaxUBODiscreteBindingSlots number of UBOs, encoder them all into an
+        // argument buffer.
+        *argumentBufferUsed = true;
+        for (spirv_cross::MSLResourceBinding &resBinding : uniformBufferBindings)
+        {
+            // Translate to metal [[id(n)]]
+            resBinding.msl_buffer = resBinding.binding;
+
+            compilerMsl.add_msl_resource_binding(resBinding);
+        }
+    }
+    else
+    {
+        *argumentBufferUsed = false;
+        // Use discrete buffer binding slot for UBOs
+        for (spirv_cross::MSLResourceBinding &resBinding : uniformBufferBindings)
+        {
+            // Translate to metal [[buffer(n)]]
+            resBinding.msl_buffer = kUBOArgumentBufferBindingIndex + resBinding.binding;
+
+            compilerMsl.add_msl_resource_binding(resBinding);
+        }
+    }
 }
 
 angle::Result GetAssignedSamplerBindings(
@@ -204,7 +237,7 @@ class SpirvToMslCompiler : public spirv_cross::CompilerMSL
   public:
     SpirvToMslCompiler(std::vector<uint32_t> &&spriv) : spirv_cross::CompilerMSL(spriv) {}
 
-    std::string compile() override
+    std::string compileEx(gl::ShaderType shaderType, bool *hasArgumentBufferOut)
     {
         spirv_cross::CompilerMSL::Options compOpt;
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
@@ -224,16 +257,38 @@ class SpirvToMslCompiler : public spirv_cross::CompilerMSL
             compOpt.set_msl_version(2);
         }
 
-        // Enable argument buffer for UBO.
-        compOpt.argument_buffers = true;
+        // Tell spirv-cross to map default & driver uniform blocks as we want
+        spirv_cross::ShaderResources mslRes = spirv_cross::CompilerMSL::get_shader_resources();
+
+        BindBuffers(this, mslRes.uniform_buffers, shaderType, hasArgumentBufferOut);
+
+        if (*hasArgumentBufferOut)
+        {
+            // Enable argument buffer.
+            compOpt.argument_buffers = true;
+
+            // Force UBO argument buffer binding to start at kUBOArgumentBufferBindingIndex.
+            spirv_cross::MSLResourceBinding argBufferBinding = {};
+            argBufferBinding.stage    = ShaderTypeToSpvExecutionModel(shaderType);
+            argBufferBinding.desc_set = kGlslangShaderResourceDescSet;
+            argBufferBinding.binding =
+                spirv_cross::kArgumentBufferBinding;  // spirv-cross built-in binding.
+            argBufferBinding.msl_buffer = kUBOArgumentBufferBindingIndex;  // Actual binding.
+            spirv_cross::CompilerMSL::add_msl_resource_binding(argBufferBinding);
+
+            // Force discrete slot bindings for textures, default uniforms & driver uniforms
+            // instead of using argument buffer.
+            spirv_cross::CompilerMSL::add_discrete_descriptor_set(kGlslangTextureDescSet);
+            spirv_cross::CompilerMSL::add_discrete_descriptor_set(kGlslangDefaultUniformDescSet);
+            spirv_cross::CompilerMSL::add_discrete_descriptor_set(kGlslangDriverUniformsDescSet);
+        }
+        else
+        {
+            // Disable argument buffer generation for uniform buffers
+            compOpt.argument_buffers = false;
+        }
 
         spirv_cross::CompilerMSL::set_msl_options(compOpt);
-
-        // Force discrete slot bindings for textures, default uniforms & driver uniforms
-        // instead of using argument buffer.
-        spirv_cross::CompilerMSL::add_discrete_descriptor_set(kGlslangTextureDescSet);
-        spirv_cross::CompilerMSL::add_discrete_descriptor_set(kGlslangDefaultUniformDescSet);
-        spirv_cross::CompilerMSL::add_discrete_descriptor_set(kGlslangDriverUniformsDescSet);
 
         addBuiltInResources();
         analyzeShaderVariables();
@@ -748,25 +803,10 @@ angle::Result SpirvCodeToMsl(ErrorHandler *context,
         std::vector<uint32_t> &sprivCode = sprivShaderCode->at(shaderType);
         SpirvToMslCompiler compilerMsl(std::move(sprivCode));
 
-        // Tell spirv-cross to map default & driver uniform blocks as we want
-        spirv_cross::ShaderResources mslRes = compilerMsl.get_shader_resources();
-
-        ANGLE_TRY(BindResources<&spirv_cross::MSLResourceBinding::msl_buffer>(
-            &compilerMsl, mslRes.uniform_buffers, shaderType,
-            &mslShaderInfoOut->at(shaderType).hasArgumentBuffer));
-
-        // Force UBO argument buffer binding to start at kUBOArgumentBufferBindingIndex.
-        spirv_cross::MSLResourceBinding argBufferBinding = {};
-        argBufferBinding.stage    = ShaderTypeToSpvExecutionModel(shaderType);
-        argBufferBinding.desc_set = kGlslangShaderResourceDescSet;
-        argBufferBinding.binding =
-            spirv_cross::kArgumentBufferBinding;  // spirv-cross built-in binding.
-        argBufferBinding.msl_buffer = kUBOArgumentBufferBindingIndex;  // Actual binding.
-        compilerMsl.add_msl_resource_binding(argBufferBinding);
-
         // NOTE(hqle): spirv-cross uses exceptions to report error, what should we do here
         // in case of error?
-        std::string translatedMsl = compilerMsl.compile();
+        std::string translatedMsl =
+            compilerMsl.compileEx(shaderType, &mslShaderInfoOut->at(shaderType).hasArgumentBuffer);
         if (translatedMsl.size() == 0)
         {
             ANGLE_MTL_CHECK(context, false, GL_INVALID_OPERATION);

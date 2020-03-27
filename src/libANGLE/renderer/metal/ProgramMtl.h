@@ -147,6 +147,18 @@ class ProgramMtl : public ProgramImpl
     angle::Result updateUniformBuffers(ContextMtl *context,
                                        mtl::RenderCommandEncoder *cmdEncoder,
                                        bool coverageMaskEnabled);
+    angle::Result legalizeUniformBufferOffsets(ContextMtl *context,
+                                               const std::vector<gl::InterfaceBlock> &blocks);
+    angle::Result bindUniformBuffersToDiscreteSlots(ContextMtl *context,
+                                                    mtl::RenderCommandEncoder *cmdEncoder,
+                                                    const std::vector<gl::InterfaceBlock> &blocks,
+                                                    gl::ShaderType shaderType);
+    angle::Result encodeUniformBuffersInfoArgumentBuffer(
+        ContextMtl *context,
+        mtl::RenderCommandEncoder *cmdEncoder,
+        const std::vector<gl::InterfaceBlock> &blocks,
+        gl::ShaderType shaderType,
+        int coverageMaskEnabledIdx);
 
     void reset(ContextMtl *context);
 
@@ -199,10 +211,18 @@ class ProgramMtl : public ProgramImpl
     // These are just pointers pointing to m(Vertex|Fragment)ArgumentBufferEncoder below.
     // Since only fragment shader has two sample coverage mask variances. Storing pointers in
     // gl::ShaderMap for easier indexing by shaderType and coverage mask enable flag later.
-    gl::ShaderMap<std::array<ProgramArgumentBufferEncoderMtl*, 2>> mArgumentBufferEncoders;
+    gl::ShaderMap<std::array<ProgramArgumentBufferEncoderMtl *, 2>> mArgumentBufferEncoders;
 
     ProgramArgumentBufferEncoderMtl mVertexArgumentBufferEncoder;
     std::array<ProgramArgumentBufferEncoderMtl, 2> mFragmentArgumentBufferEncoders;
+
+    // Scratch data:
+    // Legalized buffers and their offsets. For example, uniform buffer's offset=1 is not a valid
+    // offset, it will be converted to legal offset and the result is stored in this array.
+    std::vector<std::pair<mtl::BufferRef, uint32_t>> mLegalizedOffsetedUniformBuffers;
+    // Stores the render stages usage of each uniform buffer. Only used if the buffers are encoded
+    // into an argument buffer.
+    std::vector<uint32_t> mArgumentBufferRenderStageUsages;
 
     mtl::RenderPipelineCache mMetalRenderPipelineCache;
 };

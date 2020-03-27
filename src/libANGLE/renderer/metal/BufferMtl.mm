@@ -45,19 +45,18 @@ angle::Result GetFirstLastIndices(const IndexType *indices,
 }  // namespace
 
 // ConversionBufferMtl implementation.
-ConversionBufferMtl::ConversionBufferMtl(const gl::Context *context,
+ConversionBufferMtl::ConversionBufferMtl(ContextMtl *contextMtl,
                                          size_t initialSize,
                                          size_t alignment)
     : dirty(true), convertedBuffer(nullptr), convertedOffset(0)
 {
-    ContextMtl *contextMtl = mtl::GetImpl(context);
     data.initialize(contextMtl, initialSize, alignment);
 }
 
 ConversionBufferMtl::~ConversionBufferMtl() = default;
 
 // IndexConversionBufferMtl implementation.
-IndexConversionBufferMtl::IndexConversionBufferMtl(const gl::Context *context,
+IndexConversionBufferMtl::IndexConversionBufferMtl(ContextMtl *context,
                                                    gl::DrawElementsType typeIn,
                                                    size_t offsetIn)
     : ConversionBufferMtl(context,
@@ -67,11 +66,17 @@ IndexConversionBufferMtl::IndexConversionBufferMtl(const gl::Context *context,
       offset(offsetIn)
 {}
 
-// BufferMtl::VertexConversionBuffer implementation.
-BufferMtl::VertexConversionBuffer::VertexConversionBuffer(const gl::Context *context,
-                                                          angle::FormatID formatIDIn,
-                                                          GLuint strideIn,
-                                                          size_t offsetIn)
+// UniformConversionBufferMtl implementation
+UniformConversionBufferMtl::UniformConversionBufferMtl(ContextMtl *context, size_t offsetIn)
+    : ConversionBufferMtl(context, 0, mtl::kUniformBufferSettingOffsetMinAlignment),
+      offset(offsetIn)
+{}
+
+// VertexConversionBufferMtl implementation.
+VertexConversionBufferMtl::VertexConversionBufferMtl(ContextMtl *context,
+                                                     angle::FormatID formatIDIn,
+                                                     GLuint strideIn,
+                                                     size_t offsetIn)
     : ConversionBufferMtl(context, 0, mtl::kVertexAttribBufferStrideAlignment),
       formatID(formatIDIn),
       stride(strideIn),
@@ -285,12 +290,12 @@ uint8_t *BufferMtl::syncAndObtainShadowCopy(ContextMtl *contextMtl)
     return mShadowCopy.data();
 }
 
-ConversionBufferMtl *BufferMtl::getVertexConversionBuffer(const gl::Context *context,
+ConversionBufferMtl *BufferMtl::getVertexConversionBuffer(ContextMtl *context,
                                                           angle::FormatID formatID,
                                                           GLuint stride,
                                                           size_t offset)
 {
-    for (VertexConversionBuffer &buffer : mVertexConversionBuffers)
+    for (VertexConversionBufferMtl &buffer : mVertexConversionBuffers)
     {
         if (buffer.formatID == formatID && buffer.stride == stride && buffer.offset == offset)
         {
@@ -302,7 +307,7 @@ ConversionBufferMtl *BufferMtl::getVertexConversionBuffer(const gl::Context *con
     return &mVertexConversionBuffers.back();
 }
 
-IndexConversionBufferMtl *BufferMtl::getIndexConversionBuffer(const gl::Context *context,
+IndexConversionBufferMtl *BufferMtl::getIndexConversionBuffer(ContextMtl *context,
                                                               gl::DrawElementsType type,
                                                               size_t offset)
 {
@@ -318,14 +323,37 @@ IndexConversionBufferMtl *BufferMtl::getIndexConversionBuffer(const gl::Context 
     return &mIndexConversionBuffers.back();
 }
 
-void BufferMtl::markConversionBuffersDirty()
+ConversionBufferMtl *BufferMtl::getUniformConversionBuffer(ContextMtl *context, size_t offset)
 {
-    for (VertexConversionBuffer &buffer : mVertexConversionBuffers)
+    for (UniformConversionBufferMtl &buffer : mUniformConversionBuffers)
     {
-        buffer.dirty = true;
+        if (buffer.offset == offset)
+        {
+            return &buffer;
+        }
     }
 
-    for (auto &buffer : mIndexConversionBuffers)
+    mUniformConversionBuffers.emplace_back(context, offset);
+    return &mUniformConversionBuffers.back();
+}
+
+void BufferMtl::markConversionBuffersDirty()
+{
+    for (VertexConversionBufferMtl &buffer : mVertexConversionBuffers)
+    {
+        buffer.dirty           = true;
+        buffer.convertedBuffer = nullptr;
+        buffer.convertedOffset = 0;
+    }
+
+    for (IndexConversionBufferMtl &buffer : mIndexConversionBuffers)
+    {
+        buffer.dirty           = true;
+        buffer.convertedBuffer = nullptr;
+        buffer.convertedOffset = 0;
+    }
+
+    for (UniformConversionBufferMtl &buffer : mUniformConversionBuffers)
     {
         buffer.dirty           = true;
         buffer.convertedBuffer = nullptr;
@@ -337,6 +365,7 @@ void BufferMtl::clearConversionBuffers()
 {
     mVertexConversionBuffers.clear();
     mIndexConversionBuffers.clear();
+    mUniformConversionBuffers.clear();
 }
 
 angle::Result BufferMtl::setDataImpl(const gl::Context *context,

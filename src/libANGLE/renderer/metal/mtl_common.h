@@ -127,7 +127,6 @@ constexpr uint32_t kUniformBufferSettingOffsetMinAlignment = 256;
 constexpr uint32_t kUniformBufferSettingOffsetMinAlignment = 4;
 #endif
 constexpr uint32_t kIndexBufferOffsetAlignment = 4;
-constexpr uint32_t kUniformBufferOffsetAlignment = 4;
 
 // Binding index start for vertex data buffers:
 constexpr uint32_t kVboBindingIndexStart = 0;

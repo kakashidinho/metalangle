@@ -1596,6 +1596,72 @@ TEST_P(UniformBufferTest, SizeOverMaxBlockSize)
     EXPECT_PIXEL_COLOR_EQ(width / 2 + 5, height / 2 + 5, GLColor::green);
 }
 
+// Test with many uniform buffers work as expected.
+TEST_P(UniformBufferTest, ManyBlocks)
+{
+    constexpr char kFS[] =
+        R"(#version 300 es
+
+        precision highp float;
+        out vec4 my_FragColor;
+
+        layout(std140) uniform uboBlock { vec4 color; } blocks[12];
+
+        void main()
+        {
+            vec4 color = vec4(0, 0, 0, 1);
+            color += blocks[0].color;
+            color += blocks[1].color;
+            color += blocks[2].color;
+            color += blocks[3].color;
+            color += blocks[4].color;
+            color += blocks[5].color;
+            color += blocks[6].color;
+            color += blocks[7].color;
+            color += blocks[8].color;
+            color += blocks[9].color;
+            color += blocks[10].color;
+            color += blocks[11].color;
+            my_FragColor = vec4(color.rgb, 1.0);
+        })";
+
+    ANGLE_GL_PROGRAM(program, essl3_shaders::vs::Simple(), kFS);
+    GLBuffer buffers[12];
+    GLint bufferIndex[12];
+    bufferIndex[0]  = glGetUniformBlockIndex(program, "uboBlock[0]");
+    bufferIndex[1]  = glGetUniformBlockIndex(program, "uboBlock[1]");
+    bufferIndex[2]  = glGetUniformBlockIndex(program, "uboBlock[2]");
+    bufferIndex[3]  = glGetUniformBlockIndex(program, "uboBlock[3]");
+    bufferIndex[4]  = glGetUniformBlockIndex(program, "uboBlock[4]");
+    bufferIndex[5]  = glGetUniformBlockIndex(program, "uboBlock[5]");
+    bufferIndex[6]  = glGetUniformBlockIndex(program, "uboBlock[6]");
+    bufferIndex[7]  = glGetUniformBlockIndex(program, "uboBlock[7]");
+    bufferIndex[8]  = glGetUniformBlockIndex(program, "uboBlock[8]");
+    bufferIndex[9]  = glGetUniformBlockIndex(program, "uboBlock[9]");
+    bufferIndex[10] = glGetUniformBlockIndex(program, "uboBlock[10]");
+    bufferIndex[11] = glGetUniformBlockIndex(program, "uboBlock[11]");
+
+    std::vector<GLubyte> v(16, 0);
+    float *vAsFloat = reinterpret_cast<float *>(v.data());
+
+    for (int i = 0; i < 12; ++i)
+    {
+        glBindBuffer(GL_UNIFORM_BUFFER, buffers[i]);
+        vAsFloat[0] = (i + 1) / 255.0f;
+        vAsFloat[1] = (i + 1) / 255.0f;
+        vAsFloat[2] = (i + 1) / 255.0f;
+        vAsFloat[3] = 255.0f;
+
+        glBufferData(GL_UNIFORM_BUFFER, v.size(), v.data(), GL_STATIC_DRAW);
+
+        glBindBufferBase(GL_UNIFORM_BUFFER, i, buffers[i]);
+        glUniformBlockBinding(program, bufferIndex[i], i);
+    }
+
+    drawQuad(program.get(), essl3_shaders::PositionAttrib(), 0.5f);
+    EXPECT_PIXEL_NEAR(0, 0, 78, 78, 78, 255, 2);
+}
+
 // Use this to select which configurations (e.g. which renderer, which GLES major version) these
 // tests should be run against.
 ANGLE_INSTANTIATE_TEST(UniformBufferTest,

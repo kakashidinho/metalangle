@@ -490,7 +490,7 @@ void DisplayMtl::ensureCapsInitialized() const
     // Fill in additional limits for UBOs and SSBOs.
     mNativeCaps.maxUniformBufferBindings     = mNativeCaps.maxCombinedUniformBlocks;
     mNativeCaps.maxUniformBlockSize          = 16384;  // Default according to GLES 3.0 spec.
-    mNativeCaps.uniformBufferOffsetAlignment = mtl::kUniformBufferOffsetAlignment;
+    mNativeCaps.uniformBufferOffsetAlignment = 1;
 
     mNativeCaps.maxShaderStorageBufferBindings     = 0;
     mNativeCaps.maxShaderStorageBlockSize          = 0;

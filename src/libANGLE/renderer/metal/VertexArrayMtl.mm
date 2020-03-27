@@ -606,7 +606,7 @@ angle::Result VertexArrayMtl::convertIndexBuffer(const gl::Context *glContext,
     BufferMtl *idxBuffer = mtl::GetImpl(getState().getElementArrayBuffer());
 
     IndexConversionBufferMtl *conversion =
-        idxBuffer->getIndexConversionBuffer(glContext, indexType, offset);
+        idxBuffer->getIndexConversionBuffer(mtl::GetImpl(glContext), indexType, offset);
 
     // Has the content of the buffer has changed since last conversion?
     if (!conversion->dirty)
@@ -686,7 +686,7 @@ angle::Result VertexArrayMtl::convertVertexBuffer(const gl::Context *glContext,
     const angle::Format &intendedAngleFormat = srcVertexFormat.intendedAngleFormat();
 
     ConversionBufferMtl *conversion = srcBuffer->getVertexConversionBuffer(
-        glContext, intendedAngleFormat.id, binding.getStride(), binding.getOffset());
+        mtl::GetImpl(glContext), intendedAngleFormat.id, binding.getStride(), binding.getOffset());
 
     // Has the content of the buffer has changed since last conversion?
     if (!conversion->dirty)
