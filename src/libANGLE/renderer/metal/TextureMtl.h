@@ -166,6 +166,10 @@ class TextureMtl : public TextureImpl
   private:
     void releaseTexture(bool releaseImages);
     void releaseTexture(bool releaseImages, bool releaseTextureObjectsOnly);
+    angle::Result createNativeTexture(const gl::Context *context,
+                                      gl::TextureType type,
+                                      GLuint mips,
+                                      const gl::Extents &size);
     angle::Result onBaseMaxLevelsChanged(const gl::Context *context);
     angle::Result ensureSamplerStateCreated(const gl::Context *context);
     // Ensure image at given index is created:
@@ -286,6 +290,7 @@ class TextureMtl : public TextureImpl
     mtl::TextureRef mNativeSwizzleSamplingView;
 
     GLuint mCurrentBaseLevel = 0;
+    GLuint mCurrentMaxLevel  = 1000;
 
     bool mIsPow2 = false;
 };

@@ -460,41 +460,55 @@ angle::Result TextureMtl::ensureTextureCreated(const gl::Context *context)
 
     // Create actual texture object:
     mCurrentBaseLevel = mState.getEffectiveBaseLevel();
-    // Base level image should already be defined:
-    ANGLE_MTL_CHECK(contextMtl, mTexImageDefs[0][mCurrentBaseLevel].image, GL_INVALID_OPERATION);
 
     const GLuint mips  = mState.getMipmapMaxLevel() - mCurrentBaseLevel + 1;
     gl::ImageDesc desc = mState.getBaseLevelDesc();
-    mFormat            = contextMtl->getPixelFormat(mTexImageDefs[0][mCurrentBaseLevel].formatID);
+    ANGLE_MTL_CHECK(contextMtl, desc.format.valid(), GL_INVALID_OPERATION);
+    angle::FormatID angleFormatId =
+        angle::Format::InternalFormatToID(desc.format.info->sizedInternalFormat);
+    mFormat = contextMtl->getPixelFormat(angleFormatId);
 
-    mIsPow2 =
-        gl::isPow2(desc.size.width) && gl::isPow2(desc.size.height) && gl::isPow2(desc.size.depth);
+    return createNativeTexture(context, mState.getType(), mips, desc.size);
+}
+
+angle::Result TextureMtl::createNativeTexture(const gl::Context *context,
+                                              gl::TextureType type,
+                                              GLuint mips,
+                                              const gl::Extents &size)
+{
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+
+    // Create actual texture object:
+    mCurrentBaseLevel = mState.getEffectiveBaseLevel();
+    mCurrentMaxLevel  = mState.getEffectiveMaxLevel();
+
+    mIsPow2          = gl::isPow2(size.width) && gl::isPow2(size.height) && gl::isPow2(size.depth);
     mSlices          = 1;
     int numCubeFaces = 1;
-    switch (mState.getType())
+    switch (type)
     {
         case gl::TextureType::_2D:
-            ANGLE_TRY(mtl::Texture::Make2DTexture(contextMtl, mFormat, desc.size.width,
-                                                  desc.size.height, mips,
+            ANGLE_TRY(mtl::Texture::Make2DTexture(contextMtl, mFormat, size.width, size.height,
+                                                  mips,
                                                   /** renderTargetOnly */ false,
                                                   /** allowFormatView */ false, &mNativeTexture));
             break;
         case gl::TextureType::CubeMap:
             mSlices = numCubeFaces = 6;
-            ANGLE_TRY(mtl::Texture::MakeCubeTexture(contextMtl, mFormat, desc.size.width, mips,
+            ANGLE_TRY(mtl::Texture::MakeCubeTexture(contextMtl, mFormat, size.width, mips,
                                                     /** renderTargetOnly */ false,
                                                     /** allowFormatView */ false, &mNativeTexture));
             break;
         case gl::TextureType::_3D:
-            ANGLE_TRY(mtl::Texture::Make3DTexture(contextMtl, mFormat, desc.size.width,
-                                                  desc.size.height, desc.size.depth, mips,
+            ANGLE_TRY(mtl::Texture::Make3DTexture(contextMtl, mFormat, size.width, size.height,
+                                                  size.depth, mips,
                                                   /** renderTargetOnly */ false,
                                                   /** allowFormatView */ false, &mNativeTexture));
             break;
         case gl::TextureType::_2DArray:
-            mSlices = mTexImageDefs[0][mCurrentBaseLevel].image->arrayLength();
+            mSlices = size.depth;
             ANGLE_TRY(mtl::Texture::Make2DArrayTexture(
-                contextMtl, mFormat, desc.size.width, desc.size.height, mips, mSlices,
+                contextMtl, mFormat, size.width, size.height, mips, mSlices,
                 /** renderTargetOnly */ false,
                 /** allowFormatView */ false, &mNativeTexture));
             break;
@@ -572,7 +586,8 @@ angle::Result TextureMtl::ensureSamplerStateCreated(const gl::Context *context)
 
 angle::Result TextureMtl::onBaseMaxLevelsChanged(const gl::Context *context)
 {
-    if (!mNativeTexture)
+    if (!mNativeTexture || (mCurrentBaseLevel == mState.getEffectiveBaseLevel() &&
+                            mCurrentMaxLevel == mState.getEffectiveMaxLevel()))
     {
         return angle::Result::Continue;
     }
