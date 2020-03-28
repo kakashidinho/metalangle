@@ -1097,7 +1097,7 @@ angle::Result ProgramMtl::updateUniformBuffers(ContextMtl *context,
 
         // Remove any other stages other than vertex and fragment.
         uint32_t stages = mArgumentBufferRenderStageUsages[bufferIndex] &
-                          (mtl::RenderStageVertex | mtl::RenderStageFragment);
+                          (mtl::kRenderStageVertex | mtl::kRenderStageFragment);
 
         if (stages == 0)
         {

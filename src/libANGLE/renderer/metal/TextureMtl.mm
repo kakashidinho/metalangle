@@ -1502,7 +1502,7 @@ angle::Result TextureMtl::setPerSliceSubImage(const gl::Context *context,
             blitEncoder->copyBufferToTexture(
                 unpackBufferMtl->getCurrentBuffer(), offset, pixelsRowPitch, pixelsDepthPitch,
                 mtlArea.size, image, slice, 0, mtlArea.origin,
-                mFormat.isPVRTC() ? mtl::BlitOptionRowLinearPVRTC : MTLBlitOptionNone);
+                mFormat.isPVRTC() ? mtl::kBlitOptionRowLinearPVRTC : MTLBlitOptionNone);
         }
     }
     else

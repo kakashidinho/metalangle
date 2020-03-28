@@ -155,21 +155,21 @@ constexpr uint32_t kOcclusionQueryResultSize = sizeof(uint64_t);
 
 // Work-around the enum is not available on macOS
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-constexpr MTLBlitOption BlitOptionRowLinearPVRTC = MTLBlitOptionNone;
+constexpr MTLBlitOption kBlitOptionRowLinearPVRTC = MTLBlitOptionNone;
 #else
-constexpr MTLBlitOption BlitOptionRowLinearPVRTC           = MTLBlitOptionRowLinearPVRTC;
+constexpr MTLBlitOption kBlitOptionRowLinearPVRTC          = MTLBlitOptionRowLinearPVRTC;
 #endif
 
 #if defined(__IPHONE_13_0) || defined(__MAC_10_15)
-using TextureSwizzleChannels                  = MTLTextureSwizzleChannels;
-using RenderStages                            = MTLRenderStages;
-constexpr MTLRenderStages RenderStageVertex   = MTLRenderStageVertex;
-constexpr MTLRenderStages RenderStageFragment = MTLRenderStageFragment;
+using TextureSwizzleChannels                   = MTLTextureSwizzleChannels;
+using RenderStages                             = MTLRenderStages;
+constexpr MTLRenderStages kRenderStageVertex   = MTLRenderStageVertex;
+constexpr MTLRenderStages kRenderStageFragment = MTLRenderStageFragment;
 #else
 using TextureSwizzleChannels                               = int;
 using RenderStages                                         = int;
-constexpr RenderStages RenderStageVertex                   = 1;
-constexpr RenderStages RenderStageFragment                 = 2;
+constexpr RenderStages kRenderStageVertex                  = 1;
+constexpr RenderStages kRenderStageFragment                = 2;
 #endif
 
 enum class PixelType
