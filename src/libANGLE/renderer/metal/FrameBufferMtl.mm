@@ -824,6 +824,8 @@ angle::Result FramebufferMtl::prepareRenderPass(const gl::Context *context,
 {
     auto &desc = *pDescOut;
 
+    const mtl::Format *firstAttachemtFormat = nullptr;
+    mRenderPassAttachmentsSameColorType     = true;
     uint32_t maxColorAttachments = static_cast<uint32_t>(mState.getColorAttachments().size());
     desc.numColorAttachments     = 0;
     for (uint32_t colorIndexGL = 0; colorIndexGL < maxColorAttachments; ++colorIndexGL)
@@ -838,6 +840,21 @@ angle::Result FramebufferMtl::prepareRenderPass(const gl::Context *context,
             desc.sampleCount = std::max(desc.sampleCount, colorRenderTarget->getRenderSamples());
 
             desc.numColorAttachments = std::max(desc.numColorAttachments, colorIndexGL + 1);
+
+            if (!firstAttachemtFormat)
+            {
+                firstAttachemtFormat = colorRenderTarget->getFormat();
+            }
+            else if (colorRenderTarget->getFormat())
+            {
+                if (firstAttachemtFormat->actualAngleFormat().isSint() !=
+                        colorRenderTarget->getFormat()->actualAngleFormat().isSint() ||
+                    firstAttachemtFormat->actualAngleFormat().isUint() !=
+                        colorRenderTarget->getFormat()->actualAngleFormat().isUint())
+                {
+                    mRenderPassAttachmentsSameColorType = false;
+                }
+            }
         }
         else
         {
@@ -982,10 +999,47 @@ angle::Result FramebufferMtl::clearWithDraw(const gl::Context *context,
     ContextMtl *contextMtl = mtl::GetImpl(context);
     DisplayMtl *display    = contextMtl->getDisplay();
 
-    // Start new render encoder if not already.
-    mtl::RenderCommandEncoder *encoder = ensureRenderPassStarted(context, mRenderPassDesc);
+    if (mRenderPassAttachmentsSameColorType || !clearColorBuffers.any() ||
+        !clearOpts.clearColor.valid())
+    {
+        // Start new render encoder if not already.
+        mtl::RenderCommandEncoder *encoder = ensureRenderPassStarted(context, mRenderPassDesc);
 
-    return display->getUtils().clearWithDraw(context, encoder, clearOpts);
+        return display->getUtils().clearWithDraw(context, encoder, clearOpts);
+    }
+    else
+    {
+        // Not all attachments have the same color type.
+        // Clear the attachment one by one.
+        mtl::ClearRectParams overrideClearOps = clearOpts;
+        overrideClearOps.enabledBuffers.reset();
+        overrideClearOps.enabledBuffers.set(0);
+        for (size_t drawbuffer : clearColorBuffers)
+        {
+            if (drawbuffer >= mRenderPassDesc.numColorAttachments)
+            {
+                continue;
+            }
+            RenderTargetMtl *renderTarget = mColorRenderTargets[drawbuffer];
+            if (!renderTarget || !renderTarget->getTexture())
+            {
+                continue;
+            }
+            const mtl::Format &format     = *renderTarget->getFormat();
+            mtl::PixelType clearColorType = overrideClearOps.clearColor.value().type;
+            if ((clearColorType == mtl::PixelType::Int && !format.actualAngleFormat().isSint()) ||
+                (clearColorType == mtl::PixelType::UInt && !format.actualAngleFormat().isUint()) ||
+                (clearColorType == mtl::PixelType::Float && format.actualAngleFormat().isInt()))
+            {
+                continue;
+            }
+
+            mtl::RenderCommandEncoder *encoder = contextMtl->getRenderCommandEncoder(*renderTarget);
+            ANGLE_TRY(display->getUtils().clearWithDraw(context, encoder, overrideClearOps));
+        }
+
+        return angle::Result::Continue;
+    }
 }
 
 angle::Result FramebufferMtl::clearImpl(const gl::Context *context,
