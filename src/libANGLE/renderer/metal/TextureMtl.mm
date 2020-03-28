@@ -343,12 +343,16 @@ angle::Result UploadTextureContents(const gl::Context *context,
     return angle::Result::Continue;
 }
 
-GLenum OverrideSwizzleValue(const gl::Context *context, GLenum swizzle, const mtl::Format &format)
+ANGLE_MTL_UNUSED
+GLenum OverrideSwizzleValue(const gl::Context *context,
+                            GLenum swizzle,
+                            const mtl::Format &format,
+                            const gl::InternalFormat &glInternalFormat)
 {
     if (format.actualAngleFormat().depthBits)
     {
         ASSERT(!format.swizzled);
-        if (context->getState().getClientMajorVersion() >= 3)
+        if (context->getState().getClientMajorVersion() >= 3 && glInternalFormat.sized)
         {
             // ES 3.0 spec: treat depth texture as red texture during sampling.
             if (swizzle == GL_GREEN || swizzle == GL_BLUE || swizzle == GL_ALPHA)
@@ -1211,15 +1215,17 @@ angle::Result TextureMtl::bindToShader(const gl::Context *context,
              mFormat.swizzled) &&
             contextMtl->getDisplay()->getFeatures().hasTextureSwizzle.enabled)
         {
+            const gl::InternalFormat &glInternalForamt = *mState.getBaseLevelDesc().format.info;
+
             MTLTextureSwizzleChannels swizzle = MTLTextureSwizzleChannelsMake(
-                mtl::GetTextureSwizzle(
-                    OverrideSwizzleValue(context, mState.getSwizzleState().swizzleRed, mFormat)),
-                mtl::GetTextureSwizzle(
-                    OverrideSwizzleValue(context, mState.getSwizzleState().swizzleGreen, mFormat)),
-                mtl::GetTextureSwizzle(
-                    OverrideSwizzleValue(context, mState.getSwizzleState().swizzleBlue, mFormat)),
-                mtl::GetTextureSwizzle(
-                    OverrideSwizzleValue(context, mState.getSwizzleState().swizzleAlpha, mFormat)));
+                mtl::GetTextureSwizzle(OverrideSwizzleValue(
+                    context, mState.getSwizzleState().swizzleRed, mFormat, glInternalForamt)),
+                mtl::GetTextureSwizzle(OverrideSwizzleValue(
+                    context, mState.getSwizzleState().swizzleGreen, mFormat, glInternalForamt)),
+                mtl::GetTextureSwizzle(OverrideSwizzleValue(
+                    context, mState.getSwizzleState().swizzleBlue, mFormat, glInternalForamt)),
+                mtl::GetTextureSwizzle(OverrideSwizzleValue(
+                    context, mState.getSwizzleState().swizzleAlpha, mFormat, glInternalForamt)));
 
             mNativeSwizzleSamplingView = mNativeTexture->createSwizzleView(swizzle);
         }
