@@ -533,16 +533,36 @@ angle::Result VertexArrayMtl::syncDirtyAttrib(const gl::Context *glContext,
     }
     else
     {
+        const gl::State &glState = glContext->getState();
+        const gl::VertexAttribCurrentValueData &defaultValue =
+            glState.getVertexAttribCurrentValues()[attribIndex];
+
         // Tell ContextMtl to update default attribute value
         contextMtl->invalidateDefaultAttribute(attribIndex);
 
         mCurrentArrayBuffers[attribIndex]       = nullptr;
         mCurrentArrayBufferOffsets[attribIndex] = 0;
         mCurrentArrayBufferStrides[attribIndex] = 0;
-        // NOTE(hqle): We only support ES 2.0 atm. So default attribute type should always
-        // be float.
-        mCurrentArrayBufferFormats[attribIndex] =
-            &contextMtl->getVertexFormat(angle::FormatID::R32G32B32A32_FLOAT, false);
+
+        const mtl::VertexFormat *vertexFormat = nullptr;
+        switch (defaultValue.Type)
+        {
+            case gl::VertexAttribType::Int:
+                vertexFormat =
+                    &contextMtl->getVertexFormat(angle::FormatID::R32G32B32A32_SINT, false);
+                break;
+            case gl::VertexAttribType::UnsignedInt:
+                vertexFormat =
+                    &contextMtl->getVertexFormat(angle::FormatID::R32G32B32A32_UINT, false);
+                break;
+            case gl::VertexAttribType::Float:
+                vertexFormat =
+                    &contextMtl->getVertexFormat(angle::FormatID::R32G32B32A32_FLOAT, false);
+                break;
+            default:
+                UNREACHABLE();
+        }
+        mCurrentArrayBufferFormats[attribIndex] = vertexFormat;
     }
 
     return angle::Result::Continue;

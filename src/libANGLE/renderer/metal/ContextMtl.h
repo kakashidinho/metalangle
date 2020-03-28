@@ -399,7 +399,6 @@ class ContextMtl : public ContextImpl, public mtl::Context
 
     struct DefaultAttribute
     {
-        // NOTE(hqle): Support integer default attributes in ES 3.0
         float values[4];
     };
 
