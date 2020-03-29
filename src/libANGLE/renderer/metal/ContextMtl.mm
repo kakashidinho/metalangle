@@ -1819,10 +1819,9 @@ angle::Result ContextMtl::handleDirtyDepthBias(const gl::Context *context)
     return angle::Result::Continue;
 }
 
-angle::Result ContextMtl::checkIfPipelineChanged(
-    const gl::Context *context,
-    gl::PrimitiveMode primitiveMode,
-    bool *pipelineDescChanged)
+angle::Result ContextMtl::checkIfPipelineChanged(const gl::Context *context,
+                                                 gl::PrimitiveMode primitiveMode,
+                                                 bool *pipelineDescChanged)
 {
     ASSERT(mRenderEncoder.valid());
     mtl::PrimitiveTopologyClass topologyClass = mtl::GetPrimitiveTopologyClass(primitiveMode);

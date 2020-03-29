@@ -41,6 +41,7 @@ angle::Result GlslangGetShaderSpirvCode(ErrorHandler *context,
                                         const gl::ShaderMap<std::string> &shaderSources,
                                         gl::ShaderMap<std::vector<uint32_t>> *shaderCodeOut);
 
+// Translate from SPIR-V code to Metal shader source code.
 angle::Result SpirvCodeToMsl(ErrorHandler *context,
                              gl::ShaderMap<std::vector<uint32_t>> *sprivShaderCode,
                              gl::ShaderMap<TranslatedShaderInfo> *mslShaderInfoOut,
