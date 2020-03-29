@@ -355,9 +355,13 @@ GLenum OverrideSwizzleValue(const gl::Context *context,
         if (context->getState().getClientMajorVersion() >= 3 && glInternalFormat.sized)
         {
             // ES 3.0 spec: treat depth texture as red texture during sampling.
-            if (swizzle == GL_GREEN || swizzle == GL_BLUE || swizzle == GL_ALPHA)
+            if (swizzle == GL_GREEN || swizzle == GL_BLUE)
             {
                 return GL_NONE;
+            }
+            else if (swizzle == GL_ALPHA)
+            {
+                return GL_ONE;
             }
         }
         else
@@ -368,7 +372,7 @@ GLenum OverrideSwizzleValue(const gl::Context *context,
             {
                 return GL_RED;
             }
-            if (swizzle == GL_ALPHA)
+            else if (swizzle == GL_ALPHA)
             {
                 return GL_ONE;
             }
