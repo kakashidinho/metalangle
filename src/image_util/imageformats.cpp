@@ -162,7 +162,7 @@ void R8G8B8::readColor(gl::ColorUI *dst, const R8G8B8 *src)
 {
     dst->red   = src->R;
     dst->green = src->G;
-    dst->blue  = src->G;
+    dst->blue  = src->B;
     dst->alpha = 1;
 }
 
@@ -1832,12 +1832,13 @@ void D16::WriteDepthStencil(D16 *dst, const DepthStencil *src)
 
 void D24X8::ReadDepthStencil(DepthStencil *dst, const D24X8 *src)
 {
-    dst->depth = gl::normalizedToFloat<24>(src->D);
+    dst->depth = gl::normalizedToFloat<24>(gl::getShiftedData<24, 8>(src->D));
 }
 
 void D24X8::WriteDepthStencil(D24X8 *dst, const DepthStencil *src)
 {
-    dst->D = gl::floatToNormalized<24, uint32_t>(static_cast<float>(src->depth));
+    dst->D =
+        gl::shiftData<24, 8>(gl::floatToNormalized<24, uint32_t>(static_cast<float>(src->depth)));
 }
 
 void D32F::ReadDepthStencil(DepthStencil *dst, const D32F *src)
