@@ -109,6 +109,7 @@ constexpr uint32_t kMaxVertexAttribs = gl::MAX_VERTEX_ATTRIBS;
 constexpr uint32_t kMaxRenderTargets = 4;
 
 constexpr uint32_t kMaxShaderUBOs = 12;
+constexpr uint32_t kMaxUBOSize    = 16384;
 
 constexpr size_t kDefaultAttributeSize = 4 * sizeof(float);
 
