@@ -152,6 +152,10 @@ inline void SetDefaultVertexBufferLayout(mtl::VertexBufferLayoutDesc *layout)
 // VertexArrayMtl implementation
 VertexArrayMtl::VertexArrayMtl(const gl::VertexArrayState &state, ContextMtl *context)
     : VertexArrayImpl(state),
+      mDefaultFloatVertexFormat(
+          context->getVertexFormat(angle::FormatID::R32G32B32A32_FLOAT, false)),
+      mDefaultIntVertexFormat(context->getVertexFormat(angle::FormatID::R32G32B32A32_SINT, false)),
+      mDefaultUIntVertexFormat(context->getVertexFormat(angle::FormatID::R32G32B32A32_UINT, false)),
       // Due to Metal's strict requirement for offset and stride, we need to always allocate new
       // buffer for every conversion.
       mDynamicVertexData(true)
@@ -191,7 +195,7 @@ void VertexArrayMtl::reset(ContextMtl *context)
     }
     for (const mtl::VertexFormat *&format : mCurrentArrayBufferFormats)
     {
-        format = &context->getVertexFormat(angle::FormatID::R32G32B32A32_FLOAT, false);
+        format = &mDefaultFloatVertexFormat;
     }
 
     for (size_t &inlineDataSize : mCurrentArrayInlineDataSizes)
@@ -315,9 +319,6 @@ angle::Result VertexArrayMtl::setupDraw(const gl::Context *glContext,
             const auto &attrib               = attribs[v];
             const gl::VertexBinding &binding = bindings[attrib.bindingIndex];
 
-            const angle::Format &angleFormat = mCurrentArrayBufferFormats[v]->actualAngleFormat();
-            desc.attributes[v].format        = mCurrentArrayBufferFormats[v]->metalFormat;
-
             bool attribEnabled = attrib.enabled;
             if (attribEnabled && !mCurrentArrayBuffers[v] && !mCurrentArrayInlineDataPointers[v])
             {
@@ -327,13 +328,35 @@ angle::Result VertexArrayMtl::setupDraw(const gl::Context *glContext,
 
             if (!attribEnabled)
             {
-                desc.attributes[v].bufferIndex = mtl::kDefaultAttribsBindingIndex;
-                desc.attributes[v].offset      = v * mtl::kDefaultAttributeSize;
+                desc.attributes[v].bufferIndex       = mtl::kDefaultAttribsBindingIndex;
+                desc.attributes[v].offset            = v * mtl::kDefaultAttributeSize;
+                const sh::ShaderVariable &attribInfo = programState.getProgramInputs()[v];
+                switch (attribInfo.type)
+                {
+                    case GL_INT:
+                    case GL_INT_VEC2:
+                    case GL_INT_VEC3:
+                    case GL_INT_VEC4:
+                        desc.attributes[v].format = mDefaultIntVertexFormat.metalFormat;
+                        break;
+                    case GL_UNSIGNED_INT:
+                    case GL_UNSIGNED_INT_VEC2:
+                    case GL_UNSIGNED_INT_VEC3:
+                    case GL_UNSIGNED_INT_VEC4:
+                        desc.attributes[v].format = mDefaultUIntVertexFormat.metalFormat;
+                        break;
+                    default:
+                        desc.attributes[v].format = mDefaultFloatVertexFormat.metalFormat;
+                }
             }
             else
             {
                 uint32_t bufferIdx    = mtl::kVboBindingIndexStart + v;
                 uint32_t bufferOffset = static_cast<uint32_t>(mCurrentArrayBufferOffsets[v]);
+
+                const angle::Format &angleFormat =
+                    mCurrentArrayBufferFormats[v]->actualAngleFormat();
+                desc.attributes[v].format = mCurrentArrayBufferFormats[v]->metalFormat;
 
                 desc.attributes[v].bufferIndex = bufferIdx;
                 desc.attributes[v].offset      = 0;
@@ -536,36 +559,12 @@ angle::Result VertexArrayMtl::syncDirtyAttrib(const gl::Context *glContext,
     }
     else
     {
-        const gl::State &glState = glContext->getState();
-        const gl::VertexAttribCurrentValueData &defaultValue =
-            glState.getVertexAttribCurrentValues()[attribIndex];
-
-        // Tell ContextMtl to update default attribute value
-        contextMtl->invalidateDefaultAttribute(attribIndex);
-
+        // Use default attribute value. Handled in setupDraw().
         mCurrentArrayBuffers[attribIndex]       = nullptr;
         mCurrentArrayBufferOffsets[attribIndex] = 0;
         mCurrentArrayBufferStrides[attribIndex] = 0;
-
-        const mtl::VertexFormat *vertexFormat = nullptr;
-        switch (defaultValue.Type)
-        {
-            case gl::VertexAttribType::Int:
-                vertexFormat =
-                    &contextMtl->getVertexFormat(angle::FormatID::R32G32B32A32_SINT, false);
-                break;
-            case gl::VertexAttribType::UnsignedInt:
-                vertexFormat =
-                    &contextMtl->getVertexFormat(angle::FormatID::R32G32B32A32_UINT, false);
-                break;
-            case gl::VertexAttribType::Float:
-                vertexFormat =
-                    &contextMtl->getVertexFormat(angle::FormatID::R32G32B32A32_FLOAT, false);
-                break;
-            default:
-                UNREACHABLE();
-        }
-        mCurrentArrayBufferFormats[attribIndex] = vertexFormat;
+        mCurrentArrayBufferFormats[attribIndex] =
+            &contextMtl->getVertexFormat(angle::FormatID::NONE, false);
     }
 
     return angle::Result::Continue;

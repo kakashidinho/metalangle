@@ -128,6 +128,10 @@ class VertexArrayMtl : public VertexArrayImpl
     // Format per vertex attribute
     gl::AttribArray<const mtl::VertexFormat *> mCurrentArrayBufferFormats;
 
+    const mtl::VertexFormat &mDefaultFloatVertexFormat;
+    const mtl::VertexFormat &mDefaultIntVertexFormat;
+    const mtl::VertexFormat &mDefaultUIntVertexFormat;
+
     mtl::BufferPool mDynamicVertexData;
     mtl::BufferPool mDynamicIndexData;
 
