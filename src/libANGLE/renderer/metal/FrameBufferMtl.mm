@@ -92,9 +92,11 @@ angle::Result FramebufferMtl::invalidateSub(const gl::Context *context,
                                             const GLenum *attachments,
                                             const gl::Rectangle &area)
 {
-    // NOTE(hqle): ES 3.0 feature.
-    UNIMPLEMENTED();
-    return angle::Result::Stop;
+    if (area.encloses(getCompleteRenderArea()))
+    {
+        return invalidateImpl(mtl::GetImpl(context), count, attachments);
+    }
+    return angle::Result::Continue;
 }
 
 angle::Result FramebufferMtl::clear(const gl::Context *context, GLbitfield mask)
