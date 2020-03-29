@@ -104,6 +104,9 @@ struct VertexFormat : public FormatBase
     MTLVertexFormat metalFormat = MTLVertexFormatInvalid;
 
     VertexCopyFunction vertexLoadFunction = nullptr;
+    // If this value is non-zero, it means the difference between intended and actual angle format
+    // is only number of components
+    uint32_t defaultAlpha = 0;
 
   private:
     void init(angle::FormatID angleFormatId, bool tightlyPacked = false);

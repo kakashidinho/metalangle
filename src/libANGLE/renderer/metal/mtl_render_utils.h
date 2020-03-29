@@ -126,6 +126,21 @@ struct CopyPixelsToBufferParams : CopyPixelsCommonParams
     bool reverseTextureRowOrder;
 };
 
+struct VertexFormatConvertParams
+{
+    BufferRef srcBuffer;
+    uint32_t srcBufferStartOffset = 0;
+    uint32_t srcStride            = 0;
+    uint32_t srcDefaultAlphaData  = 0;  // casted as uint
+
+    BufferRef dstBuffer;
+    uint32_t dstBufferStartOffset = 0;
+    uint32_t dstStride            = 0;
+    uint32_t dstComponents        = 0;
+
+    uint32_t vertexCount = 0;
+};
+
 class ComputeBasedUtils
 {
   public:
@@ -402,6 +417,33 @@ class CopyPixelsUtils : public ComputeBasedUtils
     const std::string mWriteShaderName;
 };
 
+// Util class for handling vertex format conversion on GPU
+class VertexFormatConversionUtils : public ComputeBasedUtils
+{
+  public:
+    void onDestroy();
+
+    // Convert vertex format to float
+    angle::Result convertVertexFormatToFloat(ContextMtl *contextMtl,
+                                             const angle::Format &srcAngleFormat,
+                                             const VertexFormatConvertParams &params);
+    // Expand number of components per vertex's attribute (or just simply copy components between
+    // buffers with different stride and offset)
+    angle::Result expandVertexFormatComponents(ContextMtl *contextMtl,
+                                               const angle::Format &srcAngleFormat,
+                                               const VertexFormatConvertParams &params);
+
+  private:
+    void ensureComponentsExpandPipelineCreated(ContextMtl *contextMtl);
+    AutoObjCPtr<id<MTLComputePipelineState>> getFloatConverstionPipeline(
+        ContextMtl *contextMtl,
+        const angle::Format &srcAngleFormat);
+    using ConvertToFloatPipelineArray =
+        std::array<AutoObjCPtr<id<MTLComputePipelineState>>, angle::kNumANGLEFormats>;
+    ConvertToFloatPipelineArray mConvertToFloatPipelineCaches;
+    AutoObjCPtr<id<MTLComputePipelineState>> mComponentsExpandPipeline;
+};
+
 // RenderUtils: container class of variable util classes above
 class RenderUtils : public Context, angle::NonCopyable
 {
@@ -465,6 +507,16 @@ class RenderUtils : public Context, angle::NonCopyable
                                                 const angle::Format &dstAngleFormat,
                                                 const CopyPixelsToBufferParams &params);
 
+    // Convert vertex format to float (or normalized) on GPU
+    angle::Result convertVertexFormatToFloat(ContextMtl *contextMtl,
+                                             const angle::Format &srcAngleFormat,
+                                             const VertexFormatConvertParams &params);
+    // Expand number of components per vertex's attribute (or just simply copy components between
+    // buffers with different stride and offset) on GPU
+    angle::Result expandVertexFormatComponents(ContextMtl *contextMtl,
+                                               const angle::Format &srcAngleFormat,
+                                               const VertexFormatConvertParams &params);
+
   private:
     // override ErrorHandler
     void handleError(GLenum error,
@@ -489,6 +541,8 @@ class RenderUtils : public Context, angle::NonCopyable
     MipmapUtils mMipmapUtils;
 
     std::array<CopyPixelsUtils, angle::EnumSize<PixelType>()> mCopyPixelsUtils;
+
+    VertexFormatConversionUtils mVertexFormatUtils;
 };
 
 }  // namespace mtl

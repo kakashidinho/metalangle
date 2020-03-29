@@ -152,7 +152,7 @@ def gen_shader_enums_code(angle_formats):
 
 def main():
     src_files = ['blit.metal', 'clear.metal', 'gen_indices.metal', 'gen_mipmap.metal',
-                 'copy_pixel_buffer.metal', 'misc.metal']
+                 'copy_buffer.metal', 'misc.metal']
     # auto_script parameters.
     if len(sys.argv) > 1:
         inputs = ['../../angle_format_map.json'] + src_files + [ 'common.h', 'constants.h' ]

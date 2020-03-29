@@ -39,7 +39,7 @@ and vertex formats will force MetalANGLE to do software conversions on CPU.
 #### TODO lists
 - [ ] Make sure it passes all ANGLE's tests.
 - [x] ~~Support `GL_TRIANGLE_FAN` & `GL_LINE_LOOP` by generating index buffer on the fly using Metal compute shader.~~
-- [ ] Use compute shader to convert unsupported offsets, strides & vertex formats.
+- [x] Use compute shader to convert unsupported offsets, strides & vertex formats.
 - [x] ~~Support MSAA.~~
 - [ ] Support OpenGL ES 3.0.
 

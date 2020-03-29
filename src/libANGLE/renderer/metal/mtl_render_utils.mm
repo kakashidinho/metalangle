@@ -35,7 +35,7 @@ namespace
 #define UNMULTIPLY_ALPHA_CONSTANT_NAME @"kUnmultiplyAlpha"
 #define SOURCE_TEXTURE_TYPE_CONSTANT_NAME @"kSourceTextureType"
 #define SOURCE_TEXTURE2_TYPE_CONSTANT_NAME @"kSourceTexture2Type"
-#define PIXEL_COPY_FORMAT_TYPE_CONSTANT_NAME @"kCopyFormatType"
+#define COPY_FORMAT_TYPE_CONSTANT_NAME @"kCopyFormatType"
 #define PIXEL_COPY_TEXTURE_TYPE_CONSTANT_NAME @"kCopyTextureType"
 
 // See libANGLE/renderer/metal/shaders/clear.metal
@@ -86,7 +86,7 @@ struct Generate3DMipmapUniform
     uint32_t padding[2];
 };
 
-// See libANGLE/renderer/metal/shaders/copy_pixel_buffer.metal
+// See libANGLE/renderer/metal/shaders/copy_buffer.metal
 struct CopyPixelFromBufferUniforms
 {
     uint32_t copySize[3];
@@ -112,6 +112,23 @@ struct WritePixelToBufferUniforms
     uint8_t reverseTextureRowOrder;
 
     uint8_t padding[11];
+};
+
+struct CopyVertexUniforms
+{
+    uint32_t srcBufferStartOffset;
+    uint32_t srcStride;
+    uint32_t srcComponentBytes;
+    uint32_t srcComponents;
+    uint32_t srcDefaultAlphaData;
+
+    uint32_t dstBufferStartOffset;
+    uint32_t dstStride;
+    uint32_t dstComponents;
+
+    uint32_t vertexCount;
+
+    uint32_t padding[3];
 };
 
 // Class to automatically disable occlusion query upon entering block and re-able it upon
@@ -382,6 +399,7 @@ void RenderUtils::onDestroy()
     mIndexUtils.onDestroy();
     mVisibilityResultUtils.onDestroy();
     mMipmapUtils.onDestroy();
+    mVertexFormatUtils.onDestroy();
 
     for (ClearUtils &util : mClearUtils)
     {
@@ -521,6 +539,21 @@ angle::Result RenderUtils::packPixelsFromTextureToBuffer(ContextMtl *contextMtl,
     int index = GetPixelTypeIndex(dstAngleFormat);
     return mCopyPixelsUtils[index].packPixelsFromTextureToBuffer(contextMtl, dstAngleFormat,
                                                                  params);
+}
+
+angle::Result RenderUtils::convertVertexFormatToFloat(ContextMtl *contextMtl,
+                                                      const angle::Format &srcAngleFormat,
+                                                      const VertexFormatConvertParams &params)
+{
+    return mVertexFormatUtils.convertVertexFormatToFloat(contextMtl, srcAngleFormat, params);
+}
+
+// Expand number of components per vertex's attribute
+angle::Result RenderUtils::expandVertexFormatComponents(ContextMtl *contextMtl,
+                                                        const angle::Format &srcAngleFormat,
+                                                        const VertexFormatConvertParams &params)
+{
+    return mVertexFormatUtils.expandVertexFormatComponents(contextMtl, srcAngleFormat, params);
 }
 
 // ClearUtils implementation
@@ -1754,7 +1787,7 @@ AutoObjCPtr<id<MTLComputePipelineState>> CopyPixelsUtils::getPixelsCopyPipeline(
 
             [funcConstants setConstantValue:&formatIDValue
                                        type:MTLDataTypeInt
-                                   withName:PIXEL_COPY_FORMAT_TYPE_CONSTANT_NAME];
+                                   withName:COPY_FORMAT_TYPE_CONSTANT_NAME];
             [funcConstants setConstantValue:&shaderTextureType
                                        type:MTLDataTypeInt
                                    withName:PIXEL_COPY_TEXTURE_TYPE_CONSTANT_NAME];
@@ -1853,6 +1886,107 @@ angle::Result CopyPixelsUtils::packPixelsFromTextureToBuffer(ContextMtl *context
                     /** allowNonUniform */ true, threads, threadsPerThreadgroup);
 
     return angle::Result::Continue;
+}
+
+// VertexFormatConversionUtils implementation
+void VertexFormatConversionUtils::onDestroy()
+{
+    ClearComputePipelineCacheArray(&mConvertToFloatPipelineCaches);
+    mComponentsExpandPipeline = nil;
+}
+
+angle::Result VertexFormatConversionUtils::convertVertexFormatToFloat(
+    ContextMtl *contextMtl,
+    const angle::Format &srcAngleFormat,
+    const VertexFormatConvertParams &params)
+{
+    ComputeCommandEncoder *cmdEncoder = contextMtl->getComputeCommandEncoder();
+    ASSERT(cmdEncoder);
+
+    AutoObjCPtr<id<MTLComputePipelineState>> pipeline =
+        getFloatConverstionPipeline(contextMtl, srcAngleFormat);
+    cmdEncoder->setComputePipelineState(pipeline);
+    cmdEncoder->setBuffer(params.srcBuffer, 0, 1);
+    cmdEncoder->setBufferForWrite(params.dstBuffer, 0, 2);
+
+    CopyVertexUniforms options;
+    options.srcBufferStartOffset = params.srcBufferStartOffset;
+    options.srcStride            = params.srcStride;
+
+    options.dstBufferStartOffset = params.dstBufferStartOffset;
+    options.dstStride            = params.dstStride;
+    options.dstComponents        = params.dstComponents;
+
+    options.vertexCount = params.vertexCount;
+    cmdEncoder->setData(options, 0);
+
+    dispatchCompute(contextMtl, cmdEncoder, pipeline, params.vertexCount);
+    return angle::Result::Continue;
+}
+
+// Expand number of components per vertex's attribute
+angle::Result VertexFormatConversionUtils::expandVertexFormatComponents(
+    ContextMtl *contextMtl,
+    const angle::Format &srcAngleFormat,
+    const VertexFormatConvertParams &params)
+{
+    ComputeCommandEncoder *cmdEncoder = contextMtl->getComputeCommandEncoder();
+    ASSERT(cmdEncoder);
+
+    ensureComponentsExpandPipelineCreated(contextMtl);
+
+    cmdEncoder->setComputePipelineState(mComponentsExpandPipeline);
+    cmdEncoder->setBuffer(params.srcBuffer, 0, 1);
+    cmdEncoder->setBufferForWrite(params.dstBuffer, 0, 2);
+
+    CopyVertexUniforms options;
+    options.srcBufferStartOffset = params.srcBufferStartOffset;
+    options.srcStride            = params.srcStride;
+    options.srcComponentBytes    = srcAngleFormat.pixelBytes / srcAngleFormat.channelCount;
+    options.srcComponents        = srcAngleFormat.channelCount;
+    options.srcDefaultAlphaData  = params.srcDefaultAlphaData;
+
+    options.dstBufferStartOffset = params.dstBufferStartOffset;
+    options.dstStride            = params.dstStride;
+    options.dstComponents        = params.dstComponents;
+
+    options.vertexCount = params.vertexCount;
+    cmdEncoder->setData(options, 0);
+
+    dispatchCompute(contextMtl, cmdEncoder, mComponentsExpandPipeline, params.vertexCount);
+    return angle::Result::Continue;
+}
+
+void VertexFormatConversionUtils::ensureComponentsExpandPipelineCreated(ContextMtl *contextMtl)
+{
+    EnsureComputePipelineInitialized(contextMtl->getDisplay(), @"expandVertexFormatComponents",
+                                     &mComponentsExpandPipeline);
+}
+AutoObjCPtr<id<MTLComputePipelineState>> VertexFormatConversionUtils::getFloatConverstionPipeline(
+    ContextMtl *contextMtl,
+    const angle::Format &srcAngleFormat)
+{
+    int formatIDValue = static_cast<int>(srcAngleFormat.id);
+
+    auto &cache = mConvertToFloatPipelineCaches[formatIDValue];
+
+    if (!cache)
+    {
+        // Pipeline not cached, create it now:
+        ANGLE_MTL_OBJC_SCOPE
+        {
+            auto funcConstants = [[[MTLFunctionConstantValues alloc] init] ANGLE_MTL_AUTORELEASE];
+
+            [funcConstants setConstantValue:&formatIDValue
+                                       type:MTLDataTypeInt
+                                   withName:COPY_FORMAT_TYPE_CONSTANT_NAME];
+
+            EnsureSpecializedComputePipelineInitialized(
+                contextMtl->getDisplay(), @"convertToFloatVertexFormat", funcConstants, &cache);
+        }
+    }
+
+    return cache;
 }
 
 // ComputeBasedUtils implementation

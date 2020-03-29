@@ -3,7 +3,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
-// copy_pixel_buffer.metal: implements compute shader that copy pixel data from buffer to texture.
+// copy_buffer.metal: implements compute shader that copy formatted data from buffer to texture,
+// from texture to buffer and from buffer to buffer.
+// NOTE(hqle): This file is a bit hard to read but there are a lot of repeated works, and it would
+// be a pain to implement without the use of macros.
 //
 
 #include <metal_pack>
@@ -14,6 +17,8 @@
 using namespace rx::mtl_shader;
 
 constant int kCopyFormatType [[function_constant(1)]];
+
+/* -------- copy pixel data between buffer and texture ---------*/
 constant int kCopyTextureType [[function_constant(2)]];
 constant bool kCopyTextureType2D      = kCopyTextureType == kTextureType2D;
 constant bool kCopyTextureType2DArray = kCopyTextureType == kTextureType2DArray;
@@ -84,12 +89,10 @@ static inline float4 sRGBtoLinear(float4 color)
     DEST_TEXTURE_PARAMS(TEXTURE_TYPE)
 
 #define COMMON_READ_FUNC_PARAMS        \
-    ushort3 gIndices,                  \
-    constant CopyPixelParams &options, \
     uint bufferOffset,                 \
     constant uchar *buffer
 
-#define FORWARD_COMMON_READ_FUNC_PARAMS gIndices, options, bufferOffset, buffer
+#define FORWARD_COMMON_READ_FUNC_PARAMS bufferOffset, buffer
 
 #define SRC_TEXTURE_PARAMS(TYPE)  TEXTURE_PARAMS(TYPE, access::read, src)
 #define FORWARD_SRC_TEXTURE_PARAMS FORWARD_TEXTURE_PARAMS(src)
@@ -274,6 +277,31 @@ static inline void writeR5G5B5A1_UNORM(COMMON_WRITE_FLOAT_FUNC_PARAMS)
     ;
 
     shortToBytes(dst, bufferOffset, buffer);
+}
+
+// R10G10B10A2_SINT
+static inline int4 readR10G10B10A2_SINT(COMMON_READ_FUNC_PARAMS)
+{
+    int4 color;
+    int src = bytesToInt<int>(buffer, bufferOffset);
+
+    color.r = getShiftedData<10, 0>(src);
+    color.g = getShiftedData<10, 10>(src);
+    color.b = getShiftedData<10, 20>(src);
+    color.a = getShiftedData<2, 30>(src);
+    return color;
+}
+// R10G10B10A2_UINT
+static inline uint4 readR10G10B10A2_UINT(COMMON_READ_FUNC_PARAMS)
+{
+    uint4 color;
+    uint src = bytesToInt<uint>(buffer, bufferOffset);
+
+    color.r = getShiftedData<10, 0>(src);
+    color.g = getShiftedData<10, 10>(src);
+    color.b = getShiftedData<10, 20>(src);
+    color.a = getShiftedData<2, 30>(src);
+    return color;
 }
 
 // R8G8B8A8 generic
@@ -654,6 +682,18 @@ static inline void writeR16_FLOAT(COMMON_WRITE_FLOAT_FUNC_PARAMS)
 {
     shortToBytes(as_type<ushort>(static_cast<half>(color.r)), bufferOffset, buffer);
 }
+// R16_NORM
+template <typename ShortType>
+static inline float4 readR16_NORM(COMMON_READ_FUNC_PARAMS)
+{
+    float4 color;
+    color.r = normalizedToFloat<ShortType>(bytesToShort<ShortType>(buffer, bufferOffset));
+    color.g = color.b = 0.0;
+    color.a           = 1.0;
+    return color;
+}
+#define readR16_SNORM readR16_NORM<short>
+#define readR16_UNORM readR16_NORM<ushort>
 
 // R16_SINT
 static inline int4 readR16_SINT(COMMON_READ_FUNC_PARAMS)
@@ -739,6 +779,20 @@ static inline void writeR16G16_FLOAT(COMMON_WRITE_FLOAT_FUNC_PARAMS)
     shortToBytes(as_type<ushort>(static_cast<half>(color.g)), bufferOffset + 2, buffer);
 }
 
+// R16G16_NORM
+template <typename ShortType>
+static inline float4 readR16G16_NORM(COMMON_READ_FUNC_PARAMS)
+{
+    float4 color;
+    color.r = normalizedToFloat<ShortType>(bytesToShort<ShortType>(buffer, bufferOffset));
+    color.g = normalizedToFloat<ShortType>(bytesToShort<ShortType>(buffer, bufferOffset + 2));
+    color.b = 0.0;
+    color.a = 1.0;
+    return color;
+}
+#define readR16G16_SNORM readR16G16_NORM<short>
+#define readR16G16_UNORM readR16G16_NORM<ushort>
+
 // R16G16_SINT
 static inline int4 readR16G16_SINT(COMMON_READ_FUNC_PARAMS)
 {
@@ -781,6 +835,20 @@ static inline float4 readR16G16B16_FLOAT(COMMON_READ_FUNC_PARAMS)
     color.a = 1.0;
     return color;
 }
+
+// R16G16B16_NORM
+template <typename ShortType>
+static inline float4 readR16G16B16_NORM(COMMON_READ_FUNC_PARAMS)
+{
+    float4 color;
+    color.r = normalizedToFloat<ShortType>(bytesToShort<ShortType>(buffer, bufferOffset));
+    color.g = normalizedToFloat<ShortType>(bytesToShort<ShortType>(buffer, bufferOffset + 2));
+    color.b = normalizedToFloat<ShortType>(bytesToShort<ShortType>(buffer, bufferOffset + 4));
+    color.a = 1.0;
+    return color;
+}
+#define readR16G16B16_SNORM readR16G16B16_NORM<short>
+#define readR16G16B16_UNORM readR16G16B16_NORM<ushort>
 // R16G16B16_SINT
 static inline int4 readR16G16B16_SINT(COMMON_READ_FUNC_PARAMS)
 {
@@ -820,6 +888,20 @@ static inline void writeR16G16B16A16_FLOAT(COMMON_WRITE_FLOAT_FUNC_PARAMS)
     shortToBytes(as_type<ushort>(static_cast<half>(color.b)), bufferOffset + 4, buffer);
     shortToBytes(as_type<ushort>(static_cast<half>(color.a)), bufferOffset + 6, buffer);
 }
+
+// R16G16B16A16_NORM
+template <typename ShortType>
+static inline float4 readR16G16B16A16_NORM(COMMON_READ_FUNC_PARAMS)
+{
+    float4 color;
+    color.r = normalizedToFloat<ShortType>(bytesToShort<ShortType>(buffer, bufferOffset));
+    color.g = normalizedToFloat<ShortType>(bytesToShort<ShortType>(buffer, bufferOffset + 2));
+    color.b = normalizedToFloat<ShortType>(bytesToShort<ShortType>(buffer, bufferOffset + 4));
+    color.a = normalizedToFloat<ShortType>(bytesToShort<ShortType>(buffer, bufferOffset + 6));
+    return color;
+}
+#define readR16G16B16A16_SNORM readR16G16B16A16_NORM<short>
+#define readR16G16B16A16_UNORM readR16G16B16A16_NORM<ushort>
 
 // R16G16B16A16_SINT
 static inline int4 readR16G16B16A16_SINT(COMMON_READ_FUNC_PARAMS)
@@ -871,6 +953,19 @@ static inline void writeR32_FLOAT(COMMON_WRITE_FLOAT_FUNC_PARAMS)
     intToBytes(as_type<uint>(color.r), bufferOffset, buffer);
 }
 
+// R32_NORM
+template <typename IntType>
+static inline float4 readR32_NORM(COMMON_READ_FUNC_PARAMS)
+{
+    float4 color;
+    color.r = normalizedToFloat<IntType>(bytesToInt<IntType>(buffer, bufferOffset));
+    color.g = color.b = 0.0;
+    color.a           = 1.0;
+    return color;
+}
+#define readR32_SNORM readR32_NORM<int>
+#define readR32_UNORM readR32_NORM<uint>
+
 // A32_FLOAT
 static inline float4 readA32_FLOAT(COMMON_READ_FUNC_PARAMS)
 {
@@ -909,6 +1004,17 @@ static inline int4 readR32_SINT(COMMON_READ_FUNC_PARAMS)
 static inline void writeR32_SINT(COMMON_WRITE_SINT_FUNC_PARAMS)
 {
     intToBytes(color.r, bufferOffset, buffer);
+}
+
+// R32_FIXED
+static inline float4 readR32_FIXED(COMMON_READ_FUNC_PARAMS)
+{
+    float4 color;
+    constexpr float kDivisor = 1.0f / (1 << 16);
+    color.r                  = bytesToInt<int>(buffer, bufferOffset) * kDivisor;
+    color.g = color.b = 0.0;
+    color.a           = 1.0;
+    return color;
 }
 
 // R32_UINT
@@ -955,6 +1061,20 @@ static inline void writeR32G32_FLOAT(COMMON_WRITE_FLOAT_FUNC_PARAMS)
     intToBytes(as_type<uint>(color.g), bufferOffset + 4, buffer);
 }
 
+// R32G32_NORM
+template <typename IntType>
+static inline float4 readR32G32_NORM(COMMON_READ_FUNC_PARAMS)
+{
+    float4 color;
+    color.r = normalizedToFloat<IntType>(bytesToInt<IntType>(buffer, bufferOffset));
+    color.g = normalizedToFloat<IntType>(bytesToInt<IntType>(buffer, bufferOffset + 4));
+    color.b = 0.0;
+    color.a = 1.0;
+    return color;
+}
+#define readR32G32_SNORM readR32G32_NORM<int>
+#define readR32G32_UNORM readR32G32_NORM<uint>
+
 // R32G32_SINT
 static inline int4 readR32G32_SINT(COMMON_READ_FUNC_PARAMS)
 {
@@ -969,6 +1089,18 @@ static inline void writeR32G32_SINT(COMMON_WRITE_SINT_FUNC_PARAMS)
 {
     intToBytes(color.r, bufferOffset, buffer);
     intToBytes(color.g, bufferOffset + 4, buffer);
+}
+
+// R32G32_FIXED
+static inline float4 readR32G32_FIXED(COMMON_READ_FUNC_PARAMS)
+{
+    float4 color;
+    constexpr float kDivisor = 1.0f / (1 << 16);
+    color.r                  = bytesToInt<int>(buffer, bufferOffset) * kDivisor;
+    color.g                  = bytesToInt<int>(buffer, bufferOffset + 4) * kDivisor;
+    color.b                  = 0.0;
+    color.a                  = 1.0;
+    return color;
 }
 
 // R32G32_UINT
@@ -997,6 +1129,21 @@ static inline float4 readR32G32B32_FLOAT(COMMON_READ_FUNC_PARAMS)
     color.a = 1.0;
     return color;
 }
+
+// R32G32B32_NORM
+template <typename IntType>
+static inline float4 readR32G32B32_NORM(COMMON_READ_FUNC_PARAMS)
+{
+    float4 color;
+    color.r = normalizedToFloat<IntType>(bytesToInt<IntType>(buffer, bufferOffset));
+    color.g = normalizedToFloat<IntType>(bytesToInt<IntType>(buffer, bufferOffset + 4));
+    color.b = normalizedToFloat<IntType>(bytesToInt<IntType>(buffer, bufferOffset + 8));
+    color.a = 1.0;
+    return color;
+}
+#define readR32G32B32_SNORM readR32G32B32_NORM<int>
+#define readR32G32B32_UNORM readR32G32B32_NORM<uint>
+
 // R32G32B32_SINT
 static inline int4 readR32G32B32_SINT(COMMON_READ_FUNC_PARAMS)
 {
@@ -1005,6 +1152,18 @@ static inline int4 readR32G32B32_SINT(COMMON_READ_FUNC_PARAMS)
     color.g = bytesToInt<int>(buffer, bufferOffset + 4);
     color.b = bytesToInt<int>(buffer, bufferOffset + 8);
     color.a = 1;
+    return color;
+}
+
+// R32G32B32_FIXED
+static inline float4 readR32G32B32_FIXED(COMMON_READ_FUNC_PARAMS)
+{
+    float4 color;
+    constexpr float kDivisor = 1.0f / (1 << 16);
+    color.r                  = bytesToInt<int>(buffer, bufferOffset) * kDivisor;
+    color.g                  = bytesToInt<int>(buffer, bufferOffset + 4) * kDivisor;
+    color.b                  = bytesToInt<int>(buffer, bufferOffset + 8) * kDivisor;
+    color.a                  = 1.0;
     return color;
 }
 
@@ -1037,6 +1196,20 @@ static inline void writeR32G32B32A32_FLOAT(COMMON_WRITE_FLOAT_FUNC_PARAMS)
     intToBytes(as_type<uint>(color.a), bufferOffset + 12, buffer);
 }
 
+// R32G32B32A32_NORM
+template <typename IntType>
+static inline float4 readR32G32B32A32_NORM(COMMON_READ_FUNC_PARAMS)
+{
+    float4 color;
+    color.r = normalizedToFloat<IntType>(bytesToInt<IntType>(buffer, bufferOffset));
+    color.g = normalizedToFloat<IntType>(bytesToInt<IntType>(buffer, bufferOffset + 4));
+    color.b = normalizedToFloat<IntType>(bytesToInt<IntType>(buffer, bufferOffset + 8));
+    color.a = normalizedToFloat<IntType>(bytesToInt<IntType>(buffer, bufferOffset + 12));
+    return color;
+}
+#define readR32G32B32A32_SNORM readR32G32B32A32_NORM<int>
+#define readR32G32B32A32_UNORM readR32G32B32A32_NORM<uint>
+
 // R32G32B32A32_SINT
 static inline int4 readR32G32B32A32_SINT(COMMON_READ_FUNC_PARAMS)
 {
@@ -1053,6 +1226,17 @@ static inline void writeR32G32B32A32_SINT(COMMON_WRITE_SINT_FUNC_PARAMS)
     intToBytes(color.g, bufferOffset + 4, buffer);
     intToBytes(color.b, bufferOffset + 8, buffer);
     intToBytes(color.a, bufferOffset + 12, buffer);
+}
+// R32G32B32A32_FIXED
+static inline float4 readR32G32B32A32_FIXED(COMMON_READ_FUNC_PARAMS)
+{
+    float4 color;
+    constexpr float kDivisor = 1.0f / (1 << 16);
+    color.r                  = bytesToInt<int>(buffer, bufferOffset) * kDivisor;
+    color.g                  = bytesToInt<int>(buffer, bufferOffset + 4) * kDivisor;
+    color.b                  = bytesToInt<int>(buffer, bufferOffset + 8) * kDivisor;
+    color.a                  = bytesToInt<int>(buffer, bufferOffset + 12) * kDivisor;
+    return color;
 }
 
 // R32G32B32A32_UINT
@@ -1072,6 +1256,34 @@ static inline void writeR32G32B32A32_UINT(COMMON_WRITE_UINT_FUNC_PARAMS)
     intToBytes(color.b, bufferOffset + 8, buffer);
     intToBytes(color.a, bufferOffset + 12, buffer);
 }
+
+#define ALIAS_READ_SINT_FUNC(FORMAT)                                   \
+    static inline int4 read##FORMAT##_SSCALED(COMMON_READ_FUNC_PARAMS) \
+    {                                                                  \
+        return read##FORMAT##_SINT(FORWARD_COMMON_READ_FUNC_PARAMS);   \
+    }
+
+#define ALIAS_READ_UINT_FUNC(FORMAT)                                    \
+    static inline uint4 read##FORMAT##_USCALED(COMMON_READ_FUNC_PARAMS) \
+    {                                                                   \
+        return read##FORMAT##_UINT(FORWARD_COMMON_READ_FUNC_PARAMS);    \
+    }
+
+#define ALIAS_READ_INT_FUNC(FORMAT) \
+    ALIAS_READ_SINT_FUNC(FORMAT)    \
+    ALIAS_READ_UINT_FUNC(FORMAT)
+
+#define ALIAS_READ_INT_FUNCS(BITS)                 \
+    ALIAS_READ_INT_FUNC(R##BITS)                   \
+    ALIAS_READ_INT_FUNC(R##BITS##G##BITS)          \
+    ALIAS_READ_INT_FUNC(R##BITS##G##BITS##B##BITS) \
+    ALIAS_READ_INT_FUNC(R##BITS##G##BITS##B##BITS##A##BITS)
+
+ALIAS_READ_INT_FUNCS(8)
+ALIAS_READ_INT_FUNCS(16)
+ALIAS_READ_INT_FUNCS(32)
+
+ALIAS_READ_INT_FUNC(R10G10B10A2)
 
 // Copy pixels from buffer to texture
 kernel void readFromBufferToFloatTexture(COMMON_READ_KERNEL_PARAMS(float))
@@ -1272,4 +1484,151 @@ kernel void writeFromUIntTextureToBuffer(COMMON_WRITE_KERNEL_PARAMS(uint))
     }
 
 #undef SUPPORTED_FORMATS
+}
+
+/** -----  vertex format conversion --------*/
+struct CopyVertexParams
+{
+    uint srcBufferStartOffset;
+    uint srcStride;
+    uint srcComponentBytes;  // unused when convert to float
+    uint srcComponents;      // unused when convert to float
+    // Default source alpha when expanding the number of components.
+    // if source has less than 32 bits per component, only those bits are usable in
+    // srcDefaultAlpha
+    uchar4 srcDefaultAlphaData;  // unused when convert to float
+
+    uint dstBufferStartOffset;
+    uint dstStride;
+    uint dstComponents;
+
+    uint vertexCount;
+};
+
+#define INT_FORMAT_PROC(FORMAT, PROC) \
+    PROC(FORMAT##_UNORM)              \
+    PROC(FORMAT##_SNORM)              \
+    PROC(FORMAT##_UINT)               \
+    PROC(FORMAT##_SINT)               \
+    PROC(FORMAT##_USCALED)            \
+    PROC(FORMAT##_SSCALED)
+
+#define PURE_INT_FORMAT_PROC(FORMAT, PROC) \
+    PROC(FORMAT##_UINT)                    \
+    PROC(FORMAT##_SINT)
+
+#define FLOAT_FORMAT_PROC(FORMAT, PROC) PROC(FORMAT##_FLOAT)
+#define FIXED_FORMAT_PROC(FORMAT, PROC) PROC(FORMAT##_FIXED)
+
+#define FORMAT_BITS_PROC(BITS, PROC1, PROC2) \
+    PROC1(R##BITS, PROC2)                    \
+    PROC1(R##BITS##G##BITS, PROC2)           \
+    PROC1(R##BITS##G##BITS##B##BITS, PROC2)  \
+    PROC1(R##BITS##G##BITS##B##BITS##A##BITS, PROC2)
+
+template <typename IntType>
+static inline void writeFloatVertex(constant CopyVertexParams &options,
+                                    uint idx,
+                                    vec<IntType, 4> data,
+                                    device uchar *dst)
+{
+    uint dstOffset = idx * options.dstStride + options.dstBufferStartOffset;
+
+    for (uint component = 0; component < options.dstComponents; ++component, dstOffset += 4)
+    {
+        floatToBytes(static_cast<float>(data[component]), dstOffset, dst);
+    }
+}
+
+template <>
+inline void writeFloatVertex(constant CopyVertexParams &options,
+                             uint idx,
+                             vec<float, 4> data,
+                             device uchar *dst)
+{
+    uint dstOffset = idx * options.dstStride + options.dstBufferStartOffset;
+
+    for (uint component = 0; component < options.dstComponents; ++component, dstOffset += 4)
+    {
+        floatToBytes(data[component], dstOffset, dst);
+    }
+}
+
+// Kernel to convert from any vertex format to float vertex format
+kernel void convertToFloatVertexFormat(uint index [[thread_position_in_grid]],
+                                       constant CopyVertexParams &options [[buffer(0)]],
+                                       constant uchar *srcBuffer [[buffer(1)]],
+                                       device uchar *dstBuffer [[buffer(2)]])
+{
+    ANGLE_KERNEL_GUARD(index, options.vertexCount);
+
+#define SUPPORTED_FORMATS(PROC)                   \
+    FORMAT_BITS_PROC(8, INT_FORMAT_PROC, PROC)    \
+    FORMAT_BITS_PROC(16, INT_FORMAT_PROC, PROC)   \
+    FORMAT_BITS_PROC(32, INT_FORMAT_PROC, PROC)   \
+    FORMAT_BITS_PROC(16, FLOAT_FORMAT_PROC, PROC) \
+    FORMAT_BITS_PROC(32, FLOAT_FORMAT_PROC, PROC) \
+    FORMAT_BITS_PROC(32, FIXED_FORMAT_PROC, PROC) \
+    PROC(R10G10B10A2_SINT)                        \
+    PROC(R10G10B10A2_UINT)                        \
+    PROC(R10G10B10A2_SSCALED)                     \
+    PROC(R10G10B10A2_USCALED)
+
+    uint bufferOffset = options.srcBufferStartOffset + options.srcStride * index;
+
+#define COMVERT_FLOAT_VERTEX_SWITCH_CASE(FORMAT)           \
+    case FormatID::FORMAT:                                 \
+    {                                                      \
+        auto data = read##FORMAT(bufferOffset, srcBuffer); \
+        writeFloatVertex(options, index, data, dstBuffer); \
+    }                                                      \
+    break;
+
+    switch (kCopyFormatType)
+    {
+        SUPPORTED_FORMATS(COMVERT_FLOAT_VERTEX_SWITCH_CASE)
+    }
+
+#undef SUPPORTED_FORMATS
+}
+
+// Kernel to expand (or just simply copy) the components of the vertex
+kernel void expandVertexFormatComponents(uint index [[thread_position_in_grid]],
+                                         constant CopyVertexParams &options [[buffer(0)]],
+                                         constant uchar *srcBuffer [[buffer(1)]],
+                                         device uchar *dstBuffer [[buffer(2)]])
+{
+    ANGLE_KERNEL_GUARD(index, options.vertexCount);
+
+    uint srcOffset = options.srcBufferStartOffset + options.srcStride * index;
+    uint dstOffset = options.dstBufferStartOffset + options.dstStride * index;
+
+    uint dstComponentsBeforeAlpha = min(options.dstComponents, 3u);
+    uint component;
+    for (component = 0; component < options.srcComponents; ++component,
+        srcOffset += options.srcComponentBytes, dstOffset += options.srcComponentBytes)
+    {
+        for (uint byte = 0; byte < options.srcComponentBytes; ++byte)
+        {
+            dstBuffer[dstOffset + byte] = srcBuffer[srcOffset + byte];
+        }
+    }
+
+    for (; component < dstComponentsBeforeAlpha;
+         ++component, dstOffset += options.srcComponentBytes)
+    {
+        for (uint byte = 0; byte < options.srcComponentBytes; ++byte)
+        {
+            dstBuffer[dstOffset + byte] = 0;
+        }
+    }
+
+    if (component < options.dstComponents)
+    {
+        // Last alpha component
+        for (uint byte = 0; byte < options.srcComponentBytes; ++byte)
+        {
+            dstBuffer[dstOffset + byte] = options.srcDefaultAlphaData[byte];
+        }
+    }
 }

@@ -123,6 +123,7 @@ case_vertex_format_template1 = """        case angle::FormatID::{angle_format}:
             this->metalFormat = {mtl_format};
             this->actualFormatId = angle::FormatID::{actual_angle_format};
             this->vertexLoadFunction = {vertex_copy_function};
+            this->defaultAlpha = {default_alpha};
             break;
 
 """
@@ -133,12 +134,14 @@ case_vertex_format_template2 = """        case angle::FormatID::{angle_format}:
                 this->metalFormat = {mtl_format_packed};
                 this->actualFormatId = angle::FormatID::{actual_angle_format_packed};
                 this->vertexLoadFunction = {vertex_copy_function_packed};
+                this->defaultAlpha = {default_alpha_packed};
             }}
             else
             {{
                 this->metalFormat = {mtl_format};
                 this->actualFormatId = angle::FormatID::{actual_angle_format};
                 this->vertexLoadFunction = {vertex_copy_function};
+                this->defaultAlpha = {default_alpha};
             }}
             break;
 
@@ -147,26 +150,27 @@ case_vertex_format_template2 = """        case angle::FormatID::{angle_format}:
 
 # NOTE(hqle): This is a modified version of the get_vertex_copy_function() function in
 # src/libANGLE/renderer/angle_format.py
-def get_vertex_copy_function_mtl(src_format, dst_format):
+def get_vertex_copy_function_and_default_alpha(src_format, dst_format):
     if dst_format == "NONE":
-        return "nullptr"
+        return "nullptr", 0
 
     num_channel = len(angle_format_utils.get_channel_tokens(src_format))
     if num_channel < 1 or num_channel > 4:
-        return "nullptr"
+        return "nullptr", 0
 
     src_gl_type = angle_format_utils.get_format_gl_type(src_format)
     dst_gl_type = angle_format_utils.get_format_gl_type(dst_format)
 
     if src_gl_type == dst_gl_type:
         if src_format.startswith('R10G10B10A2'):
-            return 'CopyNativeVertexData<GLuint, 1, 1, 0>'
+            return 'CopyNativeVertexData<GLuint, 1, 1, 0>', 0
 
         if src_gl_type == None:
-            return 'nullptr'
+            return 'nullptr', 0
         dst_num_channel = len(
             angle_format_utils.get_channel_tokens(dst_format))
         default_alpha = '1'
+
         if num_channel == dst_num_channel or dst_num_channel < 4:
             default_alpha = '0'
         elif 'A16_FLOAT' in dst_format:
@@ -177,16 +181,16 @@ def get_vertex_copy_function_mtl(src_format, dst_format):
             default_alpha = 'std::numeric_limits<%s>::max()' % (src_gl_type)
 
         return 'CopyNativeVertexData<%s, %d, %d, %s>' % (src_gl_type, num_channel, dst_num_channel,
-                                                         default_alpha)
+                                                         default_alpha), default_alpha
 
     if src_format.startswith('R10G10B10A2'):
         assert 'FLOAT' in dst_format, (
             'get_vertex_copy_function: can only convert to float,' + ' not to ' + dst_format)
         is_signed = 'true' if 'SINT' in src_format or 'SNORM' in src_format or 'SSCALED' in src_format else 'false'
         is_normal = 'true' if 'NORM' in src_format else 'false'
-        return 'CopyXYZ10W2ToXYZW32FVertexData<%s, %s, true>' % (is_signed, is_normal)
+        return 'CopyXYZ10W2ToXYZW32FVertexData<%s, %s, true>' % (is_signed, is_normal), 0
 
-    return angle_format_utils.get_vertex_copy_function(src_format, dst_format)
+    return angle_format_utils.get_vertex_copy_function(src_format, dst_format), 0
 
 # Generate format conversion switch case (generic case)
 
@@ -349,29 +353,33 @@ def gen_image_map_switch_string(image_table, angle_to_gl):
 
 def gen_vertex_map_switch_case(angle_fmt, actual_angle_fmt, angle_to_mtl_map, override_packed_map):
     mtl_format = angle_to_mtl_map[actual_angle_fmt]
-    copy_function = get_vertex_copy_function_mtl(angle_fmt, actual_angle_fmt)
+    copy_function, default_alpha = get_vertex_copy_function_and_default_alpha(
+        angle_fmt, actual_angle_fmt)
     if actual_angle_fmt in override_packed_map:
         # This format has an override when used in tightly packed buffer,
         # Return if else block
         angle_fmt_packed = override_packed_map[actual_angle_fmt]
         mtl_format_packed = angle_to_mtl_map[angle_fmt_packed]
-        copy_function_packed = get_vertex_copy_function_mtl(
+        copy_function_packed, default_alpha_packed = get_vertex_copy_function_and_default_alpha(
             angle_fmt, angle_fmt_packed)
         return case_vertex_format_template2.format(
             angle_format=angle_fmt,
             mtl_format_packed=mtl_format_packed,
             actual_angle_format_packed=angle_fmt_packed,
             vertex_copy_function_packed=copy_function_packed,
+            default_alpha_packed=default_alpha_packed,
             mtl_format=mtl_format,
             actual_angle_format=actual_angle_fmt,
-            vertex_copy_function=copy_function)
+            vertex_copy_function=copy_function,
+            default_alpha=default_alpha)
     else:
         # This format has no packed buffer's override, return ordinary block.
         return case_vertex_format_template1.format(
             angle_format=angle_fmt,
             mtl_format=mtl_format,
             actual_angle_format=actual_angle_fmt,
-            vertex_copy_function=copy_function)
+            vertex_copy_function=copy_function,
+            default_alpha=default_alpha)
 
 
 def gen_vertex_map_switch_string(vertex_table):
@@ -392,6 +400,7 @@ def gen_vertex_map_switch_string(vertex_table):
     switch_data += "            this->metalFormat = MTLVertexFormatInvalid;\n"
     switch_data += "            this->actualFormatId = angle::FormatID::NONE;\n"
     switch_data += "            this->vertexLoadFunction = nullptr;"
+    switch_data += "            this->defaultAlpha = 0;"
     return switch_data
 
 

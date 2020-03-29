@@ -112,14 +112,14 @@ static inline Short bytesToShort(constant uchar *input, uint offset)
 }
 
 template <typename Int>
-static inline uint bytesToInt(constant uchar *input, uint offset)
+static inline Int bytesToInt(constant uchar *input, uint offset)
 {
-    uint input0 = input[offset];
-    uint input1 = input[offset + 1];
-    uint input2 = input[offset + 2];
-    uint input3 = input[offset + 3];
+    Int input0 = input[offset];
+    Int input1 = input[offset + 1];
+    Int input2 = input[offset + 2];
+    Int input3 = input[offset + 3];
     // Little endian conversion:
-    return as_type<Int>(input0 | (input1 << 8) | (input2 << 16) | (input3 << 24));
+    return input0 | (input1 << 8) | (input2 << 16) | (input3 << 24);
 }
 
 template <typename Short>
@@ -138,6 +138,11 @@ static inline void intToBytes(Int val, uint offset, device uchar *output)
     output[offset + 1] = (valUnsigned >> 8) & 0xff;
     output[offset + 2] = (valUnsigned >> 16) & 0xff;
     output[offset + 3] = (valUnsigned >> 24) & 0xff;
+}
+
+static inline void floatToBytes(float val, uint offset, device uchar *output)
+{
+    intToBytes(as_type<uint>(val), offset, output);
 }
 
 static inline void int24bitToBytes(uint val, uint offset, device uchar *output)
@@ -180,6 +185,27 @@ template <typename T>
 static inline float normalizedToFloat(T input)
 {
     return normalizedToFloat<sizeof(T) * 8, T>(input);
+}
+
+template <>
+inline float normalizedToFloat(short input)
+{
+    constexpr float inverseMax = 1.0f / 0x7fff;
+    return static_cast<float>(input) * inverseMax;
+}
+
+template <>
+inline float normalizedToFloat(int input)
+{
+    constexpr float inverseMax = 1.0f / 0x7fffffff;
+    return static_cast<float>(input) * inverseMax;
+}
+
+template <>
+inline float normalizedToFloat(uint input)
+{
+    constexpr float inverseMax = 1.0f / 0xffffffff;
+    return static_cast<float>(input) * inverseMax;
 }
 
 template <unsigned int outputBitCount, typename T>
