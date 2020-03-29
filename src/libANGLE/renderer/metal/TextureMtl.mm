@@ -1565,6 +1565,7 @@ angle::Result TextureMtl::convertAndSetPerSliceSubImage(const gl::Context *conte
         if (!mFormat.getCaps().writable || mFormat.hasDepthOrStencilBits() ||
             mFormat.intendedAngleFormat().isBlock)
         {
+            // Unsupported format, use CPU path.
             const uint8_t *clientData = unpackBufferMtl->getClientShadowCopyData(contextMtl);
             clientData += offset;
             ANGLE_TRY(convertAndSetPerSliceSubImage(context, slice, mtlArea, internalFormat, type,
@@ -1585,51 +1586,76 @@ angle::Result TextureMtl::convertAndSetPerSliceSubImage(const gl::Context *conte
             ANGLE_TRY(contextMtl->getDisplay()->getUtils().unpackPixelsFromBufferToTexture(
                 contextMtl, pixelsAngleFormat, params));
         }
-    }
+    }  // if (unpackBuffer)
     else
     {
         LoadImageFunctionInfo loadFunctionInfo = mFormat.textureLoadFunctions
                                                      ? mFormat.textureLoadFunctions(type)
                                                      : LoadImageFunctionInfo();
-        // Create scratch buffer
         const angle::Format &dstFormat = angle::Format::Get(mFormat.actualFormatId);
-        angle::MemoryBuffer conversionRow;
-        const size_t dstRowPitch = dstFormat.pixelBytes * mtlArea.size.width;
-        ANGLE_CHECK_GL_ALLOC(contextMtl, conversionRow.resize(dstRowPitch));
+        const size_t dstRowPitch       = dstFormat.pixelBytes * mtlArea.size.width;
 
-        MTLRegion mtlRow   = mtlArea;
-        mtlRow.size.height = mtlRow.size.depth = 1;
-        // Convert row by row:
-        for (NSUInteger d = 0; d < mtlArea.size.depth; ++d)
+        // Check if original image data is compressed:
+        if (mFormat.intendedAngleFormat().isBlock)
         {
-            mtlRow.origin.z = mtlArea.origin.z + d;
-            for (NSUInteger r = 0; r < mtlArea.size.height; ++r)
+            ASSERT(loadFunctionInfo.loadFunction);
+
+            // Need to create a buffer to hold entire decompressed image.
+            const size_t dstDepthPitch = dstRowPitch * mtlArea.size.height;
+            angle::MemoryBuffer decompressBuf;
+            ANGLE_CHECK_GL_ALLOC(contextMtl,
+                                 decompressBuf.resize(dstDepthPitch * mtlArea.size.depth));
+
+            // Decompress
+            loadFunctionInfo.loadFunction(
+                mtlArea.size.width, mtlArea.size.height, mtlArea.size.depth, pixels, pixelsRowPitch,
+                pixelsDepthPitch, decompressBuf.data(), dstRowPitch, dstDepthPitch);
+
+            // Upload to texture
+            ANGLE_TRY(UploadTextureContents(context, dstFormat, mtlArea, 0, slice,
+                                            decompressBuf.data(), dstRowPitch, dstDepthPitch,
+                                            image));
+        }  // if (mFormat.intendedAngleFormat().isBlock)
+        else
+        {
+            // Create scratch row buffer
+            angle::MemoryBuffer conversionRow;
+            ANGLE_CHECK_GL_ALLOC(contextMtl, conversionRow.resize(dstRowPitch));
+
+            // Convert row by row:
+            MTLRegion mtlRow   = mtlArea;
+            mtlRow.size.height = mtlRow.size.depth = 1;
+            for (NSUInteger d = 0; d < mtlArea.size.depth; ++d)
             {
-                const uint8_t *psrc = pixels + d * pixelsDepthPitch + r * pixelsRowPitch;
-                mtlRow.origin.y     = mtlArea.origin.y + r;
-
-                // Convert pixels
-                if (loadFunctionInfo.loadFunction)
+                mtlRow.origin.z = mtlArea.origin.z + d;
+                for (NSUInteger r = 0; r < mtlArea.size.height; ++r)
                 {
-                    loadFunctionInfo.loadFunction(mtlRow.size.width, 1, 1, psrc, pixelsRowPitch, 0,
-                                                  conversionRow.data(), dstRowPitch, 0);
-                }
-                else
-                {
-                    CopyImageCHROMIUM(psrc, pixelsRowPitch, pixelsAngleFormat.pixelBytes, 0,
-                                      pixelsAngleFormat.pixelReadFunction, conversionRow.data(),
-                                      dstRowPitch, dstFormat.pixelBytes, 0,
-                                      dstFormat.pixelWriteFunction, internalFormat.format,
-                                      dstFormat.componentType, mtlRow.size.width, 1, 1, false,
-                                      false, false);
-                }
+                    const uint8_t *psrc = pixels + d * pixelsDepthPitch + r * pixelsRowPitch;
+                    mtlRow.origin.y     = mtlArea.origin.y + r;
 
-                // Upload to texture
-                ANGLE_TRY(UploadTextureContents(context, dstFormat, mtlRow, 0, slice,
-                                                conversionRow.data(), dstRowPitch, 0, image));
+                    // Convert pixels
+                    if (loadFunctionInfo.loadFunction)
+                    {
+                        loadFunctionInfo.loadFunction(mtlRow.size.width, 1, 1, psrc, pixelsRowPitch,
+                                                      0, conversionRow.data(), dstRowPitch, 0);
+                    }
+                    else
+                    {
+                        CopyImageCHROMIUM(psrc, pixelsRowPitch, pixelsAngleFormat.pixelBytes, 0,
+                                          pixelsAngleFormat.pixelReadFunction, conversionRow.data(),
+                                          dstRowPitch, dstFormat.pixelBytes, 0,
+                                          dstFormat.pixelWriteFunction, internalFormat.format,
+                                          dstFormat.componentType, mtlRow.size.width, 1, 1, false,
+                                          false, false);
+                    }
+
+                    // Upload to texture
+                    ANGLE_TRY(UploadTextureContents(context, dstFormat, mtlRow, 0, slice,
+                                                    conversionRow.data(), dstRowPitch, 0, image));
+                }
             }
-        }
-    }
+        }  // if (mFormat.intendedAngleFormat().isBlock)
+    }      // if (unpackBuffer)
 
     return angle::Result::Continue;
 }
