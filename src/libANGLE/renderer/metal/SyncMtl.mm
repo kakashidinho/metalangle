@@ -76,13 +76,18 @@ angle::Result Sync::clientWait(ContextMtl *contextMtl,
         contextMtl->flushCommandBufer();
     }
 
+    // Create references to mutex and condition variable since they might be released in
+    // onDestroy(), but the callback might still not be fired yet.
+    std::shared_ptr<std::condition_variable> cvRef = mCv;
+    std::shared_ptr<std::mutex> lockRef            = mLock;
+
     AutoObjCObj<MTLSharedEventListener> eventListener =
         contextMtl->getDisplay()->getOrCreateSharedEventListener();
     [mMetalSharedEvent.get() notifyListener:eventListener
                                     atValue:mSetCounter
                                       block:^(id<MTLSharedEvent> sharedEvent, uint64_t value) {
-                                        std::unique_lock<std::mutex> lg(*mLock);
-                                        mCv->notify_one();
+                                        std::unique_lock<std::mutex> lg(*lockRef);
+                                        cvRef->notify_one();
                                       }];
 
     if (!mCv->wait_for(lg, std::chrono::nanoseconds(timeout),
