@@ -76,6 +76,13 @@ angle::Result Sync::clientWait(ContextMtl *contextMtl,
         contextMtl->flushCommandBufer();
     }
 
+    if (timeout == 0)
+    {
+        *outResult = GL_TIMEOUT_EXPIRED;
+
+        return angle::Result::Continue;
+    }
+
     // Create references to mutex and condition variable since they might be released in
     // onDestroy(), but the callback might still not be fired yet.
     std::shared_ptr<std::condition_variable> cvRef = mCv;
