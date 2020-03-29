@@ -161,7 +161,7 @@ angle::Result BufferMtl::mapRange(const gl::Context *context,
         if (mBufferPool.getMaxBuffers() == 1)
         {
             *mapPtr = mBuffer->map(mtl::GetImpl(context), (access & GL_MAP_WRITE_BIT) == 0,
-                                   access & GL_MAP_UNSYNCHRONIZED_BIT);
+                                   access & GL_MAP_UNSYNCHRONIZED_BIT) + offset;
         }
         else
         {
