@@ -206,7 +206,11 @@ StreamProducerImpl *DisplayMtl::createStreamProducerD3DTexture(
 gl::Version DisplayMtl::getMaxSupportedESVersion() const
 {
     if (mFeatures.hasBaseVertexInstancedDraw.enabled && mFeatures.hasStencilOutput.enabled &&
-        supportEitherGPUFamily(4, 1) && getMetalDevice().depth24Stencil8PixelFormatSupported)
+        supportEitherGPUFamily(4, 1)
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
+        && getMetalDevice().depth24Stencil8PixelFormatSupported
+#endif
+        )
     {
         return gl::Version(3, 0);
     }
