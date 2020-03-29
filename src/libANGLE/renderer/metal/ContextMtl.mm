@@ -1198,10 +1198,7 @@ angle::Result ContextMtl::finishCommandBuffer()
 {
     flushCommandBufer();
 
-    if (mCmdBuffer.valid())
-    {
-        mCmdBuffer.finish();
-    }
+    mCmdBuffer.finish();
 
     return angle::Result::Continue;
 }
