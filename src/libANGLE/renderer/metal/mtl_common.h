@@ -217,9 +217,6 @@ struct ClearColorValue
     }
 };
 
-// NOTE(hqle): Support ES 3.0.
-constexpr gl::Version kMaxSupportedGLVersion = gl::Version(2, 0);
-
 template <typename T>
 struct ImplTypeHelper;
 

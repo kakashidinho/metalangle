@@ -205,7 +205,12 @@ StreamProducerImpl *DisplayMtl::createStreamProducerD3DTexture(
 
 gl::Version DisplayMtl::getMaxSupportedESVersion() const
 {
-    return mtl::kMaxSupportedGLVersion;
+    if (mFeatures.hasBaseVertexInstancedDraw.enabled && mFeatures.hasStencilOutput.enabled &&
+        supportEitherGPUFamily(4, 1) && getMetalDevice().depth24Stencil8PixelFormatSupported)
+    {
+        return gl::Version(3, 0);
+    }
+    return gl::Version(2, 0);
 }
 
 gl::Version DisplayMtl::getMaxConformantESVersion() const
