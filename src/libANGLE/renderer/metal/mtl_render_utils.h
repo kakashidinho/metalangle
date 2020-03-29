@@ -37,6 +37,7 @@ struct ClearRectParams
     Optional<float> clearDepth;
     Optional<uint32_t> clearStencil;
 
+    const mtl::Format *colorFormat = nullptr;
     gl::Extents dstTextureSize;
 
     // Only clear enabled buffers

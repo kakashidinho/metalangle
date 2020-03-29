@@ -184,7 +184,8 @@ class FramebufferMtl : public FramebufferImpl
     RenderTargetMtl *mStencilRenderTarget = nullptr;
     mtl::RenderPassDesc mRenderPassDesc;
 
-    bool mRenderPassAttachmentsSameColorType = false;
+    const mtl::Format *mRenderPassFirstColorAttachmentFormat = nullptr;
+    bool mRenderPassAttachmentsSameColorType                 = false;
 
     // Flag indicating the render pass start is a clean start or a resume from interruption such
     // as by a compute pass.

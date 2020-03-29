@@ -64,6 +64,8 @@ void FramebufferMtl::reset()
         rt = nullptr;
     }
     mDepthRenderTarget = mStencilRenderTarget = nullptr;
+
+    mRenderPassFirstColorAttachmentFormat = nullptr;
 }
 
 void FramebufferMtl::destroy(const gl::Context *context)
@@ -824,8 +826,8 @@ angle::Result FramebufferMtl::prepareRenderPass(const gl::Context *context,
 {
     auto &desc = *pDescOut;
 
-    const mtl::Format *firstAttachemtFormat = nullptr;
-    mRenderPassAttachmentsSameColorType     = true;
+    mRenderPassFirstColorAttachmentFormat = nullptr;
+    mRenderPassAttachmentsSameColorType   = true;
     uint32_t maxColorAttachments = static_cast<uint32_t>(mState.getColorAttachments().size());
     desc.numColorAttachments     = 0;
     for (uint32_t colorIndexGL = 0; colorIndexGL < maxColorAttachments; ++colorIndexGL)
@@ -841,15 +843,15 @@ angle::Result FramebufferMtl::prepareRenderPass(const gl::Context *context,
 
             desc.numColorAttachments = std::max(desc.numColorAttachments, colorIndexGL + 1);
 
-            if (!firstAttachemtFormat)
+            if (!mRenderPassFirstColorAttachmentFormat)
             {
-                firstAttachemtFormat = colorRenderTarget->getFormat();
+                mRenderPassFirstColorAttachmentFormat = colorRenderTarget->getFormat();
             }
             else if (colorRenderTarget->getFormat())
             {
-                if (firstAttachemtFormat->actualAngleFormat().isSint() !=
+                if (mRenderPassFirstColorAttachmentFormat->actualAngleFormat().isSint() !=
                         colorRenderTarget->getFormat()->actualAngleFormat().isSint() ||
-                    firstAttachemtFormat->actualAngleFormat().isUint() !=
+                    mRenderPassFirstColorAttachmentFormat->actualAngleFormat().isUint() !=
                         colorRenderTarget->getFormat()->actualAngleFormat().isUint())
                 {
                     mRenderPassAttachmentsSameColorType = false;
@@ -1059,6 +1061,7 @@ angle::Result FramebufferMtl::clearImpl(const gl::Context *context,
     const gl::Rectangle renderArea(0, 0, mState.getDimensions().width,
                                    mState.getDimensions().height);
 
+    clearOpts.colorFormat    = mRenderPassFirstColorAttachmentFormat;
     clearOpts.dstTextureSize = mState.getExtents();
     clearOpts.clearArea      = ClipRectToScissor(contextMtl->getState(), renderArea, false);
     clearOpts.flipY          = mFlipY;
