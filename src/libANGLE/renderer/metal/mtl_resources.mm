@@ -342,12 +342,12 @@ Texture::Texture(Texture *original, const TextureSwizzleChannels &swizzle)
 #if defined(__IPHONE_13_0) || defined(__MAC_10_15)
     ANGLE_MTL_OBJC_SCOPE
     {
-        auto view =
-            [original->get() newTextureViewWithPixelFormat:original->pixelFormat()
-                                               textureType:original->textureType()
-                                                    levels:NSMakeRange(0, original->mipmapLevels())
-                                                    slices:NSMakeRange(0, original->arrayLength())
-                                                   swizzle:swizzle];
+        auto view = [original->get()
+            newTextureViewWithPixelFormat:original->pixelFormat()
+                              textureType:original->textureType()
+                                   levels:NSMakeRange(0, original->mipmapLevels())
+                                   slices:NSMakeRange(0, original->cubeFacesOrArrayLength())
+                                  swizzle:swizzle];
 
         set([view ANGLE_MTL_AUTORELEASE]);
     }
