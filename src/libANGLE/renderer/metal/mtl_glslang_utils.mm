@@ -240,6 +240,7 @@ class SpirvToMslCompiler : public spirv_cross::CompilerMSL
     std::string compileEx(gl::ShaderType shaderType, bool *hasArgumentBufferOut)
     {
         spirv_cross::CompilerMSL::Options compOpt;
+
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
         compOpt.platform = spirv_cross::CompilerMSL::Options::macOS;
 #else
@@ -256,6 +257,8 @@ class SpirvToMslCompiler : public spirv_cross::CompilerMSL
             // Always use at least Metal 2.0.
             compOpt.set_msl_version(2);
         }
+
+        compOpt.pad_fragment_output_components = true;
 
         // Tell spirv-cross to map default & driver uniform blocks as we want
         spirv_cross::ShaderResources mslRes = spirv_cross::CompilerMSL::get_shader_resources();
