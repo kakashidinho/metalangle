@@ -91,10 +91,14 @@ class CommandBuffer final : public WrappedObject<id<MTLCommandBuffer>>, angle::N
     CommandBuffer(CommandQueue *cmdQueue);
     ~CommandBuffer();
 
+    // This method must be called so that command encoder can be used.
     void restart();
 
+    // Return true if command buffer can be encoded into. Return false if it has been committed
+    // and hasn't been restarted.
     bool valid() const;
     void commit();
+    // wait for committed command buffer to finish.
     void finish();
 
     void present(id<CAMetalDrawable> presentationDrawable);
@@ -247,6 +251,8 @@ class RenderCommandEncoder final : public CommandEncoder
     void reset() override;
     void endEncoding() override;
 
+    // Restart the encoder so that new commands can be encoded.
+    // NOTE: parent CommandBuffer's restart() must be called before this.
     RenderCommandEncoder &restart(const RenderPassDesc &desc);
 
     RenderCommandEncoder &setRenderPipelineState(id<MTLRenderPipelineState> state);
@@ -369,6 +375,8 @@ class BlitCommandEncoder final : public CommandEncoder
     BlitCommandEncoder(CommandBuffer *cmdBuffer);
     ~BlitCommandEncoder() override;
 
+    // Restart the encoder so that new commands can be encoded.
+    // NOTE: parent CommandBuffer's restart() must be called before this.
     BlitCommandEncoder &restart();
 
     BlitCommandEncoder &copyBufferToTexture(const BufferRef &src,
@@ -420,6 +428,8 @@ class ComputeCommandEncoder final : public CommandEncoder
     ComputeCommandEncoder(CommandBuffer *cmdBuffer);
     ~ComputeCommandEncoder() override;
 
+    // Restart the encoder so that new commands can be encoded.
+    // NOTE: parent CommandBuffer's restart() must be called before this.
     ComputeCommandEncoder &restart();
 
     ComputeCommandEncoder &setComputePipelineState(id<MTLComputePipelineState> state);
