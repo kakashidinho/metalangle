@@ -6,9 +6,9 @@
   "src/libANGLE/renderer/metal/shaders/clear.metal":
     "37ef05208eb5d12110a7d277a4bbcbe1",
   "src/libANGLE/renderer/metal/shaders/common.h":
-    "6489a8aa4ebdc2c6dc2c0bd016b3f782",
+    "63e719c9bbd371311da2692d389f0171",
   "src/libANGLE/renderer/metal/shaders/compiled/mtl_default_shaders.inc":
-    "59c769cd29b0f773194eb6e781757639",
+    "353107a6d83c097f0726acf76ffecd30",
   "src/libANGLE/renderer/metal/shaders/constants.h":
     "1c36bcb6e805eac8c83b0a69eebadbe8",
   "src/libANGLE/renderer/metal/shaders/copy_buffer.metal":

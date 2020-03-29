@@ -29,10 +29,6 @@ constant bool kColorOutputAvailable0 = kNumColorOutputs > 0;
 constant bool kColorOutputAvailable1 = kNumColorOutputs > 1;
 constant bool kColorOutputAvailable2 = kNumColorOutputs > 2;
 constant bool kColorOutputAvailable3 = kNumColorOutputs > 3;
-constant bool kColorOutputAvailable4 = kNumColorOutputs > 4;
-constant bool kColorOutputAvailable5 = kNumColorOutputs > 5;
-constant bool kColorOutputAvailable6 = kNumColorOutputs > 6;
-constant bool kColorOutputAvailable7 = kNumColorOutputs > 7;
 
 namespace rx
 {
@@ -49,10 +45,6 @@ struct MultipleColorOutputs
     vec<T, 4> color1 [[color(1), function_constant(kColorOutputAvailable1)]];
     vec<T, 4> color2 [[color(2), function_constant(kColorOutputAvailable2)]];
     vec<T, 4> color3 [[color(3), function_constant(kColorOutputAvailable3)]];
-    vec<T, 4> color4 [[color(4), function_constant(kColorOutputAvailable4)]];
-    vec<T, 4> color5 [[color(5), function_constant(kColorOutputAvailable5)]];
-    vec<T, 4> color6 [[color(6), function_constant(kColorOutputAvailable6)]];
-    vec<T, 4> color7 [[color(7), function_constant(kColorOutputAvailable7)]];
 };
 
 #define ANGLE_ASSIGN_COLOR_OUPUT(STRUCT_VARIABLE, COLOR_INDEX, VALUE) \
@@ -73,10 +65,6 @@ static inline MultipleColorOutputs<T> toMultipleColorOutputs(vec<T, 4> color)
     ANGLE_ASSIGN_COLOR_OUPUT(re, 1, color);
     ANGLE_ASSIGN_COLOR_OUPUT(re, 2, color);
     ANGLE_ASSIGN_COLOR_OUPUT(re, 3, color);
-    ANGLE_ASSIGN_COLOR_OUPUT(re, 4, color);
-    ANGLE_ASSIGN_COLOR_OUPUT(re, 5, color);
-    ANGLE_ASSIGN_COLOR_OUPUT(re, 6, color);
-    ANGLE_ASSIGN_COLOR_OUPUT(re, 7, color);
 
     return re;
 }
