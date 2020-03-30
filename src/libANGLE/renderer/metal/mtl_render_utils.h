@@ -185,7 +185,6 @@ class ClearUtils : DrawBasedUtils
     ClearUtils(const std::string &fragmentShaderName);
     ClearUtils(const ClearUtils &src);
 
-    angle::Result initialize(Context *ctx);
     void onDestroy();
 
     // Clear current framebuffer
@@ -194,7 +193,7 @@ class ClearUtils : DrawBasedUtils
                                 const ClearRectParams &params);
 
   private:
-    void initClearResources(Context *ctx);
+    void ensureRenderPipelineStateInitialized(Context *ctx, uint32_t numColorAttachments);
 
     void setupClearWithDraw(const gl::Context *context,
                             RenderCommandEncoder *cmdEncoder,
@@ -218,7 +217,6 @@ class ColorBlitUtils : BaseBlitUtils
     ColorBlitUtils(const std::string &fragmentShaderName);
     ColorBlitUtils(const ColorBlitUtils &src);
 
-    angle::Result initialize(Context *ctx);
     void onDestroy();
 
     // Blit texture data to current framebuffer
@@ -227,7 +225,11 @@ class ColorBlitUtils : BaseBlitUtils
                                     const ColorBlitParams &params);
 
   private:
-    void initBlitResources(Context *ctx);
+    void ensureRenderPipelineStateInitialized(Context *ctx,
+                                              uint32_t numColorAttachments,
+                                              int alphaPremultiplyType,
+                                              int sourceTextureType,
+                                              RenderPipelineCache *cacheOut);
 
     void setupColorBlitWithDraw(const gl::Context *context,
                                 RenderCommandEncoder *cmdEncoder,
@@ -253,7 +255,6 @@ class ColorBlitUtils : BaseBlitUtils
 class DepthStencilBlitUtils : BaseBlitUtils
 {
   public:
-    angle::Result initialize(Context *ctx);
     void onDestroy();
 
     angle::Result blitDepthStencilWithDraw(const gl::Context *context,
@@ -261,7 +262,10 @@ class DepthStencilBlitUtils : BaseBlitUtils
                                            const DepthStencilBlitParams &params);
 
   private:
-    void initBlitResources(Context *ctx);
+    void ensureRenderPipelineStateInitialized(Context *ctx,
+                                              int sourceDepthTextureType,
+                                              int sourceStencilTextureType,
+                                              RenderPipelineCache *cacheOut);
 
     void setupDepthStencilBlitWithDraw(const gl::Context *context,
                                        RenderCommandEncoder *cmdEncoder,

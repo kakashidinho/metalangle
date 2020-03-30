@@ -213,7 +213,7 @@ int GetShaderTextureType(const TextureRef &texture)
 {
     if (!texture)
     {
-        return mtl_shader::kTextureType2D;
+        return -1;
     }
     switch (texture->textureType())
     {
@@ -380,16 +380,6 @@ RenderUtils::~RenderUtils() {}
 
 angle::Result RenderUtils::initialize()
 {
-    for (ClearUtils &util : mClearUtils)
-    {
-        ANGLE_TRY(util.initialize(this));
-    }
-    for (ColorBlitUtils &util : mColorBlitUtils)
-    {
-        ANGLE_TRY(util.initialize(this));
-    }
-    ANGLE_TRY(mDepthStencilBlitUtils.initialize(this));
-
     return angle::Result::Continue;
 }
 
@@ -571,20 +561,20 @@ ClearUtils::ClearUtils(const std::string &fragmentShaderName)
 
 ClearUtils::ClearUtils(const ClearUtils &src) : ClearUtils(src.mFragmentShaderName) {}
 
-angle::Result ClearUtils::initialize(Context *ctx)
-{
-    initClearResources(ctx);
-
-    return angle::Result::Continue;
-}
-
 void ClearUtils::onDestroy()
 {
     ClearRenderPipelineCacheArray(&mClearRenderPipelineCache);
 }
 
-void ClearUtils::initClearResources(Context *ctx)
+void ClearUtils::ensureRenderPipelineStateInitialized(Context *ctx, uint32_t numOutputs)
 {
+    RenderPipelineCache &cache = mClearRenderPipelineCache[numOutputs];
+    if (cache.getVertexShader() && cache.getFragmentShader())
+    {
+        // Already initialized.
+        return;
+    }
+
     ANGLE_MTL_OBJC_SCOPE
     {
         NSError *err       = nil;
@@ -594,24 +584,18 @@ void ClearUtils::initClearResources(Context *ctx)
 
         // Create clear shader pipeline cache for each number of color outputs.
         // So clear k color outputs will use mClearRenderPipelineCache[k] for example:
-        for (uint32_t i = 0; i <= kMaxRenderTargets; ++i)
-        {
-            RenderPipelineCache &cache = mClearRenderPipelineCache[i];
-            uint32_t numOutputs        = i;
+        [funcConstants setConstantValue:&numOutputs
+                                   type:MTLDataTypeUInt
+                               withName:NUM_COLOR_OUTPUTS_CONSTANT_NAME];
 
-            [funcConstants setConstantValue:&numOutputs
-                                       type:MTLDataTypeUInt
-                                   withName:NUM_COLOR_OUTPUTS_CONSTANT_NAME];
+        auto fragmentShader = [[shaderLib
+            newFunctionWithName:[NSString stringWithUTF8String:mFragmentShaderName.c_str()]
+                 constantValues:funcConstants
+                          error:&err] ANGLE_MTL_AUTORELEASE];
+        ASSERT(fragmentShader);
 
-            auto fragmentShader = [[shaderLib
-                newFunctionWithName:[NSString stringWithUTF8String:mFragmentShaderName.c_str()]
-                     constantValues:funcConstants
-                              error:&err] ANGLE_MTL_AUTORELEASE];
-            ASSERT(fragmentShader);
-
-            cache.setVertexShader(ctx, vertexShader);
-            cache.setFragmentShader(ctx, fragmentShader);
-        }
+        cache.setVertexShader(ctx, vertexShader);
+        cache.setFragmentShader(ctx, fragmentShader);
     }
 }
 
@@ -675,6 +659,7 @@ id<MTLRenderPipelineState> ClearUtils::getClearRenderPipelineState(const gl::Con
 
     pipelineDesc.inputPrimitiveTopology = kPrimitiveTopologyClassTriangle;
 
+    ensureRenderPipelineStateInitialized(contextMtl, renderPassDesc.numColorAttachments);
     RenderPipelineCache &cache = mClearRenderPipelineCache[renderPassDesc.numColorAttachments];
 
     return cache.getRenderPipelineState(contextMtl, pipelineDesc);
@@ -767,13 +752,6 @@ ColorBlitUtils::ColorBlitUtils(const std::string &fragmentShaderName)
 ColorBlitUtils::ColorBlitUtils(const ColorBlitUtils &src) : ColorBlitUtils(src.mFragmentShaderName)
 {}
 
-angle::Result ColorBlitUtils::initialize(Context *ctx)
-{
-    initBlitResources(ctx);
-
-    return angle::Result::Continue;
-}
-
 void ColorBlitUtils::onDestroy()
 {
     ClearRenderPipelineCache2DArray(&mBlitRenderPipelineCache);
@@ -781,8 +759,19 @@ void ColorBlitUtils::onDestroy()
     ClearRenderPipelineCache2DArray(&mBlitUnmultiplyAlphaRenderPipelineCache);
 }
 
-void ColorBlitUtils::initBlitResources(Context *ctx)
+void ColorBlitUtils::ensureRenderPipelineStateInitialized(Context *ctx,
+                                                          uint32_t numOutputs,
+                                                          int alphaPremultiplyType,
+                                                          int textureType,
+                                                          RenderPipelineCache *cacheOut)
 {
+    RenderPipelineCache &pipelineCache = *cacheOut;
+    if (pipelineCache.getVertexShader() && pipelineCache.getFragmentShader())
+    {
+        // Already initialized.
+        return;
+    }
+
     ANGLE_MTL_OBJC_SCOPE
     {
         NSError *err       = nil;
@@ -790,64 +779,42 @@ void ColorBlitUtils::initBlitResources(Context *ctx)
         auto vertexShader  = [[shaderLib newFunctionWithName:@"blitVS"] ANGLE_MTL_AUTORELEASE];
         auto funcConstants = [[[MTLFunctionConstantValues alloc] init] ANGLE_MTL_AUTORELEASE];
 
-        ColorBlitRenderPipelineCacheArray *const pipelineCachePerTypePtr[] = {
-            // Normal blit
-            &mBlitRenderPipelineCache,
-            // Blit premultiply-alpha
-            &mBlitPremultiplyAlphaRenderPipelineCache,
-            // Blit unmultiply alpha
-            &mBlitUnmultiplyAlphaRenderPipelineCache};
+        constexpr BOOL multiplyAlphaFlags[][2] = {// premultiply, unmultiply
 
-        BOOL multiplyAlphaFlags[][2] = {// premultiply, unmultiply
+                                                  // Normal blit
+                                                  {NO, NO},
+                                                  // Blit premultiply-alpha
+                                                  {YES, NO},
+                                                  // Blit unmultiply alpha
+                                                  {NO, YES}};
 
-                                        // Normal blit
-                                        {NO, NO},
-                                        // Blit premultiply-alpha
-                                        {YES, NO},
-                                        // Blit unmultiply alpha
-                                        {NO, YES}};
+        // Set alpha multiply flags
+        [funcConstants setConstantValue:&multiplyAlphaFlags[alphaPremultiplyType][0]
+                                   type:MTLDataTypeBool
+                               withName:PREMULTIPLY_ALPHA_CONSTANT_NAME];
+        [funcConstants setConstantValue:&multiplyAlphaFlags[alphaPremultiplyType][1]
+                                   type:MTLDataTypeBool
+                               withName:UNMULTIPLY_ALPHA_CONSTANT_NAME];
 
-        for (int alphaType = 0; alphaType < 3; ++alphaType)
-        {
-            [funcConstants setConstantValue:&multiplyAlphaFlags[alphaType][0]
-                                       type:MTLDataTypeBool
-                                   withName:PREMULTIPLY_ALPHA_CONSTANT_NAME];
-            [funcConstants setConstantValue:&multiplyAlphaFlags[alphaType][1]
-                                       type:MTLDataTypeBool
-                                   withName:UNMULTIPLY_ALPHA_CONSTANT_NAME];
+        // We create blit shader pipeline cache for each number of color outputs.
+        // So blit k color outputs will use mBlitRenderPipelineCache[k-1] for example:
+        [funcConstants setConstantValue:&numOutputs
+                                   type:MTLDataTypeUInt
+                               withName:NUM_COLOR_OUTPUTS_CONSTANT_NAME];
 
-            // Create blit shader pipeline cache for each number of color outputs.
-            // So blit k color outputs will use mBlitRenderPipelineCache[k-1] for example:
-            for (uint32_t numOutputs = 1; numOutputs <= kMaxRenderTargets; ++numOutputs)
-            {
+        // Set texture type constant
+        [funcConstants setConstantValue:&textureType
+                                   type:MTLDataTypeInt
+                               withName:SOURCE_TEXTURE_TYPE_CONSTANT_NAME];
 
-                [funcConstants setConstantValue:&numOutputs
-                                           type:MTLDataTypeUInt
-                                       withName:NUM_COLOR_OUTPUTS_CONSTANT_NAME];
-                // For each source color texture type
-                for (int textureType = 0; textureType < mtl_shader::kTextureTypeCount;
-                     ++textureType)
-                {
-                    [funcConstants setConstantValue:&textureType
-                                               type:MTLDataTypeInt
-                                           withName:SOURCE_TEXTURE_TYPE_CONSTANT_NAME];
+        auto fragmentShader = [[shaderLib
+            newFunctionWithName:[NSString stringWithUTF8String:mFragmentShaderName.c_str()]
+                 constantValues:funcConstants
+                          error:&err] ANGLE_MTL_AUTORELEASE];
 
-                    RenderPipelineCache &pipelineCache =
-                        (*pipelineCachePerTypePtr)[alphaType][numOutputs - 1][textureType];
-
-                    auto fragmentShader = [[shaderLib
-                        newFunctionWithName:[NSString
-                                                stringWithUTF8String:mFragmentShaderName.c_str()]
-                             constantValues:funcConstants
-                                      error:&err] ANGLE_MTL_AUTORELEASE];
-
-                    ASSERT(fragmentShader);
-                    pipelineCache.setVertexShader(ctx, vertexShader);
-                    pipelineCache.setFragmentShader(ctx, fragmentShader);
-
-                }  // for each source color texture type
-            }      // for numOutputs
-        }          // for alphaType
+        ASSERT(fragmentShader);
+        pipelineCache.setVertexShader(ctx, vertexShader);
+        pipelineCache.setFragmentShader(ctx, fragmentShader);
     }
 }
 
@@ -869,20 +836,27 @@ id<MTLRenderPipelineState> ColorBlitUtils::getColorBlitRenderPipelineState(
     pipelineDesc.inputPrimitiveTopology = kPrimitiveTopologyClassTriangle;
 
     RenderPipelineCache *pipelineCache;
+    int alphaPremultiplyType;
     uint32_t nOutputIndex = renderPassDesc.numColorAttachments - 1;
     int textureType       = GetShaderTextureType(params.src);
     if (params.unpackPremultiplyAlpha == params.unpackUnmultiplyAlpha)
     {
-        pipelineCache = &mBlitRenderPipelineCache[nOutputIndex][textureType];
+        alphaPremultiplyType = 0;
+        pipelineCache        = &mBlitRenderPipelineCache[nOutputIndex][textureType];
     }
     else if (params.unpackPremultiplyAlpha)
     {
-        pipelineCache = &mBlitPremultiplyAlphaRenderPipelineCache[nOutputIndex][textureType];
+        alphaPremultiplyType = 1;
+        pipelineCache        = &mBlitPremultiplyAlphaRenderPipelineCache[nOutputIndex][textureType];
     }
     else
     {
-        pipelineCache = &mBlitUnmultiplyAlphaRenderPipelineCache[nOutputIndex][textureType];
+        alphaPremultiplyType = 2;
+        pipelineCache        = &mBlitUnmultiplyAlphaRenderPipelineCache[nOutputIndex][textureType];
     }
+
+    ensureRenderPipelineStateInitialized(contextMtl, renderPassDesc.numColorAttachments,
+                                         alphaPremultiplyType, textureType, pipelineCache);
 
     return pipelineCache->getRenderPipelineState(contextMtl, pipelineDesc);
 }
@@ -941,13 +915,6 @@ angle::Result ColorBlitUtils::blitColorWithDraw(const gl::Context *context,
 }
 
 // DepthStencilBlitUtils implementation
-angle::Result DepthStencilBlitUtils::initialize(Context *ctx)
-{
-    initBlitResources(ctx);
-
-    return angle::Result::Continue;
-}
-
 void DepthStencilBlitUtils::onDestroy()
 {
     ClearRenderPipelineCacheArray(&mDepthBlitRenderPipelineCache);
@@ -955,8 +922,18 @@ void DepthStencilBlitUtils::onDestroy()
     ClearRenderPipelineCache2DArray(&mDepthStencilBlitRenderPipelineCache);
 }
 
-void DepthStencilBlitUtils::initBlitResources(Context *ctx)
+void DepthStencilBlitUtils::ensureRenderPipelineStateInitialized(Context *ctx,
+                                                                 int sourceDepthTextureType,
+                                                                 int sourceStencilTextureType,
+                                                                 RenderPipelineCache *cacheOut)
 {
+    RenderPipelineCache &cache = *cacheOut;
+    if (cache.getVertexShader() && cache.getFragmentShader())
+    {
+        // Already initialized.
+        return;
+    }
+
     ANGLE_MTL_OBJC_SCOPE
     {
         NSError *err       = nil;
@@ -964,53 +941,41 @@ void DepthStencilBlitUtils::initBlitResources(Context *ctx)
         auto vertexShader  = [[shaderLib newFunctionWithName:@"blitVS"] ANGLE_MTL_AUTORELEASE];
         auto funcConstants = [[[MTLFunctionConstantValues alloc] init] ANGLE_MTL_AUTORELEASE];
 
-        for (int textureType = 0; textureType < mtl_shader::kTextureTypeCount; ++textureType)
+        NSString *shaderName;
+        if (sourceDepthTextureType != -1 && sourceStencilTextureType != -1)
         {
-            // Depth blit
-            [funcConstants setConstantValue:&textureType
+            shaderName = @"blitDepthStencilFS";
+        }
+        else if (sourceDepthTextureType != -1)
+        {
+            shaderName = @"blitDepthFS";
+        }
+        else
+        {
+            shaderName = @"blitStencilFS";
+        }
+
+        if (sourceDepthTextureType != -1)
+        {
+            [funcConstants setConstantValue:&sourceDepthTextureType
                                        type:MTLDataTypeInt
                                    withName:SOURCE_TEXTURE_TYPE_CONSTANT_NAME];
-            auto fragmentShader = [[shaderLib newFunctionWithName:@"blitDepthFS"
-                                                   constantValues:funcConstants
-                                                            error:&err] ANGLE_MTL_AUTORELEASE];
-            ASSERT(fragmentShader);
+        }
+        if (sourceStencilTextureType != -1)
+        {
 
-            mDepthBlitRenderPipelineCache[textureType].setVertexShader(ctx, vertexShader);
-            mDepthBlitRenderPipelineCache[textureType].setFragmentShader(ctx, fragmentShader);
-
-            if (!ctx->getDisplay()->getFeatures().hasStencilOutput.enabled)
-            {
-                continue;
-            }
-
-            // Stencil blit
-            [funcConstants setConstantValue:&textureType
+            [funcConstants setConstantValue:&sourceStencilTextureType
                                        type:MTLDataTypeInt
                                    withName:SOURCE_TEXTURE2_TYPE_CONSTANT_NAME];
-            fragmentShader = [[shaderLib newFunctionWithName:@"blitStencilFS"
-                                              constantValues:funcConstants
-                                                       error:&err] ANGLE_MTL_AUTORELEASE];
-            ASSERT(fragmentShader);
-            mStencilBlitRenderPipelineCache[textureType].setVertexShader(ctx, vertexShader);
-            mStencilBlitRenderPipelineCache[textureType].setFragmentShader(ctx, fragmentShader);
+        }
 
-            for (int textureType2 = 0; textureType2 < mtl_shader::kTextureTypeCount; ++textureType2)
-            {
-                // Depth & stencil blit
-                [funcConstants setConstantValue:&textureType2
-                                           type:MTLDataTypeInt
-                                       withName:SOURCE_TEXTURE2_TYPE_CONSTANT_NAME];
+        auto fragmentShader = [[shaderLib newFunctionWithName:shaderName
+                                               constantValues:funcConstants
+                                                        error:&err] ANGLE_MTL_AUTORELEASE];
+        ASSERT(fragmentShader);
 
-                fragmentShader = [[shaderLib newFunctionWithName:@"blitDepthStencilFS"
-                                                  constantValues:funcConstants
-                                                           error:&err] ANGLE_MTL_AUTORELEASE];
-                ASSERT(fragmentShader);
-                mDepthStencilBlitRenderPipelineCache[textureType][textureType2].setVertexShader(
-                    ctx, vertexShader);
-                mDepthStencilBlitRenderPipelineCache[textureType][textureType2].setFragmentShader(
-                    ctx, fragmentShader);
-            }  // for (int textureType2)
-        }      // for (int textureType1)
+        cache.setVertexShader(ctx, vertexShader);
+        cache.setFragmentShader(ctx, fragmentShader);
     }
 }
 
@@ -1048,6 +1013,9 @@ id<MTLRenderPipelineState> DepthStencilBlitUtils::getDepthStencilBlitRenderPipel
         // Only stencil blit
         pipelineCache = &mStencilBlitRenderPipelineCache[stencilTextureType];
     }
+
+    ensureRenderPipelineStateInitialized(contextMtl, depthTextureType, stencilTextureType,
+                                         pipelineCache);
 
     return pipelineCache->getRenderPipelineState(contextMtl, pipelineDesc);
 }
