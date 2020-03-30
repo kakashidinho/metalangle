@@ -1263,22 +1263,50 @@ angle::Result FramebufferMtl::readPixelsToPBO(const gl::Context *context,
 
     const mtl::Format &readFormat        = *renderTarget->getFormat();
     const angle::Format &readAngleFormat = readFormat.actualAngleFormat();
-    const angle::Format &dstAngleFormat  = *packPixelsParams.destFormat;
-
-    const mtl::Format &dstFormat = contextMtl->getPixelFormat(dstAngleFormat.id);
 
     ANGLE_MTL_CHECK(contextMtl, packPixelsParams.offset <= std::numeric_limits<uint32_t>::max(),
                     GL_INVALID_OPERATION);
     uint32_t offset = static_cast<uint32_t>(packPixelsParams.offset);
-    ANGLE_MTL_CHECK(contextMtl, (offset % dstAngleFormat.pixelBytes) == 0, GL_INVALID_OPERATION);
 
     mtl::TextureRef texture = renderTarget->getTexture();
 
     BufferMtl *packBufferMtl = mtl::GetImpl(packPixelsParams.packBuffer);
     mtl::BufferRef dstBuffer = packBufferMtl->getCurrentBuffer();
 
-    if (dstFormat.needConversion(readAngleFormat.id))
+    if (packPixelsParams.destFormat->id != readAngleFormat.id ||
+        (offset % packPixelsParams.destFormat->pixelBytes))
     {
+        const angle::Format *actualDstAngleFormat;
+
+        // SRGB is special case: We need to write sRGB values to buffer, not linear values.
+        switch (readAngleFormat.id)
+        {
+            case angle::FormatID::B8G8R8A8_UNORM_SRGB:
+            case angle::FormatID::R8G8B8_UNORM_SRGB:
+            case angle::FormatID::R8G8B8A8_UNORM_SRGB:
+                if (packPixelsParams.destFormat->id != readAngleFormat.id)
+                {
+                    switch (packPixelsParams.destFormat->id)
+                    {
+                        case angle::FormatID::B8G8R8A8_UNORM:
+                            actualDstAngleFormat =
+                                &angle::Format::Get(angle::FormatID::B8G8R8A8_UNORM_SRGB);
+                            break;
+                        case angle::FormatID::R8G8B8A8_UNORM:
+                            actualDstAngleFormat =
+                                &angle::Format::Get(angle::FormatID::R8G8B8A8_UNORM_SRGB);
+                            break;
+                        default:
+                            // Unsupported format.
+                            ANGLE_MTL_CHECK(contextMtl, false, GL_INVALID_ENUM);
+                    }
+                    break;
+                }
+                OS_FALLTHROUGH;
+            default:
+                actualDstAngleFormat = packPixelsParams.destFormat;
+        }
+
         // Use compute shader
         mtl::CopyPixelsToBufferParams params;
         params.buffer            = dstBuffer;
@@ -1292,7 +1320,7 @@ angle::Result FramebufferMtl::readPixelsToPBO(const gl::Context *context,
         params.reverseTextureRowOrder = packPixelsParams.reverseRowOrder;
 
         ANGLE_TRY(contextMtl->getDisplay()->getUtils().packPixelsFromTextureToBuffer(
-            contextMtl, dstAngleFormat, params));
+            contextMtl, *actualDstAngleFormat, params));
     }
     else
     {
