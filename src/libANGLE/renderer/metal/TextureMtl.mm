@@ -1614,6 +1614,11 @@ angle::Result TextureMtl::convertAndSetPerSliceSubImage(const gl::Context *conte
             params.texture           = image;
             params.textureArea       = mtl::MTLRegionToGLBox(mtlArea);
 
+            // If texture is not array, slice must be zero, if texture is array, mtlArea.origin.z
+            // must be zero.
+            ASSERT(slice == 0 || params.textureArea.z == 0);
+            params.textureArea.z += slice;
+
             ANGLE_TRY(contextMtl->getDisplay()->getUtils().unpackPixelsFromBufferToTexture(
                 contextMtl, pixelsAngleFormat, params));
         }

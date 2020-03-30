@@ -120,6 +120,9 @@ struct CopyPixelsFromBufferParams : CopyPixelsCommonParams
 {
     uint32_t bufferDepthPitch = 0;
 
+    // z offset is:
+    //  - slice index if texture is array.
+    //  - depth if texture is 3d.
     gl::Box textureArea;
 };
 
