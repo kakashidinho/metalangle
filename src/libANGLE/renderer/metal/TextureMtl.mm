@@ -1530,8 +1530,14 @@ angle::Result TextureMtl::setPerSliceSubImage(const gl::Context *context,
     if (unpackBuffer)
     {
         uintptr_t offset = reinterpret_cast<uintptr_t>(pixels);
-        ANGLE_MTL_CHECK(contextMtl, (offset % mFormat.actualAngleFormat().pixelBytes) == 0,
-                        GL_INVALID_OPERATION);
+        if (offset % mFormat.actualAngleFormat().pixelBytes)
+        {
+            // offset is not divisible by pixelByte, use convertAndSetPerSliceSubImage() function.
+            return convertAndSetPerSliceSubImage(context, slice, mtlArea, internalFormat, type,
+                                                 pixelsAngleFormat, pixelsRowPitch,
+                                                 pixelsDepthPitch, unpackBuffer, pixels, image);
+        }
+
         BufferMtl *unpackBufferMtl = mtl::GetImpl(unpackBuffer);
 
         if (mFormat.hasDepthAndStencilBits())
@@ -1585,8 +1591,6 @@ angle::Result TextureMtl::convertAndSetPerSliceSubImage(const gl::Context *conte
                         GL_INVALID_OPERATION);
 
         uint32_t offset = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(pixels));
-        ANGLE_MTL_CHECK(contextMtl, (offset % pixelsAngleFormat.pixelBytes) == 0,
-                        GL_INVALID_OPERATION);
 
         BufferMtl *unpackBufferMtl = mtl::GetImpl(unpackBuffer);
         if (!mFormat.getCaps().writable || mFormat.hasDepthOrStencilBits() ||
