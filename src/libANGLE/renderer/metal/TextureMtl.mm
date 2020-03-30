@@ -826,7 +826,8 @@ angle::Result TextureMtl::setSubImage(const gl::Context *context,
                                       gl::Buffer *unpackBuffer,
                                       const uint8_t *pixels)
 {
-    const gl::InternalFormat &formatInfo = gl::GetInternalFormatInfo(format, type);
+    const gl::InternalFormat &formatInfo =
+        gl::GetInternalFormatInfo(mFormat.intendedInternalFormat().internalFormat, type);
 
     return setSubImageImpl(context, index, area, formatInfo, type, unpack, unpackBuffer, pixels);
 }
