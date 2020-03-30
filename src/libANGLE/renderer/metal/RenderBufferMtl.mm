@@ -106,6 +106,30 @@ angle::Result RenderbufferMtl::setStorageImpl(const gl::Context *context,
         }
 
         mRenderTarget.set(mTexture, mImplicitMSTexture, 0, 0, mFormat);
+
+        // For emulated channels that GL texture intends to not have,
+        // we need to initialize their content.
+        bool emulatedChannels = mtl::IsFormatEmulated(mFormat);
+        if (emulatedChannels)
+        {
+            gl::ImageIndex index;
+
+            if (actualSamples > 1)
+            {
+                index = gl::ImageIndex::Make2DMultisample();
+            }
+            else
+            {
+                index = gl::ImageIndex::Make2D(0);
+            }
+
+            ANGLE_TRY(mtl::InitializeTextureContents(context, mTexture, mFormat, index));
+            if (mImplicitMSTexture)
+            {
+                ANGLE_TRY(mtl::InitializeTextureContents(context, mImplicitMSTexture, mFormat,
+                                                         gl::ImageIndex::Make2DMultisample()));
+            }
+        }  // if (emulatedChannels)
     }
 
     return angle::Result::Continue;

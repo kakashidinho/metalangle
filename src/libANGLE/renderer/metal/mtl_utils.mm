@@ -14,6 +14,7 @@
 
 #include "common/MemoryBuffer.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
+#include "libANGLE/renderer/metal/RenderTargetMtl.h"
 
 namespace rx
 {
@@ -28,54 +29,21 @@ angle::Result InitializeTextureContents(const gl::Context *context,
     ASSERT(texture && texture->valid());
     ContextMtl *contextMtl = mtl::GetImpl(context);
 
+    const angle::Format &actualAngleFormat           = textureObjFormat.actualAngleFormat();
     const gl::InternalFormat &intendedInternalFormat = textureObjFormat.intendedInternalFormat();
 
     // This function is called in many places to initialize the content of a texture.
     // So it's better we do the sanity check here instead of let the callers do it themselves:
-    if (!textureObjFormat.valid())
+    if (!textureObjFormat.valid() || actualAngleFormat.isBlock || actualAngleFormat.depthBits > 0 ||
+        actualAngleFormat.stencilBits > 0)
     {
+        // If dst format is compressed, ignore.
         return angle::Result::Continue;
     }
 
     gl::Extents size = texture->size(index);
 
     // Intialize the content to black
-
-    const angle::Format &dstFormat = angle::Format::Get(textureObjFormat.actualFormatId);
-    const size_t dstRowPitch       = dstFormat.pixelBytes * size.width;
-    angle::MemoryBuffer conversionRow;
-    ANGLE_CHECK_GL_ALLOC(contextMtl, conversionRow.resize(dstRowPitch));
-
-    if (textureObjFormat.initFunction)
-    {
-        textureObjFormat.initFunction(size.width, 1, 1, conversionRow.data(), dstRowPitch, 0);
-    }
-    else
-    {
-        if (!textureObjFormat.valid() || intendedInternalFormat.compressed ||
-            intendedInternalFormat.depthBits > 0 || intendedInternalFormat.stencilBits > 0)
-        {
-            // If source format is compressed, ignore.
-            return angle::Result::Continue;
-        }
-
-        const angle::Format &srcFormat = angle::Format::Get(intendedInternalFormat.alphaBits > 0
-                                                                ? angle::FormatID::R8G8B8A8_UNORM
-                                                                : angle::FormatID::R8G8B8_UNORM);
-        const size_t srcRowPitch       = srcFormat.pixelBytes * size.width;
-        angle::MemoryBuffer srcRow;
-        ANGLE_CHECK_GL_ALLOC(contextMtl, srcRow.resize(srcRowPitch));
-        memset(srcRow.data(), 0, srcRowPitch);
-
-        CopyImageCHROMIUM(srcRow.data(), srcRowPitch, srcFormat.pixelBytes, 0,
-                          srcFormat.pixelReadFunction, conversionRow.data(), dstRowPitch,
-                          dstFormat.pixelBytes, 0, dstFormat.pixelWriteFunction,
-                          intendedInternalFormat.format, dstFormat.componentType, size.width, 1, 1,
-                          false, false, false);
-    }
-
-    auto mtlRowRegion = MTLRegionMake2D(0, 0, size.width, 1);
-
     GLint layer      = 0;
     GLint startDepth = 0;
     if (index.hasLayer())
@@ -97,18 +65,78 @@ angle::Result InitializeTextureContents(const gl::Context *context,
         }
     }
 
-    for (NSUInteger d = 0; d < static_cast<NSUInteger>(size.depth); ++d)
+    if (texture->isCPUAccessible() && index.getType() != gl::TextureType::_2DMultisample &&
+        index.getType() != gl::TextureType::_2DMultisampleArray)
     {
-        mtlRowRegion.origin.z = d + startDepth;
-        for (NSUInteger r = 0; r < static_cast<NSUInteger>(size.height); ++r)
-        {
-            mtlRowRegion.origin.y = r;
+        const angle::Format &dstFormat = angle::Format::Get(textureObjFormat.actualFormatId);
+        const size_t dstRowPitch       = dstFormat.pixelBytes * size.width;
+        angle::MemoryBuffer conversionRow;
+        ANGLE_CHECK_GL_ALLOC(contextMtl, conversionRow.resize(dstRowPitch));
 
-            // Upload to texture
-            texture->replaceRegion(contextMtl, mtlRowRegion, index.getLevelIndex(), layer,
-                                   conversionRow.data(), dstRowPitch);
+        if (textureObjFormat.initFunction)
+        {
+            textureObjFormat.initFunction(size.width, 1, 1, conversionRow.data(), dstRowPitch, 0);
         }
-    }
+        else
+        {
+            if (!textureObjFormat.valid() || intendedInternalFormat.compressed ||
+                intendedInternalFormat.depthBits > 0 || intendedInternalFormat.stencilBits > 0)
+            {
+                // If source format is compressed, ignore.
+                return angle::Result::Continue;
+            }
+
+            const angle::Format &srcFormat = angle::Format::Get(
+                intendedInternalFormat.alphaBits > 0 ? angle::FormatID::R8G8B8A8_UNORM
+                                                     : angle::FormatID::R8G8B8_UNORM);
+            const size_t srcRowPitch = srcFormat.pixelBytes * size.width;
+            angle::MemoryBuffer srcRow;
+            ANGLE_CHECK_GL_ALLOC(contextMtl, srcRow.resize(srcRowPitch));
+            memset(srcRow.data(), 0, srcRowPitch);
+
+            CopyImageCHROMIUM(srcRow.data(), srcRowPitch, srcFormat.pixelBytes, 0,
+                              srcFormat.pixelReadFunction, conversionRow.data(), dstRowPitch,
+                              dstFormat.pixelBytes, 0, dstFormat.pixelWriteFunction,
+                              intendedInternalFormat.format, dstFormat.componentType, size.width, 1,
+                              1, false, false, false);
+        }
+
+        auto mtlRowRegion = MTLRegionMake2D(0, 0, size.width, 1);
+
+        for (NSUInteger d = 0; d < static_cast<NSUInteger>(size.depth); ++d)
+        {
+            mtlRowRegion.origin.z = d + startDepth;
+            for (NSUInteger r = 0; r < static_cast<NSUInteger>(size.height); ++r)
+            {
+                mtlRowRegion.origin.y = r;
+
+                // Upload to texture
+                texture->replaceRegion(contextMtl, mtlRowRegion, index.getLevelIndex(), layer,
+                                       conversionRow.data(), dstRowPitch);
+            }
+        }
+    }  // if (texture->isCPUAccessible())
+    else
+    {
+        // Use clear render command
+        RenderTargetMtl tempRtt;
+        tempRtt.set(texture, index.getLevelIndex(), std::max(layer, startDepth), textureObjFormat);
+
+        // temporarily enable all color channels. Some emulated format has some channels write mask
+        // disabled when the texture is created.
+        MTLColorWriteMask enableAllChannels = MTLColorWriteMaskAll;
+        MTLColorWriteMask oldMask           = texture->getColorWritableMask();
+        texture->setColorWritableMask(enableAllChannels);
+
+        Optional<MTLClearColor> blackColor = MTLClearColorMake(0, 0, 0, 1);
+        RenderCommandEncoder *encoder = contextMtl->getRenderCommandEncoder(tempRtt, blackColor);
+        ANGLE_UNUSED_VARIABLE(encoder);
+        contextMtl->endEncoding(true);
+
+        // Restore texture's intended write mask
+        texture->setColorWritableMask(oldMask);
+
+    }  // if (texture->isCPUAccessible())
 
     return angle::Result::Continue;
 }

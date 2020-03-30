@@ -1131,6 +1131,8 @@ angle::Result TextureMtl::getAttachmentRenderTarget(const gl::Context *context,
                         contextMtl, mFormat, desc.size.width, desc.size.height, samples,
                         /* renderTargetOnly */ true,
                         /* allowFormatView */ false, &msTexture));
+
+                    ANGLE_TRY(checkForEmulatedChannels(context, mFormat, msTexture));
                 }
 
                 rtt.setImplicitMSTexture(msTexture);
@@ -1676,7 +1678,7 @@ angle::Result TextureMtl::checkForEmulatedChannels(const gl::Context *context,
     {
         uint32_t mipmaps = texture->mipmapLevels();
 
-        uint32_t layers = texture->textureType() == MTLTextureTypeCube ? 6 : texture->arrayLength();
+        uint32_t layers = texture->cubeFacesOrArrayLength();
         for (uint32_t layer = 0; layer < layers; ++layer)
         {
             for (uint32_t mip = 0; mip < mipmaps; ++mip)
