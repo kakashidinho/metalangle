@@ -14,6 +14,7 @@
 #include "common/MemoryBuffer.h"
 #include "common/debug.h"
 #include "common/mathutil.h"
+#include "image_util/imageformats.h"
 #include "libANGLE/renderer/metal/BufferMtl.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
 #include "libANGLE/renderer/metal/DisplayMtl.h"
@@ -131,9 +132,19 @@ gl::TextureType GetTextureImageType(gl::TextureType texType)
     }
 }
 
+// D24X8 by default writes depth data to high 24 bits of 32 bit integers. However, Metal separate
+// depth stencil blitting expects depth data to be in low 24 bits of the data.
+void WriteDepthStencilToDepth24(const uint8_t *srcPtr, uint8_t *dstPtr)
+{
+    auto src = reinterpret_cast<const angle::DepthStencil *>(srcPtr);
+    auto dst = reinterpret_cast<uint32_t *>(dstPtr);
+    *dst     = gl::floatToNormalized<24, uint32_t>(static_cast<float>(src->depth));
+}
+
 angle::Result CopyTextureContentsToStagingBuffer(ContextMtl *contextMtl,
                                                  const angle::Format &textureAngleFormat,
                                                  const angle::Format &stagingAngleFormat,
+                                                 rx::PixelWriteFunction pixelWriteFunctionOverride,
                                                  const MTLSize &regionSize,
                                                  const uint8_t *data,
                                                  size_t bytesPerRow,
@@ -164,9 +175,12 @@ angle::Result CopyTextureContentsToStagingBuffer(ContextMtl *contextMtl,
     }
     else
     {
+        rx::PixelWriteFunction pixelWriteFunction = pixelWriteFunctionOverride
+                                                        ? pixelWriteFunctionOverride
+                                                        : stagingAngleFormat.pixelWriteFunction;
         // This is only for depth & stencil case.
         ASSERT(textureAngleFormat.depthBits || textureAngleFormat.stencilBits);
-        ASSERT(textureAngleFormat.pixelReadFunction && stagingAngleFormat.pixelWriteFunction);
+        ASSERT(textureAngleFormat.pixelReadFunction && pixelWriteFunction);
 
         // cache to store read result of source pixel
         angle::DepthStencil depthStencilData;
@@ -187,7 +201,7 @@ angle::Result CopyTextureContentsToStagingBuffer(ContextMtl *contextMtl,
                                              c * stagingAngleFormat.pixelBytes;
 
                     textureAngleFormat.pixelReadFunction(sourcePixelData, sourcePixelReadData);
-                    stagingAngleFormat.pixelWriteFunction(sourcePixelReadData, destPixelData);
+                    pixelWriteFunction(sourcePixelReadData, destPixelData);
                 }
             }
         }
@@ -226,8 +240,9 @@ angle::Result UploadTextureContentsWithStagingBuffer(ContextMtl *contextMtl,
     size_t stagingBuffer2DImageSize;
     mtl::BufferRef stagingBuffer;
     ANGLE_TRY(CopyTextureContentsToStagingBuffer(
-        contextMtl, textureAngleFormat, textureAngleFormat, region.size, data, bytesPerRow,
-        bytesPer2DImage, &stagingBufferRowPitch, &stagingBuffer2DImageSize, &stagingBuffer));
+        contextMtl, textureAngleFormat, textureAngleFormat, textureAngleFormat.pixelWriteFunction,
+        region.size, data, bytesPerRow, bytesPer2DImage, &stagingBufferRowPitch,
+        &stagingBuffer2DImageSize, &stagingBuffer));
 
     // Copy staging buffer to texture.
     mtl::BlitCommandEncoder *encoder = contextMtl->getBlitCommandEncoder();
@@ -259,12 +274,18 @@ angle::Result UploadPackedDepthStencilTextureContentsWithStagingBuffer(
     // We have to split the depth & stencil data into 2 buffers.
     angle::FormatID stagingDepthBufferFormatId;
     angle::FormatID stagingStencilBufferFormatId;
+    // Custom depth write function. We cannot use those in imageformats.cpp since Metal has some
+    // special cases.
+    rx::PixelWriteFunction stagingDepthBufferWriteFunctionOverride = nullptr;
 
     switch (textureAngleFormat.id)
     {
         case angle::FormatID::D24_UNORM_S8_UINT:
-            stagingDepthBufferFormatId   = angle::FormatID::D24_UNORM_X8_UINT;
-            stagingStencilBufferFormatId = angle::FormatID::S8_UINT;
+            // D24_UNORM_X8_UINT writes depth data to high 24 bits. But Metal expects depth data to
+            // be in low 24 bits.
+            stagingDepthBufferFormatId              = angle::FormatID::D24_UNORM_X8_UINT;
+            stagingDepthBufferWriteFunctionOverride = WriteDepthStencilToDepth24;
+            stagingStencilBufferFormatId            = angle::FormatID::S8_UINT;
             break;
         case angle::FormatID::D32_FLOAT_S8X24_UINT:
             stagingDepthBufferFormatId   = angle::FormatID::D32_FLOAT;
@@ -283,14 +304,14 @@ angle::Result UploadPackedDepthStencilTextureContentsWithStagingBuffer(
     mtl::BufferRef stagingDepthbuffer, stagingStencilBuffer;
 
     ANGLE_TRY(CopyTextureContentsToStagingBuffer(
-        contextMtl, textureAngleFormat, angleStagingDepthFormat, region.size, data, bytesPerRow,
-        bytesPer2DImage, &stagingDepthBufferRowPitch, &stagingDepthBuffer2DImageSize,
-        &stagingDepthbuffer));
+        contextMtl, textureAngleFormat, angleStagingDepthFormat,
+        stagingDepthBufferWriteFunctionOverride, region.size, data, bytesPerRow, bytesPer2DImage,
+        &stagingDepthBufferRowPitch, &stagingDepthBuffer2DImageSize, &stagingDepthbuffer));
 
     ANGLE_TRY(CopyTextureContentsToStagingBuffer(
-        contextMtl, textureAngleFormat, angleStagingStencilFormat, region.size, data, bytesPerRow,
-        bytesPer2DImage, &stagingStencilBufferRowPitch, &stagingStencilBuffer2DImageSize,
-        &stagingStencilBuffer));
+        contextMtl, textureAngleFormat, angleStagingStencilFormat, nullptr, region.size, data,
+        bytesPerRow, bytesPer2DImage, &stagingStencilBufferRowPitch,
+        &stagingStencilBuffer2DImageSize, &stagingStencilBuffer));
 
     mtl::BlitCommandEncoder *encoder = contextMtl->getBlitCommandEncoder();
 
