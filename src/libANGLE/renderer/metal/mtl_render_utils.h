@@ -62,7 +62,11 @@ struct BlitParams
     TextureRef src;
     uint32_t srcLevel = 0;
     uint32_t srcLayer = 0;
+
+    // Source rectangle:
+    // NOTE: don't pass flipped rect here, the RenderUtils will auto flip it if srcYFlipped = true.
     gl::Rectangle srcRect;
+
     bool srcYFlipped = false;  // source texture has data flipped in Y direction
     bool unpackFlipX = false;  // flip texture data copying process in X direction
     bool unpackFlipY = false;  // flip texture data copying process in Y direction

@@ -370,9 +370,6 @@ angle::Result FramebufferMtl::blit(const gl::Context *context,
         srcClippedDestArea.height = y1 - srcClippedDestArea.y;
     }
 
-    // Flip source area if necessary
-    clippedSourceArea = srcFrameBuffer->getReadArea(context, clippedSourceArea);
-
     const bool unpackFlipX = sourceArea.isReversedX();
     const bool unpackFlipY = sourceArea.isReversedY();
 
