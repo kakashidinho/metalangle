@@ -285,10 +285,21 @@ static inline int4 readR10G10B10A2_SINT(COMMON_READ_FUNC_PARAMS)
     int4 color;
     int src = bytesToInt<int>(buffer, bufferOffset);
 
+    constexpr int3 rgbSignMask(0x200);       // 1 set at the 9 bit
+    constexpr int3 negativeMask(0xfffffc00);  // All bits from 10 to 31 set to 1
+    constexpr int alphaSignMask = 0x2;
+    constexpr int alphaNegMask  = 0xfffffffc;
+
     color.r = getShiftedData<10, 0>(src);
     color.g = getShiftedData<10, 10>(src);
     color.b = getShiftedData<10, 20>(src);
+
+    int3 isRgbNegative = (color.rgb & rgbSignMask) >> 9;
+    color.rgb = (isRgbNegative * negativeMask) | color.rgb;
+
     color.a = getShiftedData<2, 30>(src);
+    int isAlphaNegative = color.a & alphaSignMask >> 1;
+    color.a = (isAlphaNegative * alphaNegMask) | color.a;
     return color;
 }
 // R10G10B10A2_UINT
