@@ -20,6 +20,7 @@
 #include "compiler/translator/TranslatorMetal.h"
 #include "libANGLE/Context.h"
 #include "libANGLE/ProgramLinkedResources.h"
+#include "libANGLE/renderer/glslang_wrapper_utils.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
 #include "libANGLE/renderer/metal/DisplayMtl.h"
 #include "libANGLE/renderer/metal/TextureMtl.h"
@@ -110,6 +111,7 @@ angle::Result BindResources(spirv_cross::CompilerMSL *compiler,
 
 angle::Result GetAssignedSamplerBindings(
     const spirv_cross::CompilerMSL &compilerMsl,
+    const OriginalSamplerBindingMapMtl &originalBindings,
     std::array<SamplerBindingMtl, mtl::kMaxShaderSamplers> *bindings)
 {
     for (const spirv_cross::Resource &resource : compilerMsl.get_shader_resources().sampled_images)
@@ -124,12 +126,24 @@ angle::Result GetAssignedSamplerBindings(
         ASSERT(descriptorSet == 0);
         ASSERT(compilerMsl.has_decoration(resource.id, spv::DecorationBinding));
 
-        uint32_t binding = compilerMsl.get_decoration(resource.id, spv::DecorationBinding);
-
-        SamplerBindingMtl &actualBinding = bindings->at(binding);
-        actualBinding.textureBinding = compilerMsl.get_automatic_msl_resource_binding(resource.id);
-        actualBinding.samplerBinding =
+        uint32_t actualTextureSlot = compilerMsl.get_automatic_msl_resource_binding(resource.id);
+        uint32_t actualSamplerSlot =
             compilerMsl.get_automatic_msl_resource_binding_secondary(resource.id);
+
+        // Assign sequential index for subsequent array elements
+        const std::vector<std::pair<uint32_t, uint32_t>> &resOrignalBindings =
+            originalBindings.at(resource.name);
+        uint32_t currentTextureSlot = actualTextureSlot;
+        uint32_t currentSamplerSlot = actualSamplerSlot;
+        for (const std::pair<uint32_t, uint32_t> &originalBindingRange : resOrignalBindings)
+        {
+            SamplerBindingMtl &actualBinding = bindings->at(originalBindingRange.first);
+            actualBinding.textureBinding     = currentTextureSlot;
+            actualBinding.samplerBinding     = currentSamplerSlot;
+
+            currentTextureSlot += originalBindingRange.second;
+            currentSamplerSlot += originalBindingRange.second;
+        }
     }
     return angle::Result::Continue;
 }
@@ -380,15 +394,33 @@ angle::Result ProgramMtl::linkImpl(const gl::Context *glContext,
 
     ANGLE_TRY(initDefaultUniformBlocks(glContext));
 
+    // Retrieve original sampler bindings produced by glslang_wrapper
+    OriginalSamplerBindingMapMtl originalSamplerBindings;
+    const std::vector<gl::SamplerBinding> &samplerBindings = mState.getSamplerBindings();
+    const std::vector<gl::LinkedUniform> &uniforms         = mState.getUniforms();
+
+    for (uint32_t textureIndex = 0; textureIndex < samplerBindings.size(); ++textureIndex)
+    {
+        const gl::SamplerBinding &samplerBinding = samplerBindings[textureIndex];
+        uint32_t uniformIndex = mState.getUniformIndexFromSamplerIndex(textureIndex);
+        const gl::LinkedUniform &samplerUniform = uniforms[uniformIndex];
+        bool isSamplerInStruct = samplerUniform.name.find('.') != std::string::npos;
+        std::string mappedSamplerName =
+            isSamplerInStruct ? GlslangGetMappedSamplerName(samplerUniform.name)
+                              : GlslangGetMappedSamplerName(samplerUniform.mappedName);
+        originalSamplerBindings[mappedSamplerName].push_back(
+            {textureIndex, static_cast<uint32_t>(samplerBinding.boundTextureUnits.size())});
+    }
+
     // Convert GLSL to spirv code
     gl::ShaderMap<std::vector<uint32_t>> shaderCodes;
     ANGLE_TRY(mtl::GlslangGetShaderSpirvCode(contextMtl, contextMtl->getCaps(), false, shaderSource,
                                              &shaderCodes));
 
     // Convert spirv code to MSL
-    ANGLE_TRY(convertToMsl(glContext, gl::ShaderType::Vertex, infoLog,
+    ANGLE_TRY(convertToMsl(glContext, gl::ShaderType::Vertex, infoLog, originalSamplerBindings,
                            &shaderCodes[gl::ShaderType::Vertex]));
-    ANGLE_TRY(convertToMsl(glContext, gl::ShaderType::Fragment, infoLog,
+    ANGLE_TRY(convertToMsl(glContext, gl::ShaderType::Fragment, infoLog, originalSamplerBindings,
                            &shaderCodes[gl::ShaderType::Fragment]));
 
     return angle::Result::Continue;
@@ -589,6 +621,7 @@ void ProgramMtl::loadAssignedSamplerBindings(gl::BinaryInputStream *stream)
 angle::Result ProgramMtl::convertToMsl(const gl::Context *glContext,
                                        gl::ShaderType shaderType,
                                        gl::InfoLog &infoLog,
+                                       const OriginalSamplerBindingMapMtl &originalSamplerBindings,
                                        std::vector<uint32_t> *sprivCode)
 {
     ContextMtl *contextMtl = mtl::GetImpl(glContext);
@@ -630,7 +663,8 @@ angle::Result ProgramMtl::convertToMsl(const gl::Context *glContext,
     }
 
     // Retrieve automatic texture slot assignments
-    ANGLE_TRY((GetAssignedSamplerBindings(compilerMsl, &mActualSamplerBindings[shaderType])));
+    ANGLE_TRY((GetAssignedSamplerBindings(compilerMsl, originalSamplerBindings,
+                                          &mActualSamplerBindings[shaderType])));
 
     std::string postprocessedMsl = PostProcessTranslatedMsl(translatedMsl);
 

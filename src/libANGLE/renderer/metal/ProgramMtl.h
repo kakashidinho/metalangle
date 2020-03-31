@@ -31,6 +31,11 @@ struct SamplerBindingMtl
     uint32_t samplerBinding = 0;
 };
 
+// Original mapping of front end from sampler name to multiple sampler slots (in form of
+// slot:count pair)
+using OriginalSamplerBindingMapMtl =
+    std::unordered_map<std::string, std::vector<std::pair<uint32_t, uint32_t>>>;
+
 class ProgramMtl : public ProgramImpl
 {
   public:
@@ -160,6 +165,7 @@ class ProgramMtl : public ProgramImpl
     angle::Result convertToMsl(const gl::Context *glContext,
                                gl::ShaderType shaderType,
                                gl::InfoLog &infoLog,
+                               const OriginalSamplerBindingMapMtl &originalSamplerBindings,
                                std::vector<uint32_t> *sprivCode);
 
     angle::Result createMslShader(const gl::Context *glContext,
@@ -187,6 +193,7 @@ class ProgramMtl : public ProgramImpl
 
     gl::ShaderMap<std::string> mTranslatedMslShader;
 
+    // Binding produced by spirv-cross
     gl::ShaderMap<std::array<SamplerBindingMtl, mtl::kMaxShaderSamplers>> mActualSamplerBindings;
 
     mtl::RenderPipelineCache mMetalRenderPipelineCache;
