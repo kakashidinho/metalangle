@@ -93,7 +93,7 @@
 - (void)viewDidAppear
 {
     [super viewDidAppear];
-#else  // TARGET_OS_OSX
+#else   // TARGET_OS_OSX
 - (void)viewDidAppear:(BOOL)animated
 {
     [super viewDidAppear:animated];
@@ -120,7 +120,7 @@
 - (void)viewDidDisappear
 {
     [super viewDidDisappear];
-#else  // TARGET_OS_OSX
+#else   // TARGET_OS_OSX
 - (void)viewDidDisappear:(BOOL)animated
 {
     [super viewDidDisappear:animated];

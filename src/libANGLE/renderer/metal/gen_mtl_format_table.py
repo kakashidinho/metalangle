@@ -167,8 +167,7 @@ def get_vertex_copy_function_and_default_alpha(src_format, dst_format):
 
         if src_gl_type == None:
             return 'nullptr', 0
-        dst_num_channel = len(
-            angle_format_utils.get_channel_tokens(dst_format))
+        dst_num_channel = len(angle_format_utils.get_channel_tokens(dst_format))
         default_alpha = '1'
 
         if num_channel == dst_num_channel or dst_num_channel < 4:
@@ -191,6 +190,7 @@ def get_vertex_copy_function_and_default_alpha(src_format, dst_format):
         return 'CopyXYZ10W2ToXYZW32FVertexData<%s, %s, true>' % (is_signed, is_normal), 0
 
     return angle_format_utils.get_vertex_copy_function(src_format, dst_format), 0
+
 
 # Generate format conversion switch case (generic case)
 
@@ -220,12 +220,11 @@ def gen_image_map_switch_case(angle_format, actual_angle_format_info, angle_to_m
                 a=swizzle_map[swizzle_channels[3:]])
             return case_image_format_template2.format(
                 angle_format=angle_format,
-                image_format_assign_default=assign_gen_func(
-                    default_actual_angle_format, angle_to_mtl_map),
-                image_format_assign_swizzled=assign_gen_func(
-                    swizzled_actual_angle_format, angle_to_mtl_map),
-                mtl_swizzle=mtl_swizzle_make
-            )
+                image_format_assign_default=assign_gen_func(default_actual_angle_format,
+                                                            angle_to_mtl_map),
+                image_format_assign_swizzled=assign_gen_func(swizzled_actual_angle_format,
+                                                             angle_to_mtl_map),
+                mtl_swizzle=mtl_swizzle_make)
         else:
             # Only default case
             return gen_image_map_switch_case(angle_format, default_actual_angle_format,
@@ -234,14 +233,15 @@ def gen_image_map_switch_case(angle_format, actual_angle_format_info, angle_to_m
         # Default case
         return case_image_format_template1.format(
             angle_format=angle_format,
-            image_format_assign=assign_gen_func(
-                actual_angle_format_info, angle_to_mtl_map)
-        )
+            image_format_assign=assign_gen_func(actual_angle_format_info, angle_to_mtl_map))
+
 
 # Generate format conversion switch case (simple case)
 
 
-def gen_image_map_switch_simple_case(angle_format, actual_angle_format_info, angle_to_gl, angle_to_mtl_map):
+def gen_image_map_switch_simple_case(angle_format, actual_angle_format_info, angle_to_gl,
+                                     angle_to_mtl_map):
+
     def gen_format_assign_code(actual_angle_format, angle_to_mtl_map):
         return image_format_assign_template1.format(
             actual_angle_format=actual_angle_format,
@@ -252,10 +252,12 @@ def gen_image_map_switch_simple_case(angle_format, actual_angle_format_info, ang
     return gen_image_map_switch_case(angle_format, actual_angle_format_info, angle_to_mtl_map,
                                      gen_format_assign_code)
 
+
 # Generate format conversion switch case (Mac case)
 
 
-def gen_image_map_switch_mac_case(angle_format, actual_angle_format_info, angle_to_gl, angle_to_mtl_map, mac_fallbacks):
+def gen_image_map_switch_mac_case(angle_format, actual_angle_format_info, angle_to_gl,
+                                  angle_to_mtl_map, mac_fallbacks):
     gl_format = angle_to_gl[angle_format]
 
     def gen_format_assign_code(actual_angle_format, angle_to_mtl_map):
@@ -304,8 +306,8 @@ def gen_image_map_switch_string(image_table, angle_to_gl):
     switch_data = ''
 
     def gen_image_map_switch_common_case(angle_format, actual_angle_format):
-        mac_case = gen_image_map_switch_mac_case(angle_format, actual_angle_format, angle_to_gl, mac_angle_to_mtl,
-                                                 mac_fallbacks)
+        mac_case = gen_image_map_switch_mac_case(angle_format, actual_angle_format, angle_to_gl,
+                                                 mac_angle_to_mtl, mac_fallbacks)
         non_mac_case = gen_image_map_switch_simple_case(angle_format, actual_angle_format,
                                                         angle_to_gl, angle_to_mtl)
         if mac_case == non_mac_case:
@@ -321,17 +323,15 @@ def gen_image_map_switch_string(image_table, angle_to_gl):
 
     # Common case
     for angle_format in sorted(angle_to_mtl.keys()):
-        switch_data += gen_image_map_switch_common_case(
-            angle_format, angle_format)
+        switch_data += gen_image_map_switch_common_case(angle_format, angle_format)
     for angle_format in sorted(angle_override.keys()):
-        switch_data += gen_image_map_switch_common_case(
-            angle_format, angle_override[angle_format])
+        switch_data += gen_image_map_switch_common_case(angle_format, angle_override[angle_format])
 
     # Mac specific
     switch_data += "#if TARGET_OS_OSX || TARGET_OS_MACCATALYST\n"
     for angle_format in sorted(mac_specific_map.keys()):
-        switch_data += gen_image_map_switch_mac_case(angle_format, angle_format, angle_to_gl, mac_angle_to_mtl,
-                                                     mac_fallbacks)
+        switch_data += gen_image_map_switch_mac_case(angle_format, angle_format, angle_to_gl,
+                                                     mac_angle_to_mtl, mac_fallbacks)
     for angle_format in sorted(mac_override.keys()):
         switch_data += gen_image_map_switch_mac_case(angle_format, mac_override[angle_format],
                                                      angle_to_gl, mac_angle_to_mtl, mac_fallbacks)
@@ -339,8 +339,8 @@ def gen_image_map_switch_string(image_table, angle_to_gl):
     # iOS specific
     switch_data += "#elif TARGET_OS_IOS  // TARGET_OS_OSX || TARGET_OS_MACCATALYST\n"
     for angle_format in sorted(ios_specific_map.keys()):
-        switch_data += gen_image_map_switch_simple_case(angle_format, angle_format,
-                                                        angle_to_gl, ios_specific_map)
+        switch_data += gen_image_map_switch_simple_case(angle_format, angle_format, angle_to_gl,
+                                                        ios_specific_map)
     for angle_format in sorted(ios_override.keys()):
         switch_data += gen_image_map_switch_simple_case(angle_format, ios_override[angle_format],
                                                         angle_to_gl, ios_angle_to_mtl)
@@ -408,8 +408,7 @@ def main():
     data_source_name = 'mtl_format_map.json'
     # auto_script parameters.
     if len(sys.argv) > 1:
-        inputs = ['../angle_format.py',
-                  '../angle_format_map.json', data_source_name]
+        inputs = ['../angle_format.py', '../angle_format_map.json', data_source_name]
         outputs = ['mtl_format_table_autogen.mm']
 
         if sys.argv[1] == 'inputs':
@@ -421,8 +420,7 @@ def main():
             return 1
         return 0
 
-    angle_to_gl = angle_format_utils.load_inverse_table(
-        '../angle_format_map.json')
+    angle_to_gl = angle_format_utils.load_inverse_table('../angle_format_map.json')
 
     map_json = angle_format_utils.load_json(data_source_name)
     map_image = map_json["image"]

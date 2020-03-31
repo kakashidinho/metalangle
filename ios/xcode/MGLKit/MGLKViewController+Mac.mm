@@ -166,9 +166,7 @@ static CVReturn CVFrameDisplayCallback(CVDisplayLinkRef displayLink,
                                               selector:@selector(frameStep)
                                               userInfo:nil
                                                repeats:YES];
-        [[NSRunLoop currentRunLoop] addTimer:_displayTimer
-                                     forMode:NSDefaultRunLoopMode];
-        [[NSRunLoop currentRunLoop] addTimer:_displayTimer
-                                     forMode:NSModalPanelRunLoopMode];
+        [[NSRunLoop currentRunLoop] addTimer:_displayTimer forMode:NSDefaultRunLoopMode];
+        [[NSRunLoop currentRunLoop] addTimer:_displayTimer forMode:NSModalPanelRunLoopMode];
     }
 }

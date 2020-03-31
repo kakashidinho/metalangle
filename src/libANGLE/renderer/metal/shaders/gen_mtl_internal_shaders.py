@@ -24,6 +24,7 @@ template_header_boilerplate = """// GENERATED FILE - DO NOT EDIT.
 //
 """
 
+
 # Convert content of a file to byte array and store in a header file.
 # variable_name: name of C++ variable that will hold the file content as byte array.
 # filename: the file whose content will be converted to C++ byte array.
@@ -54,9 +55,8 @@ def gen_precompiled_shaders(mac_version, ios_version, variable_name, additional_
     for src_file in src_files:
         object_file = 'compiled/default.{0}.{1}.air'.format(mac_version, src_file)
         object_files += ' ' + object_file
-        os.system(
-            'xcrun -sdk macosx metal -mmacosx-version-min={0} {1} {2} -c -o {3}'
-            .format(mac_version, additional_flags, src_file, object_file))
+        os.system('xcrun -sdk macosx metal -mmacosx-version-min={0} {1} {2} -c -o {3}'.format(
+            mac_version, additional_flags, src_file, object_file))
     os.system(
         'xcrun -sdk macosx metallib {object_files} -o compiled/default.{mac_version}.metallib'
         .format(mac_version=mac_version, object_files=object_files))
@@ -67,9 +67,8 @@ def gen_precompiled_shaders(mac_version, ios_version, variable_name, additional_
     for src_file in src_files:
         object_file = 'compiled/default.ios.{0}.{1}.air'.format(ios_version, src_file)
         object_files += ' ' + object_file
-        os.system(
-            'xcrun -sdk iphoneos metal -mios-version-min={0} {1} {2} -c -o {3}'
-            .format(ios_version, additional_flags, src_file, object_file))
+        os.system('xcrun -sdk iphoneos metal -mios-version-min={0} {1} {2} -c -o {3}'.format(
+            ios_version, additional_flags, src_file, object_file))
     os.system(
         'xcrun -sdk iphoneos metallib {object_files} -o compiled/default.ios.{ios_version}.metallib'
         .format(ios_version=ios_version, object_files=object_files))
@@ -81,9 +80,8 @@ def gen_precompiled_shaders(mac_version, ios_version, variable_name, additional_
     for src_file in src_files:
         object_file = 'compiled/default.ios_sim.{0}.{1}.air'.format(ios_version, src_file)
         object_files += ' ' + object_file
-        os.system(
-            'xcrun -sdk iphonesimulator metal {0} {1} -c -o {2}'
-            .format(additional_flags, src_file, object_file))
+        os.system('xcrun -sdk iphonesimulator metal {0} {1} -c -o {2}'.format(
+            additional_flags, src_file, object_file))
     os.system(
         'xcrun -sdk iphonesimulator metallib {object_files} -o compiled/default.ios_sim.{ios_version}.metallib'
         .format(ios_version=ios_version, object_files=object_files))
@@ -139,7 +137,7 @@ def gen_shader_enums_code(angle_formats):
     code += "{\n"
     code += "    NONE,\n"
     for angle_format in sorted(angle_formats):
-        if angle_format == 'NONE': # NONE already moved to the beginning of enum declaration
+        if angle_format == 'NONE':  # NONE already moved to the beginning of enum declaration
             continue
         code += "    " + angle_format + ",\n"
     code += "};\n\n"
@@ -150,12 +148,15 @@ def gen_shader_enums_code(angle_formats):
 
     return code
 
+
 def main():
-    src_files = ['blit.metal', 'clear.metal', 'gen_indices.metal', 'gen_mipmap.metal',
-                 'copy_buffer.metal', 'misc.metal']
+    src_files = [
+        'blit.metal', 'clear.metal', 'gen_indices.metal', 'gen_mipmap.metal', 'copy_buffer.metal',
+        'misc.metal'
+    ]
     # auto_script parameters.
     if len(sys.argv) > 1:
-        inputs = ['../../angle_format_map.json'] + src_files + [ 'common.h', 'constants.h' ]
+        inputs = ['../../angle_format_map.json'] + src_files + ['common.h', 'constants.h']
         outputs = ['format_autogen.h', 'compiled/mtl_default_shaders.inc']
 
         if sys.argv[1] == 'inputs':
@@ -193,9 +194,11 @@ def main():
 
     # pre-compiled shaders
     gen_precompiled_shaders(10.13, 11.0, 'compiled_default_metallib', '', src_files)
-    gen_precompiled_shaders(10.13, 11.0, 'compiled_default_metallib_debug', '-gline-tables-only -MO', src_files)
+    gen_precompiled_shaders(10.13, 11.0, 'compiled_default_metallib_debug',
+                            '-gline-tables-only -MO', src_files)
     gen_precompiled_shaders(10.14, 12.0, 'compiled_default_metallib_2_1', '', src_files)
-    gen_precompiled_shaders(10.14, 12.0, 'compiled_default_metallib_2_1_debug', '-gline-tables-only -MO', src_files)
+    gen_precompiled_shaders(10.14, 12.0, 'compiled_default_metallib_2_1_debug',
+                            '-gline-tables-only -MO', src_files)
 
     os.system('echo "// clang-format on" >> compiled/mtl_default_shaders.inc')
 
