@@ -1158,7 +1158,6 @@ angle::Result ProgramMtl::legalizeUniformBufferOffsets(
             mLegalizedOffsetedUniformBuffers[bufferIndex].first = conversion->convertedBuffer;
             mLegalizedOffsetedUniformBuffers[bufferIndex].second =
                 static_cast<uint32_t>(conversion->convertedOffset + srcOffset - offsetModulo);
-            return angle::Result::Continue;
         }
         else
         {
