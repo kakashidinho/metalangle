@@ -318,11 +318,19 @@ class IndexGeneratorUtils : public ComputeBasedUtils
 
     angle::Result generateLineLoopBufferFromArrays(ContextMtl *contextMtl,
                                                    const TriFanOrLineLoopFromArrayParams &params);
+    angle::Result generateLineLoopLastSegment(ContextMtl *contextMtl,
+                                              uint32_t firstVertex,
+                                              uint32_t lastVertex,
+                                              const BufferRef &dstBuffer,
+                                              uint32_t dstOffset);
     // Destination buffer must have at least 2x the number of original indices if primitive restart
     // is enabled.
     angle::Result generateLineLoopBufferFromElementsArray(ContextMtl *contextMtl,
                                                           const IndexGenerationParams &params,
                                                           uint32_t *indicesGenerated);
+    // NOTE: this function assumes primitive restart is not enabled.
+    angle::Result generateLineLoopLastSegmentFromElementsArray(ContextMtl *contextMtl,
+                                                               const IndexGenerationParams &params);
 
   private:
     // Index generator compute pipelines:
@@ -369,6 +377,9 @@ class IndexGeneratorUtils : public ComputeBasedUtils
     angle::Result generateLineLoopBufferFromElementsArrayCPU(ContextMtl *contextMtl,
                                                              const IndexGenerationParams &params,
                                                              uint32_t *indicesGenerated);
+    angle::Result generateLineLoopLastSegmentFromElementsArrayCPU(
+        ContextMtl *contextMtl,
+        const IndexGenerationParams &params);
 
     IndexConversionPipelineArray mIndexConversionPipelineCaches;
 
@@ -515,11 +526,19 @@ class RenderUtils : public Context, angle::NonCopyable
 
     angle::Result generateLineLoopBufferFromArrays(ContextMtl *contextMtl,
                                                    const TriFanOrLineLoopFromArrayParams &params);
+    angle::Result generateLineLoopLastSegment(ContextMtl *contextMtl,
+                                              uint32_t firstVertex,
+                                              uint32_t lastVertex,
+                                              const BufferRef &dstBuffer,
+                                              uint32_t dstOffset);
     // Destination buffer must have at least 2x the number of original indices if primitive restart
     // is enabled.
     angle::Result generateLineLoopBufferFromElementsArray(ContextMtl *contextMtl,
                                                           const IndexGenerationParams &params,
                                                           uint32_t *indicesGenerated);
+    // NOTE: this function assumes primitive restart is not enabled.
+    angle::Result generateLineLoopLastSegmentFromElementsArray(ContextMtl *contextMtl,
+                                                               const IndexGenerationParams &params);
 
     void combineVisibilityResult(ContextMtl *contextMtl,
                                  bool keepOldValue,

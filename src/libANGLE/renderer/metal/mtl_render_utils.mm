@@ -352,6 +352,18 @@ angle::Result GenLineLoopFromClientElements(ContextMtl *contextMtl,
     return angle::Result::Continue;
 }
 
+template <typename T>
+void GetFirstLastIndicesFromClientElements(GLsizei count,
+                                           const T *indices,
+                                           uint32_t *firstOut,
+                                           uint32_t *lastOut)
+{
+    *firstOut = 0;
+    *lastOut  = 0;
+    memcpy(firstOut, indices, sizeof(indices[0]));
+    memcpy(lastOut, indices + count - 1, sizeof(indices[0]));
+}
+
 int GetShaderTextureType(const TextureRef &texture)
 {
     if (!texture)
@@ -630,6 +642,15 @@ angle::Result RenderUtils::generateLineLoopBufferFromArrays(
 {
     return mIndexUtils.generateLineLoopBufferFromArrays(contextMtl, params);
 }
+angle::Result RenderUtils::generateLineLoopLastSegment(ContextMtl *contextMtl,
+                                                       uint32_t firstVertex,
+                                                       uint32_t lastVertex,
+                                                       const BufferRef &dstBuffer,
+                                                       uint32_t dstOffset)
+{
+    return mIndexUtils.generateLineLoopLastSegment(contextMtl, firstVertex, lastVertex, dstBuffer,
+                                                   dstOffset);
+}
 angle::Result RenderUtils::generateLineLoopBufferFromElementsArray(
     ContextMtl *contextMtl,
     const IndexGenerationParams &params,
@@ -637,6 +658,12 @@ angle::Result RenderUtils::generateLineLoopBufferFromElementsArray(
 {
     return mIndexUtils.generateLineLoopBufferFromElementsArray(contextMtl, params,
                                                                indicesGenerated);
+}
+angle::Result RenderUtils::generateLineLoopLastSegmentFromElementsArray(
+    ContextMtl *contextMtl,
+    const IndexGenerationParams &params)
+{
+    return mIndexUtils.generateLineLoopLastSegmentFromElementsArray(contextMtl, params);
 }
 
 void RenderUtils::combineVisibilityResult(
@@ -1764,6 +1791,80 @@ angle::Result IndexGeneratorUtils::generateLineLoopBufferFromElementsArrayCPU(
     }
 
     return angle::Result::Stop;
+}
+
+angle::Result IndexGeneratorUtils::generateLineLoopLastSegment(ContextMtl *contextMtl,
+                                                               uint32_t firstVertex,
+                                                               uint32_t lastVertex,
+                                                               const BufferRef &dstBuffer,
+                                                               uint32_t dstOffset)
+{
+    uint8_t *ptr = dstBuffer->map(contextMtl) + dstOffset;
+
+    uint32_t indices[2] = {lastVertex, firstVertex};
+    memcpy(ptr, indices, sizeof(indices));
+
+    dstBuffer->unmap(contextMtl);
+
+    return angle::Result::Continue;
+}
+
+angle::Result IndexGeneratorUtils::generateLineLoopLastSegmentFromElementsArray(
+    ContextMtl *contextMtl,
+    const IndexGenerationParams &params)
+{
+    ASSERT(!params.primitiveRestartEnabled);
+    const gl::VertexArray *vertexArray = contextMtl->getState().getVertexArray();
+    const gl::Buffer *elementBuffer    = vertexArray->getElementArrayBuffer();
+    if (elementBuffer)
+    {
+        size_t srcOffset = reinterpret_cast<size_t>(params.indices);
+        ANGLE_CHECK(contextMtl, srcOffset <= std::numeric_limits<uint32_t>::max(),
+                    "Index offset is too large", GL_INVALID_VALUE);
+
+        BufferMtl *bufferMtl = GetImpl(elementBuffer);
+        std::pair<uint32_t, uint32_t> firstLast;
+        ANGLE_TRY(bufferMtl->getFirstLastIndices(contextMtl, params.srcType,
+                                                 static_cast<uint32_t>(srcOffset),
+                                                 params.indexCount, &firstLast));
+
+        return generateLineLoopLastSegment(contextMtl, firstLast.first, firstLast.second,
+                                           params.dstBuffer, params.dstOffset);
+    }
+    else
+    {
+        return generateLineLoopLastSegmentFromElementsArrayCPU(contextMtl, params);
+    }
+}
+
+angle::Result IndexGeneratorUtils::generateLineLoopLastSegmentFromElementsArrayCPU(
+    ContextMtl *contextMtl,
+    const IndexGenerationParams &params)
+{
+    ASSERT(!params.primitiveRestartEnabled);
+
+    uint32_t first, last;
+
+    switch (params.srcType)
+    {
+        case gl::DrawElementsType::UnsignedByte:
+            GetFirstLastIndicesFromClientElements(
+                params.indexCount, static_cast<const uint8_t *>(params.indices), &first, &last);
+            break;
+        case gl::DrawElementsType::UnsignedShort:
+            GetFirstLastIndicesFromClientElements(
+                params.indexCount, static_cast<const uint16_t *>(params.indices), &first, &last);
+            break;
+        case gl::DrawElementsType::UnsignedInt:
+            GetFirstLastIndicesFromClientElements(
+                params.indexCount, static_cast<const uint32_t *>(params.indices), &first, &last);
+            break;
+        default:
+            UNREACHABLE();
+            return angle::Result::Stop;
+    }
+
+    return generateLineLoopLastSegment(contextMtl, first, last, params.dstBuffer, params.dstOffset);
 }
 
 // VisibilityResultUtils implementation
