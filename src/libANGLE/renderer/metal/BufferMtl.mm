@@ -57,13 +57,15 @@ ConversionBufferMtl::~ConversionBufferMtl() = default;
 
 // IndexConversionBufferMtl implementation.
 IndexConversionBufferMtl::IndexConversionBufferMtl(ContextMtl *context,
-                                                   gl::DrawElementsType typeIn,
+                                                   gl::DrawElementsType elemTypeIn,
+                                                   bool primitiveRestartEnabledIn,
                                                    size_t offsetIn)
     : ConversionBufferMtl(context,
                           kConvertedElementArrayBufferInitialSize,
                           mtl::kIndexBufferOffsetAlignment),
-      type(typeIn),
-      offset(offsetIn)
+      elemType(elemTypeIn),
+      offset(offsetIn),
+      primitiveRestartEnabled(primitiveRestartEnabledIn)
 {}
 
 // UniformConversionBufferMtl implementation
@@ -167,7 +169,8 @@ angle::Result BufferMtl::mapRange(const gl::Context *context,
         if (mBufferPool.getMaxBuffers() == 1)
         {
             *mapPtr = mBuffer->map(contextMtl, (access & GL_MAP_WRITE_BIT) == 0,
-                                   access & GL_MAP_UNSYNCHRONIZED_BIT) + offset;
+                                   access & GL_MAP_UNSYNCHRONIZED_BIT) +
+                      offset;
         }
         else
         {
@@ -308,18 +311,20 @@ ConversionBufferMtl *BufferMtl::getVertexConversionBuffer(ContextMtl *context,
 }
 
 IndexConversionBufferMtl *BufferMtl::getIndexConversionBuffer(ContextMtl *context,
-                                                              gl::DrawElementsType type,
+                                                              gl::DrawElementsType elemType,
+                                                              bool primitiveRestartEnabled,
                                                               size_t offset)
 {
     for (auto &buffer : mIndexConversionBuffers)
     {
-        if (buffer.type == type && buffer.offset == offset)
+        if (buffer.elemType == elemType && buffer.offset == offset &&
+            buffer.primitiveRestartEnabled == primitiveRestartEnabled)
         {
             return &buffer;
         }
     }
 
-    mIndexConversionBuffers.emplace_back(context, type, offset);
+    mIndexConversionBuffers.emplace_back(context, elemType, primitiveRestartEnabled, offset);
     return &mIndexConversionBuffers.back();
 }
 

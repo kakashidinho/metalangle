@@ -62,11 +62,19 @@ struct BlitParamsUniform
 };
 
 // See libANGLE/renderer/metal/shaders/genIndices.metal
+struct TriFanOrLineLoopArrayParams
+{
+    uint firstVertex;
+    uint vertexCount;
+    uint padding[2];
+};
+
 struct IndexConversionUniform
 {
     uint32_t srcOffset;
     uint32_t indexCount;
-    uint32_t padding[2];
+    uint8_t primitiveRestartEnabled;
+    uint8_t padding[7];
 };
 
 // See libANGLE/renderer/metal/shaders/misc.metal
@@ -172,41 +180,176 @@ struct ScopedDisableOcclusionQuery
 template <typename T>
 angle::Result GenTriFanFromClientElements(ContextMtl *contextMtl,
                                           GLsizei count,
+                                          bool primitiveRestartEnabled,
                                           const T *indices,
                                           const BufferRef &dstBuffer,
                                           uint32_t dstOffset)
 {
     ASSERT(count > 2);
+    constexpr T kSrcPrimitiveRestartIndex    = std::numeric_limits<T>::max();
+    const uint32_t kDstPrimitiveRestartIndex = std::numeric_limits<uint32_t>::max();
+
     uint32_t *dstPtr = reinterpret_cast<uint32_t *>(dstBuffer->map(contextMtl) + dstOffset);
-    T firstIdx;
-    memcpy(&firstIdx, indices, sizeof(firstIdx));
-    for (GLsizei i = 2; i < count; ++i)
+    T triFirstIdx, srcPrevIdx;
+    memcpy(&triFirstIdx, indices, sizeof(triFirstIdx));
+    memcpy(&srcPrevIdx, indices + 1, sizeof(srcPrevIdx));
+
+    if (primitiveRestartEnabled)
     {
-        T srcPrevIdx, srcIdx;
-        memcpy(&srcPrevIdx, indices + i - 1, sizeof(srcPrevIdx));
-        memcpy(&srcIdx, indices + i, sizeof(srcIdx));
+        GLsizei triFirstIdxLoc = 0;
+        while (triFirstIdx == kSrcPrimitiveRestartIndex)
+        {
+            memcpy(&dstPtr[triFirstIdxLoc++], &kDstPrimitiveRestartIndex,
+                   sizeof(kDstPrimitiveRestartIndex));
+            memcpy(&triFirstIdx, indices + triFirstIdxLoc, sizeof(triFirstIdx));
+        }
 
-        uint32_t triIndices[3];
-        triIndices[0] = firstIdx;
-        triIndices[1] = srcPrevIdx;
-        triIndices[2] = srcIdx;
+        if (triFirstIdxLoc + 2 >= count)
+        {
+            // Not enough indices.
+            for (GLsizei i = triFirstIdxLoc; i < count; ++i)
+            {
+                memcpy(&dstPtr[i], &kDstPrimitiveRestartIndex, sizeof(kDstPrimitiveRestartIndex));
+            }
+        }
 
-        memcpy(dstPtr + 3 * (i - 2), triIndices, sizeof(triIndices));
+        for (GLsizei i = triFirstIdxLoc + 2; i < count; ++i)
+        {
+            uint32_t triIndices[3];
+
+            T srcIdx;
+            memcpy(&srcIdx, indices + i, sizeof(srcIdx));
+            if (srcPrevIdx == kSrcPrimitiveRestartIndex || srcIdx == kSrcPrimitiveRestartIndex)
+            {
+                // Incomplete triangle.
+                triIndices[0]  = kDstPrimitiveRestartIndex;
+                triIndices[1]  = kDstPrimitiveRestartIndex;
+                triIndices[2]  = kDstPrimitiveRestartIndex;
+                triFirstIdx    = srcIdx;
+                triFirstIdxLoc = i;
+            }
+            else if (i < triFirstIdxLoc + 2)
+            {
+                // Incomplete triangle
+                triIndices[0] = kDstPrimitiveRestartIndex;
+                triIndices[1] = kDstPrimitiveRestartIndex;
+                triIndices[2] = kDstPrimitiveRestartIndex;
+            }
+            else
+            {
+                triIndices[0] = triFirstIdx;
+                triIndices[1] = srcPrevIdx;
+                triIndices[2] = srcIdx;
+            }
+            srcPrevIdx = srcIdx;
+
+            memcpy(dstPtr + 3 * (i - 2), triIndices, sizeof(triIndices));
+        }
+    }
+    else
+    {
+        for (GLsizei i = 2; i < count; ++i)
+        {
+            T srcIdx;
+            memcpy(&srcIdx, indices + i, sizeof(srcIdx));
+
+            uint32_t triIndices[3];
+            triIndices[0] = triFirstIdx;
+            triIndices[1] = srcPrevIdx;
+            triIndices[2] = srcIdx;
+            srcPrevIdx    = srcIdx;
+
+            memcpy(dstPtr + 3 * (i - 2), triIndices, sizeof(triIndices));
+        }
     }
     dstBuffer->unmap(contextMtl);
 
     return angle::Result::Continue;
 }
+
 template <typename T>
-void GetFirstLastIndicesFromClientElements(GLsizei count,
-                                           const T *indices,
-                                           uint32_t *firstOut,
-                                           uint32_t *lastOut)
+angle::Result GenLineLoopFromClientElements(ContextMtl *contextMtl,
+                                            GLsizei count,
+                                            bool primitiveRestartEnabled,
+                                            const T *indices,
+                                            const BufferRef &dstBuffer,
+                                            uint32_t dstOffset,
+                                            uint32_t *indicesGenerated)
 {
-    *firstOut = 0;
-    *lastOut  = 0;
-    memcpy(firstOut, indices, sizeof(indices[0]));
-    memcpy(lastOut, indices + count - 1, sizeof(indices[0]));
+    ASSERT(count >= 2);
+    constexpr T kSrcPrimitiveRestartIndex    = std::numeric_limits<T>::max();
+    const uint32_t kDstPrimitiveRestartIndex = std::numeric_limits<uint32_t>::max();
+
+    uint32_t *dstPtr = reinterpret_cast<uint32_t *>(dstBuffer->map(contextMtl) + dstOffset);
+    T lineLoopFirstIdx;
+    memcpy(&lineLoopFirstIdx, indices, sizeof(lineLoopFirstIdx));
+
+    if (primitiveRestartEnabled)
+    {
+        GLsizei lineLoopFirstIdxLoc = 0;
+        while (lineLoopFirstIdx == kSrcPrimitiveRestartIndex)
+        {
+            memcpy(&dstPtr[lineLoopFirstIdxLoc++], &kDstPrimitiveRestartIndex,
+                   sizeof(kDstPrimitiveRestartIndex));
+            memcpy(&lineLoopFirstIdx, indices + lineLoopFirstIdxLoc, sizeof(lineLoopFirstIdx));
+        }
+
+        uint32_t dstIdx = lineLoopFirstIdx;
+        memcpy(&dstPtr[lineLoopFirstIdxLoc], &dstIdx, sizeof(dstIdx));
+        uint32_t dstWritten = lineLoopFirstIdxLoc + 1;
+
+        for (GLsizei i = lineLoopFirstIdxLoc + 1; i < count; ++i)
+        {
+            T srcIdx;
+            memcpy(&srcIdx, indices + i, sizeof(srcIdx));
+            if (srcIdx == kSrcPrimitiveRestartIndex)
+            {
+                // breaking line strip
+                dstIdx = lineLoopFirstIdx;
+                memcpy(&dstPtr[dstWritten++], &dstIdx, sizeof(dstIdx));
+                memcpy(&dstPtr[dstWritten++], &kDstPrimitiveRestartIndex,
+                       sizeof(kDstPrimitiveRestartIndex));
+                lineLoopFirstIdxLoc = i + 1;
+            }
+            else
+            {
+                dstIdx = srcIdx;
+                memcpy(&dstPtr[dstWritten++], &dstIdx, sizeof(dstIdx));
+                if (lineLoopFirstIdxLoc == i)
+                {
+                    lineLoopFirstIdx = srcIdx;
+                }
+            }
+        }
+
+        if (lineLoopFirstIdxLoc < count)
+        {
+            // last segment
+            dstIdx = lineLoopFirstIdx;
+            memcpy(&dstPtr[dstWritten++], &dstIdx, sizeof(dstIdx));
+        }
+
+        *indicesGenerated = dstWritten;
+    }
+    else
+    {
+        uint32_t dstIdx = lineLoopFirstIdx;
+        memcpy(dstPtr, &dstIdx, sizeof(dstIdx));
+        memcpy(dstPtr + count, &dstIdx, sizeof(dstIdx));
+        for (GLsizei i = 1; i < count; ++i)
+        {
+            T srcIdx;
+            memcpy(&srcIdx, indices + i, sizeof(srcIdx));
+
+            dstIdx = srcIdx;
+            memcpy(dstPtr + i, &dstIdx, sizeof(dstIdx));
+        }
+
+        *indicesGenerated = count + 1;
+    }
+    dstBuffer->unmap(contextMtl);
+
+    return angle::Result::Continue;
 }
 
 int GetShaderTextureType(const TextureRef &texture)
@@ -463,20 +606,14 @@ angle::Result RenderUtils::blitDepthStencilWithDraw(const gl::Context *context,
     return mDepthStencilBlitUtils.blitDepthStencilWithDraw(context, cmdEncoder, params);
 }
 
-angle::Result RenderUtils::convertIndexBuffer(ContextMtl *contextMtl,
-                                              gl::DrawElementsType srcType,
-                                              uint32_t indexCount,
-                                              const BufferRef &srcBuffer,
-                                              uint32_t srcOffset,
-                                              const BufferRef &dstBuffer,
-                                              // Must be multiples of kIndexBufferOffsetAlignment
-                                              uint32_t dstOffset)
+angle::Result RenderUtils::convertIndexBufferGPU(ContextMtl *contextMtl,
+                                                 const IndexConversionParams &params)
 {
-    return mIndexUtils.convertIndexBuffer(contextMtl, srcType, indexCount, srcBuffer, srcOffset,
-                                          dstBuffer, dstOffset);
+    return mIndexUtils.convertIndexBufferGPU(contextMtl, params);
 }
-angle::Result RenderUtils::generateTriFanBufferFromArrays(ContextMtl *contextMtl,
-                                                          const TriFanFromArrayParams &params)
+angle::Result RenderUtils::generateTriFanBufferFromArrays(
+    ContextMtl *contextMtl,
+    const TriFanOrLineLoopFromArrayParams &params)
 {
     return mIndexUtils.generateTriFanBufferFromArrays(contextMtl, params);
 }
@@ -487,20 +624,19 @@ angle::Result RenderUtils::generateTriFanBufferFromElementsArray(
     return mIndexUtils.generateTriFanBufferFromElementsArray(contextMtl, params);
 }
 
-angle::Result RenderUtils::generateLineLoopLastSegment(ContextMtl *contextMtl,
-                                                       uint32_t firstVertex,
-                                                       uint32_t lastVertex,
-                                                       const BufferRef &dstBuffer,
-                                                       uint32_t dstOffset)
-{
-    return mIndexUtils.generateLineLoopLastSegment(contextMtl, firstVertex, lastVertex, dstBuffer,
-                                                   dstOffset);
-}
-angle::Result RenderUtils::generateLineLoopLastSegmentFromElementsArray(
+angle::Result RenderUtils::generateLineLoopBufferFromArrays(
     ContextMtl *contextMtl,
-    const IndexGenerationParams &params)
+    const TriFanOrLineLoopFromArrayParams &params)
 {
-    return mIndexUtils.generateLineLoopLastSegmentFromElementsArray(contextMtl, params);
+    return mIndexUtils.generateLineLoopBufferFromArrays(contextMtl, params);
+}
+angle::Result RenderUtils::generateLineLoopBufferFromElementsArray(
+    ContextMtl *contextMtl,
+    const IndexGenerationParams &params,
+    uint32_t *indicesGenerated)
+{
+    return mIndexUtils.generateLineLoopBufferFromElementsArray(contextMtl, params,
+                                                               indicesGenerated);
 }
 
 void RenderUtils::combineVisibilityResult(
@@ -1275,15 +1411,18 @@ AutoObjCPtr<id<MTLComputePipelineState>> IndexGeneratorUtils::getIndexConversion
 }
 
 AutoObjCPtr<id<MTLComputePipelineState>>
-IndexGeneratorUtils::getTriFanFromElemArrayGeneratorPipeline(ContextMtl *contextMtl,
-                                                             gl::DrawElementsType srcType,
-                                                             uint32_t srcOffset)
+IndexGeneratorUtils::getIndicesFromElemArrayGeneratorPipeline(
+    ContextMtl *contextMtl,
+    gl::DrawElementsType srcType,
+    uint32_t srcOffset,
+    NSString *shaderName,
+    IndexConversionPipelineArray *pipelineCacheArray)
 {
     size_t elementSize = gl::GetDrawElementsTypeSize(srcType);
     BOOL aligned       = (srcOffset % elementSize) == 0;
     int srcTypeKey     = static_cast<int>(srcType);
 
-    auto &cache = mTriFanFromElemArrayGeneratorPipelineCaches[srcTypeKey][aligned ? 1 : 0];
+    auto &cache = (*pipelineCacheArray)[srcTypeKey][aligned ? 1 : 0];
 
     if (!cache)
     {
@@ -1323,8 +1462,8 @@ IndexGeneratorUtils::getTriFanFromElemArrayGeneratorPipeline(ContextMtl *context
                                        type:MTLDataTypeBool
                                    withName:SOURCE_IDX_IS_U32_CONSTANT_NAME];
 
-            EnsureSpecializedComputePipelineInitialized(
-                contextMtl->getDisplay(), @"genTriFanIndicesFromElements", funcConstants, &cache);
+            EnsureSpecializedComputePipelineInitialized(contextMtl->getDisplay(), shaderName,
+                                                        funcConstants, &cache);
         }
     }
 
@@ -1337,42 +1476,44 @@ void IndexGeneratorUtils::ensureTriFanFromArrayGeneratorInitialized(ContextMtl *
                                      &mTriFanFromArraysGeneratorPipeline);
 }
 
-angle::Result IndexGeneratorUtils::convertIndexBuffer(ContextMtl *contextMtl,
-                                                      gl::DrawElementsType srcType,
-                                                      uint32_t indexCount,
-                                                      const BufferRef &srcBuffer,
-                                                      uint32_t srcOffset,
-                                                      const BufferRef &dstBuffer,
-                                                      uint32_t dstOffset)
+void IndexGeneratorUtils::ensureLineLoopFromArrayGeneratorInitialized(ContextMtl *contextMtl)
+{
+    EnsureComputePipelineInitialized(contextMtl->getDisplay(), @"genLineLoopIndicesFromArray",
+                                     &mLineLoopFromArraysGeneratorPipeline);
+}
+
+angle::Result IndexGeneratorUtils::convertIndexBufferGPU(ContextMtl *contextMtl,
+                                                         const IndexConversionParams &params)
 {
     ComputeCommandEncoder *cmdEncoder = contextMtl->getComputeCommandEncoder();
     ASSERT(cmdEncoder);
 
     AutoObjCPtr<id<MTLComputePipelineState>> pipelineState =
-        getIndexConversionPipeline(contextMtl, srcType, srcOffset);
+        getIndexConversionPipeline(contextMtl, params.srcType, params.srcOffset);
 
     ASSERT(pipelineState);
 
     cmdEncoder->setComputePipelineState(pipelineState);
 
-    ASSERT((dstOffset % kIndexBufferOffsetAlignment) == 0);
+    ASSERT((params.dstOffset % kIndexBufferOffsetAlignment) == 0);
 
     IndexConversionUniform uniform;
-    uniform.srcOffset  = srcOffset;
-    uniform.indexCount = indexCount;
+    uniform.srcOffset               = params.srcOffset;
+    uniform.indexCount              = params.indexCount;
+    uniform.primitiveRestartEnabled = params.primitiveRestartEnabled;
 
     cmdEncoder->setData(uniform, 0);
-    cmdEncoder->setBuffer(srcBuffer, 0, 1);
-    cmdEncoder->setBufferForWrite(dstBuffer, dstOffset, 2);
+    cmdEncoder->setBuffer(params.srcBuffer, 0, 1);
+    cmdEncoder->setBufferForWrite(params.dstBuffer, params.dstOffset, 2);
 
-    dispatchCompute(contextMtl, cmdEncoder, pipelineState, indexCount);
+    dispatchCompute(contextMtl, cmdEncoder, pipelineState, params.indexCount);
 
     return angle::Result::Continue;
 }
 
 angle::Result IndexGeneratorUtils::generateTriFanBufferFromArrays(
     ContextMtl *contextMtl,
-    const TriFanFromArrayParams &params)
+    const TriFanOrLineLoopFromArrayParams &params)
 {
     ComputeCommandEncoder *cmdEncoder = contextMtl->getComputeCommandEncoder();
     ASSERT(cmdEncoder);
@@ -1384,21 +1525,16 @@ angle::Result IndexGeneratorUtils::generateTriFanBufferFromArrays(
 
     ASSERT((params.dstOffset % kIndexBufferOffsetAlignment) == 0);
 
-    struct TriFanArrayParams
-    {
-        uint firstVertex;
-        uint vertexCountFrom3rd;
-        uint padding[2];
-    } uniform;
+    TriFanOrLineLoopArrayParams uniform;
 
-    uniform.firstVertex        = params.firstVertex;
-    uniform.vertexCountFrom3rd = params.vertexCount - 2;
+    uniform.firstVertex = params.firstVertex;
+    uniform.vertexCount = params.vertexCount - 2;
 
     cmdEncoder->setData(uniform, 0);
     cmdEncoder->setBufferForWrite(params.dstBuffer, params.dstOffset, 2);
 
     dispatchCompute(contextMtl, cmdEncoder, mTriFanFromArraysGeneratorPipeline,
-                    uniform.vertexCountFrom3rd);
+                    uniform.vertexCount);
 
     return angle::Result::Continue;
 }
@@ -1411,13 +1547,25 @@ angle::Result IndexGeneratorUtils::generateTriFanBufferFromElementsArray(
     const gl::Buffer *elementBuffer    = vertexArray->getElementArrayBuffer();
     if (elementBuffer)
     {
-        size_t srcOffset = reinterpret_cast<size_t>(params.indices);
+        BufferMtl *elementBufferMtl = GetImpl(elementBuffer);
+        size_t srcOffset            = reinterpret_cast<size_t>(params.indices);
         ANGLE_CHECK(contextMtl, srcOffset <= std::numeric_limits<uint32_t>::max(),
                     "Index offset is too large", GL_INVALID_VALUE);
-        return generateTriFanBufferFromElementsArrayGPU(
-            contextMtl, params.srcType, params.indexCount,
-            GetImpl(elementBuffer)->getCurrentBuffer(), static_cast<uint32_t>(srcOffset),
-            params.dstBuffer, params.dstOffset);
+        if (params.primitiveRestartEnabled ||
+            (!contextMtl->getDisplay()->getFeatures().breakRenderPassIsCheap.enabled &&
+             contextMtl->getRenderCommandEncoder()))
+        {
+            IndexGenerationParams cpuPathParams = params;
+            cpuPathParams.indices =
+                elementBufferMtl->getClientShadowCopyData(contextMtl) + srcOffset;
+            return generateTriFanBufferFromElementsArrayCPU(contextMtl, cpuPathParams);
+        }
+        else
+        {
+            return generateTriFanBufferFromElementsArrayGPU(
+                contextMtl, params.srcType, params.indexCount, elementBufferMtl->getCurrentBuffer(),
+                static_cast<uint32_t>(srcOffset), params.dstBuffer, params.dstOffset);
+        }
     }
     else
     {
@@ -1439,7 +1587,9 @@ angle::Result IndexGeneratorUtils::generateTriFanBufferFromElementsArrayGPU(
     ASSERT(cmdEncoder);
 
     AutoObjCPtr<id<MTLComputePipelineState>> pipelineState =
-        getTriFanFromElemArrayGeneratorPipeline(contextMtl, srcType, srcOffset);
+        getIndicesFromElemArrayGeneratorPipeline(contextMtl, srcType, srcOffset,
+                                                 @"genTriFanIndicesFromElements",
+                                                 &mTriFanFromElemArrayGeneratorPipelineCaches);
 
     ASSERT(pipelineState);
 
@@ -1468,17 +1618,17 @@ angle::Result IndexGeneratorUtils::generateTriFanBufferFromElementsArrayCPU(
     switch (params.srcType)
     {
         case gl::DrawElementsType::UnsignedByte:
-            return GenTriFanFromClientElements(contextMtl, params.indexCount,
-                                               static_cast<const uint8_t *>(params.indices),
-                                               params.dstBuffer, params.dstOffset);
+            return GenTriFanFromClientElements(
+                contextMtl, params.indexCount, params.primitiveRestartEnabled,
+                static_cast<const uint8_t *>(params.indices), params.dstBuffer, params.dstOffset);
         case gl::DrawElementsType::UnsignedShort:
-            return GenTriFanFromClientElements(contextMtl, params.indexCount,
-                                               static_cast<const uint16_t *>(params.indices),
-                                               params.dstBuffer, params.dstOffset);
+            return GenTriFanFromClientElements(
+                contextMtl, params.indexCount, params.primitiveRestartEnabled,
+                static_cast<const uint16_t *>(params.indices), params.dstBuffer, params.dstOffset);
         case gl::DrawElementsType::UnsignedInt:
-            return GenTriFanFromClientElements(contextMtl, params.indexCount,
-                                               static_cast<const uint32_t *>(params.indices),
-                                               params.dstBuffer, params.dstOffset);
+            return GenTriFanFromClientElements(
+                contextMtl, params.indexCount, params.primitiveRestartEnabled,
+                static_cast<const uint32_t *>(params.indices), params.dstBuffer, params.dstOffset);
         default:
             UNREACHABLE();
     }
@@ -1486,75 +1636,134 @@ angle::Result IndexGeneratorUtils::generateTriFanBufferFromElementsArrayCPU(
     return angle::Result::Stop;
 }
 
-angle::Result IndexGeneratorUtils::generateLineLoopLastSegment(ContextMtl *contextMtl,
-                                                               uint32_t firstVertex,
-                                                               uint32_t lastVertex,
-                                                               const BufferRef &dstBuffer,
-                                                               uint32_t dstOffset)
+angle::Result IndexGeneratorUtils::generateLineLoopBufferFromArrays(
+    ContextMtl *contextMtl,
+    const TriFanOrLineLoopFromArrayParams &params)
 {
-    uint8_t *ptr = dstBuffer->map(contextMtl);
+    ComputeCommandEncoder *cmdEncoder = contextMtl->getComputeCommandEncoder();
+    ASSERT(cmdEncoder);
+    ensureLineLoopFromArrayGeneratorInitialized(contextMtl);
 
-    uint32_t indices[2] = {lastVertex, firstVertex};
-    memcpy(ptr, indices, sizeof(indices));
+    cmdEncoder->setComputePipelineState(mLineLoopFromArraysGeneratorPipeline);
 
-    dstBuffer->unmap(contextMtl);
+    ASSERT((params.dstOffset % kIndexBufferOffsetAlignment) == 0);
+
+    TriFanOrLineLoopArrayParams uniform;
+
+    uniform.firstVertex = params.firstVertex;
+    uniform.vertexCount = params.vertexCount;
+
+    cmdEncoder->setData(uniform, 0);
+    cmdEncoder->setBufferForWrite(params.dstBuffer, params.dstOffset, 2);
+
+    dispatchCompute(contextMtl, cmdEncoder, mLineLoopFromArraysGeneratorPipeline,
+                    uniform.vertexCount + 1);
 
     return angle::Result::Continue;
 }
 
-angle::Result IndexGeneratorUtils::generateLineLoopLastSegmentFromElementsArray(
+angle::Result IndexGeneratorUtils::generateLineLoopBufferFromElementsArray(
     ContextMtl *contextMtl,
-    const IndexGenerationParams &params)
+    const IndexGenerationParams &params,
+    uint32_t *indicesGenerated)
 {
     const gl::VertexArray *vertexArray = contextMtl->getState().getVertexArray();
     const gl::Buffer *elementBuffer    = vertexArray->getElementArrayBuffer();
     if (elementBuffer)
     {
-        size_t srcOffset = reinterpret_cast<size_t>(params.indices);
+        BufferMtl *elementBufferMtl = GetImpl(elementBuffer);
+        size_t srcOffset            = reinterpret_cast<size_t>(params.indices);
         ANGLE_CHECK(contextMtl, srcOffset <= std::numeric_limits<uint32_t>::max(),
                     "Index offset is too large", GL_INVALID_VALUE);
-
-        BufferMtl *bufferMtl = GetImpl(elementBuffer);
-        std::pair<uint32_t, uint32_t> firstLast;
-        ANGLE_TRY(bufferMtl->getFirstLastIndices(contextMtl, params.srcType,
-                                                 static_cast<uint32_t>(srcOffset),
-                                                 params.indexCount, &firstLast));
-
-        return generateLineLoopLastSegment(contextMtl, firstLast.first, firstLast.second,
-                                           params.dstBuffer, params.dstOffset);
+        if (params.primitiveRestartEnabled ||
+            (!contextMtl->getDisplay()->getFeatures().breakRenderPassIsCheap.enabled &&
+             contextMtl->getRenderCommandEncoder()))
+        {
+            IndexGenerationParams cpuPathParams = params;
+            cpuPathParams.indices =
+                elementBufferMtl->getClientShadowCopyData(contextMtl) + srcOffset;
+            return generateLineLoopBufferFromElementsArrayCPU(contextMtl, cpuPathParams,
+                                                              indicesGenerated);
+        }
+        else
+        {
+            *indicesGenerated = params.indexCount + 1;
+            return generateLineLoopBufferFromElementsArrayGPU(
+                contextMtl, params.srcType, params.indexCount, elementBufferMtl->getCurrentBuffer(),
+                static_cast<uint32_t>(srcOffset), params.dstBuffer, params.dstOffset);
+        }
     }
     else
     {
-        return generateLineLoopLastSegmentFromElementsArrayCPU(contextMtl, params);
+        return generateLineLoopBufferFromElementsArrayCPU(contextMtl, params, indicesGenerated);
     }
 }
 
-angle::Result IndexGeneratorUtils::generateLineLoopLastSegmentFromElementsArrayCPU(
+angle::Result IndexGeneratorUtils::generateLineLoopBufferFromElementsArrayGPU(
     ContextMtl *contextMtl,
-    const IndexGenerationParams &params)
+    gl::DrawElementsType srcType,
+    uint32_t indexCount,
+    const BufferRef &srcBuffer,
+    uint32_t srcOffset,
+    const BufferRef &dstBuffer,
+    // Must be multiples of kIndexBufferOffsetAlignment
+    uint32_t dstOffset)
 {
-    uint32_t first, last;
+    ComputeCommandEncoder *cmdEncoder = contextMtl->getComputeCommandEncoder();
+    ASSERT(cmdEncoder);
 
+    AutoObjCPtr<id<MTLComputePipelineState>> pipelineState =
+        getIndicesFromElemArrayGeneratorPipeline(contextMtl, srcType, srcOffset,
+                                                 @"genLineLoopIndicesFromElements",
+                                                 &mLineLoopFromElemArrayGeneratorPipelineCaches);
+
+    ASSERT(pipelineState);
+
+    cmdEncoder->setComputePipelineState(pipelineState);
+
+    ASSERT((dstOffset % kIndexBufferOffsetAlignment) == 0);
+    ASSERT(indexCount >= 2);
+
+    IndexConversionUniform uniform;
+    uniform.srcOffset  = srcOffset;
+    uniform.indexCount = indexCount;
+
+    cmdEncoder->setData(uniform, 0);
+    cmdEncoder->setBuffer(srcBuffer, 0, 1);
+    cmdEncoder->setBufferForWrite(dstBuffer, dstOffset, 2);
+
+    dispatchCompute(contextMtl, cmdEncoder, pipelineState, uniform.indexCount + 1);
+
+    return angle::Result::Continue;
+}
+
+angle::Result IndexGeneratorUtils::generateLineLoopBufferFromElementsArrayCPU(
+    ContextMtl *contextMtl,
+    const IndexGenerationParams &params,
+    uint32_t *indicesGenerated)
+{
     switch (params.srcType)
     {
         case gl::DrawElementsType::UnsignedByte:
-            GetFirstLastIndicesFromClientElements(
-                params.indexCount, static_cast<const uint8_t *>(params.indices), &first, &last);
-            break;
+            return GenLineLoopFromClientElements(
+                contextMtl, params.indexCount, params.primitiveRestartEnabled,
+                static_cast<const uint8_t *>(params.indices), params.dstBuffer, params.dstOffset,
+                indicesGenerated);
         case gl::DrawElementsType::UnsignedShort:
-            GetFirstLastIndicesFromClientElements(
-                params.indexCount, static_cast<const uint16_t *>(params.indices), &first, &last);
-            break;
+            return GenLineLoopFromClientElements(
+                contextMtl, params.indexCount, params.primitiveRestartEnabled,
+                static_cast<const uint16_t *>(params.indices), params.dstBuffer, params.dstOffset,
+                indicesGenerated);
         case gl::DrawElementsType::UnsignedInt:
-            GetFirstLastIndicesFromClientElements(
-                params.indexCount, static_cast<const uint32_t *>(params.indices), &first, &last);
-            break;
+            return GenLineLoopFromClientElements(
+                contextMtl, params.indexCount, params.primitiveRestartEnabled,
+                static_cast<const uint32_t *>(params.indices), params.dstBuffer, params.dstOffset,
+                indicesGenerated);
         default:
             UNREACHABLE();
-            return angle::Result::Stop;
     }
 
-    return generateLineLoopLastSegment(contextMtl, first, last, params.dstBuffer, params.dstOffset);
+    return angle::Result::Stop;
 }
 
 // VisibilityResultUtils implementation

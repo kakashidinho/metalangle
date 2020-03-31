@@ -311,6 +311,16 @@ class ContextMtl : public ContextImpl, public mtl::Context
                                      const void *indices,
                                      GLsizei instances);
 
+    angle::Result drawLineLoopArrays(const gl::Context *context,
+                                     GLint first,
+                                     GLsizei count,
+                                     GLsizei instances);
+    angle::Result drawLineLoopElements(const gl::Context *context,
+                                       GLsizei count,
+                                       gl::DrawElementsType type,
+                                       const void *indices,
+                                       GLsizei instances);
+
     angle::Result drawArraysImpl(const gl::Context *context,
                                  gl::PrimitiveMode mode,
                                  GLint first,

@@ -638,6 +638,7 @@ void DisplayMtl::initializeFeatures()
 
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
     mFeatures.hasDepthTextureFiltering.enabled = true;
+    mFeatures.breakRenderPassIsCheap.enabled   = true;
 
     // Texture swizzle is only supported if macos sdk 10.15 is present
 #    if defined(__MAC_10_15)
@@ -648,6 +649,8 @@ void DisplayMtl::initializeFeatures()
     }
 #    endif
 #elif TARGET_OS_IOS
+    mFeatures.breakRenderPassIsCheap.enabled = false;
+
     // Base Vertex drawing is only supported since GPU family 3.
     ANGLE_FEATURE_CONDITION((&mFeatures), hasBaseVertexInstancedDraw, supportiOSGPUFamily(3));
 

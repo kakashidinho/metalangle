@@ -89,13 +89,26 @@ struct DepthStencilBlitParams : public BlitParams
     uint32_t srcStencilLayer = 0;
 };
 
-struct TriFanFromArrayParams
+struct TriFanOrLineLoopFromArrayParams
 {
     uint32_t firstVertex;
     uint32_t vertexCount;
     BufferRef dstBuffer;
     // Must be multiples of kIndexBufferOffsetAlignment
     uint32_t dstOffset;
+};
+
+struct IndexConversionParams
+{
+
+    gl::DrawElementsType srcType;
+    uint32_t indexCount;
+    const BufferRef &srcBuffer;
+    uint32_t srcOffset;
+    const BufferRef &dstBuffer;
+    // Must be multiples of kIndexBufferOffsetAlignment
+    uint32_t dstOffset;
+    bool primitiveRestartEnabled = false;
 };
 
 struct IndexGenerationParams
@@ -105,6 +118,7 @@ struct IndexGenerationParams
     const void *indices;
     BufferRef dstBuffer;
     uint32_t dstOffset;
+    bool primitiveRestartEnabled = false;
 };
 
 struct CopyPixelsCommonParams
@@ -295,37 +309,41 @@ class IndexGeneratorUtils : public ComputeBasedUtils
   public:
     void onDestroy();
 
-    angle::Result convertIndexBuffer(ContextMtl *contextMtl,
-                                     gl::DrawElementsType srcType,
-                                     uint32_t indexCount,
-                                     const BufferRef &srcBuffer,
-                                     uint32_t srcOffset,
-                                     const BufferRef &dstBuffer,
-                                     // Must be multiples of kIndexBufferOffsetAlignment
-                                     uint32_t dstOffset);
+    angle::Result convertIndexBufferGPU(ContextMtl *contextMtl,
+                                        const IndexConversionParams &params);
     angle::Result generateTriFanBufferFromArrays(ContextMtl *contextMtl,
-                                                 const TriFanFromArrayParams &params);
+                                                 const TriFanOrLineLoopFromArrayParams &params);
     angle::Result generateTriFanBufferFromElementsArray(ContextMtl *contextMtl,
                                                         const IndexGenerationParams &params);
 
-    angle::Result generateLineLoopLastSegment(ContextMtl *contextMtl,
-                                              uint32_t firstVertex,
-                                              uint32_t lastVertex,
-                                              const BufferRef &dstBuffer,
-                                              uint32_t dstOffset);
-    angle::Result generateLineLoopLastSegmentFromElementsArray(ContextMtl *contextMtl,
-                                                               const IndexGenerationParams &params);
+    angle::Result generateLineLoopBufferFromArrays(ContextMtl *contextMtl,
+                                                   const TriFanOrLineLoopFromArrayParams &params);
+    // Destination buffer must have at least 2x the number of original indices if primitive restart
+    // is enabled.
+    angle::Result generateLineLoopBufferFromElementsArray(ContextMtl *contextMtl,
+                                                          const IndexGenerationParams &params,
+                                                          uint32_t *indicesGenerated);
 
   private:
+    // Index generator compute pipelines:
+    //  - First dimension: index type.
+    //  - second dimension: source buffer's offset is aligned or not.
+    using IndexConversionPipelineArray =
+        std::array<std::array<AutoObjCPtr<id<MTLComputePipelineState>>, 2>,
+                   angle::EnumSize<gl::DrawElementsType>()>;
+
     AutoObjCPtr<id<MTLComputePipelineState>> getIndexConversionPipeline(
         ContextMtl *contextMtl,
         gl::DrawElementsType srcType,
         uint32_t srcOffset);
-    AutoObjCPtr<id<MTLComputePipelineState>> getTriFanFromElemArrayGeneratorPipeline(
+    AutoObjCPtr<id<MTLComputePipelineState>> getIndicesFromElemArrayGeneratorPipeline(
         ContextMtl *contextMtl,
         gl::DrawElementsType srcType,
-        uint32_t srcOffset);
+        uint32_t srcOffset,
+        NSString *shaderName,
+        IndexConversionPipelineArray *pipelineCacheArray);
     void ensureTriFanFromArrayGeneratorInitialized(ContextMtl *contextMtl);
+    void ensureLineLoopFromArrayGeneratorInitialized(ContextMtl *contextMtl);
 
     angle::Result generateTriFanBufferFromElementsArrayGPU(
         ContextMtl *contextMtl,
@@ -338,19 +356,27 @@ class IndexGeneratorUtils : public ComputeBasedUtils
         uint32_t dstOffset);
     angle::Result generateTriFanBufferFromElementsArrayCPU(ContextMtl *contextMtl,
                                                            const IndexGenerationParams &params);
-    angle::Result generateLineLoopLastSegmentFromElementsArrayCPU(
-        ContextMtl *contextMtl,
-        const IndexGenerationParams &params);
 
-    // Index generator compute pipelines:
-    //  - First dimension: index type.
-    //  - second dimension: source buffer's offset is aligned or not.
-    using IndexConversionPipelineArray =
-        std::array<std::array<AutoObjCPtr<id<MTLComputePipelineState>>, 2>,
-                   angle::EnumSize<gl::DrawElementsType>()>;
+    angle::Result generateLineLoopBufferFromElementsArrayGPU(
+        ContextMtl *contextMtl,
+        gl::DrawElementsType srcType,
+        uint32_t indexCount,
+        const BufferRef &srcBuffer,
+        uint32_t srcOffset,
+        const BufferRef &dstBuffer,
+        // Must be multiples of kIndexBufferOffsetAlignment
+        uint32_t dstOffset);
+    angle::Result generateLineLoopBufferFromElementsArrayCPU(ContextMtl *contextMtl,
+                                                             const IndexGenerationParams &params,
+                                                             uint32_t *indicesGenerated);
+
     IndexConversionPipelineArray mIndexConversionPipelineCaches;
+
     IndexConversionPipelineArray mTriFanFromElemArrayGeneratorPipelineCaches;
     AutoObjCPtr<id<MTLComputePipelineState>> mTriFanFromArraysGeneratorPipeline;
+
+    IndexConversionPipelineArray mLineLoopFromElemArrayGeneratorPipelineCaches;
+    AutoObjCPtr<id<MTLComputePipelineState>> mLineLoopFromArraysGeneratorPipeline;
 };
 
 // Util class for handling visibility query result
@@ -480,26 +506,20 @@ class RenderUtils : public Context, angle::NonCopyable
                                            RenderCommandEncoder *cmdEncoder,
                                            const DepthStencilBlitParams &params);
 
-    angle::Result convertIndexBuffer(ContextMtl *contextMtl,
-                                     gl::DrawElementsType srcType,
-                                     uint32_t indexCount,
-                                     const BufferRef &srcBuffer,
-                                     uint32_t srcOffset,
-                                     const BufferRef &dstBuffer,
-                                     // Must be multiples of kIndexBufferOffsetAlignment
-                                     uint32_t dstOffset);
+    angle::Result convertIndexBufferGPU(ContextMtl *contextMtl,
+                                        const IndexConversionParams &params);
     angle::Result generateTriFanBufferFromArrays(ContextMtl *contextMtl,
-                                                 const TriFanFromArrayParams &params);
+                                                 const TriFanOrLineLoopFromArrayParams &params);
     angle::Result generateTriFanBufferFromElementsArray(ContextMtl *contextMtl,
                                                         const IndexGenerationParams &params);
 
-    angle::Result generateLineLoopLastSegment(ContextMtl *contextMtl,
-                                              uint32_t firstVertex,
-                                              uint32_t lastVertex,
-                                              const BufferRef &dstBuffer,
-                                              uint32_t dstOffset);
-    angle::Result generateLineLoopLastSegmentFromElementsArray(ContextMtl *contextMtl,
-                                                               const IndexGenerationParams &params);
+    angle::Result generateLineLoopBufferFromArrays(ContextMtl *contextMtl,
+                                                   const TriFanOrLineLoopFromArrayParams &params);
+    // Destination buffer must have at least 2x the number of original indices if primitive restart
+    // is enabled.
+    angle::Result generateLineLoopBufferFromElementsArray(ContextMtl *contextMtl,
+                                                          const IndexGenerationParams &params,
+                                                          uint32_t *indicesGenerated);
 
     void combineVisibilityResult(ContextMtl *contextMtl,
                                  bool keepOldValue,

@@ -47,6 +47,9 @@ struct FeaturesMtl : FeatureSetBase
         "Some Apple platforms such as iOS allows separate depth & stencil buffers, "
         "whereas others such as macOS don't",
         &members};
+
+    Feature breakRenderPassIsCheap = {"break_render_pass_is_cheap", FeatureCategory::MetalFeatures,
+                                      "Breaking render pass is a cheap operation", &members};
 };
 
 }  // namespace angle
