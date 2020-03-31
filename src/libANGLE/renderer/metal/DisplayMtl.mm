@@ -481,11 +481,11 @@ void DisplayMtl::ensureCapsInitialized() const
     // NOTE(hqle): support UBO (ES 3.0 feature)
     mNativeCaps.maxShaderUniformBlocks[gl::ShaderType::Vertex]   = mtl::kMaxShaderUBOs;
     mNativeCaps.maxShaderUniformBlocks[gl::ShaderType::Fragment] = mtl::kMaxShaderUBOs;
-    mNativeCaps.maxCombinedUniformBlocks                         = 2 * mtl::kMaxShaderUBOs;
+    mNativeCaps.maxCombinedUniformBlocks                         = mtl::kMaxGLUBOBindings;
 
     // Note that we currently implement textures as combined image+samplers, so the limit is
     // the minimum of supported samplers and sampled images.
-    mNativeCaps.maxCombinedTextureImageUnits                         = 2 * mtl::kMaxShaderSamplers;
+    mNativeCaps.maxCombinedTextureImageUnits                         = mtl::kMaxGLSamplerBindings;
     mNativeCaps.maxShaderTextureImageUnits[gl::ShaderType::Fragment] = mtl::kMaxShaderSamplers;
     mNativeCaps.maxShaderTextureImageUnits[gl::ShaderType::Vertex]   = mtl::kMaxShaderSamplers;
 

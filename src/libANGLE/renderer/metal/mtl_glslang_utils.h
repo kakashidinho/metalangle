@@ -27,7 +27,8 @@ struct SamplerBinding
 
 struct TranslatedShaderInfo
 {
-    std::array<SamplerBinding, kMaxShaderSamplers> actualSamplerBindings;
+    std::array<SamplerBinding, kMaxGLSamplerBindings> actualSamplerBindings;
+    std::array<uint32_t, kMaxGLUBOBindings> actualUBOBindings;
     bool hasArgumentBuffer;
 };
 
@@ -43,6 +44,7 @@ angle::Result GlslangGetShaderSpirvCode(ErrorHandler *context,
 
 // Translate from SPIR-V code to Metal shader source code.
 angle::Result SpirvCodeToMsl(ErrorHandler *context,
+                             const gl::ProgramState &programState,
                              gl::ShaderMap<std::vector<uint32_t>> *sprivShaderCode,
                              gl::ShaderMap<TranslatedShaderInfo> *mslShaderInfoOut,
                              gl::ShaderMap<std::string> *mslCodeOut);

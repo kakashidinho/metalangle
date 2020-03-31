@@ -233,6 +233,11 @@ void ProgramMtl::reset(ContextMtl *context)
         {
             binding.textureBinding = mtl::kMaxShaderSamplers;
         }
+
+        for (uint32_t &binding : mMslShaderTranslateInfo[shaderType].actualUBOBindings)
+        {
+            binding = mtl::kMaxShaderBuffers;
+        }
     }
 
     for (ProgramArgumentBufferEncoderMtl &encoder : mVertexArgumentBufferEncoders)
@@ -324,7 +329,7 @@ angle::Result ProgramMtl::linkImpl(const gl::Context *glContext,
                                              &shaderCodes));
 
     // Convert spirv code to MSL
-    ANGLE_TRY(mtl::SpirvCodeToMsl(contextMtl, &shaderCodes, &mMslShaderTranslateInfo,
+    ANGLE_TRY(mtl::SpirvCodeToMsl(contextMtl, mState, &shaderCodes, &mMslShaderTranslateInfo,
                                   &mTranslatedMslShader));
 
     for (gl::ShaderType shaderType : gl::AllGLES2ShaderTypes())
@@ -516,6 +521,11 @@ void ProgramMtl::saveShaderInternalInfo(gl::BinaryOutputStream *stream)
             stream->writeInt<uint32_t>(binding.textureBinding);
             stream->writeInt<uint32_t>(binding.samplerBinding);
         }
+
+        for (uint32_t uboBinding : mMslShaderTranslateInfo[shaderType].actualUBOBindings)
+        {
+            stream->writeInt<uint32_t>(uboBinding);
+        }
     }
 }
 
@@ -529,6 +539,11 @@ void ProgramMtl::loadShaderInternalInfo(gl::BinaryInputStream *stream)
         {
             binding.textureBinding = stream->readInt<uint32_t>();
             binding.samplerBinding = stream->readInt<uint32_t>();
+        }
+
+        for (uint32_t &uboBinding : mMslShaderTranslateInfo[shaderType].actualUBOBindings)
+        {
+            uboBinding = stream->readInt<uint32_t>();
         }
     }
 }
@@ -1187,10 +1202,17 @@ angle::Result ProgramMtl::bindUniformBuffersToDiscreteSlots(
             continue;
         }
 
+        uint32_t actualBufferIdx =
+            mMslShaderTranslateInfo[shaderType].actualUBOBindings[bufferIndex];
+
+        if (actualBufferIdx >= mtl::kMaxShaderBuffers)
+        {
+            continue;
+        }
+
         mtl::BufferRef mtlBuffer = mLegalizedOffsetedUniformBuffers[bufferIndex].first;
         uint32_t offset          = mLegalizedOffsetedUniformBuffers[bufferIndex].second;
-        cmdEncoder->setBuffer(shaderType, mtlBuffer, offset,
-                              mtl::kUBOArgumentBufferBindingIndex + bufferIndex);
+        cmdEncoder->setBuffer(shaderType, mtlBuffer, offset, actualBufferIdx);
     }
     return angle::Result::Continue;
 }
@@ -1235,11 +1257,18 @@ angle::Result ProgramMtl::encodeUniformBuffersInfoArgumentBuffer(
 
         mArgumentBufferRenderStageUsages[bufferIndex] |= mtlRenderStage;
 
+        uint32_t actualBufferIdx =
+            mMslShaderTranslateInfo[shaderType].actualUBOBindings[bufferIndex];
+        if (actualBufferIdx >= mtl::kMaxShaderBuffers)
+        {
+            continue;
+        }
+
         mtl::BufferRef mtlBuffer = mLegalizedOffsetedUniformBuffers[bufferIndex].first;
         uint32_t offset          = mLegalizedOffsetedUniformBuffers[bufferIndex].second;
         [bufferEncoder.metalArgBufferEncoder setBuffer:mtlBuffer->get()
                                                 offset:offset
-                                               atIndex:bufferIndex];
+                                               atIndex:actualBufferIdx];
     }
 
     ANGLE_TRY(bufferEncoder.bufferPool.commit(context));
