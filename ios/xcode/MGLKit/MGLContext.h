@@ -12,6 +12,7 @@ typedef enum MGLRenderingAPI : int
 {
     kMGLRenderingAPIOpenGLES1 = 1,
     kMGLRenderingAPIOpenGLES2 = 2,
+    kMGLRenderingAPIOpenGLES3 = 3,
 } MGLRenderingAPI;
 
 @interface MGLContext : NSObject

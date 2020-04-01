@@ -111,6 +111,10 @@ void Throw(NSString *msg)
             ctxMajorVersion = 2;
             ctxMinorVersion = 0;
             break;
+        case kMGLRenderingAPIOpenGLES3:
+            ctxMajorVersion = 3;
+            ctxMinorVersion = 0;
+            break;
         default:
             UNREACHABLE();
     }
