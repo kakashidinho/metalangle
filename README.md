@@ -9,23 +9,35 @@ to continue operate on Apple platforms by translating OpenGL ES draw calls to Me
 
 ### Current Metal backend implementation status
 - MetalANGLE is being migrated into official ANGLE repo. So this repo might not get updated for a while.
-- Almost all basic samples has been tested to work fine.
 - __OpenGL ES 2.0__ functionalities are 100% completed.
-- OpenGL ES 3.0 functionalities are being developed.
+- __OpenGL ES 3.0__ status:
+  - [x] Occlusion queries.
+  - [x] MSAA.
+  - [x] Multiple render targets.
+  - [x] 3D, array, shadow textures.
+  - [x] Texture swizzles.
+  - [x] Uniform buffers.
+  - [x] Fence sync.
+  - [x] Pixel buffer objects.
+  - [ ] Primitive Restart. Metal's primitive restart doesn't work reliably.
+  - [ ] Flat shading with last provoking vertex. Metal's default is first provoking vertex.
+  - [ ] Transform feedbacks.
+- All basic samples are working.
 - __Almost all of ANGLE end2end tests have been passed__. See [List of failed tests](src/libANGLE/renderer/metal/README.md#Failed-ANGLE-end2end-tests).
-- __97.7% of OpenGL ES 2.0 conformance tests passed__. See [Khronos VK-GL-CTS](https://github.com/KhronosGroup/VK-GL-CTS).
-- [MGLKit](src/libANGLE/renderer/metal/DevSetup.md#MGLKit) utilities classes have been added. Providing kind of similar functionalies to Apples's GLKit.
+- __98% of OpenGL ES 2.0 conformance tests passed__. __90%+ of OpenGL ES 3.0 conformance tests passed__. See [Khronos VK-GL-CTS](https://github.com/KhronosGroup/VK-GL-CTS).
 - These extensions have been implemented:
   - [x] [EXT_instanced_arrays](https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_instanced_arrays.txt)/[ANGLE_instanced_arrays](https://www.khronos.org/registry/OpenGL/extensions/ANGLE/ANGLE_instanced_arrays.txt): Instanced draw calls for GLES 2.0.
   - [x] [OES_depth_texture](https://www.khronos.org/registry/OpenGL/extensions/OES/OES_depth_texture.txt).
   - [x] [EXT_draw_buffers](https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_draw_buffers.txt): Multiple render targets for GLES 2.0.
   - [x] [ANGLE_framebuffer_blit](https://www.khronos.org/registry/OpenGL/extensions/ANGLE/ANGLE_framebuffer_blit.txt).
   - [x] [APPLE_clip_distance](https://www.khronos.org/registry/OpenGL/extensions/APPLE/APPLE_clip_distance.txt): Custom clip planes.
+- [MGLKit](src/libANGLE/renderer/metal/DevSetup.md#MGLKit) utilities classes have been added. Providing kind of similar functionalies to Apples's GLKit.
 - Urho3D engine's demos have been tested using MetalANGLE without issues. See [Urho3D's MetalANGLE integration testing branch](https://github.com/kakashidinho/Urho3D/tree/angle-metal-backend).
 - Irrlicht Engine's integration with MetalANGLE sample: [https://github.com/kakashidinho/irrlicht](https://github.com/kakashidinho/irrlicht).
 - ~~No `GL_TRIANGLE_FAN` & `GL_LINE_LOOP` support in draw calls yet.~~
-- Metal doesn't allow buffer offset not being multiple of 4 bytes. Hence, draw calls that use unsupported offsets, strides,
-and vertex formats will force MetalANGLE to do software conversions on CPU.
+- Metal doesn't allow buffer offset not being multiple of 4 bytes or multiple of attribute's size.
+  Hence, draw calls that use unsupported offsets, strides, and vertex formats will force MetalANGLE
+  to do conversions on the fly.
 - ~~MSAA is not supported yet.~~
 - __Platforms supports__:
   - MetalANGLE only supports __MacOS 10.13+__ for Mac.
@@ -39,9 +51,9 @@ and vertex formats will force MetalANGLE to do software conversions on CPU.
 #### TODO lists
 - [ ] Make sure it passes all ANGLE's tests.
 - [x] ~~Support `GL_TRIANGLE_FAN` & `GL_LINE_LOOP` by generating index buffer on the fly using Metal compute shader.~~
-- [x] Use compute shader to convert unsupported offsets, strides & vertex formats.
+- [x] ~~Use compute shader to convert unsupported offsets, strides & vertex formats.~~
 - [x] ~~Support MSAA.~~
-- [ ] Support OpenGL ES 3.0.
+- [ ] Fully support OpenGL ES 3.0.
 
 ## How to build Metal ANGLE for MacOS & iOS
 View the [Metal backend's Dev setup instructions](src/libANGLE/renderer/metal/DevSetup.md).
