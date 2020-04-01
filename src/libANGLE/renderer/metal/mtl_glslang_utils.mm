@@ -766,6 +766,174 @@ class SpirvToMslCompiler : public spirv_cross::CompilerMSL
         return args;
     }
 
+    // Override function prototype emitter to insert shadow compare mode flag to come
+    // together with the shadow sampler. NOTE(hqle): This is just 90% copy of spirv_msl's code.
+    // The better way is modifying and creating a PR on spirv-cross repo directly. But this should
+    // be a work around solution for now.
+    void emit_function_prototype(spirv_cross::SPIRFunction &func,
+                                 const spirv_cross::Bitset &) override
+    {
+        // Turn off clang-format to easier compare with original code
+        // clang-format off
+        using namespace spirv_cross;
+        using namespace spv;
+        using namespace std;
+
+        if (func.self != ir.default_entry_point)
+            add_function_overload(func);
+
+        local_variable_names = resource_names;
+        string decl;
+
+        processing_entry_point = func.self == ir.default_entry_point;
+
+        // Metal helper functions must be static force-inline otherwise they will cause problems when linked together in a single Metallib.
+        if (!processing_entry_point)
+            statement("static inline __attribute__((always_inline))");
+
+        auto &type = get<SPIRType>(func.return_type);
+
+        if (!type.array.empty() && msl_options.force_native_arrays)
+        {
+            // We cannot return native arrays in MSL, so "return" through an out variable.
+            decl += "void";
+        }
+        else
+        {
+            decl += func_type_decl(type);
+        }
+
+        decl += " ";
+        decl += to_name(func.self);
+        decl += "(";
+
+        if (!type.array.empty() && msl_options.force_native_arrays)
+        {
+            // Fake arrays returns by writing to an out array instead.
+            decl += "thread ";
+            decl += type_to_glsl(type);
+            decl += " (&SPIRV_Cross_return_value)";
+            decl += type_to_array_glsl(type);
+            if (!func.arguments.empty())
+                decl += ", ";
+        }
+
+        if (processing_entry_point)
+        {
+            if (msl_options.argument_buffers)
+                decl += entry_point_args_argument_buffer(!func.arguments.empty());
+            else
+                decl += entry_point_args_classic(!func.arguments.empty());
+
+            // If entry point function has variables that require early declaration,
+            // ensure they each have an empty initializer, creating one if needed.
+            // This is done at this late stage because the initialization expression
+            // is cleared after each compilation pass.
+            for (auto var_id : vars_needing_early_declaration)
+            {
+                auto &ed_var = get<SPIRVariable>(var_id);
+                ID &initializer = ed_var.initializer;
+                if (!initializer)
+                    initializer = ir.increase_bound_by(1);
+
+                // Do not override proper initializers.
+                if (ir.ids[initializer].get_type() == TypeNone || ir.ids[initializer].get_type() == TypeExpression)
+                    set<SPIRExpression>(ed_var.initializer, "{}", ed_var.basetype, true);
+            }
+        }
+
+        for (auto &arg : func.arguments)
+        {
+            uint32_t name_id = arg.id;
+
+            auto *var = maybe_get<SPIRVariable>(arg.id);
+            if (var)
+            {
+                // If we need to modify the name of the variable, make sure we modify the original variable.
+                // Our alias is just a shadow variable.
+                if (arg.alias_global_variable && var->basevariable)
+                    name_id = var->basevariable;
+
+                var->parameter = &arg; // Hold a pointer to the parameter so we can invalidate the readonly field if needed.
+            }
+
+            add_local_variable_name(name_id);
+
+            decl += argument_decl(arg);
+
+            bool is_dynamic_img_sampler = has_extended_decoration(arg.id, SPIRVCrossDecorationDynamicImageSampler);
+
+            auto &arg_type = get<SPIRType>(arg.type);
+            if (arg_type.basetype == SPIRType::SampledImage && !is_dynamic_img_sampler)
+            {
+                // Manufacture automatic plane args for multiplanar texture
+                uint32_t planes = 1;
+                if (auto *constexpr_sampler = find_constexpr_sampler(name_id))
+                    if (constexpr_sampler->ycbcr_conversion_enable)
+                        planes = constexpr_sampler->planes;
+                for (uint32_t i = 1; i < planes; i++)
+                    decl += join(", ", argument_decl(arg), plane_name_suffix, i);
+
+                // Manufacture automatic sampler arg for SampledImage texture
+                if (arg_type.image.dim != DimBuffer)
+                    decl += join(", thread const ", sampler_type(arg_type), " ", to_sampler_expression(arg.id));
+            }
+
+            // Manufacture automatic swizzle arg.
+            if (msl_options.swizzle_texture_samples && has_sampled_images && is_sampled_image_type(arg_type) &&
+                !is_dynamic_img_sampler)
+            {
+                bool arg_is_array = !arg_type.array.empty();
+                decl += join(", constant uint", arg_is_array ? "* " : "& ", to_swizzle_expression(arg.id));
+            }
+
+            if (buffers_requiring_array_length.count(name_id))
+            {
+                bool arg_is_array = !arg_type.array.empty();
+                decl += join(", constant uint", arg_is_array ? "* " : "& ", to_buffer_size_expression(name_id));
+            }
+
+            if (is_sampled_image_type(arg_type) && arg_type.image.depth)
+            {
+                bool arg_is_array = !arg_type.array.empty();
+                // Insert shadow compare mode flag to the argument sequence:
+                decl += join(", constant uniform<uint>", arg_is_array ? "* " : "& ",
+                             toShadowCompareModeExpression(arg.id));
+            }
+
+            if (&arg != &func.arguments.back())
+                decl += ", ";
+        }
+
+        decl += ")";
+        statement(decl);
+
+        // clang-format on
+    }
+
+    // Override function call arguments passing generator to insert shadow compare mode flag to come
+    // together with the shadow sampler
+    std::string to_func_call_arg(const spirv_cross::SPIRFunction::Parameter &arg,
+                                 uint32_t id) override
+    {
+        std::string arg_str = spirv_cross::CompilerMSL::to_func_call_arg(arg, id);
+
+        const spirv_cross::SPIRType &type = expression_type(id);
+
+        if (is_sampled_image_type(type) && type.image.depth)
+        {
+            // Insert shadow compare mode flag to the argument sequence:
+            // Need to check the base variable in case we need to apply a qualified alias.
+            uint32_t var_id = 0;
+            auto *var       = maybe_get<spirv_cross::SPIRVariable>(id);
+            if (var)
+                var_id = var->basevariable;
+
+            arg_str += ", " + toShadowCompareModeExpression(var_id ? var_id : id);
+        }
+        return arg_str;
+    }
+
     // Additional functions
     void addBuiltInResources()
     {
@@ -782,8 +950,8 @@ class SpirvToMslCompiler : public spirv_cross::CompilerMSL
     {
         ir.for_each_typed_id<spirv_cross::SPIRVariable>([this](uint32_t,
                                                                spirv_cross::SPIRVariable &var) {
-            auto &type     = get_variable_data_type(var);
-            uint32_t varId = var.self;
+            const spirv_cross::SPIRType &type = get_variable_data_type(var);
+            uint32_t varId                    = var.self;
 
             if (var.storage == spv::StorageClassUniformConstant && !is_hidden_variable(var))
             {

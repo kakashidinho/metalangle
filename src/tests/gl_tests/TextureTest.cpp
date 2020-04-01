@@ -3344,10 +3344,18 @@ TEST_P(ShadowSamplerTestES3, ArrayOfShadowSamplerLodCompareOn)
         "uniform float lod;\n"
         "uniform int index;\n"
         "out vec4 fragColor;\n"
+        "vec4 depthSample2(highp sampler2DShadow texShadow)\n"
+        "{\n"
+        "    return vec4(textureLod(texShadow, vec3(texcoord, depthRef), lod) * 0.5);\n"
+        "}\n"
+        "vec4 depthSample1()\n"
+        "{\n"
+        "    return depthSample2(tex2DShadow[index]);\n"
+        "}\n"
+        "\n"
         "void main()\n"
         "{\n"
-        "    fragColor = vec4(textureLod(tex2DShadow[index], vec3(texcoord, depthRef), lod) * "
-        "0.5);\n"
+        "    fragColor = depthSample1();\n"
         "    fragColor.a = 1.0;\n"
         "}\n";
 
@@ -3415,6 +3423,89 @@ TEST_P(ShadowSamplerTestES3, ArrayOfShadowSamplerLodCompareOn)
     EXPECT_GL_NO_ERROR();
     // The shader writes 0.5 * <comparison result (1.0)>
     EXPECT_PIXEL_NEAR(0, 0, 128, 128, 128, 255, 2);
+}
+
+// Test that an array of shadow sampler dynamic index will
+// return correct comparison value
+TEST_P(ShadowSamplerTestES3, ArrayOfShadowSamplerDynamicIndex)
+{
+    const char kFS[] =
+        "#version 300 es\n"
+        "precision highp float;\n"
+        "uniform highp sampler2DShadow tex2DShadow[2];\n"
+        "in vec2 texcoord;\n"
+        "uniform float depthRef;\n"
+        "out vec4 fragColor;\n"
+        "vec4 depthSample2(highp sampler2DShadow texShadow)\n"
+        "{\n"
+        "    return vec4(texture(texShadow, vec3(texcoord, depthRef)) * 0.5);\n"
+        "}\n"
+        "vec4 depthSample1()\n"
+        "{\n"
+        "    if (gl_FragCoord.x < 10.0)\n"
+        "    {\n"
+        "        return depthSample2(tex2DShadow[0]);\n"
+        "    }\n"
+        "    else\n"
+        "    {\n"
+        "        return depthSample2(tex2DShadow[1]);\n"
+        "    }\n"
+        "}\n"
+        "\n"
+        "void main()\n"
+        "{\n"
+        "    fragColor = depthSample1();\n"
+        "    fragColor.a = 1.0;\n"
+        "}\n";
+
+    GLProgram program;
+    program.makeRaster(getVertexShaderSource(), kFS);
+
+    GLint depthRefLocation = glGetUniformLocation(program, "depthRef");
+    GLint sampler0Location = glGetUniformLocation(program, "tex2DShadow[0]");
+    GLint sampler1Location = glGetUniformLocation(program, "tex2DShadow[1]");
+
+    EXPECT_NE(depthRefLocation, -1);
+    EXPECT_NE(sampler0Location, -1);
+    EXPECT_NE(sampler1Location, -1);
+
+    glActiveTexture(GL_TEXTURE0);
+    GLTexture tempTex;
+    glBindTexture(GL_TEXTURE_2D, tempTex);
+    GLfloat tempDepthTexData = 0.0f;
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, 1, 1, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
+                 &tempDepthTexData);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, mTextureShadow);
+    GLfloat depthTexData[5];
+    depthTexData[0] = 0.5f;
+    depthTexData[1] = 0.5f;
+    depthTexData[2] = 0.5f;
+    depthTexData[3] = 0.5f;
+    depthTexData[4] = 0.4f;
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, 2, 2, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
+                 depthTexData);
+    glTexImage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, 1, 1, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
+                 depthTexData + 4);
+
+    glUseProgram(program);
+    glUniform1f(depthRefLocation, 0.45f);
+    glUniform1i(sampler0Location, 0);
+    glUniform1i(sampler1Location, 1);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+    drawQuad(program, "position", 0.5f);
+    EXPECT_GL_NO_ERROR();
+    // The shader writes 0.5 * <comparison result (0.0)>
+    EXPECT_PIXEL_NEAR(9, 0, 0, 0, 0, 255, 2);
+
+    // The shader writes 0.5 * <comparison result (1.0)> for fragment at postion.x >= 10
+    EXPECT_PIXEL_NEAR(11, 0, 128, 128, 128, 255, 2);
 }
 
 // Test that an array of shadow sampler with different compare modes and lod=1 will
@@ -6729,6 +6820,7 @@ ANGLE_INSTANTIATE_TEST(Texture2DDepthTest,
                        ES2_OPENGL(),
                        ES2_OPENGLES(),
                        ES2_VULKAN(),
-                       ES3_VULKAN());
+                       ES3_VULKAN(),
+                       ES3_METAL());
 
 }  // anonymous namespace
