@@ -587,6 +587,8 @@ class Traverser final : public TIntermTraverser, public ArrayTraverser
         newSequence->push_back(structDecl);
 
         mSymbolTable->declare(newStruct);
+
+        mReplacedStructs[structure] = newStruct;
     }
 
     // Returns true if the type is a struct that was removed because we extracted all the members.
@@ -617,8 +619,41 @@ class Traverser final : public TIntermTraverser, public ArrayTraverser
 
         if (nonSamplerCount > 0)
         {
-            // Keep the old declaration around if it has other members.
-            newSequence->push_back(oldDeclaration);
+            // Keep the old declaration with replaced type around if it has other members.
+            std::unordered_map<const TStructure *, const TStructure *>::iterator ite =
+                mReplacedStructs.find(structure);
+            if (ite == mReplacedStructs.end())
+            {
+                newSequence->push_back(oldDeclaration);
+            }
+            else
+            {
+                // Replace the type of the declared variables.
+                // NOTE(hqle): Remove this once merged with upstream. Since updated code from
+                // upstream already deals with this.
+                const TStructure *replacementStruct = ite->second;
+                TIntermDeclaration *varDecl         = new TIntermDeclaration;
+                for (TIntermNode *var : *(oldDeclaration->getSequence()))
+                {
+                    TIntermSymbol *declaratorSymbol = var->getAsSymbolNode();
+                    ASSERT(declaratorSymbol);
+                    const TVariable &declaratorVar = declaratorSymbol->variable();
+                    const TType &oldType           = declaratorVar.getType();
+                    TType *newStructType           = new TType(replacementStruct, true);
+                    newStructType->setQualifier(oldType.getQualifier());
+                    if (oldType.getArraySizes())
+                    {
+                        newStructType->makeArrays(*oldType.getArraySizes());
+                    }
+                    TVariable *newDeclaratorVar = new TVariable(
+                        declaratorVar.uniqueId(), declaratorVar.name(), declaratorVar.symbolType(),
+                        TExtension::UNDEFINED, newStructType);
+                    TIntermSymbol *newDeclarator = new TIntermSymbol(newDeclaratorVar);
+                    varDecl->appendDeclarator(newDeclarator);
+                }
+
+                newSequence->push_back(varDecl);
+            }
         }
         else
         {
@@ -1015,6 +1050,7 @@ class Traverser final : public TIntermTraverser, public ArrayTraverser
 
     int mRemovedUniformsCount;
     std::set<ImmutableString> mRemovedStructs;
+    std::unordered_map<const TStructure *, const TStructure *> mReplacedStructs;
     FunctionInstantiations mFunctionInstantiations;
     FunctionMap mFunctionMap;
     VariableExtraData mVariableExtraData;
