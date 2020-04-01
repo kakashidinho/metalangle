@@ -300,8 +300,8 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             }
             else
             {
-                this->metalFormat    = MTLPixelFormatRG16Float;
-                this->actualFormatId = angle::FormatID::R16G16_FLOAT;
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
                 this->initFunction   = nullptr;
             }
 
@@ -330,8 +330,8 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             }
             else
             {
-                this->metalFormat    = MTLPixelFormatRG16Sint;
-                this->actualFormatId = angle::FormatID::R16G16_SINT;
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
                 this->initFunction   = nullptr;
             }
 
@@ -369,8 +369,8 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             }
             else
             {
-                this->metalFormat    = MTLPixelFormatRG16Uint;
-                this->actualFormatId = angle::FormatID::R16G16_UINT;
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
                 this->initFunction   = nullptr;
             }
 
@@ -525,8 +525,8 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             }
             else
             {
-                this->metalFormat    = MTLPixelFormatRG32Float;
-                this->actualFormatId = angle::FormatID::R32G32_FLOAT;
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
                 this->initFunction   = nullptr;
             }
 
@@ -555,8 +555,8 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             }
             else
             {
-                this->metalFormat    = MTLPixelFormatRG32Sint;
-                this->actualFormatId = angle::FormatID::R32G32_SINT;
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
                 this->initFunction   = nullptr;
             }
 
@@ -585,8 +585,8 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             }
             else
             {
-                this->metalFormat    = MTLPixelFormatRG32Uint;
-                this->actualFormatId = angle::FormatID::R32G32_UINT;
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
                 this->initFunction   = nullptr;
             }
 
@@ -756,8 +756,8 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             }
             else
             {
-                this->metalFormat    = MTLPixelFormatRG8Uint;
-                this->actualFormatId = angle::FormatID::R8G8_UINT;
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
                 this->initFunction   = nullptr;
             }
 
@@ -786,8 +786,8 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             }
             else
             {
-                this->metalFormat    = MTLPixelFormatR16Unorm;
-                this->actualFormatId = angle::FormatID::R16_UNORM;
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
                 this->initFunction   = nullptr;
             }
 
