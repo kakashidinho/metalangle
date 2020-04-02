@@ -5,13 +5,27 @@
 //
 
 #include "test_utils/ANGLETest.h"
+
+#include "include/platform/FeaturesMtl.h"
 #include "util/EGLWindow.h"
 #include "util/random_utils.h"
 #include "util/test_utils.h"
 
 using namespace angle;
 
-class OcclusionQueriesTest : public ANGLETest
+using OcclusionQueryTestParams = std::tuple<angle::PlatformParameters, bool>;
+
+struct PrintToStringParamName
+{
+    std::string operator()(const ::testing::TestParamInfo<OcclusionQueryTestParams> &info) const
+    {
+        ::std::stringstream ss;
+        ss << (std::get<1>(info.param) ? "OverrideFeaturesOn_" : "") << std::get<0>(info.param);
+        return ss.str();
+    }
+};
+
+class OcclusionQueriesTest : public ANGLETestWithParam<OcclusionQueryTestParams>
 {
   protected:
     OcclusionQueriesTest() : mProgram(0), mRNG(1)
@@ -32,6 +46,14 @@ class OcclusionQueriesTest : public ANGLETest
     }
 
     void testTearDown() override { glDeleteProgram(mProgram); }
+
+    void overrideFeaturesMetal(FeaturesMtl *features) override
+    {
+        if (::testing::get<1>(GetParam()))
+        {
+            features->overrideFeatures({"allow_buffer_read_write"}, false);
+        }
+    }
 
     GLuint mProgram;
     RNG mRNG;
@@ -175,8 +197,10 @@ TEST_P(OcclusionQueriesTest, ClearNotCounted)
     swapBuffers();
 
     GLuint result[2] = {GL_TRUE, GL_TRUE};
-    glGetQueryObjectuivEXT(query[0], GL_QUERY_RESULT_EXT, &result[0]);  // will block waiting for result
-    glGetQueryObjectuivEXT(query[1], GL_QUERY_RESULT_EXT, &result[1]);  // will block waiting for result
+    glGetQueryObjectuivEXT(query[0], GL_QUERY_RESULT_EXT,
+                           &result[0]);  // will block waiting for result
+    glGetQueryObjectuivEXT(query[1], GL_QUERY_RESULT_EXT,
+                           &result[1]);  // will block waiting for result
     EXPECT_GL_NO_ERROR();
 
     glDeleteQueriesEXT(2, query);
@@ -372,8 +396,9 @@ TEST_P(OcclusionQueriesTest, MultiContext)
 
     // Test skipped because the D3D backends cannot support simultaneous queries on multiple
     // contexts yet.  Same with the Vulkan backend.
-    ANGLE_SKIP_TEST_IF(GetParam() == ES2_D3D9() || GetParam() == ES2_D3D11() ||
-                       GetParam() == ES3_D3D11() || GetParam() == ES2_VULKAN());
+    const angle::PlatformParameters platform = ::testing::get<0>(GetParam());
+    ANGLE_SKIP_TEST_IF(platform == ES2_D3D9() || platform == ES2_D3D11() ||
+                       platform == ES3_D3D11() || platform == ES2_VULKAN());
 
     glDepthMask(GL_TRUE);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -390,9 +415,9 @@ TEST_P(OcclusionQueriesTest, MultiContext)
 
     EGLint contextAttributes[] = {
         EGL_CONTEXT_MAJOR_VERSION_KHR,
-        GetParam().majorVersion,
+        platform.majorVersion,
         EGL_CONTEXT_MINOR_VERSION_KHR,
-        GetParam().minorVersion,
+        platform.minorVersion,
         EGL_NONE,
     };
 
@@ -521,15 +546,22 @@ TEST_P(OcclusionQueriesTest, MultiContext)
     }
 }
 
+const angle::PlatformParameters platforms[] = {
+    ES2_D3D9(),   ES2_D3D11(),    ES3_D3D11(),    ES2_OPENGL(), ES2_METAL(),
+    ES3_OPENGL(), ES2_OPENGLES(), ES3_OPENGLES(), ES2_VULKAN(),
+};
+
 // Use this to select which configurations (e.g. which renderer, which GLES major version) these
 // tests should be run against.
-ANGLE_INSTANTIATE_TEST(OcclusionQueriesTest,
-                       ES2_D3D9(),
-                       ES2_D3D11(),
-                       ES3_D3D11(),
-                       ES2_OPENGL(),
-                       ES2_METAL(),
-                       ES3_OPENGL(),
-                       ES2_OPENGLES(),
-                       ES3_OPENGLES(),
-                       ES2_VULKAN());
+INSTANTIATE_TEST_SUITE_P(
+    ,
+    OcclusionQueriesTest,
+    testing::Combine(testing::ValuesIn(::angle::FilterTestParams(platforms, ArraySize(platforms))),
+                     testing::Values(false)),
+    PrintToStringParamName());
+
+// Simulate missing buffer read-write features in Metal.
+INSTANTIATE_TEST_SUITE_P(OverrideFeatures,
+                         OcclusionQueriesTest,
+                         testing::Combine(testing::Values(ES2_METAL()), testing::Values(true)),
+                         PrintToStringParamName());

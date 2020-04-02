@@ -6,29 +6,12 @@
 
 #include "common.h"
 
-// Metal only supports 64 bit integer in 2.2. So we have to emulate the 64 bit addition by
-// using a vector of 4 ushort integers since our target Metal version is 2.0.
-static inline ushort4 sum64(ushort4 a, ushort4 b)
-{
-    ushort4 re(0);
-    uint carry = 0;
-    for (int i = 0; i < 4; ++i)
-    {
-        uint sum = a[i] + b[i] + carry;
-        re[i]    = sum % 0x10000;
-        carry    = sum / 0x10000;
-    }
-
-    return re;
-}
+constant bool kCombineWithExistingResult [[function_constant(1)]];
 
 // Combine the visibility result of current render pass with previous value from previous render
 // pass
 struct CombineVisibilityResultOptions
 {
-    // 1: the previous value of query's buffer will be combined.
-    // 0: the previous value is ignored.
-    uint combineWithCurrentValue;
     // Start offset in the render pass's visibility buffer allocated for the query.
     uint startOffset;
     // How many offsets in the render pass's visibility buffer is used for the query?
@@ -47,13 +30,24 @@ kernel void combineVisibilityResult(uint idx [[thread_position_in_grid]],
         // Consider a better approach.
         return;
     }
-    ushort4 finalResult16x4 =
-        finalResults[0] * static_cast<ushort>(options.combineWithCurrentValue);
+    ushort4 finalResult16x4;
+
+    if (kCombineWithExistingResult)
+    {
+        finalResult16x4 = finalResults[0];
+    }
+    else
+    {
+        finalResult16x4 = ushort4(0, 0, 0, 0);
+    }
+
     for (uint i = 0; i < options.numOffsets; ++i)
     {
         uint offset              = options.startOffset + i;
         ushort4 renderpassResult = renderpassVisibilityResult[offset];
-        finalResult16x4          = sum64(finalResult16x4, renderpassResult);
+
+        // Only boolean result is required, so bitwise OR is enough
+        finalResult16x4          = finalResult16x4 | renderpassResult;
     }
     finalResults[0] = finalResult16x4;
 }

@@ -66,6 +66,7 @@ angle::Result OcclusionQueryPool::allocateQueryOffset(ContextMtl *contextMtl,
 
     if (clearOldValue)
     {
+        // If old value is not needed, deallocate any offset previously allocated for this query.
         deallocateQueryOffset(contextMtl, query);
     }
     if (query->getAllocatedVisibilityOffsets().empty())
@@ -86,6 +87,12 @@ angle::Result OcclusionQueryPool::allocateQueryOffset(ContextMtl *contextMtl,
     if (currentOffset == 0)
     {
         mResetFirstQuery = clearOldValue;
+        if (!clearOldValue && !contextMtl->getDisplay()->getFeatures().allowBufferReadWrite.enabled)
+        {
+            // If old value of first query needs to be retained and device doesn't support buffer
+            // read-write, we need an additional offset to store the old value of the query.
+            return allocateQueryOffset(contextMtl, query, false);
+        }
     }
 
     return angle::Result::Continue;
@@ -110,15 +117,30 @@ void OcclusionQueryPool::resolveVisibilityResults(ContextMtl *contextMtl)
         return;
     }
 
-    RenderUtils &utils = contextMtl->getDisplay()->getUtils();
+    RenderUtils &utils              = contextMtl->getDisplay()->getUtils();
+    BlitCommandEncoder *blitEncoder = nullptr;
     // Combine the values stored in the offsets allocated for first query
     if (mAllocatedQueries[0])
     {
         const BufferRef &dstBuf = mAllocatedQueries[0]->getVisibilityResultBuffer();
         const VisibilityBufferOffsetsMtl &allocatedOffsets =
             mAllocatedQueries[0]->getAllocatedVisibilityOffsets();
-        utils.combineVisibilityResult(contextMtl, !mResetFirstQuery, allocatedOffsets,
-                                      mRenderPassResultsPool, dstBuf);
+        if (!mResetFirstQuery &&
+            !contextMtl->getDisplay()->getFeatures().allowBufferReadWrite.enabled)
+        {
+            // If we cannot read and write to the same buffer in shader. We need to copy the old
+            // value of first query to first offset allocated for it.
+            blitEncoder = contextMtl->getBlitCommandEncoder();
+            blitEncoder->copyBuffer(dstBuf, 0, mRenderPassResultsPool, allocatedOffsets.front(),
+                                    kOcclusionQueryResultSize);
+            utils.combineVisibilityResult(contextMtl, false, allocatedOffsets,
+                                          mRenderPassResultsPool, dstBuf);
+        }
+        else
+        {
+            utils.combineVisibilityResult(contextMtl, !mResetFirstQuery, allocatedOffsets,
+                                          mRenderPassResultsPool, dstBuf);
+        }
     }
 
     // Combine the values stored in the offsets allocated for each of the remaining queries
@@ -138,7 +160,7 @@ void OcclusionQueryPool::resolveVisibilityResults(ContextMtl *contextMtl)
     }
 
     // Request synchronization and cleanup
-    BlitCommandEncoder *blitEncoder = contextMtl->getBlitCommandEncoder();
+    blitEncoder = contextMtl->getBlitCommandEncoder();
     for (size_t i = 0; i < mAllocatedQueries.size(); ++i)
     {
         QueryMtl *query = mAllocatedQueries[i];

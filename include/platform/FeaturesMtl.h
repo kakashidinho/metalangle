@@ -48,6 +48,14 @@ struct FeaturesMtl : FeatureSetBase
         "whereas others such as macOS don't",
         &members};
 
+    Feature allowBufferReadWrite = {"allow_buffer_read_write", FeatureCategory::MetalFeatures,
+                                    "The renderer supports buffer read & write in the same shader",
+                                    &members};
+
+    Feature allowMultisampleStoreAndResolve = {
+        "allow_msaa_store_and_resolve", FeatureCategory::MetalFeatures,
+        "The renderer supports MSAA store and resolve in the same pass", &members};
+
     Feature breakRenderPassIsCheap = {"break_render_pass_is_cheap", FeatureCategory::MetalFeatures,
                                       "Breaking render pass is a cheap operation", &members};
 };

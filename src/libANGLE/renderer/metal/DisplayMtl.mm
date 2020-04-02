@@ -210,7 +210,7 @@ gl::Version DisplayMtl::getMaxSupportedESVersion() const
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
         && getMetalDevice().depth24Stencil8PixelFormatSupported
 #endif
-        )
+    )
     {
         return gl::Version(3, 0);
     }
@@ -631,9 +631,17 @@ void DisplayMtl::initializeFeatures()
     mFeatures.hasTextureSwizzle.enabled                 = false;
     mFeatures.allowSeparatedDepthStencilBuffers.enabled = false;
 
+    ANGLE_FEATURE_CONDITION((&mFeatures), allowBufferReadWrite, supportEitherGPUFamily(3, 1));
+    ANGLE_FEATURE_CONDITION((&mFeatures), allowMultisampleStoreAndResolve,
+                            supportEitherGPUFamily(3, 1));
+
     if (ANGLE_APPLE_AVAILABLE_XCI(10.14, 13.0, 12.0))
     {
         mFeatures.hasStencilOutput.enabled = true;
+    }
+    if (ANGLE_APPLE_AVAILABLE_XCI(10.15, 13.0, 13.0))
+    {
+        ANGLE_FEATURE_CONDITION((&mFeatures), hasTextureSwizzle, supportEitherGPUFamily(1, 2));
     }
 
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
@@ -641,13 +649,6 @@ void DisplayMtl::initializeFeatures()
     mFeatures.breakRenderPassIsCheap.enabled   = true;
 
     // Texture swizzle is only supported if macos sdk 10.15 is present
-#    if defined(__MAC_10_15)
-    if (ANGLE_APPLE_AVAILABLE_XC(10.15, 13.0))
-    {
-        // The runtime OS must be MacOS 10.15+ or Mac Catalyst for this to be supported:
-        ANGLE_FEATURE_CONDITION((&mFeatures), hasTextureSwizzle, supportMacGPUFamily(2));
-    }
-#    endif
 #elif TARGET_OS_IOS
     mFeatures.breakRenderPassIsCheap.enabled = false;
 

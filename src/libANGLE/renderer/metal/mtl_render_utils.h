@@ -403,9 +403,12 @@ class VisibilityResultUtils : public ComputeBasedUtils
                                  const BufferRef &finalResultBuf);
 
   private:
-    void ensureVisibilityResultCombPipelineInitialized(ContextMtl *contextMtl);
+    AutoObjCPtr<id<MTLComputePipelineState>> getVisibilityResultCombPipeline(ContextMtl *contextMtl,
+                                                                             bool keepOldValue);
     // Visibility combination compute pipeline:
-    AutoObjCPtr<id<MTLComputePipelineState>> mVisibilityResultCombPipeline;
+    // - 0: This compute pipeline only combine the new values and discard old value.
+    // - 1: This compute pipeline keep the old value and combine with new values.
+    std::array<AutoObjCPtr<id<MTLComputePipelineState>>, 2> mVisibilityResultCombPipelines;
 };
 
 // Util class for handling mipmap generation

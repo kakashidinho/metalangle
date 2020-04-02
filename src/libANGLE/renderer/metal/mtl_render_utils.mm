@@ -37,6 +37,7 @@ namespace
 #define SOURCE_TEXTURE2_TYPE_CONSTANT_NAME @"kSourceTexture2Type"
 #define COPY_FORMAT_TYPE_CONSTANT_NAME @"kCopyFormatType"
 #define PIXEL_COPY_TEXTURE_TYPE_CONSTANT_NAME @"kCopyTextureType"
+#define VISIBILITY_RESULT_KEEP_OLD_VAL_CONSTANT_NAME @"kCombineWithExistingResult"
 
 // See libANGLE/renderer/metal/shaders/clear.metal
 struct ClearParamsUniform
@@ -80,10 +81,9 @@ struct IndexConversionUniform
 // See libANGLE/renderer/metal/shaders/misc.metal
 struct CombineVisibilityResultUniform
 {
-    uint32_t keepOldValue;
     uint32_t startOffset;
     uint32_t numOffsets;
-    uint32_t padding;
+    uint32_t padding[2];
 };
 
 // See libANGLE/renderer/metal/shaders/gen_mipmap.metal
@@ -1870,13 +1870,34 @@ angle::Result IndexGeneratorUtils::generateLineLoopLastSegmentFromElementsArrayC
 // VisibilityResultUtils implementation
 void VisibilityResultUtils::onDestroy()
 {
-    mVisibilityResultCombPipeline = nil;
+    ClearComputePipelineCacheArray(&mVisibilityResultCombPipelines);
 }
 
-void VisibilityResultUtils::ensureVisibilityResultCombPipelineInitialized(ContextMtl *contextMtl)
+AutoObjCPtr<id<MTLComputePipelineState>> VisibilityResultUtils::getVisibilityResultCombPipeline(
+    ContextMtl *contextMtl,
+    bool keepOldValue)
 {
-    EnsureComputePipelineInitialized(contextMtl->getDisplay(), @"combineVisibilityResult",
-                                     &mVisibilityResultCombPipeline);
+    // There is no guarantee Objective-C's BOOL is equal to bool, so casting just in case.
+    BOOL keepOldValueVal = keepOldValue;
+    AutoObjCPtr<id<MTLComputePipelineState>> &cache =
+        mVisibilityResultCombPipelines[keepOldValueVal];
+    if (cache)
+    {
+        return cache;
+    }
+    ANGLE_MTL_OBJC_SCOPE
+    {
+        auto funcConstants = [[[MTLFunctionConstantValues alloc] init] ANGLE_MTL_AUTORELEASE];
+
+        [funcConstants setConstantValue:&keepOldValueVal
+                                   type:MTLDataTypeBool
+                               withName:VISIBILITY_RESULT_KEEP_OLD_VAL_CONSTANT_NAME];
+
+        EnsureSpecializedComputePipelineInitialized(
+            contextMtl->getDisplay(), @"combineVisibilityResult", funcConstants, &cache);
+    }
+
+    return cache;
 }
 
 void VisibilityResultUtils::combineVisibilityResult(
@@ -1898,15 +1919,14 @@ void VisibilityResultUtils::combineVisibilityResult(
         return;
     }
 
-    ensureVisibilityResultCombPipelineInitialized(contextMtl);
-
     ComputeCommandEncoder *cmdEncoder = contextMtl->getComputeCommandEncoder();
     ASSERT(cmdEncoder);
 
-    cmdEncoder->setComputePipelineState(mVisibilityResultCombPipeline);
+    id<MTLComputePipelineState> pipeline =
+        getVisibilityResultCombPipeline(contextMtl, keepOldValue);
+    cmdEncoder->setComputePipelineState(pipeline);
 
     CombineVisibilityResultUniform options;
-    options.keepOldValue = keepOldValue ? 1 : 0;
     // Offset is viewed as 64 bit unit in compute shader.
     options.startOffset = renderPassResultBufOffsets.front() / kOcclusionQueryResultSize;
     options.numOffsets  = renderPassResultBufOffsets.size();
@@ -1915,7 +1935,7 @@ void VisibilityResultUtils::combineVisibilityResult(
     cmdEncoder->setBuffer(renderPassResultBuf, 0, 1);
     cmdEncoder->setBufferForWrite(finalResultBuf, 0, 2);
 
-    dispatchCompute(contextMtl, cmdEncoder, mVisibilityResultCombPipeline, 1);
+    dispatchCompute(contextMtl, cmdEncoder, pipeline, 1);
 }
 
 // MipmapUtils implementation
