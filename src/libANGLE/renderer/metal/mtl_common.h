@@ -127,7 +127,8 @@ constexpr uint32_t kUniformBufferSettingOffsetMinAlignment = 256;
 #else
 constexpr uint32_t kUniformBufferSettingOffsetMinAlignment = 4;
 #endif
-constexpr uint32_t kIndexBufferOffsetAlignment = 4;
+constexpr uint32_t kIndexBufferOffsetAlignment       = 4;
+constexpr uint32_t kTextureToBufferBlittingAlignment = 256;
 
 // Font end binding limits
 constexpr uint32_t kMaxGLSamplerBindings = 2 * kMaxShaderSamplers;

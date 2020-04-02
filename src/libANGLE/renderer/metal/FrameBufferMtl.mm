@@ -1274,7 +1274,8 @@ angle::Result FramebufferMtl::readPixelsToPBO(const gl::Context *context,
     mtl::BufferRef dstBuffer = packBufferMtl->getCurrentBuffer();
 
     if (packPixelsParams.destFormat->id != readAngleFormat.id ||
-        (offset % packPixelsParams.destFormat->pixelBytes))
+        (offset % packPixelsParams.destFormat->pixelBytes) ||
+        (offset % mtl::kTextureToBufferBlittingAlignment))
     {
         const angle::Format *actualDstAngleFormat;
 
