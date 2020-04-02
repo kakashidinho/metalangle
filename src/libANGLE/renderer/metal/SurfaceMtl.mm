@@ -402,7 +402,6 @@ angle::Result SurfaceMtl::getAttachmentRenderTarget(const gl::Context *context,
                                                     GLsizei samples,
                                                     FramebufferAttachmentRenderTarget **rtOut)
 {
-    // NOTE(hqle): Support MSAA.
     ANGLE_TRY(ensureCurrentDrawableObtained(context));
     ANGLE_TRY(ensureTexturesSizeCorrect(context));
 
@@ -440,21 +439,34 @@ angle::Result SurfaceMtl::ensureTexturesSizeCorrect(const gl::Context *context)
 {
     ASSERT(mMetalLayer);
 
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+
     gl::Extents size(static_cast<int>(mMetalLayer.get().drawableSize.width),
                      static_cast<int>(mMetalLayer.get().drawableSize.height), 1);
 
     if (mSamples > 1 && (!mMSColorTexture || mMSColorTexture->size() != size))
     {
+        mAutoResolveMSColorTexture =
+            contextMtl->getDisplay()->getFeatures().allowMultisampleStoreAndResolve.enabled;
         ANGLE_TRY(createTexture(context, mColorFormat, size.width, size.height, mSamples,
+                                /** renderTargetOnly */ mAutoResolveMSColorTexture,
                                 &mMSColorTexture));
 
-        mColorRenderTarget.setImplicitMSTexture(mMSColorTexture);
+        if (mAutoResolveMSColorTexture)
+        {
+            // Use auto MSAA resolve at the end of render pass.
+            mColorRenderTarget.setImplicitMSTexture(mMSColorTexture);
+        }
+        else
+        {
+            mColorRenderTarget.setTexture(mMSColorTexture);
+        }
     }
 
     if (mDepthFormat.valid() && (!mDepthTexture || mDepthTexture->size() != size))
     {
         ANGLE_TRY(createTexture(context, mDepthFormat, size.width, size.height, mSamples,
-                                &mDepthTexture));
+                                /** renderTargetOnly */ true, &mDepthTexture));
 
         mDepthRenderTarget.set(mDepthTexture, 0, 0, mDepthFormat);
     }
@@ -468,7 +480,7 @@ angle::Result SurfaceMtl::ensureTexturesSizeCorrect(const gl::Context *context)
         else
         {
             ANGLE_TRY(createTexture(context, mStencilFormat, size.width, size.height, mSamples,
-                                    &mStencilTexture));
+                                    /** renderTargetOnly */ true, &mStencilTexture));
         }
 
         mStencilRenderTarget.set(mStencilTexture, 0, 0, mStencilFormat);
@@ -482,19 +494,20 @@ angle::Result SurfaceMtl::createTexture(const gl::Context *context,
                                         uint32_t width,
                                         uint32_t height,
                                         uint32_t samples,
+                                        bool renderTargetOnly,
                                         mtl::TextureRef *textureOut)
 {
     ContextMtl *contextMtl = mtl::GetImpl(context);
     if (samples > 1)
     {
         ANGLE_TRY(mtl::Texture::Make2DMSTexture(contextMtl, format, width, height, samples,
-                                                /** renderTargetOnly */ true,
+                                                /** renderTargetOnly */ renderTargetOnly,
                                                 /** allowFormatView */ false, textureOut));
     }
     else
     {
         ANGLE_TRY(mtl::Texture::Make2DTexture(contextMtl, format, width, height, 1,
-                                              /** renderTargetOnly */ true,
+                                              /** renderTargetOnly */ renderTargetOnly,
                                               /** allowFormatView */ false, textureOut));
     }
     return angle::Result::Continue;
@@ -550,7 +563,7 @@ angle::Result SurfaceMtl::obtainNextDrawable(const gl::Context *context)
         if (!mDrawableTexture)
         {
             mDrawableTexture = mtl::Texture::MakeFromMetal(mCurrentDrawable.get().texture);
-            mColorRenderTarget.set(mDrawableTexture, mMSColorTexture, 0, 0, mColorFormat);
+            mColorRenderTarget.set(mDrawableTexture, 0, 0, mColorFormat);
         }
         else
         {
@@ -574,6 +587,18 @@ angle::Result SurfaceMtl::swapImpl(const gl::Context *context)
         ASSERT(mDrawableTexture);
 
         ContextMtl *contextMtl = mtl::GetImpl(context);
+
+        if (mMSColorTexture && !mAutoResolveMSColorTexture)
+        {
+            // Resolve texture
+            mColorManualResolveRenderTarget.set(mDrawableTexture, 0, 0, mColorFormat);
+            mtl::RenderCommandEncoder *encoder =
+                contextMtl->getRenderCommandEncoder(mColorManualResolveRenderTarget);
+            ANGLE_TRY(contextMtl->getDisplay()->getUtils().blitColorWithDraw(
+                context, encoder, mColorFormat.actualAngleFormat(), mMSColorTexture));
+            contextMtl->endEncoding(true);
+            mColorManualResolveRenderTarget.reset();
+        }
 
         contextMtl->present(context, mCurrentDrawable);
 

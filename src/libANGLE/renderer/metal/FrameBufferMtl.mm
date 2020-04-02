@@ -66,6 +66,8 @@ void FramebufferMtl::reset()
     mDepthRenderTarget = mStencilRenderTarget = nullptr;
 
     mRenderPassFirstColorAttachmentFormat = nullptr;
+
+    mReadPixelBuffer = nullptr;
 }
 
 void FramebufferMtl::destroy(const gl::Context *context)
@@ -510,8 +512,7 @@ angle::Result FramebufferMtl::syncState(const gl::Context *context,
             case gl::Framebuffer::DIRTY_BIT_DEFAULT_SAMPLES:
             case gl::Framebuffer::DIRTY_BIT_DEFAULT_FIXED_SAMPLE_LOCATIONS:
                 break;
-            default:
-            {
+            default: {
                 static_assert(gl::Framebuffer::DIRTY_BIT_COLOR_ATTACHMENT_0 == 0, "FB dirty bits");
                 if (dirtyBit < gl::Framebuffer::DIRTY_BIT_COLOR_ATTACHMENT_MAX)
                 {
@@ -543,6 +544,9 @@ angle::Result FramebufferMtl::syncState(const gl::Context *context,
         {
             contextMtl->onDrawFrameBufferChangedState(context, this, renderPassChanged);
         }
+
+        // Recreate pixel reading buffer if needed in future.
+        mReadPixelBuffer = nullptr;
     }
 
     return angle::Result::Continue;
@@ -688,6 +692,9 @@ void FramebufferMtl::onStartedDrawingToFrameBuffer(const gl::Context *context)
 
     // Stencil load/store
     initLoadStoreActionOnRenderPassFirstStart(&mRenderPassDesc.stencilAttachment);
+
+    // This pixel read buffer is not needed anymore
+    mReadPixelBuffer = nullptr;
 }
 
 void FramebufferMtl::onFrameEnd(const gl::Context *context)
@@ -1218,10 +1225,29 @@ angle::Result FramebufferMtl::readPixelsImpl(const gl::Context *context,
 
     const mtl::Format &readFormat        = *renderTarget->getFormat();
     const angle::Format &readAngleFormat = readFormat.actualAngleFormat();
+    uint32_t level                       = renderTarget->getLevelIndex();
+    uint32_t width                       = texture->width(level);
+    uint32_t height                      = texture->height(level);
+    uint32_t bufferRowPitch              = readAngleFormat.pixelBytes * width;
 
-    int srcRowPitch = area.width * readAngleFormat.pixelBytes;
-    angle::MemoryBuffer readPixelRowBuffer;
-    ANGLE_CHECK_GL_ALLOC(contextMtl, readPixelRowBuffer.resize(srcRowPitch));
+    // Read to buffer first then copy data from buffer to client memory
+    if (!mReadPixelBuffer || texture->isCPUReadMemDirty())
+    {
+        size_t bufferSize = bufferRowPitch * height;
+        if (!mReadPixelBuffer || bufferSize > mReadPixelBuffer->size())
+        {
+            ANGLE_TRY(mtl::Buffer::MakeBuffer(contextMtl, bufferSize, nullptr, &mReadPixelBuffer));
+        }
+
+        gl::Rectangle wholeArea(0, 0, width, height);
+        ANGLE_TRY(readPixelsToBuffer(context, wholeArea, renderTarget, false, readAngleFormat, 0,
+                                     bufferRowPitch, &mReadPixelBuffer));
+
+        texture->resetCPUReadMemDirty();
+    }
+
+    // Copy data from buffer to client memory
+    const uint8_t *bufferData = mReadPixelBuffer->mapReadOnly(contextMtl);
 
     auto packPixelsRowParams = packPixelsParams;
     gl::Rectangle srcRowRegion(area.x, area.y, area.width, 1);
@@ -1238,15 +1264,14 @@ angle::Result FramebufferMtl::readPixelsImpl(const gl::Context *context,
         srcRowRegion.y             = r;
         packPixelsRowParams.area.y = packPixelsParams.area.y + i;
 
-        // Read the pixels data to the row buffer
-        ANGLE_TRY(mtl::ReadTexturePerSliceBytes(
-            context, texture, srcRowPitch, srcRowRegion, renderTarget->getLevelIndex(),
-            renderTarget->getLayerIndex(), readPixelRowBuffer.data()));
+        const uint8_t *src = bufferData + srcRowRegion.x * readAngleFormat.pixelBytes +
+                             srcRowRegion.y * bufferRowPitch;
 
         // Convert to destination format
-        PackPixels(packPixelsRowParams, readAngleFormat, srcRowPitch, readPixelRowBuffer.data(),
-                   pixels);
+        PackPixels(packPixelsRowParams, readAngleFormat, bufferRowPitch, src, pixels);
     }
+
+    mReadPixelBuffer->unmap(contextMtl);
 
     return angle::Result::Continue;
 }
@@ -1261,21 +1286,41 @@ angle::Result FramebufferMtl::readPixelsToPBO(const gl::Context *context,
 
     ContextMtl *contextMtl = mtl::GetImpl(context);
 
-    const mtl::Format &readFormat        = *renderTarget->getFormat();
-    const angle::Format &readAngleFormat = readFormat.actualAngleFormat();
-
     ANGLE_MTL_CHECK(contextMtl, packPixelsParams.offset <= std::numeric_limits<uint32_t>::max(),
                     GL_INVALID_OPERATION);
     uint32_t offset = static_cast<uint32_t>(packPixelsParams.offset);
 
-    mtl::TextureRef texture = renderTarget->getTexture();
-
     BufferMtl *packBufferMtl = mtl::GetImpl(packPixelsParams.packBuffer);
     mtl::BufferRef dstBuffer = packBufferMtl->getCurrentBuffer();
 
-    if (packPixelsParams.destFormat->id != readAngleFormat.id ||
-        (offset % packPixelsParams.destFormat->pixelBytes) ||
-        (offset % mtl::kTextureToBufferBlittingAlignment))
+    return readPixelsToBuffer(context, area, renderTarget, packPixelsParams.reverseRowOrder,
+                              *packPixelsParams.destFormat, offset, packPixelsParams.outputPitch,
+                              &dstBuffer);
+}
+
+angle::Result FramebufferMtl::readPixelsToBuffer(const gl::Context *context,
+                                                 const gl::Rectangle &area,
+                                                 RenderTargetMtl *renderTarget,
+                                                 bool reverseRowOrder,
+                                                 const angle::Format &dstAngleFormat,
+                                                 uint32_t dstBufferOffset,
+                                                 uint32_t dstBufferRowPitch,
+                                                 const mtl::BufferRef *pDstBuffer)
+{
+    ASSERT(renderTarget);
+
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+
+    const mtl::Format &readFormat        = *renderTarget->getFormat();
+    const angle::Format &readAngleFormat = readFormat.actualAngleFormat();
+
+    mtl::TextureRef texture = renderTarget->getTexture();
+
+    const mtl::BufferRef &dstBuffer = *pDstBuffer;
+
+    if (dstAngleFormat.id != readAngleFormat.id || texture->samples() > 1 ||
+        (dstBufferOffset % dstAngleFormat.pixelBytes) ||
+        (dstBufferOffset % mtl::kTextureToBufferBlittingAlignment))
     {
         const angle::Format *actualDstAngleFormat;
 
@@ -1285,9 +1330,9 @@ angle::Result FramebufferMtl::readPixelsToPBO(const gl::Context *context,
             case angle::FormatID::B8G8R8A8_UNORM_SRGB:
             case angle::FormatID::R8G8B8_UNORM_SRGB:
             case angle::FormatID::R8G8B8A8_UNORM_SRGB:
-                if (packPixelsParams.destFormat->id != readAngleFormat.id)
+                if (dstAngleFormat.id != readAngleFormat.id)
                 {
-                    switch (packPixelsParams.destFormat->id)
+                    switch (dstAngleFormat.id)
                     {
                         case angle::FormatID::B8G8R8A8_UNORM:
                             actualDstAngleFormat =
@@ -1305,20 +1350,20 @@ angle::Result FramebufferMtl::readPixelsToPBO(const gl::Context *context,
                 }
                 OS_FALLTHROUGH;
             default:
-                actualDstAngleFormat = packPixelsParams.destFormat;
+                actualDstAngleFormat = &dstAngleFormat;
         }
 
         // Use compute shader
         mtl::CopyPixelsToBufferParams params;
         params.buffer            = dstBuffer;
-        params.bufferStartOffset = offset;
-        params.bufferRowPitch    = packPixelsParams.outputPitch;
+        params.bufferStartOffset = dstBufferOffset;
+        params.bufferRowPitch    = dstBufferRowPitch;
 
         params.texture                = texture;
         params.textureArea            = area;
         params.textureLevel           = renderTarget->getLevelIndex();
         params.textureSliceOrDeph     = renderTarget->getLayerIndex();
-        params.reverseTextureRowOrder = packPixelsParams.reverseRowOrder;
+        params.reverseTextureRowOrder = reverseRowOrder;
 
         ANGLE_TRY(contextMtl->getDisplay()->getUtils().packPixelsFromTextureToBuffer(
             contextMtl, *actualDstAngleFormat, params));
@@ -1326,24 +1371,31 @@ angle::Result FramebufferMtl::readPixelsToPBO(const gl::Context *context,
     else
     {
         // Use blit command encoder
-        int srcRowPitch = area.width * readAngleFormat.pixelBytes;
-
-        gl::Rectangle srcRowRegion(area.x, area.y, area.width, 1);
-
-        int rowOffset = packPixelsParams.reverseRowOrder ? -1 : 1;
-        int startRow  = packPixelsParams.reverseRowOrder ? (area.y1() - 1) : area.y;
-
-        uint32_t bufferRowOffset = offset;
-        // Copy pixels row by row
-        for (int r = startRow, i = 0; i < area.height;
-             ++i, r += rowOffset, bufferRowOffset += packPixelsParams.outputPitch)
+        if (!reverseRowOrder)
         {
-            srcRowRegion.y = r;
-
-            // Read the pixels data to the buffer's row
             ANGLE_TRY(mtl::ReadTexturePerSliceBytesToBuffer(
-                context, texture, srcRowPitch, srcRowRegion, renderTarget->getLevelIndex(),
-                renderTarget->getLayerIndex(), bufferRowOffset, dstBuffer));
+                context, texture, dstBufferRowPitch, area, renderTarget->getLevelIndex(),
+                renderTarget->getLayerIndex(), dstBufferOffset, dstBuffer));
+        }
+        else
+        {
+            gl::Rectangle srcRowRegion(area.x, area.y, area.width, 1);
+
+            int startRow  = area.y1() - 1;
+
+            uint32_t bufferRowOffset = dstBufferOffset;
+            // Copy pixels row by row
+            for (int r = startRow, i = 0; i < area.height;
+                 ++i, --r, bufferRowOffset += dstBufferRowPitch)
+            {
+                srcRowRegion.y = r;
+
+                // Read the pixels data to the buffer's row
+                ANGLE_TRY(mtl::ReadTexturePerSliceBytesToBuffer(
+                    context, texture, dstBufferRowPitch, srcRowRegion,
+                    renderTarget->getLevelIndex(), renderTarget->getLayerIndex(), bufferRowOffset,
+                    dstBuffer));
+            }
         }
     }
 

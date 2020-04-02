@@ -72,18 +72,7 @@ template <typename T>
 static inline vec<T, 4> blitSampleTextureMS(texture2d_ms<T> srcTexture, float2 texCoords)
 {
     uint2 coords = getImageCoords(srcTexture, texCoords);
-    uint samples = srcTexture.get_num_samples();
-
-    vec<T, 4> output(0);
-
-    for (uint sample = 0; sample < samples; ++sample)
-    {
-        output += srcTexture.read(coords, sample);
-    }
-
-    output = output / samples;
-
-    return output;
+    return resolveTextureMS(srcTexture, coords);
 }
 
 template <typename T>

@@ -84,6 +84,7 @@ class SurfaceMtl : public SurfaceImpl
                                 uint32_t width,
                                 uint32_t height,
                                 uint32_t samples,
+                                bool renderTargetOnly,
                                 mtl::TextureRef *textureOut);
 
     CGSize calcExpectedDrawableSize() const;
@@ -102,7 +103,8 @@ class SurfaceMtl : public SurfaceImpl
     // Implicit multisample texture
     mtl::TextureRef mMSColorTexture;
 
-    bool mUsePackedDepthStencil = false;
+    bool mUsePackedDepthStencil     = false;
+    bool mAutoResolveMSColorTexture = false;
 
     mtl::Format mColorFormat;
     mtl::Format mDepthFormat;
@@ -111,6 +113,7 @@ class SurfaceMtl : public SurfaceImpl
     int mSamples = 0;
 
     RenderTargetMtl mColorRenderTarget;
+    RenderTargetMtl mColorManualResolveRenderTarget;
     RenderTargetMtl mDepthRenderTarget;
     RenderTargetMtl mStencilRenderTarget;
 };

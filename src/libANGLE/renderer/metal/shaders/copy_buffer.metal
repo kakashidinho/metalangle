@@ -22,6 +22,7 @@ constant int kCopyFormatType [[function_constant(1)]];
 constant int kCopyTextureType [[function_constant(2)]];
 constant bool kCopyTextureType2D      = kCopyTextureType == kTextureType2D;
 constant bool kCopyTextureType2DArray = kCopyTextureType == kTextureType2DArray;
+constant bool kCopyTextureType2DMS    = kCopyTextureType == kTextureType2DMultisample;
 constant bool kCopyTextureTypeCube    = kCopyTextureType == kTextureTypeCube;
 constant bool kCopyTextureType3D      = kCopyTextureType == kTextureType3D;
 
@@ -79,6 +80,7 @@ static inline float4 sRGBtoLinear(float4 color)
     NAME_PREFIX##Texture3d,                 \
     NAME_PREFIX##TextureCube               
 
+// Params for reading from buffer to texture
 #define DEST_TEXTURE_PARAMS(TYPE)  TEXTURE_PARAMS(TYPE, access::write, dst)
 #define FORWARD_DEST_TEXTURE_PARAMS FORWARD_TEXTURE_PARAMS(dst)
 
@@ -94,8 +96,14 @@ static inline float4 sRGBtoLinear(float4 color)
 
 #define FORWARD_COMMON_READ_FUNC_PARAMS bufferOffset, buffer
 
-#define SRC_TEXTURE_PARAMS(TYPE)  TEXTURE_PARAMS(TYPE, access::read, src)
-#define FORWARD_SRC_TEXTURE_PARAMS FORWARD_TEXTURE_PARAMS(src)
+// Params for writing to buffer by coping from texture.
+// (NOTE: it has additional multisample source texture parameter)
+#define SRC_TEXTURE_PARAMS(TYPE)                             \
+    TEXTURE_PARAMS(TYPE, access::read, src),                 \
+    texture2d_ms<TYPE, access::read> srcTexture2dMS          \
+    [[texture(0), function_constant(kCopyTextureType2DMS)]]  \
+
+#define FORWARD_SRC_TEXTURE_PARAMS FORWARD_TEXTURE_PARAMS(src), srcTexture2dMS
 
 #define COMMON_WRITE_KERNEL_PARAMS(TEXTURE_TYPE)     \
     ushort2 gIndices [[thread_position_in_grid]],    \
@@ -163,6 +171,9 @@ static inline vec<T, 4> textureRead(ushort2 gIndices,
             break;
         case kTextureType2DArray:
             color = srcTexture2dArray.read(coords.xy, options.textureLayer, options.textureLevel);
+            break;
+        case kTextureType2DMultisample:
+            color = resolveTextureMS(srcTexture2dMS, coords.xy);
             break;
         case kTextureType3D:
             color = srcTexture3d.read(uint3(coords, options.textureLayer), options.textureLevel);

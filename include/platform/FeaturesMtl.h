@@ -56,9 +56,17 @@ struct FeaturesMtl : FeatureSetBase
         "allow_msaa_store_and_resolve", FeatureCategory::MetalFeatures,
         "The renderer supports MSAA store and resolve in the same pass", &members};
 
+    Feature hasDepthAutoResolve = {
+        "has_msaa_depth_auto_resolve", FeatureCategory::MetalFeatures,
+        "The renderer supports MSAA depth auto resolve at the end of render pass", &members};
+
+    Feature hasStencilAutoResolve = {
+        "has_msaa_stencil_auto_resolve", FeatureCategory::MetalFeatures,
+        "The renderer supports MSAA stencil auto resolve at the end of render pass", &members};
+
     Feature breakRenderPassIsCheap = {"break_render_pass_is_cheap", FeatureCategory::MetalFeatures,
                                       "Breaking render pass is a cheap operation", &members};
-};
+};  // namespace angle
 
 }  // namespace angle
 

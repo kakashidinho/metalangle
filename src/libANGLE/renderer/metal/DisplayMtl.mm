@@ -554,7 +554,11 @@ void DisplayMtl::initializeExtensions() const
     mNativeExtensions.discardFramebuffer     = true;
 
     // EXT_multisampled_render_to_texture
-    mNativeExtensions.multisampledRenderToTexture = true;
+    if (mFeatures.allowMultisampleStoreAndResolve.enabled &&
+        mFeatures.hasDepthAutoResolve.enabled && mFeatures.hasStencilAutoResolve.enabled)
+    {
+        mNativeExtensions.multisampledRenderToTexture = true;
+    }
 
     // Enable EXT_blend_minmax
     mNativeExtensions.blendMinMax = true;
@@ -634,6 +638,8 @@ void DisplayMtl::initializeFeatures()
     ANGLE_FEATURE_CONDITION((&mFeatures), allowBufferReadWrite, supportEitherGPUFamily(3, 1));
     ANGLE_FEATURE_CONDITION((&mFeatures), allowMultisampleStoreAndResolve,
                             supportEitherGPUFamily(3, 1));
+    ANGLE_FEATURE_CONDITION((&mFeatures), hasDepthAutoResolve, supportEitherGPUFamily(3, 2));
+    ANGLE_FEATURE_CONDITION((&mFeatures), hasStencilAutoResolve, supportEitherGPUFamily(5, 2));
 
     if (ANGLE_APPLE_AVAILABLE_XCI(10.14, 13.0, 12.0))
     {

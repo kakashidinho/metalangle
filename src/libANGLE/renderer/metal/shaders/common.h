@@ -90,6 +90,23 @@ static inline float3 cubeTexcoords(float2 texcoords, int face)
     return float3(texcoords, 0);
 }
 
+template <typename T>
+static inline vec<T, 4> resolveTextureMS(texture2d_ms<T> srcTexture, uint2 coords)
+{
+    uint samples = srcTexture.get_num_samples();
+
+    vec<T, 4> output(0);
+
+    for (uint sample = 0; sample < samples; ++sample)
+    {
+        output += srcTexture.read(coords, sample);
+    }
+
+    output = output / samples;
+
+    return output;
+}
+
 template <typename Short>
 static inline Short bytesToShort(constant uchar *input, uint offset)
 {

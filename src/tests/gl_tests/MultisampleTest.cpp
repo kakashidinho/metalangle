@@ -8,6 +8,7 @@
 
 #include "test_utils/ANGLETest.h"
 
+#include "include/platform/FeaturesMtl.h"
 #include "test_utils/gl_raii.h"
 #include "util/OSWindow.h"
 #include "util/shader_utils.h"
@@ -16,15 +17,47 @@ using namespace angle;
 
 namespace
 {
-class MultisampleTest : public ANGLETest
+
+using MultisampleTestParams = std::tuple<angle::PlatformParameters, bool>;
+
+struct PrintToStringParamName
+{
+    std::string operator()(const ::testing::TestParamInfo<MultisampleTestParams> &info) const
+    {
+        ::std::stringstream ss;
+        ss << std::get<0>(info.param);
+        return ss.str();
+    }
+};
+
+void OverrideAutoResolveFeatureMetal(PlatformMethods *platform, FeaturesMtl *featuresMtl)
+{
+    // Simulate a missing MSAA store and resolve feature in Metal backend.
+    featuresMtl->overrideFeatures({"allow_msaa_store_and_resolve"}, false);
+}
+
+class MultisampleTest : public ANGLETestWithParam<MultisampleTestParams>
 {
   protected:
     void testSetUp() override
     {
+        const angle::PlatformParameters platform = ::testing::get<0>(GetParam());
+        angle::PlatformMethods platformMethods;
+        if (::testing::get<1>(GetParam()))
+        {
+            platformMethods.overrideFeaturesMtl = OverrideAutoResolveFeatureMetal;
+        }
+        else
+        {
+            platformMethods.overrideFeaturesMtl = DefaultOverrideFeaturesMtl;
+        }
+
         // Get display.
-        EGLint dispattrs[] = {EGL_PLATFORM_ANGLE_TYPE_ANGLE, GetParam().getRenderer(), EGL_NONE};
-        mDisplay           = eglGetPlatformDisplayEXT(
-            EGL_PLATFORM_ANGLE_ANGLE, reinterpret_cast<void *>(EGL_DEFAULT_DISPLAY), dispattrs);
+        EGLAttrib dispattrs[] = {EGL_PLATFORM_ANGLE_TYPE_ANGLE, platform.getRenderer(),
+                                 EGL_PLATFORM_ANGLE_PLATFORM_METHODS_ANGLEX,
+                                 reinterpret_cast<EGLAttrib>(&platformMethods), EGL_NONE};
+        mDisplay              = eglGetPlatformDisplay(EGL_PLATFORM_ANGLE_ANGLE,
+                                         reinterpret_cast<void *>(EGL_DEFAULT_DISPLAY), dispattrs);
         ASSERT_TRUE(mDisplay != EGL_NO_DISPLAY);
 
         ASSERT_TRUE(eglInitialize(mDisplay, nullptr, nullptr) == EGL_TRUE);
@@ -57,9 +90,9 @@ class MultisampleTest : public ANGLETest
 
         EGLint contextAttributes[] = {
             EGL_CONTEXT_MAJOR_VERSION_KHR,
-            GetParam().majorVersion,
+            platform.majorVersion,
             EGL_CONTEXT_MINOR_VERSION_KHR,
-            GetParam().minorVersion,
+            platform.minorVersion,
             EGL_NONE,
         };
 
@@ -358,17 +391,27 @@ TEST_P(MultisampleTest, ContentPresevedAfterInterruption)
     }
 }
 
-ANGLE_INSTANTIATE_TEST(MultisampleTest,
-                       WithNoFixture(ES2_D3D11()),
-                       WithNoFixture(ES3_D3D11()),
-                       WithNoFixture(ES31_D3D11()),
-                       WithNoFixture(ES2_METAL()),
-                       WithNoFixture(ES2_OPENGL()),
-                       WithNoFixture(ES3_OPENGL()),
-                       WithNoFixture(ES31_OPENGL()),
-                       WithNoFixture(ES2_OPENGLES()),
-                       WithNoFixture(ES3_OPENGLES()),
-                       WithNoFixture(ES31_OPENGLES()),
-                       WithNoFixture(ES2_VULKAN()),
-                       WithNoFixture(ES3_VULKAN()));
+const angle::PlatformParameters platforms[] = {
+    WithNoFixture(ES2_D3D11()),     WithNoFixture(ES3_D3D11()),    WithNoFixture(ES31_D3D11()),
+    WithNoFixture(ES2_METAL()),     WithNoFixture(ES2_OPENGL()),   WithNoFixture(ES3_OPENGL()),
+    WithNoFixture(ES31_OPENGL()),   WithNoFixture(ES2_OPENGLES()), WithNoFixture(ES3_OPENGLES()),
+    WithNoFixture(ES31_OPENGLES()), WithNoFixture(ES2_VULKAN()),   WithNoFixture(ES3_VULKAN()),
+};
+
+// Use this to select which configurations (e.g. which renderer, which GLES major version) these
+// tests should be run against.
+INSTANTIATE_TEST_SUITE_P(
+    ,
+    MultisampleTest,
+    testing::Combine(testing::ValuesIn(::angle::FilterTestParams(platforms, ArraySize(platforms))),
+                     testing::Values(false)),
+    PrintToStringParamName());
+
+// Simulate missing msaa auto resolve feature in Metal.
+INSTANTIATE_TEST_SUITE_P(OverrideAutoResolveFeatureOff,
+                         MultisampleTest,
+                         testing::Combine(testing::Values(WithNoFixture(ES2_METAL())),
+                                          testing::Values(true)),
+                         PrintToStringParamName());
+
 }  // anonymous namespace

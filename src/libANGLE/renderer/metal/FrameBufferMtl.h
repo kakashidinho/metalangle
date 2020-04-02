@@ -176,6 +176,15 @@ class FramebufferMtl : public FramebufferImpl
                                   const PackPixelsParams &packPixelsParams,
                                   RenderTargetMtl *renderTarget);
 
+    angle::Result readPixelsToBuffer(const gl::Context *context,
+                                     const gl::Rectangle &area,
+                                     RenderTargetMtl *renderTarget,
+                                     bool reverseRowOrder,
+                                     const angle::Format &dstAngleFormat,
+                                     uint32_t dstBufferOffset,
+                                     uint32_t dstBufferRowPitch,
+                                     const mtl::BufferRef *dstBuffer);
+
     // NOTE: we cannot use RenderTargetCache here because it doesn't support separate
     // depth & stencil attachments as of now. Separate depth & stencil could be useful to
     // save spaces on iOS devices. See doc/PackedDepthStencilSupport.md.
@@ -193,6 +202,8 @@ class FramebufferMtl : public FramebufferImpl
 
     SurfaceMtl *mBackbuffer = nullptr;
     const bool mFlipY       = false;
+
+    mtl::BufferRef mReadPixelBuffer;
 };
 }  // namespace rx
 

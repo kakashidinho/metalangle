@@ -611,6 +611,27 @@ angle::Result RenderUtils::blitColorWithDraw(const gl::Context *context,
     return mColorBlitUtils[index].blitColorWithDraw(context, cmdEncoder, params);
 }
 
+angle::Result RenderUtils::blitColorWithDraw(const gl::Context *context,
+                                             RenderCommandEncoder *cmdEncoder,
+                                             const angle::Format &srcAngleFormat,
+                                             const TextureRef &srcTexture)
+{
+    if (!srcTexture)
+    {
+        return angle::Result::Continue;
+    }
+    ColorBlitParams params;
+    params.enabledBuffers.set(0);
+    params.src = srcTexture;
+    params.dstTextureSize =
+        gl::Extents(static_cast<int>(srcTexture->width()), static_cast<int>(srcTexture->height()),
+                    static_cast<int>(srcTexture->depth()));
+    params.dstRect = params.dstScissorRect = params.srcRect =
+        gl::Rectangle(0, 0, params.dstTextureSize.width, params.dstTextureSize.height);
+
+    return blitColorWithDraw(context, cmdEncoder, srcAngleFormat, params);
+}
+
 angle::Result RenderUtils::blitDepthStencilWithDraw(const gl::Context *context,
                                                     RenderCommandEncoder *cmdEncoder,
                                                     const DepthStencilBlitParams &params)
