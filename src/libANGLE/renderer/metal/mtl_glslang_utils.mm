@@ -424,6 +424,7 @@ class SpirvToMslCompiler : public spirv_cross::CompilerMSL
         statement("inline T ANGLEtexturePCF(depth2d<T> texture, sampler s, float2 coord, float "
                   "compare_value, Opt options, int2 offset, UniformOrUInt shadowCompareMode)");
         statement("{");
+        statement("#if defined(__METAL_MACOS__)");
         statement("    float2 dims = float2(texture.get_width(), texture.get_height());");
         statement("    float2 imgCoord = coord * dims;");
         statement("    float2 texelSize = 1.0 / dims;");
@@ -439,6 +440,10 @@ class SpirvToMslCompiler : public spirv_cross::CompilerMSL
         statement("    float top = mix(tl, tr, weight.x);");
         statement("    float bottom = mix(bl, br, weight.x);");
         statement("    return mix(top, bottom, weight.y);");
+        statement("#else  // if defined(__METAL_MACOS__)");
+        statement("    return ANGLEcompare(texture.sample(s, coord, options, offset), "
+                  "compare_value, shadowCompareMode);");
+        statement("#endif  // if defined(__METAL_MACOS__)");
         statement("}");
         statement("");
 
@@ -460,6 +465,7 @@ class SpirvToMslCompiler : public spirv_cross::CompilerMSL
             "array, float compare_value, Opt options, int2 offset, UniformOrUInt "
             "shadowCompareMode)");
         statement("{");
+        statement("#if defined(__METAL_MACOS__)");
         statement("    float2 dims = float2(texture.get_width(), texture.get_height());");
         statement("    float2 imgCoord = coord * dims;");
         statement("    float2 texelSize = 1.0 / dims;");
@@ -475,6 +481,10 @@ class SpirvToMslCompiler : public spirv_cross::CompilerMSL
         statement("    float top = mix(tl, tr, weight.x);");
         statement("    float bottom = mix(bl, br, weight.x);");
         statement("    return mix(top, bottom, weight.y);");
+        statement("#else  // if defined(__METAL_MACOS__)");
+        statement("    return ANGLEcompare(texture.sample(s, coord, array, options, offset), "
+                  "compare_value, shadowCompareMode);");
+        statement("#endif  // if defined(__METAL_MACOS__)");
         statement("}");
         statement("");
 
