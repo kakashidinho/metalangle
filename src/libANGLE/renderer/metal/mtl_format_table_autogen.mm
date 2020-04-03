@@ -136,26 +136,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        case angle::FormatID::R16G16B16A16_FLOAT:
-
-            if (metalDevice.depth24Stencil8PixelFormatSupported)
-            {
-                this->metalFormat    = MTLPixelFormatRGBA16Float;
-                this->actualFormatId = angle::FormatID::R16G16B16A16_FLOAT;
-                this->initFunction   = nullptr;
-            }
-            else
-            {
-                this->metalFormat    = MTLPixelFormatInvalid;
-                this->actualFormatId = angle::FormatID::NONE;
-                this->initFunction   = nullptr;
-            }
-
-            this->swizzled = false;
-            break;
-
-#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R16G16B16A16_FLOAT:
 
             this->metalFormat    = MTLPixelFormatRGBA16Float;
@@ -165,27 +145,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        case angle::FormatID::R16G16B16A16_SINT:
-
-            if (metalDevice.depth24Stencil8PixelFormatSupported)
-            {
-                this->metalFormat    = MTLPixelFormatRGBA16Sint;
-                this->actualFormatId = angle::FormatID::R16G16B16A16_SINT;
-                this->initFunction   = nullptr;
-            }
-            else
-            {
-                this->metalFormat    = MTLPixelFormatInvalid;
-                this->actualFormatId = angle::FormatID::NONE;
-                this->initFunction   = nullptr;
-            }
-
-            this->swizzled = false;
-            break;
-
-#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R16G16B16A16_SINT:
 
             this->metalFormat    = MTLPixelFormatRGBA16Sint;
@@ -195,7 +154,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R16G16B16A16_SNORM:
 
             this->metalFormat    = MTLPixelFormatRGBA16Snorm;
@@ -205,26 +163,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        case angle::FormatID::R16G16B16A16_UINT:
-
-            if (metalDevice.depth24Stencil8PixelFormatSupported)
-            {
-                this->metalFormat    = MTLPixelFormatRGBA16Uint;
-                this->actualFormatId = angle::FormatID::R16G16B16A16_UINT;
-                this->initFunction   = nullptr;
-            }
-            else
-            {
-                this->metalFormat    = MTLPixelFormatInvalid;
-                this->actualFormatId = angle::FormatID::NONE;
-                this->initFunction   = nullptr;
-            }
-
-            this->swizzled = false;
-            break;
-
-#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R16G16B16A16_UINT:
 
             this->metalFormat    = MTLPixelFormatRGBA16Uint;
@@ -234,7 +172,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R16G16B16A16_UNORM:
 
             this->metalFormat    = MTLPixelFormatRGBA16Unorm;
@@ -289,26 +226,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        case angle::FormatID::R16_FLOAT:
-
-            if (metalDevice.depth24Stencil8PixelFormatSupported)
-            {
-                this->metalFormat    = MTLPixelFormatR16Float;
-                this->actualFormatId = angle::FormatID::R16_FLOAT;
-                this->initFunction   = nullptr;
-            }
-            else
-            {
-                this->metalFormat    = MTLPixelFormatInvalid;
-                this->actualFormatId = angle::FormatID::NONE;
-                this->initFunction   = nullptr;
-            }
-
-            this->swizzled = false;
-            break;
-
-#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R16_FLOAT:
 
             this->metalFormat    = MTLPixelFormatR16Float;
@@ -318,27 +235,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        case angle::FormatID::R16_SINT:
-
-            if (metalDevice.depth24Stencil8PixelFormatSupported)
-            {
-                this->metalFormat    = MTLPixelFormatR16Sint;
-                this->actualFormatId = angle::FormatID::R16_SINT;
-                this->initFunction   = nullptr;
-            }
-            else
-            {
-                this->metalFormat    = MTLPixelFormatInvalid;
-                this->actualFormatId = angle::FormatID::NONE;
-                this->initFunction   = nullptr;
-            }
-
-            this->swizzled = false;
-            break;
-
-#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R16_SINT:
 
             this->metalFormat    = MTLPixelFormatR16Sint;
@@ -348,7 +244,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R16_SNORM:
 
             this->metalFormat    = MTLPixelFormatR16Snorm;
@@ -358,26 +253,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        case angle::FormatID::R16_UINT:
-
-            if (metalDevice.depth24Stencil8PixelFormatSupported)
-            {
-                this->metalFormat    = MTLPixelFormatR16Uint;
-                this->actualFormatId = angle::FormatID::R16_UINT;
-                this->initFunction   = nullptr;
-            }
-            else
-            {
-                this->metalFormat    = MTLPixelFormatInvalid;
-                this->actualFormatId = angle::FormatID::NONE;
-                this->initFunction   = nullptr;
-            }
-
-            this->swizzled = false;
-            break;
-
-#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R16_UINT:
 
             this->metalFormat    = MTLPixelFormatR16Uint;
@@ -387,7 +262,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R16_UNORM:
 
             this->metalFormat    = MTLPixelFormatR16Unorm;
@@ -397,26 +271,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        case angle::FormatID::R32G32B32A32_FLOAT:
-
-            if (metalDevice.depth24Stencil8PixelFormatSupported)
-            {
-                this->metalFormat    = MTLPixelFormatRGBA32Float;
-                this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
-                this->initFunction   = nullptr;
-            }
-            else
-            {
-                this->metalFormat    = MTLPixelFormatInvalid;
-                this->actualFormatId = angle::FormatID::NONE;
-                this->initFunction   = nullptr;
-            }
-
-            this->swizzled = false;
-            break;
-
-#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R32G32B32A32_FLOAT:
 
             this->metalFormat    = MTLPixelFormatRGBA32Float;
@@ -426,27 +280,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        case angle::FormatID::R32G32B32A32_SINT:
-
-            if (metalDevice.depth24Stencil8PixelFormatSupported)
-            {
-                this->metalFormat    = MTLPixelFormatRGBA32Sint;
-                this->actualFormatId = angle::FormatID::R32G32B32A32_SINT;
-                this->initFunction   = nullptr;
-            }
-            else
-            {
-                this->metalFormat    = MTLPixelFormatInvalid;
-                this->actualFormatId = angle::FormatID::NONE;
-                this->initFunction   = nullptr;
-            }
-
-            this->swizzled = false;
-            break;
-
-#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R32G32B32A32_SINT:
 
             this->metalFormat    = MTLPixelFormatRGBA32Sint;
@@ -456,27 +289,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        case angle::FormatID::R32G32B32A32_UINT:
-
-            if (metalDevice.depth24Stencil8PixelFormatSupported)
-            {
-                this->metalFormat    = MTLPixelFormatRGBA32Uint;
-                this->actualFormatId = angle::FormatID::R32G32B32A32_UINT;
-                this->initFunction   = nullptr;
-            }
-            else
-            {
-                this->metalFormat    = MTLPixelFormatInvalid;
-                this->actualFormatId = angle::FormatID::NONE;
-                this->initFunction   = nullptr;
-            }
-
-            this->swizzled = false;
-            break;
-
-#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R32G32B32A32_UINT:
 
             this->metalFormat    = MTLPixelFormatRGBA32Uint;
@@ -486,7 +298,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R32G32_FLOAT:
 
             this->metalFormat    = MTLPixelFormatRG32Float;
@@ -514,26 +325,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        case angle::FormatID::R32_FLOAT:
-
-            if (metalDevice.depth24Stencil8PixelFormatSupported)
-            {
-                this->metalFormat    = MTLPixelFormatR32Float;
-                this->actualFormatId = angle::FormatID::R32_FLOAT;
-                this->initFunction   = nullptr;
-            }
-            else
-            {
-                this->metalFormat    = MTLPixelFormatInvalid;
-                this->actualFormatId = angle::FormatID::NONE;
-                this->initFunction   = nullptr;
-            }
-
-            this->swizzled = false;
-            break;
-
-#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R32_FLOAT:
 
             this->metalFormat    = MTLPixelFormatR32Float;
@@ -543,27 +334,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        case angle::FormatID::R32_SINT:
-
-            if (metalDevice.depth24Stencil8PixelFormatSupported)
-            {
-                this->metalFormat    = MTLPixelFormatR32Sint;
-                this->actualFormatId = angle::FormatID::R32_SINT;
-                this->initFunction   = nullptr;
-            }
-            else
-            {
-                this->metalFormat    = MTLPixelFormatInvalid;
-                this->actualFormatId = angle::FormatID::NONE;
-                this->initFunction   = nullptr;
-            }
-
-            this->swizzled = false;
-            break;
-
-#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R32_SINT:
 
             this->metalFormat    = MTLPixelFormatR32Sint;
@@ -573,27 +343,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        case angle::FormatID::R32_UINT:
-
-            if (metalDevice.depth24Stencil8PixelFormatSupported)
-            {
-                this->metalFormat    = MTLPixelFormatR32Uint;
-                this->actualFormatId = angle::FormatID::R32_UINT;
-                this->initFunction   = nullptr;
-            }
-            else
-            {
-                this->metalFormat    = MTLPixelFormatInvalid;
-                this->actualFormatId = angle::FormatID::NONE;
-                this->initFunction   = nullptr;
-            }
-
-            this->swizzled = false;
-            break;
-
-#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R32_UINT:
 
             this->metalFormat    = MTLPixelFormatR32Uint;
@@ -603,27 +352,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        case angle::FormatID::R8G8B8A8_SINT:
-
-            if (metalDevice.depth24Stencil8PixelFormatSupported)
-            {
-                this->metalFormat    = MTLPixelFormatRGBA8Sint;
-                this->actualFormatId = angle::FormatID::R8G8B8A8_SINT;
-                this->initFunction   = nullptr;
-            }
-            else
-            {
-                this->metalFormat    = MTLPixelFormatInvalid;
-                this->actualFormatId = angle::FormatID::NONE;
-                this->initFunction   = nullptr;
-            }
-
-            this->swizzled = false;
-            break;
-
-#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R8G8B8A8_SINT:
 
             this->metalFormat    = MTLPixelFormatRGBA8Sint;
@@ -633,7 +361,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R8G8B8A8_SNORM:
 
             this->metalFormat    = MTLPixelFormatRGBA8Snorm;
@@ -643,26 +370,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        case angle::FormatID::R8G8B8A8_UINT:
-
-            if (metalDevice.depth24Stencil8PixelFormatSupported)
-            {
-                this->metalFormat    = MTLPixelFormatRGBA8Uint;
-                this->actualFormatId = angle::FormatID::R8G8B8A8_UINT;
-                this->initFunction   = nullptr;
-            }
-            else
-            {
-                this->metalFormat    = MTLPixelFormatInvalid;
-                this->actualFormatId = angle::FormatID::NONE;
-                this->initFunction   = nullptr;
-            }
-
-            this->swizzled = false;
-            break;
-
-#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R8G8B8A8_UINT:
 
             this->metalFormat    = MTLPixelFormatRGBA8Uint;
@@ -672,7 +379,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R8G8B8A8_UNORM:
 
             this->metalFormat    = MTLPixelFormatRGBA8Unorm;
@@ -745,26 +451,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        case angle::FormatID::R8_UINT:
-
-            if (metalDevice.depth24Stencil8PixelFormatSupported)
-            {
-                this->metalFormat    = MTLPixelFormatR8Uint;
-                this->actualFormatId = angle::FormatID::R8_UINT;
-                this->initFunction   = nullptr;
-            }
-            else
-            {
-                this->metalFormat    = MTLPixelFormatInvalid;
-                this->actualFormatId = angle::FormatID::NONE;
-                this->initFunction   = nullptr;
-            }
-
-            this->swizzled = false;
-            break;
-
-#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R8_UINT:
 
             this->metalFormat    = MTLPixelFormatR8Uint;
@@ -774,27 +460,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        case angle::FormatID::R8_UNORM:
-
-            if (metalDevice.depth24Stencil8PixelFormatSupported)
-            {
-                this->metalFormat    = MTLPixelFormatR8Unorm;
-                this->actualFormatId = angle::FormatID::R8_UNORM;
-                this->initFunction   = nullptr;
-            }
-            else
-            {
-                this->metalFormat    = MTLPixelFormatInvalid;
-                this->actualFormatId = angle::FormatID::NONE;
-                this->initFunction   = nullptr;
-            }
-
-            this->swizzled = false;
-            break;
-
-#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R8_UNORM:
 
             this->metalFormat    = MTLPixelFormatR8Unorm;
@@ -804,7 +469,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R9G9B9E5_SHAREDEXP:
 
             this->metalFormat    = MTLPixelFormatRGB9E5Float;
@@ -823,26 +487,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        case angle::FormatID::A16_FLOAT:
-
-            if (metalDevice.depth24Stencil8PixelFormatSupported)
-            {
-                this->metalFormat    = MTLPixelFormatRGBA16Float;
-                this->actualFormatId = angle::FormatID::R16G16B16A16_FLOAT;
-                this->initFunction   = nullptr;
-            }
-            else
-            {
-                this->metalFormat    = MTLPixelFormatInvalid;
-                this->actualFormatId = angle::FormatID::NONE;
-                this->initFunction   = nullptr;
-            }
-
-            this->swizzled = false;
-            break;
-
-#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::A16_FLOAT:
 
             this->metalFormat    = MTLPixelFormatRGBA16Float;
@@ -852,27 +496,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        case angle::FormatID::A32_FLOAT:
-
-            if (metalDevice.depth24Stencil8PixelFormatSupported)
-            {
-                this->metalFormat    = MTLPixelFormatRGBA32Float;
-                this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
-                this->initFunction   = nullptr;
-            }
-            else
-            {
-                this->metalFormat    = MTLPixelFormatInvalid;
-                this->actualFormatId = angle::FormatID::NONE;
-                this->initFunction   = nullptr;
-            }
-
-            this->swizzled = false;
-            break;
-
-#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::A32_FLOAT:
 
             this->metalFormat    = MTLPixelFormatRGBA32Float;
@@ -882,7 +505,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::D24_UNORM_X8_UINT:
 
             this->metalFormat    = MTLPixelFormatDepth32Float;
@@ -901,26 +523,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        case angle::FormatID::L16A16_FLOAT:
-
-            if (metalDevice.depth24Stencil8PixelFormatSupported)
-            {
-                this->metalFormat    = MTLPixelFormatRGBA16Float;
-                this->actualFormatId = angle::FormatID::R16G16B16A16_FLOAT;
-                this->initFunction   = nullptr;
-            }
-            else
-            {
-                this->metalFormat    = MTLPixelFormatInvalid;
-                this->actualFormatId = angle::FormatID::NONE;
-                this->initFunction   = nullptr;
-            }
-
-            this->swizzled = false;
-            break;
-
-#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::L16A16_FLOAT:
 
             this->metalFormat    = MTLPixelFormatRGBA16Float;
@@ -930,28 +532,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        case angle::FormatID::L16_FLOAT:
-
-            if (metalDevice.depth24Stencil8PixelFormatSupported)
-            {
-                this->metalFormat    = MTLPixelFormatRGBA16Float;
-                this->actualFormatId = angle::FormatID::R16G16B16A16_FLOAT;
-                this->initFunction =
-                    Initialize4ComponentData<GLhalf, 0x0000, 0x0000, 0x0000, gl::Float16One>;
-            }
-            else
-            {
-                this->metalFormat    = MTLPixelFormatInvalid;
-                this->actualFormatId = angle::FormatID::NONE;
-                this->initFunction   = nullptr;
-            }
-
-            this->swizzled = false;
-            break;
-
-#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::L16_FLOAT:
 
             this->metalFormat    = MTLPixelFormatRGBA16Float;
@@ -962,27 +542,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        case angle::FormatID::L32A32_FLOAT:
-
-            if (metalDevice.depth24Stencil8PixelFormatSupported)
-            {
-                this->metalFormat    = MTLPixelFormatRGBA32Float;
-                this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
-                this->initFunction   = nullptr;
-            }
-            else
-            {
-                this->metalFormat    = MTLPixelFormatInvalid;
-                this->actualFormatId = angle::FormatID::NONE;
-                this->initFunction   = nullptr;
-            }
-
-            this->swizzled = false;
-            break;
-
-#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::L32A32_FLOAT:
 
             this->metalFormat    = MTLPixelFormatRGBA32Float;
@@ -992,28 +551,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        case angle::FormatID::L32_FLOAT:
-
-            if (metalDevice.depth24Stencil8PixelFormatSupported)
-            {
-                this->metalFormat    = MTLPixelFormatRGBA32Float;
-                this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
-                this->initFunction   = Initialize4ComponentData<GLfloat, 0x00000000, 0x00000000,
-                                                              0x00000000, gl::Float32One>;
-            }
-            else
-            {
-                this->metalFormat    = MTLPixelFormatInvalid;
-                this->actualFormatId = angle::FormatID::NONE;
-                this->initFunction   = nullptr;
-            }
-
-            this->swizzled = false;
-            break;
-
-#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::L32_FLOAT:
 
             this->metalFormat    = MTLPixelFormatRGBA32Float;
@@ -1024,7 +561,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::L8A8_UNORM:
 
             this->metalFormat    = MTLPixelFormatRGBA8Unorm;
@@ -1043,27 +579,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        case angle::FormatID::R16G16B16_FLOAT:
-
-            if (metalDevice.depth24Stencil8PixelFormatSupported)
-            {
-                this->metalFormat    = MTLPixelFormatRGBA16Float;
-                this->actualFormatId = angle::FormatID::R16G16B16A16_FLOAT;
-                this->initFunction =
-                    Initialize4ComponentData<GLhalf, 0x0000, 0x0000, 0x0000, gl::Float16One>;
-            }
-            else
-            {
-                this->metalFormat    = MTLPixelFormatInvalid;
-                this->actualFormatId = angle::FormatID::NONE;
-                this->initFunction   = nullptr;
-            }
-
-            this->swizzled = false;
-            break;
-
-#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R16G16B16_FLOAT:
 
             this->metalFormat    = MTLPixelFormatRGBA16Float;
@@ -1074,28 +589,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        case angle::FormatID::R16G16B16_SINT:
-
-            if (metalDevice.depth24Stencil8PixelFormatSupported)
-            {
-                this->metalFormat    = MTLPixelFormatRGBA16Sint;
-                this->actualFormatId = angle::FormatID::R16G16B16A16_SINT;
-                this->initFunction =
-                    Initialize4ComponentData<GLshort, 0x0000, 0x0000, 0x0000, 0x0001>;
-            }
-            else
-            {
-                this->metalFormat    = MTLPixelFormatInvalid;
-                this->actualFormatId = angle::FormatID::NONE;
-                this->initFunction   = nullptr;
-            }
-
-            this->swizzled = false;
-            break;
-
-#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R16G16B16_SINT:
 
             this->metalFormat    = MTLPixelFormatRGBA16Sint;
@@ -1105,28 +598,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        case angle::FormatID::R16G16B16_UINT:
-
-            if (metalDevice.depth24Stencil8PixelFormatSupported)
-            {
-                this->metalFormat    = MTLPixelFormatRGBA16Uint;
-                this->actualFormatId = angle::FormatID::R16G16B16A16_UINT;
-                this->initFunction =
-                    Initialize4ComponentData<GLushort, 0x0000, 0x0000, 0x0000, 0x0001>;
-            }
-            else
-            {
-                this->metalFormat    = MTLPixelFormatInvalid;
-                this->actualFormatId = angle::FormatID::NONE;
-                this->initFunction   = nullptr;
-            }
-
-            this->swizzled = false;
-            break;
-
-#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R16G16B16_UINT:
 
             this->metalFormat    = MTLPixelFormatRGBA16Uint;
@@ -1136,28 +607,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        case angle::FormatID::R32G32B32_FLOAT:
-
-            if (metalDevice.depth24Stencil8PixelFormatSupported)
-            {
-                this->metalFormat    = MTLPixelFormatRGBA32Float;
-                this->actualFormatId = angle::FormatID::R32G32B32A32_FLOAT;
-                this->initFunction   = Initialize4ComponentData<GLfloat, 0x00000000, 0x00000000,
-                                                              0x00000000, gl::Float32One>;
-            }
-            else
-            {
-                this->metalFormat    = MTLPixelFormatInvalid;
-                this->actualFormatId = angle::FormatID::NONE;
-                this->initFunction   = nullptr;
-            }
-
-            this->swizzled = false;
-            break;
-
-#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R32G32B32_FLOAT:
 
             this->metalFormat    = MTLPixelFormatRGBA32Float;
@@ -1168,28 +617,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        case angle::FormatID::R32G32B32_SINT:
-
-            if (metalDevice.depth24Stencil8PixelFormatSupported)
-            {
-                this->metalFormat    = MTLPixelFormatRGBA32Sint;
-                this->actualFormatId = angle::FormatID::R32G32B32A32_SINT;
-                this->initFunction =
-                    Initialize4ComponentData<GLint, 0x00000000, 0x00000000, 0x00000000, 0x00000001>;
-            }
-            else
-            {
-                this->metalFormat    = MTLPixelFormatInvalid;
-                this->actualFormatId = angle::FormatID::NONE;
-                this->initFunction   = nullptr;
-            }
-
-            this->swizzled = false;
-            break;
-
-#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R32G32B32_SINT:
 
             this->metalFormat    = MTLPixelFormatRGBA32Sint;
@@ -1200,28 +627,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        case angle::FormatID::R32G32B32_UINT:
-
-            if (metalDevice.depth24Stencil8PixelFormatSupported)
-            {
-                this->metalFormat    = MTLPixelFormatRGBA32Uint;
-                this->actualFormatId = angle::FormatID::R32G32B32A32_UINT;
-                this->initFunction   = Initialize4ComponentData<GLuint, 0x00000000, 0x00000000,
-                                                              0x00000000, 0x00000001>;
-            }
-            else
-            {
-                this->metalFormat    = MTLPixelFormatInvalid;
-                this->actualFormatId = angle::FormatID::NONE;
-                this->initFunction   = nullptr;
-            }
-
-            this->swizzled = false;
-            break;
-
-#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R32G32B32_UINT:
 
             this->metalFormat    = MTLPixelFormatRGBA32Uint;
@@ -1232,27 +637,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        case angle::FormatID::R8G8B8_SINT:
-
-            if (metalDevice.depth24Stencil8PixelFormatSupported)
-            {
-                this->metalFormat    = MTLPixelFormatRGBA8Sint;
-                this->actualFormatId = angle::FormatID::R8G8B8A8_SINT;
-                this->initFunction   = Initialize4ComponentData<GLbyte, 0x00, 0x00, 0x00, 0x01>;
-            }
-            else
-            {
-                this->metalFormat    = MTLPixelFormatInvalid;
-                this->actualFormatId = angle::FormatID::NONE;
-                this->initFunction   = nullptr;
-            }
-
-            this->swizzled = false;
-            break;
-
-#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R8G8B8_SINT:
 
             this->metalFormat    = MTLPixelFormatRGBA8Sint;
@@ -1262,7 +646,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R8G8B8_SNORM:
 
             this->metalFormat    = MTLPixelFormatRGBA8Snorm;
@@ -1272,26 +655,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-        case angle::FormatID::R8G8B8_UINT:
-
-            if (metalDevice.depth24Stencil8PixelFormatSupported)
-            {
-                this->metalFormat    = MTLPixelFormatRGBA8Uint;
-                this->actualFormatId = angle::FormatID::R8G8B8A8_UINT;
-                this->initFunction   = Initialize4ComponentData<GLubyte, 0x00, 0x00, 0x00, 0x01>;
-            }
-            else
-            {
-                this->metalFormat    = MTLPixelFormatInvalid;
-                this->actualFormatId = angle::FormatID::NONE;
-                this->initFunction   = nullptr;
-            }
-
-            this->swizzled = false;
-            break;
-
-#else  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R8G8B8_UINT:
 
             this->metalFormat    = MTLPixelFormatRGBA8Uint;
@@ -1301,7 +664,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::R8G8B8_UNORM:
 
             this->metalFormat    = MTLPixelFormatRGBA8Unorm;
