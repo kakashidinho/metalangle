@@ -22,6 +22,11 @@
 
 static inline bool operator==(const MTLClearColor &lhs, const MTLClearColor &rhs);
 
+namespace angle
+{
+struct FeaturesMtl;
+}
+
 namespace rx
 {
 class ContextMtl;
@@ -478,7 +483,7 @@ class RenderPipelineCache final : angle::NonCopyable
 class StateCache final : angle::NonCopyable
 {
   public:
-    StateCache();
+    StateCache(const angle::FeaturesMtl &features);
     ~StateCache();
 
     // Null depth stencil state has depth/stecil read & write disabled.
@@ -496,6 +501,8 @@ class StateCache final : angle::NonCopyable
     void clear();
 
   private:
+    const angle::FeaturesMtl &mFeatures;
+
     AutoObjCPtr<id<MTLDepthStencilState>> mNullDepthStencilState = nil;
     std::unordered_map<DepthStencilDesc, AutoObjCPtr<id<MTLDepthStencilState>>> mDepthStencilStates;
     std::unordered_map<SamplerDesc, AutoObjCPtr<id<MTLSamplerState>>> mSamplerStates;

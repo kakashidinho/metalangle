@@ -5,6 +5,7 @@
 //
 
 #include "common/mathutil.h"
+#include "include/platform/FeaturesMtl.h"
 #include "test_utils/ANGLETest.h"
 #include "test_utils/gl_raii.h"
 
@@ -991,6 +992,15 @@ class ShadowSamplerTestES3 : public TexCoordDrawTest
     GLint mLodProgramTextureShadowUniformLocation;
     GLint mLodProgramDepthRefUniformLocation;
     GLint mLodProgramLodUniformLocation;
+};
+
+class SimulatedMissingRuntimeCompareModeShadowSamplerTestES3 : public ShadowSamplerTestES3
+{
+  protected:
+    void overrideFeaturesMetal(FeaturesMtl *features) override
+    {
+        features->overrideFeatures({"allow_runtime_sampler_compare_mode"}, false);
+    }
 };
 
 class ShadowSamplerPlusSampler3DTestES3 : public TexCoordDrawTest
@@ -3595,6 +3605,38 @@ TEST_P(ShadowSamplerTestES3, MultipleShadowSamplerDifferentModes)
     EXPECT_GL_NO_ERROR();
     // This writes <comparison result (1.0)>, <depth value>, <comparison result (1.0)>, 1
     EXPECT_PIXEL_NEAR(0, 0, 255, 128, 255, 255, 2);
+}
+
+// Test that shadow sampler with compare mode = GL_COMPARE_REF_TO_TEXTURE will return comparison
+// value, even if runtime compare mode is not supported. This for testing behaviors when Metal
+// device doesn't support setting compare mode outside shader.
+TEST_P(SimulatedMissingRuntimeCompareModeShadowSamplerTestES3, ShadowSamplerCompareOn)
+{
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, mTextureShadow);
+    GLfloat depthTexData[1];
+    depthTexData[0] = 0.5f;
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, 1, 1, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
+                 depthTexData);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+
+    glUseProgram(mProgram);
+    glUniform1f(mDepthRefUniformLocation, 0.3f);
+    glUniform1i(mTextureShadowUniformLocation, 1);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+    drawQuad(mProgram, "position", 0.5f);
+    EXPECT_GL_NO_ERROR();
+    // The shader writes 0.5 * <comparison result (1.0)>
+    EXPECT_PIXEL_NEAR(0, 0, 128, 128, 128, 255, 2);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_GREATER);
+    drawQuad(mProgram, "position", 0.5f);
+    EXPECT_GL_NO_ERROR();
+    // The shader writes 0.5 * <comparison result (0.0)>
+    EXPECT_PIXEL_NEAR(0, 0, 0, 0, 0, 255, 2);
 }
 
 // Test shadow sampler and regular non-shadow sampler coexisting in the same shader.
@@ -6680,6 +6722,7 @@ ANGLE_INSTANTIATE_TEST(ShadowSamplerTestES3,
                        ES3_METAL(),
                        ES3_OPENGL(),
                        ES3_OPENGLES());
+ANGLE_INSTANTIATE_TEST(SimulatedMissingRuntimeCompareModeShadowSamplerTestES3, ES3_METAL());
 ANGLE_INSTANTIATE_TEST(ShadowSamplerPlusSampler3DTestES3,
                        ES3_D3D11(),
                        ES3_METAL(),

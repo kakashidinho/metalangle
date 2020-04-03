@@ -43,7 +43,9 @@ DisplayImpl *CreateMetalDisplay(const egl::DisplayState &state)
     return new DisplayMtl(state);
 }
 
-DisplayMtl::DisplayMtl(const egl::DisplayState &state) : DisplayImpl(state), mUtils(this) {}
+DisplayMtl::DisplayMtl(const egl::DisplayState &state)
+    : DisplayImpl(state), mStateCache(mFeatures), mUtils(this)
+{}
 
 DisplayMtl::~DisplayMtl() {}
 
@@ -634,11 +636,13 @@ void DisplayMtl::initializeFeatures()
     mFeatures.hasTextureSwizzle.enabled                 = false;
     mFeatures.allowSeparatedDepthStencilBuffers.enabled = false;
 
-    ANGLE_FEATURE_CONDITION((&mFeatures), allowBufferReadWrite, supportEitherGPUFamily(3, 1));
-    ANGLE_FEATURE_CONDITION((&mFeatures), allowMultisampleStoreAndResolve,
-                            supportEitherGPUFamily(3, 1));
     ANGLE_FEATURE_CONDITION((&mFeatures), hasDepthAutoResolve, supportEitherGPUFamily(3, 2));
     ANGLE_FEATURE_CONDITION((&mFeatures), hasStencilAutoResolve, supportEitherGPUFamily(5, 2));
+    ANGLE_FEATURE_CONDITION((&mFeatures), allowBufferReadWrite, supportEitherGPUFamily(3, 1));
+    ANGLE_FEATURE_CONDITION((&mFeatures), allowRuntimeSamplerCompareMode,
+                            supportEitherGPUFamily(3, 1));
+    ANGLE_FEATURE_CONDITION((&mFeatures), allowMultisampleStoreAndResolve,
+                            supportEitherGPUFamily(3, 1));
 
     if (ANGLE_APPLE_AVAILABLE_XCI(10.14, 13.0, 12.0))
     {
