@@ -24,6 +24,7 @@
 #include <EGL/eglext.h>
 
 #include "egluGLContextFactory.hpp"
+#include "platform/FeaturesMtl.h"
 #include "tcuANGLENativeDisplayFactory.h"
 #include "tcuNullContextFactory.hpp"
 #include "util/test_utils.h"
@@ -85,6 +86,36 @@ ANGLEPlatform::ANGLEPlatform(angle::LogErrorFunc logErrorFunc)
 
         auto *glFactory = new ANGLENativeDisplayFactory("angle-metal", "ANGLE Metal Display",
                                                         glAttribs, &mEvents);
+        m_nativeDisplayFactoryRegistry.registerFactory(glFactory);
+
+        // Simulate low spec metal devices with most of features missing:
+        static angle::PlatformMethods platformMethods;
+        platformMethods.overrideFeaturesMtl = [](angle::PlatformMethods *platform,
+                                                 angle::FeaturesMtl *featuresMtl) {
+            featuresMtl->overrideFeatures({"has_base_vertex_instanced_draw"}, false);
+            featuresMtl->overrideFeatures({"has_non_uniform_dispatch"}, false);
+            featuresMtl->overrideFeatures({"has_stencil_output"}, false);
+            featuresMtl->overrideFeatures({"allow_msaa_store_and_resolve"}, false);
+            featuresMtl->overrideFeatures({"allow_runtime_sampler_compare_mode"}, false);
+            featuresMtl->overrideFeatures({"allow_buffer_read_write"}, false);
+            featuresMtl->overrideFeatures({"break_render_pass_is_cheap"}, false);
+        };
+        bool platformAttribExist = false;
+        for (size_t i = 0; i < glAttribs.size(); ++i)
+        {
+            if (glAttribs[i] == EGL_PLATFORM_ANGLE_PLATFORM_METHODS_ANGLEX)
+            {
+                glAttribs[i + 1]    = reinterpret_cast<EGLAttrib>(&platformMethods);
+                platformAttribExist = true;
+            }
+        }
+        if (!platformAttribExist)
+        {
+            glAttribs.push_back(EGL_PLATFORM_ANGLE_PLATFORM_METHODS_ANGLEX);
+            glAttribs.push_back(reinterpret_cast<EGLAttrib>(&platformMethods));
+        }
+        glFactory = new ANGLENativeDisplayFactory(
+            "angle-metal-low-spec", "ANGLE Metal Display (Low Spec)", glAttribs, &mEvents);
         m_nativeDisplayFactoryRegistry.registerFactory(glFactory);
     }
 #endif
