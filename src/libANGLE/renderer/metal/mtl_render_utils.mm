@@ -62,6 +62,19 @@ struct BlitParamsUniform
     uint8_t padding[9];
 };
 
+struct BlitStencilToBufferParamsUniform
+{
+    float srcStartTexCoords[2];
+    float srcTexCoordSteps[2];
+    uint32_t srcLevel;
+    uint32_t srcLayer;
+
+    uint32_t dstSize[2];
+    uint32_t dstBufferRowPitch;
+
+    uint32_t padding[3];
+};
+
 // See libANGLE/renderer/metal/shaders/genIndices.metal
 struct TriFanOrLineLoopArrayParams
 {
@@ -176,6 +189,46 @@ struct ScopedDisableOcclusionQuery
 
     angle::Result *mResultOut;
 };
+
+void GetBlitTexCoords(uint32_t srcWidth,
+                      uint32_t srcHeight,
+                      const gl::Rectangle &srcRect,
+                      bool srcYFlipped,
+                      bool unpackFlipX,
+                      bool unpackFlipY,
+                      float *u0,
+                      float *v0,
+                      float *u1,
+                      float *v1)
+{
+    int x0 = srcRect.x0();  // left
+    int x1 = srcRect.x1();  // right
+    int y0 = srcRect.y0();  // lower
+    int y1 = srcRect.y1();  // upper
+    if (srcYFlipped)
+    {
+        // If source's Y has been flipped, such as default framebuffer, then adjust the real source
+        // rectangle.
+        y0 = srcHeight - y1;
+        y1 = y0 + srcRect.height;
+        std::swap(y0, y1);
+    }
+
+    if (unpackFlipX)
+    {
+        std::swap(x0, x1);
+    }
+
+    if (unpackFlipY)
+    {
+        std::swap(y0, y1);
+    }
+
+    *u0 = static_cast<float>(x0) / srcWidth;
+    *u1 = static_cast<float>(x1) / srcWidth;
+    *v0 = static_cast<float>(y0) / srcHeight;
+    *v1 = static_cast<float>(y1) / srcHeight;
+}
 
 template <typename T>
 angle::Result GenTriFanFromClientElements(ContextMtl *contextMtl,
@@ -1128,18 +1181,16 @@ void DepthStencilBlitUtils::onDestroy()
 {
     ClearRenderPipelineCacheArray(&mDepthBlitRenderPipelineCache);
     ClearRenderPipelineCacheArray(&mStencilBlitRenderPipelineCache);
-    ClearRenderPipelineCacheArray(&mStencilBlitToBufferRenderPipelineCache);
     ClearRenderPipelineCache2DArray(&mDepthStencilBlitRenderPipelineCache);
 
-    mStencilCopyBuffer       = nullptr;
-    mStencilCopyDummyTexture = nullptr;
-    mStencilCopyDummyRenderTarget.reset();
+    ClearComputePipelineCacheArray(&mStencilBlitToBufferComPipelineCache);
+
+    mStencilCopyBuffer = nullptr;
 }
 
 void DepthStencilBlitUtils::ensureRenderPipelineStateInitialized(ContextMtl *ctx,
                                                                  int sourceDepthTextureType,
                                                                  int sourceStencilTextureType,
-                                                                 bool writeStencilToBuffer,
                                                                  RenderPipelineCache *cacheOut)
 {
     RenderPipelineCache &cache = *cacheOut;
@@ -1159,12 +1210,6 @@ void DepthStencilBlitUtils::ensureRenderPipelineStateInitialized(ContextMtl *ctx
         NSString *shaderName;
         if (sourceDepthTextureType != -1 && sourceStencilTextureType != -1)
         {
-            if (writeStencilToBuffer)
-            {
-                // Write to framebuffer's depth and stencil to buffer at the same time is not
-                // supported.
-                UNREACHABLE();
-            }
             shaderName = @"blitDepthStencilFS";
         }
         else if (sourceDepthTextureType != -1)
@@ -1173,14 +1218,7 @@ void DepthStencilBlitUtils::ensureRenderPipelineStateInitialized(ContextMtl *ctx
         }
         else
         {
-            if (writeStencilToBuffer)
-            {
-                shaderName = @"blitStencilToBufferFS";
-            }
-            else
-            {
-                shaderName = @"blitStencilFS";
-            }
+            shaderName = @"blitStencilFS";
         }
 
         if (sourceDepthTextureType != -1)
@@ -1207,11 +1245,37 @@ void DepthStencilBlitUtils::ensureRenderPipelineStateInitialized(ContextMtl *ctx
     }
 }
 
+id<MTLComputePipelineState> DepthStencilBlitUtils::getStencilToBufferComputePipelineState(
+    ContextMtl *contextMtl,
+    const StencilBlitViaBufferParams &params)
+{
+    int sourceStencilTextureType = GetShaderTextureType(params.srcStencil);
+    AutoObjCPtr<id<MTLComputePipelineState>> &cache =
+        mStencilBlitToBufferComPipelineCache[sourceStencilTextureType];
+    if (cache)
+    {
+        return cache;
+    }
+
+    ANGLE_MTL_OBJC_SCOPE
+    {
+        auto funcConstants = [[[MTLFunctionConstantValues alloc] init] ANGLE_MTL_AUTORELEASE];
+
+        [funcConstants setConstantValue:&sourceStencilTextureType
+                                   type:MTLDataTypeInt
+                               withName:SOURCE_TEXTURE2_TYPE_CONSTANT_NAME];
+
+        EnsureSpecializedComputePipelineInitialized(
+            contextMtl->getDisplay(), @"blitStencilToBufferCS", funcConstants, &cache);
+    }
+
+    return cache;
+}
+
 id<MTLRenderPipelineState> DepthStencilBlitUtils::getDepthStencilBlitRenderPipelineState(
     const gl::Context *context,
     RenderCommandEncoder *cmdEncoder,
-    const DepthStencilBlitParams &params,
-    bool writeStencilToBuffer)
+    const DepthStencilBlitParams &params)
 {
     ContextMtl *contextMtl = GetImpl(context);
     RenderPipelineDesc pipelineDesc;
@@ -1230,10 +1294,6 @@ id<MTLRenderPipelineState> DepthStencilBlitUtils::getDepthStencilBlitRenderPipel
     int stencilTextureType = GetShaderTextureType(params.srcStencil);
     if (params.src && params.srcStencil)
     {
-        if (writeStencilToBuffer)
-        {
-            UNREACHABLE();
-        }
         pipelineCache = &mDepthStencilBlitRenderPipelineCache[depthTextureType][stencilTextureType];
     }
     else if (params.src)
@@ -1244,38 +1304,27 @@ id<MTLRenderPipelineState> DepthStencilBlitUtils::getDepthStencilBlitRenderPipel
     else
     {
         // Only stencil blit
-        if (writeStencilToBuffer)
-        {
-            pipelineCache = &mStencilBlitToBufferRenderPipelineCache[stencilTextureType];
-        }
-        else
-        {
-            pipelineCache = &mStencilBlitRenderPipelineCache[stencilTextureType];
-        }
+        pipelineCache = &mStencilBlitRenderPipelineCache[stencilTextureType];
     }
 
     ensureRenderPipelineStateInitialized(contextMtl, depthTextureType, stencilTextureType,
-                                         writeStencilToBuffer, pipelineCache);
+                                         pipelineCache);
 
     return pipelineCache->getRenderPipelineState(contextMtl, pipelineDesc);
 }
 
 void DepthStencilBlitUtils::setupDepthStencilBlitWithDraw(const gl::Context *context,
                                                           RenderCommandEncoder *cmdEncoder,
-                                                          const DepthStencilBlitParams &params,
-                                                          bool writeStencilToBuffer)
+                                                          const DepthStencilBlitParams &params)
 {
     ContextMtl *contextMtl = mtl::GetImpl(context);
 
     ASSERT(params.src || params.srcStencil);
-    // When writing stencil to a buffer, source depth texture must be omitted.
-    ASSERT(!params.src || !writeStencilToBuffer);
 
     setupCommonBlitWithDraw(context, cmdEncoder, params, false);
 
     // Generate render pipeline state
-    auto renderPipelineState =
-        getDepthStencilBlitRenderPipelineState(context, cmdEncoder, params, writeStencilToBuffer);
+    auto renderPipelineState = getDepthStencilBlitRenderPipelineState(context, cmdEncoder, params);
     ASSERT(renderPipelineState);
     // Setup states
     cmdEncoder->setRenderPipelineState(renderPipelineState);
@@ -1300,23 +1349,20 @@ void DepthStencilBlitUtils::setupDepthStencilBlitWithDraw(const gl::Context *con
     {
         cmdEncoder->setFragmentTexture(params.srcStencil, 1);
 
-        if (!writeStencilToBuffer)
+        if (!contextMtl->getDisplay()->getFeatures().hasStencilOutput.enabled)
         {
-            if (!contextMtl->getDisplay()->getFeatures().hasStencilOutput.enabled)
-            {
-                // Hardware must support stencil writing directly in shader.
-                UNREACHABLE();
-            }
-            // Enable stencil write to framebuffer
-            dsStateDesc.frontFaceStencil.stencilCompareFunction = MTLCompareFunctionAlways;
-            dsStateDesc.backFaceStencil.stencilCompareFunction  = MTLCompareFunctionAlways;
-
-            dsStateDesc.frontFaceStencil.depthStencilPassOperation = MTLStencilOperationReplace;
-            dsStateDesc.backFaceStencil.depthStencilPassOperation  = MTLStencilOperationReplace;
-
-            dsStateDesc.frontFaceStencil.writeMask = kStencilMaskAll;
-            dsStateDesc.backFaceStencil.writeMask  = kStencilMaskAll;
+            // Hardware must support stencil writing directly in shader.
+            UNREACHABLE();
         }
+        // Enable stencil write to framebuffer
+        dsStateDesc.frontFaceStencil.stencilCompareFunction = MTLCompareFunctionAlways;
+        dsStateDesc.backFaceStencil.stencilCompareFunction  = MTLCompareFunctionAlways;
+
+        dsStateDesc.frontFaceStencil.depthStencilPassOperation = MTLStencilOperationReplace;
+        dsStateDesc.backFaceStencil.depthStencilPassOperation  = MTLStencilOperationReplace;
+
+        dsStateDesc.frontFaceStencil.writeMask = kStencilMaskAll;
+        dsStateDesc.backFaceStencil.writeMask  = kStencilMaskAll;
     }
 
     cmdEncoder->setDepthStencilState(contextMtl->getDisplay()->getStateCache().getDepthStencilState(
@@ -1333,7 +1379,7 @@ angle::Result DepthStencilBlitUtils::blitDepthStencilWithDraw(const gl::Context 
     }
     ContextMtl *contextMtl = GetImpl(context);
 
-    setupDepthStencilBlitWithDraw(context, cmdEncoder, params, false);
+    setupDepthStencilBlitWithDraw(context, cmdEncoder, params);
 
     angle::Result result;
     {
@@ -1361,48 +1407,52 @@ angle::Result DepthStencilBlitUtils::blitStencilViaCopyBuffer(
     }
     ContextMtl *contextMtl = GetImpl(context);
 
-    // Force saving any pending render pass's work
-    contextMtl->endEncoding(true);
-
-    // Create dummy texture and intermediate buffer.
-    if (!mStencilCopyDummyTexture ||
-        mStencilCopyDummyTexture->width() < static_cast<uint32_t>(params.dstTextureSize.width) ||
-        mStencilCopyDummyTexture->height() < static_cast<uint32_t>(params.dstTextureSize.height))
-    {
-        const Format &dummyFormat = contextMtl->getPixelFormat(angle::FormatID::R8_UINT);
-        ANGLE_TRY(Texture::MakeMemoryLess2DTexture(
-            contextMtl, dummyFormat, params.dstTextureSize.width, params.dstTextureSize.height,
-            &mStencilCopyDummyTexture));
-
-        mStencilCopyDummyRenderTarget.set(mStencilCopyDummyTexture, 0, 0, dummyFormat);
-    }
-
-    uint32_t bufferRequiredRowPitch = static_cast<uint32_t>(params.dstTextureSize.width);
+    // Create intermediate buffer.
+    uint32_t bufferRequiredRowPitch = static_cast<uint32_t>(params.dstRect.width);
     uint32_t bufferRequiredSize =
-        bufferRequiredRowPitch * static_cast<uint32_t>(params.dstTextureSize.height);
+        bufferRequiredRowPitch * static_cast<uint32_t>(params.dstRect.height);
     if (!mStencilCopyBuffer || mStencilCopyBuffer->size() < bufferRequiredSize)
     {
         ANGLE_TRY(Buffer::MakeBuffer(contextMtl, bufferRequiredSize, nullptr, &mStencilCopyBuffer));
     }
 
-    // Create render pass with dummy attachment.
-    mtl::RenderCommandEncoder *renderEncoder =
-        contextMtl->getRenderCommandEncoder(mStencilCopyDummyRenderTarget);
+    // Copy stencil data to buffer via compute shader
+    ComputeCommandEncoder *cmdEncoder = contextMtl->getComputeCommandEncoder();
+    ASSERT(cmdEncoder);
 
-    renderEncoder->setColorLoadAction(MTLLoadActionDontCare, MTLClearColorMake(0, 0, 0, 0), 0);
-    renderEncoder->setColorStoreAction(MTLStoreActionDontCare, 0);
+    id<MTLComputePipelineState> pipeline =
+        getStencilToBufferComputePipelineState(contextMtl, params);
 
-    setupDepthStencilBlitWithDraw(context, renderEncoder, params, true);
+    cmdEncoder->setComputePipelineState(pipeline);
 
-    uint32_t bufferRowPitchUniform[4] = {bufferRequiredRowPitch};
+    uint32_t srcWidth  = params.srcStencil->width(params.srcLevel);
+    uint32_t srcHeight = params.srcStencil->height(params.srcLevel);
 
-    renderEncoder->setData(gl::ShaderType::Fragment, bufferRowPitchUniform, 1);
-    renderEncoder->setBufferForWrite(gl::ShaderType::Fragment, mStencilCopyBuffer, 0, 2);
+    float u0, v0, u1, v1;
+    GetBlitTexCoords(srcWidth, srcHeight, params.srcRect, params.srcYFlipped, params.unpackFlipX,
+                     params.unpackFlipY, &u0, &v0, &u1, &v1);
 
-    // Draw the screen aligned triangle
-    renderEncoder->draw(MTLPrimitiveTypeTriangle, 0, 3);
+    BlitStencilToBufferParamsUniform uniform;
+    uniform.srcTexCoordSteps[0]  = (u1 - u0) / params.dstRect.width;
+    uniform.srcTexCoordSteps[1]  = (v1 - v0) / params.dstRect.height;
+    uniform.srcStartTexCoords[0] = u0 + uniform.srcTexCoordSteps[0] * 0.5f;
+    uniform.srcStartTexCoords[1] = v0 + uniform.srcTexCoordSteps[1] * 0.5f;
+    uniform.srcLevel             = params.srcStencilLevel;
+    uniform.srcLayer             = params.srcStencilLayer;
+    uniform.dstSize[0]           = params.dstRect.width;
+    uniform.dstSize[1]           = params.dstRect.height;
+    uniform.dstBufferRowPitch    = bufferRequiredRowPitch;
 
-    contextMtl->endEncoding(false);
+    cmdEncoder->setTexture(params.srcStencil, 1);
+
+    cmdEncoder->setData(uniform, 0);
+    cmdEncoder->setBufferForWrite(mStencilCopyBuffer, 0, 1);
+
+    NSUInteger w                  = pipeline.threadExecutionWidth;
+    MTLSize threadsPerThreadgroup = MTLSizeMake(w, 1, 1);
+    dispatchCompute(contextMtl, cmdEncoder, /** allowNonUniform */ true,
+                    MTLSizeMake(params.dstRect.width, params.dstRect.height, 1),
+                    threadsPerThreadgroup);
 
     // Copy buffer to real destination texture
     ASSERT(params.dstStencil->textureType() != MTLTextureType3D);
@@ -1410,11 +1460,15 @@ angle::Result DepthStencilBlitUtils::blitStencilViaCopyBuffer(
     mtl::BlitCommandEncoder *blitEncoder = contextMtl->getBlitCommandEncoder();
 
     // Only copy the scissored area of the buffer.
+    MTLScissorRect viewportRectMtl =
+        GetScissorRect(params.dstRect, params.dstTextureSize.height, params.dstFlipY);
     MTLScissorRect scissorRectMtl =
         GetScissorRect(params.dstScissorRect, params.dstTextureSize.height, params.dstFlipY);
 
-    uint32_t bufferStartReadableOffset =
-        static_cast<uint32_t>(scissorRectMtl.x + bufferRequiredRowPitch * scissorRectMtl.y);
+    uint32_t dx = static_cast<uint32_t>(scissorRectMtl.x - viewportRectMtl.x);
+    uint32_t dy = static_cast<uint32_t>(scissorRectMtl.y - viewportRectMtl.y);
+
+    uint32_t bufferStartReadableOffset = dx + bufferRequiredRowPitch * dy;
     blitEncoder->copyBufferToTexture(
         mStencilCopyBuffer, bufferStartReadableOffset, bufferRequiredRowPitch, 0,
         MTLSizeMake(scissorRectMtl.width, scissorRectMtl.height, 1), params.dstStencil,
@@ -1501,35 +1555,12 @@ void BaseBlitUtils::setupBlitWithDrawUniformData(RenderCommandEncoder *cmdEncode
         UNREACHABLE();
     }
 
-    int x0 = params.srcRect.x0();  // left
-    int x1 = params.srcRect.x1();  // right
-    int y0 = params.srcRect.y0();  // lower
-    int y1 = params.srcRect.y1();  // upper
-    if (params.srcYFlipped)
-    {
-        // If source's Y has been flipped, such as default framebuffer, then adjust the real source
-        // rectangle.
-        y0 = srcHeight - y1;
-        y1 = y0 + params.srcRect.height;
-        std::swap(y0, y1);
-    }
+    float u0, v0, u1, v1;
+    GetBlitTexCoords(srcWidth, srcHeight, params.srcRect, params.srcYFlipped, params.unpackFlipX,
+                     params.unpackFlipY, &u0, &v0, &u1, &v1);
 
-    if (params.unpackFlipX)
-    {
-        std::swap(x0, x1);
-    }
-
-    if (params.unpackFlipY)
-    {
-        std::swap(y0, y1);
-    }
-
-    auto u0 = static_cast<float>(x0) / srcWidth;
-    auto u1 = static_cast<float>(x1) / srcWidth;
-    auto v0 = static_cast<float>(y0) / srcHeight;
-    auto v1 = static_cast<float>(y1) / srcHeight;
-    auto du = static_cast<float>(x1 - x0) / srcWidth;
-    auto dv = static_cast<float>(y1 - y0) / srcHeight;
+    auto du = u1 - u0;
+    auto dv = v1 - v0;
 
     // lower left
     uniformParams.srcTexCoords[0][0] = u0;

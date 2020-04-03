@@ -236,7 +236,8 @@ static inline uint32_t sampleStencil(
     texture2d_ms<uint32_t> srcTexture2dMS [[function_constant(kSourceTexture2Type2DMS)]],
     texturecube<uint32_t> srcTextureCube [[function_constant(kSourceTexture2TypeCube)]],
     float2 texCoords,
-    constant BlitParams &options)
+    int srcLevel,
+    int srcLayer)
 {
     uint4 output;
     constexpr sampler textureSampler(mag_filter::nearest, min_filter::nearest);
@@ -244,20 +245,18 @@ static inline uint32_t sampleStencil(
     switch (kSourceTexture2Type)
     {
         case kTextureType2D:
-            output = srcTexture2d.sample(textureSampler, texCoords, level(options.srcLevel));
+            output = srcTexture2d.sample(textureSampler, texCoords, level(srcLevel));
             break;
         case kTextureType2DArray:
-            output = srcTexture2dArray.sample(textureSampler, texCoords, options.srcLayer,
-                                              level(options.srcLevel));
+            output = srcTexture2dArray.sample(textureSampler, texCoords, srcLayer, level(srcLevel));
             break;
         case kTextureType2DMultisample:
             // Always use sample 0 for stencil resolve:
             output = srcTexture2dMS.read(getImageCoords(srcTexture2dMS, texCoords), 0);
             break;
         case kTextureTypeCube:
-            output =
-                srcTextureCube.sample(textureSampler, cubeTexcoords(texCoords, options.srcLayer),
-                                      level(options.srcLevel));
+            output = srcTextureCube.sample(textureSampler, cubeTexcoords(texCoords, srcLayer),
+                                           level(srcLevel));
             break;
     }
 
@@ -265,26 +264,40 @@ static inline uint32_t sampleStencil(
 }
 
 // Write stencil to a buffer
-fragment void blitStencilToBufferFS(BlitVSOut input [[stage_in]],
-                                    texture2d<uint32_t> srcTexture2d
-                                    [[texture(1), function_constant(kSourceTexture2Type2D)]],
-                                    texture2d_array<uint32_t> srcTexture2dArray
-                                    [[texture(1), function_constant(kSourceTexture2Type2DArray)]],
-                                    texture2d_ms<uint32_t> srcTexture2dMS
-                                    [[texture(1), function_constant(kSourceTexture2Type2DMS)]],
-                                    texturecube<uint32_t> srcTextureCube
-                                    [[texture(1), function_constant(kSourceTexture2TypeCube)]],
-                                    constant BlitParams &options [[buffer(0)]],
-                                    constant uint &dstBufferRowPitch [[buffer(1)]],
-                                    device uchar *buffer [[buffer(2)]])
+struct BlitStencilToBufferParams
 {
+    float2 srcStartTexCoords;
+    float2 srcTexCoordSteps;
+    int srcLevel;
+    int srcLayer;
 
-    uint32_t stencil = sampleStencil(srcTexture2d, srcTexture2dArray, srcTexture2dMS,
-                                     srcTextureCube, input.texCoords, options);
+    uint2 dstSize;
+    uint dstBufferRowPitch;
+};
 
-    uint2 coord = uint2(input.position.xy);
+kernel void blitStencilToBufferCS(ushort2 gIndices [[thread_position_in_grid]],
+                                  texture2d<uint32_t> srcTexture2d
+                                  [[texture(1), function_constant(kSourceTexture2Type2D)]],
+                                  texture2d_array<uint32_t> srcTexture2dArray
+                                  [[texture(1), function_constant(kSourceTexture2Type2DArray)]],
+                                  texture2d_ms<uint32_t> srcTexture2dMS
+                                  [[texture(1), function_constant(kSourceTexture2Type2DMS)]],
+                                  texturecube<uint32_t> srcTextureCube
+                                  [[texture(1), function_constant(kSourceTexture2TypeCube)]],
+                                  constant BlitStencilToBufferParams &options [[buffer(0)]],
+                                  device uchar *buffer [[buffer(1)]])
+{
+    if (gIndices.x >= options.dstSize.x || gIndices.y >= options.dstSize.y)
+    {
+        return;
+    }
 
-    buffer[dstBufferRowPitch * coord.y + coord.x] = static_cast<uchar>(stencil);
+    float2 srcTexCoords = options.srcStartTexCoords + float2(gIndices) * options.srcTexCoordSteps;
+    uint32_t stencil =
+        sampleStencil(srcTexture2d, srcTexture2dArray, srcTexture2dMS, srcTextureCube, srcTexCoords,
+                      options.srcLevel, options.srcLayer);
+
+    buffer[options.dstBufferRowPitch * gIndices.y + gIndices.x] = static_cast<uchar>(stencil);
 }
 
 #if __METAL_VERSION__ >= 210
@@ -313,7 +326,7 @@ fragment FragmentStencilOut blitStencilFS(
     FragmentStencilOut re;
 
     re.stencil = sampleStencil(srcTexture2d, srcTexture2dArray, srcTexture2dMS, srcTextureCube,
-                               input.texCoords, options);
+                               input.texCoords, options.srcLevel2, options.srcLayer2);
 
     return re;
 }
@@ -343,10 +356,11 @@ fragment FragmentDepthStencilOut blitDepthStencilFS(
 {
     FragmentDepthStencilOut re;
 
-    re.depth   = sampleDepth(srcDepthTexture2d, srcDepthTexture2dArray, srcDepthTexture2dMS,
+    re.depth = sampleDepth(srcDepthTexture2d, srcDepthTexture2dArray, srcDepthTexture2dMS,
                            srcDepthTextureCube, input.texCoords, options);
-    re.stencil = sampleStencil(srcStencilTexture2d, srcStencilTexture2dArray, srcStencilTexture2dMS,
-                               srcStencilTextureCube, input.texCoords, options);
+    re.stencil =
+        sampleStencil(srcStencilTexture2d, srcStencilTexture2dArray, srcStencilTexture2dMS,
+                      srcStencilTextureCube, input.texCoords, options.srcLevel2, options.srcLayer2);
     return re;
 }
 #endif
