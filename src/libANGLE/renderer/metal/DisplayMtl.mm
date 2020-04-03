@@ -205,7 +205,7 @@ StreamProducerImpl *DisplayMtl::createStreamProducerD3DTexture(
 
 gl::Version DisplayMtl::getMaxSupportedESVersion() const
 {
-    if (mFeatures.hasBaseVertexInstancedDraw.enabled && supportEitherGPUFamily(4, 1)
+    if (supportEitherGPUFamily(4, 1)
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
         && getMetalDevice().depth24Stencil8PixelFormatSupported
 #endif
@@ -573,8 +573,8 @@ void DisplayMtl::initializeExtensions() const
     mNativeExtensions.semaphore   = false;
     mNativeExtensions.semaphoreFd = false;
 
-    mNativeExtensions.instancedArraysANGLE = mFeatures.hasBaseVertexInstancedDraw.enabled;
-    mNativeExtensions.instancedArraysEXT   = mNativeExtensions.instancedArraysANGLE;
+    mNativeExtensions.instancedArraysANGLE = true;
+    mNativeExtensions.instancedArraysEXT   = true;
 
     mNativeExtensions.robustBufferAccessBehavior = false;
 

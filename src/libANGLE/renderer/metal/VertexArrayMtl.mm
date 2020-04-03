@@ -301,7 +301,10 @@ angle::Result VertexArrayMtl::setupDraw(const gl::Context *glContext,
 
     if (dirty)
     {
+        ContextMtl *contextMtl = mtl::GetImpl(glContext);
+
         mVertexArrayDirty = false;
+        mEmulatedInstanceAttribs.clear();
 
         const gl::ProgramState &programState = glContext->getState().getProgram()->getState();
         const gl::AttributesMask &programActiveAttribsMask =
@@ -383,11 +386,19 @@ angle::Result VertexArrayMtl::setupDraw(const gl::Context *glContext,
                     desc.layouts[bufferIdx].stepFunction = MTLVertexStepFunctionPerVertex;
                     desc.layouts[bufferIdx].stepRate     = 1;
                 }
-                else
+                else if (contextMtl->getDisplay()->getFeatures().hasBaseVertexInstancedDraw.enabled)
                 {
                     desc.layouts[bufferIdx].stepFunction = MTLVertexStepFunctionPerInstance;
                     desc.layouts[bufferIdx].stepRate     = binding.getDivisor();
                 }
+                else
+                {
+                    // Emulate instance attribute
+                    mEmulatedInstanceAttribs.push_back(v);
+                    desc.layouts[bufferIdx].stepFunction = MTLVertexStepFunctionConstant;
+                    desc.layouts[bufferIdx].stepRate     = 0;
+                }
+
                 desc.layouts[bufferIdx].stride = mCurrentArrayBufferStrides[v];
 
                 if (mCurrentArrayBuffers[v])
@@ -409,6 +420,40 @@ angle::Result VertexArrayMtl::setupDraw(const gl::Context *glContext,
     *vertexDescChanged = dirty;
 
     return angle::Result::Continue;
+}
+
+void VertexArrayMtl::emulateInstanceDrawStep(mtl::RenderCommandEncoder *cmdEncoder,
+                                             uint32_t instanceId)
+{
+
+    const std::vector<gl::VertexAttribute> &attribs = mState.getVertexAttributes();
+    const std::vector<gl::VertexBinding> &bindings  = mState.getVertexBindings();
+
+    for (uint32_t instanceAttribIdx : mEmulatedInstanceAttribs)
+    {
+        uint32_t bufferIdx               = mtl::kVboBindingIndexStart + instanceAttribIdx;
+        const auto &attrib               = attribs[instanceAttribIdx];
+        const gl::VertexBinding &binding = bindings[attrib.bindingIndex];
+        uint32_t offset =
+            instanceId / binding.getDivisor() * mCurrentArrayBufferStrides[instanceAttribIdx];
+        if (mCurrentArrayBuffers[instanceAttribIdx])
+        {
+            cmdEncoder->setVertexBuffer(mCurrentArrayBuffers[instanceAttribIdx]->getCurrentBuffer(),
+                                        offset, bufferIdx);
+        }
+        else
+        {
+            // No buffer specified, use the client memory directly as inline constant data
+            ASSERT(mCurrentArrayInlineDataSizes[instanceAttribIdx] <= mtl::kInlineConstDataMaxSize);
+            if (offset > mCurrentArrayInlineDataSizes[instanceAttribIdx])
+            {
+                offset = static_cast<uint32_t>(mCurrentArrayInlineDataSizes[instanceAttribIdx]);
+            }
+            cmdEncoder->setVertexBytes(mCurrentArrayInlineDataPointers[instanceAttribIdx] + offset,
+                                       mCurrentArrayInlineDataSizes[instanceAttribIdx] - offset,
+                                       bufferIdx);
+        }
+    }
 }
 
 angle::Result VertexArrayMtl::updateClientAttribs(const gl::Context *context,

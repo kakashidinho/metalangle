@@ -4,6 +4,7 @@
 // found in the LICENSE file.
 //
 
+#include "include/platform/FeaturesMtl.h"
 #include "test_utils/ANGLETest.h"
 #include "test_utils/gl_raii.h"
 
@@ -32,9 +33,22 @@ enum Vendor
     Angle,
     Ext
 };
+
+using InstancingTestParams = std::tuple<angle::PlatformParameters, bool>;
+
+struct PrintToStringParamName
+{
+    std::string operator()(const ::testing::TestParamInfo<InstancingTestParams> &info) const
+    {
+        ::std::stringstream ss;
+        ss << std::get<0>(info.param);
+        return ss.str();
+    }
+};
+
 }  // namespace
 
-class InstancingTest : public ANGLETest
+class InstancingTest : public ANGLETestWithParam<InstancingTestParams>
 {
   protected:
     InstancingTest()
@@ -45,6 +59,15 @@ class InstancingTest : public ANGLETest
         setConfigGreenBits(8);
         setConfigBlueBits(8);
         setConfigAlphaBits(8);
+    }
+
+    void overrideFeaturesMetal(FeaturesMtl *features) override
+    {
+        // Emualte missing instanced draw feature on Metal backend.
+        if (::testing::get<1>(GetParam()))
+        {
+            features->overrideFeatures({"has_base_vertex_instanced_draw"}, false);
+        }
     }
 
     void testTearDown() override
@@ -805,14 +828,190 @@ TEST_P(InstancingTestES3, LargestDivisor)
         << "Vertex attrib divisor read was not the same that was passed in.";
 }
 
-ANGLE_INSTANTIATE_TEST(InstancingTestES3, ES3_OPENGL(), ES3_OPENGLES(), ES3_D3D11(), ES3_VULKAN());
+// Test line loop instanced draw with gl_InstanceID
+TEST_P(InstancingTestES3, LineLoopInstanceID)
+{
+    constexpr char kVS[] = R"(
+attribute vec2 a_position;
+// x,y = offset, z = scale
+attribute vec3 a_transform;
 
-ANGLE_INSTANTIATE_TEST(InstancingTestES31, ES31_OPENGL(), ES31_OPENGLES(), ES31_D3D11());
+// invariant gl_Position;
+void main()
+{
+    vec2 v_position = a_transform.z * a_position + a_transform.xy;
+    gl_Position = vec4(v_position, 0.0, 1.0);
+})";
 
-ANGLE_INSTANTIATE_TEST(InstancingTest,
-                       ES2_D3D9(),
-                       ES2_D3D11(),
-                       ES2_METAL(),
-                       ES2_OPENGL(),
-                       ES2_OPENGLES(),
-                       ES2_VULKAN());
+    constexpr char kFS[] = R"(
+precision highp float;
+void main()
+{
+    gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+})";
+
+    constexpr char kVSWithInstanceID[] = R"(#version 300 es
+in vec2 a_position;
+// x,y = offset, z = scale
+uniform vec3 u_transform[5];
+
+// invariant gl_Position;
+void main()
+{
+    vec2 v_position = u_transform[gl_InstanceID].z * a_position + u_transform[gl_InstanceID].xy;
+    gl_Position = vec4(v_position, 0.0, 1.0);
+})";
+
+    constexpr char kFSWithInstanceID[] = R"(#version 300 es
+precision highp float;
+layout (location = 0) out vec4 fragColor;
+void main()
+{
+    fragColor = vec4(1.0, 0.0, 0.0, 1.0);
+})";
+
+    ANGLE_GL_PROGRAM(program, kVS, kFS);
+    glBindAttribLocation(program, 0, "a_position");
+    glBindAttribLocation(program, 1, "a_transform");
+    glLinkProgram(program);
+    glUseProgram(program);
+    ASSERT_GL_NO_ERROR();
+
+    constexpr GLfloat vertices[] = {
+        0.1, 0.1, -0.1, 0.1, -0.1, -0.1, 0.1, -0.1,
+    };
+
+    constexpr GLfloat transform[] = {
+        0, 0, 9, 0.2, 0.1, 2, 0.5, -0.2, 3, -0.8, -0.5, 1, -0.4, 0.4, 6,
+    };
+
+    constexpr GLushort lineloopAsStripIndices[] = {0, 1, 2, 3, 0};
+
+    constexpr GLsizei instances = ArraySize(transform) / 3;
+
+    std::vector<GLColor> expectedPixels(getWindowWidth() * getWindowHeight());
+
+    // Draw in non-instanced way
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glEnableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
+
+    glVertexAttribDivisor(0, 0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, vertices);
+
+    for (size_t i = 0; i < instances; ++i)
+    {
+        glVertexAttrib3fv(1, transform + 3 * i);
+
+        glDrawElements(GL_LINE_STRIP, ArraySize(lineloopAsStripIndices), GL_UNSIGNED_SHORT,
+                       lineloopAsStripIndices);
+    }
+
+    glReadPixels(0, 0, getWindowWidth(), getWindowHeight(), GL_RGBA, GL_UNSIGNED_BYTE,
+                 expectedPixels.data());
+    ASSERT_GL_NO_ERROR();
+
+    // Draw in instanced way:
+    ANGLE_GL_PROGRAM(programWithInstanceID, kVSWithInstanceID, kFSWithInstanceID);
+    glBindAttribLocation(programWithInstanceID, 0, "a_position");
+    glLinkProgram(programWithInstanceID);
+    glUseProgram(programWithInstanceID);
+    ASSERT_GL_NO_ERROR();
+
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    GLBuffer vertexBuffer;
+    GLBuffer indexBuffer;
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(lineloopAsStripIndices), lineloopAsStripIndices,
+                 GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribDivisor(0, 0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+    glUniform3fv(glGetUniformLocation(programWithInstanceID, "u_transform"),
+                 sizeof(transform) / (3 * sizeof(float)), transform);
+
+    glDrawArraysInstanced(GL_LINE_LOOP, 0, ArraySize(vertices) / 2, instances);
+
+    for (int y = 0; y < getWindowHeight(); ++y)
+    {
+        for (int x = 0; x < getWindowWidth(); ++x)
+        {
+            int idx               = y * getWindowWidth() + x;
+            GLColor expectedColor = expectedPixels[idx];
+
+            EXPECT_PIXEL_COLOR_EQ(x, y, expectedColor) << std::endl;
+        }
+    }
+
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDrawElementsInstanced(GL_LINE_LOOP, ArraySize(lineloopAsStripIndices) - 1, GL_UNSIGNED_SHORT,
+                            0, instances);
+
+    for (int y = 0; y < getWindowHeight(); ++y)
+    {
+        for (int x = 0; x < getWindowWidth(); ++x)
+        {
+            int idx               = y * getWindowWidth() + x;
+            GLColor expectedColor = expectedPixels[idx];
+
+            EXPECT_PIXEL_COLOR_EQ(x, y, expectedColor) << std::endl;
+        }
+    }
+}
+
+const angle::PlatformParameters platformsES2[] = {
+    ES2_D3D9(), ES2_D3D11(), ES2_METAL(), ES2_OPENGL(), ES2_OPENGLES(), ES2_VULKAN(),
+};
+const angle::PlatformParameters platformsES3[] = {
+    ES3_OPENGL(), ES3_OPENGLES(), ES3_D3D11(), ES3_VULKAN(), ES3_METAL(),
+};
+const angle::PlatformParameters platformsES31[] = {
+    ES31_OPENGL(),
+    ES31_OPENGLES(),
+    ES31_D3D11(),
+};
+
+INSTANTIATE_TEST_SUITE_P(
+    ,
+    InstancingTestES3,
+    testing::Combine(testing::ValuesIn(::angle::FilterTestParams(platformsES3,
+                                                                 ArraySize(platformsES3))),
+                     testing::Values(false)),
+    PrintToStringParamName());
+
+INSTANTIATE_TEST_SUITE_P(
+    ,
+    InstancingTestES31,
+    testing::Combine(testing::ValuesIn(::angle::FilterTestParams(platformsES31,
+                                                                 ArraySize(platformsES31))),
+                     testing::Values(false)),
+    PrintToStringParamName());
+
+INSTANTIATE_TEST_SUITE_P(
+    ,
+    InstancingTest,
+    testing::Combine(testing::ValuesIn(::angle::FilterTestParams(platformsES2,
+                                                                 ArraySize(platformsES2))),
+                     testing::Values(false)),
+    PrintToStringParamName());
+
+// Emulate missing instanced draw feature in Metal.
+INSTANTIATE_TEST_SUITE_P(OverrideFeatures,
+                         InstancingTestES3,
+                         testing::Combine(testing::Values(ES3_METAL()), testing::Values(true)),
+                         PrintToStringParamName());
+
+INSTANTIATE_TEST_SUITE_P(OverrideFeatures,
+                         InstancingTest,
+                         testing::Combine(testing::Values(ES2_METAL()), testing::Values(true)),
+                         PrintToStringParamName());

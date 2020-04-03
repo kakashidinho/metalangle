@@ -23,6 +23,7 @@
 #include "compiler/translator/tree_util/FindMain.h"
 #include "compiler/translator/tree_util/FindSymbolNode.h"
 #include "compiler/translator/tree_util/IntermNode_util.h"
+#include "compiler/translator/tree_util/ReplaceVariable.h"
 #include "compiler/translator/tree_util/RunAtTheEndOfShader.h"
 #include "compiler/translator/util.h"
 
@@ -37,6 +38,7 @@ constexpr ImmutableString kRasterizationDiscardEnabledConstName =
 constexpr ImmutableString kCoverageMaskEnabledConstName =
     ImmutableString("ANGLECoverageMaskEnabled");
 constexpr ImmutableString kCoverageMaskField       = ImmutableString("coverageMask");
+constexpr ImmutableString kEmuInstanceIDField      = ImmutableString("emulatedInstanceID");
 constexpr ImmutableString kSampleMaskWriteFuncName = ImmutableString("ANGLEWriteSampleMask");
 
 TIntermBinary *CreateDriverUniformRef(const TVariable *driverUniforms, const char *fieldName)
@@ -79,6 +81,21 @@ ANGLE_NO_DISCARD bool AppendVertexShaderPositionYCorrectionToMain(TCompiler *com
 
     // Append the assignment as a statement at the end of the shader.
     return RunAtTheEndOfShader(compiler, root, assignment, symbolTable);
+}
+
+ANGLE_NO_DISCARD bool EmulateInstanceID(TCompiler *compiler,
+                                        TIntermBlock *root,
+                                        TSymbolTable *symbolTable,
+                                        const TVariable *driverUniforms)
+{
+    // emuInstanceID
+    TIntermBinary *emuInstanceID =
+        CreateDriverUniformRef(driverUniforms, kEmuInstanceIDField.data());
+
+    // Create a symbol reference to "gl_Position"
+    const TVariable *instanceID = BuiltInVariable::gl_InstanceIndex();
+
+    return ReplaceVariableWithTyped(compiler, root, instanceID, emuInstanceID);
 }
 
 // Initialize unused varying outputs.
@@ -152,6 +169,15 @@ bool TranslatorMetal::translate(TIntermBlock *root,
     if (getShaderType() == GL_VERTEX_SHADER)
     {
         auto negViewportYScale = getDriverUniformNegViewportYScaleRef(driverUniforms);
+
+        if (mEmulatedInstanceID)
+        {
+            // Emulate gl_InstanceID
+            if (!EmulateInstanceID(this, root, &getSymbolTable(), driverUniforms))
+            {
+                return false;
+            }
+        }
 
         // Append gl_Position.y correction to main
         if (!AppendVertexShaderPositionYCorrectionToMain(this, root, &getSymbolTable(),
@@ -236,6 +262,13 @@ void TranslatorMetal::createGraphicsDriverUniformAdditionFields(std::vector<TFie
     TField *coverageMaskField =
         new TField(new TType(EbtUInt), kCoverageMaskField, TSourceLoc(), SymbolType::AngleInternal);
     fieldsOut->push_back(coverageMaskField);
+
+    if (mEmulatedInstanceID)
+    {
+        TField *emuInstanceIDField = new TField(new TType(EbtInt), kEmuInstanceIDField,
+                                                TSourceLoc(), SymbolType::AngleInternal);
+        fieldsOut->push_back(emuInstanceIDField);
+    }
 }
 
 // Add sample_mask writing to main, guarded by the specialization constant

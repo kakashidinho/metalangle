@@ -341,6 +341,18 @@ class ContextMtl : public ContextImpl, public mtl::Context
                                    const void *indices,
                                    GLsizei instanceCount);
 
+    void execDrawInstanced(MTLPrimitiveType primitiveType,
+                           uint32_t vertexStart,
+                           uint32_t vertexCount,
+                           uint32_t instances);
+
+    void execDrawIndexedInstanced(MTLPrimitiveType primitiveType,
+                                  uint32_t indexCount,
+                                  MTLIndexType indexType,
+                                  const mtl::BufferRef &indexBuffer,
+                                  size_t bufferOffset,
+                                  uint32_t instances);
+
     angle::Result syncExtendedState(const gl::Context *context);
 
     void updateViewport(FramebufferMtl *framebufferMtl,
@@ -411,7 +423,9 @@ class ContextMtl : public ContextImpl, public mtl::Context
 
         uint32_t coverageMask;
 
-        float padding[2];
+        int32_t emulatedInstanceID;
+
+        float padding;
     };
 
     struct DefaultAttribute

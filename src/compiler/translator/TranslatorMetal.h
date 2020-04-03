@@ -28,6 +28,8 @@ class TranslatorMetal : public TranslatorVulkan
     static const char *GetCoverageMaskEnabledConstName();
     static const char *GetRasterizationDiscardEnabledConstName();
 
+    void enableEmulatedInstanceID(bool e) { mEmulatedInstanceID = e; }
+
   protected:
     ANGLE_NO_DISCARD bool translate(TIntermBlock *root,
                                     ShCompileOptions compileOptions,
@@ -41,6 +43,8 @@ class TranslatorMetal : public TranslatorVulkan
     ANGLE_NO_DISCARD bool insertSampleMaskWritingLogic(TIntermBlock *root,
                                                        const TVariable *driverUniforms);
     ANGLE_NO_DISCARD bool insertRasterizationDiscardLogic(TIntermBlock *root);
+
+    bool mEmulatedInstanceID = false;
 };
 
 }  // namespace sh

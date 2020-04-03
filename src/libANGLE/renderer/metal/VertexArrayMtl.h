@@ -59,6 +59,17 @@ class VertexArrayMtl : public VertexArrayImpl
                                  size_t *idxBufferOffsetOut,
                                  gl::DrawElementsType *indexTypeOut);
 
+    // Use to emulate instanced draw for instance <instanceId>.
+    // The typical call sequence for emulated instance draw is:
+    // - setupDraw()
+    // - draw.
+    // - emulateInstanceDrawStep(1)
+    // - draw.
+    // - emulateInstanceDrawStep(n)
+    // - draw.
+    // - emulateInstanceDrawStep(0)
+    void emulateInstanceDrawStep(mtl::RenderCommandEncoder *cmdEncoder, uint32_t instanceId);
+
   private:
     void reset(ContextMtl *context);
 
@@ -134,6 +145,8 @@ class VertexArrayMtl : public VertexArrayImpl
 
     mtl::BufferPool mDynamicVertexData;
     mtl::BufferPool mDynamicIndexData;
+
+    std::vector<uint32_t> mEmulatedInstanceAttribs;
 
     bool mVertexArrayDirty = true;
 };
