@@ -686,8 +686,7 @@ TextureRef Texture::getReadableCopy(ContextMtl *context,
 {
     gl::Extents firstLevelSize = size(0);
     if (!mReadCopy || mReadCopy->get().width < static_cast<size_t>(firstLevelSize.width) ||
-        mReadCopy->get().height < static_cast<size_t>(firstLevelSize.height) ||
-        mReadCopy->get().depth < static_cast<size_t>(firstLevelSize.depth))
+        mReadCopy->get().height < static_cast<size_t>(firstLevelSize.height))
     {
         // Create a texture that big enough to store the first level data and any smaller level
         ANGLE_MTL_OBJC_SCOPE

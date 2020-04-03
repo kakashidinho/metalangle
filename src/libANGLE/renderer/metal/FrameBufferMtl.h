@@ -102,7 +102,8 @@ class FramebufferMtl : public FramebufferImpl
     void onFrameEnd(const gl::Context *context);
 
     // The actual area will be adjusted based on framebuffer flipping property.
-    gl::Rectangle getReadArea(const gl::Context *context, const gl::Rectangle &glArea);
+    gl::Rectangle getCorrectFlippedReadArea(const gl::Context *context,
+                                            const gl::Rectangle &glArea) const;
 
     // NOTE: this method doesn't do the flipping of area. Caller must do it if needed before
     // callling this. See getReadPixelsArea().
@@ -163,13 +164,16 @@ class FramebufferMtl : public FramebufferImpl
     // render target flag, then during blitting process, this texture is copied to another
     // intermidiate texture having pixel format view flag, but not render target flag.
     angle::Result getReadableViewForRenderTarget(const gl::Context *context,
+                                                 const FramebufferMtl &readFrameBuffer,
                                                  const RenderTargetMtl &rtt,
                                                  const gl::Rectangle &readArea,
-                                                 bool readStencil,
-                                                 mtl::TextureRef *readableView,
+                                                 mtl::TextureRef *readableDepthView,
+                                                 mtl::TextureRef *readableStencilView,
                                                  uint32_t *readableViewLevel,
                                                  uint32_t *readableViewLayer,
-                                                 gl::Rectangle *readableViewArea);
+                                                 gl::Rectangle *readableViewArea,
+                                                 bool *readableViewFlippedYInOut,
+                                                 bool *readableViewUnpackFlipYInOut);
 
     angle::Result readPixelsToPBO(const gl::Context *context,
                                   const gl::Rectangle &area,

@@ -1429,8 +1429,18 @@ angle::Result DepthStencilBlitUtils::blitStencilViaCopyBuffer(
     uint32_t srcHeight = params.srcStencil->height(params.srcLevel);
 
     float u0, v0, u1, v1;
-    GetBlitTexCoords(srcWidth, srcHeight, params.srcRect, params.srcYFlipped, params.unpackFlipX,
-                     params.unpackFlipY, &u0, &v0, &u1, &v1);
+    bool unpackFlipX = params.unpackFlipX;
+    bool unpackFlipY = params.unpackFlipY;
+    if (params.dstFlipX)
+    {
+        unpackFlipX = !unpackFlipX;
+    }
+    if (params.dstFlipY)
+    {
+        unpackFlipY = !unpackFlipY;
+    }
+    GetBlitTexCoords(srcWidth, srcHeight, params.srcRect, params.srcYFlipped, unpackFlipX,
+                     unpackFlipY, &u0, &v0, &u1, &v1);
 
     BlitStencilToBufferParamsUniform uniform;
     uniform.srcTexCoordSteps[0]  = (u1 - u0) / params.dstRect.width;

@@ -55,8 +55,10 @@ struct BlitParams
     gl::Rectangle dstScissorRect;
     // Destination texture needs to have viewport Y flipped?
     // The difference between this param and unpackFlipY is that unpackFlipY is from
-    // glCopyImageCHROMIUM(), and dstFlipY controls whether the final viewport needs to be
-    // flipped when drawing to destination texture.
+    // glCopyImageCHROMIUM()/glBlitFramebuffer(), and dstFlipY controls whether the final viewport
+    // needs to be flipped when drawing to destination texture. It is possible to combine the two
+    // flags before passing to RenderUtils. However, to avoid duplicated works, just pass the two
+    // flags to RenderUtils, they will be combined internally by RenderUtils logic.
     bool dstFlipY = false;
     bool dstFlipX = false;
 

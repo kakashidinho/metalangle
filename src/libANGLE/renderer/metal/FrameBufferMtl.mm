@@ -246,7 +246,7 @@ angle::Result FramebufferMtl::readPixels(const gl::Context *context,
         // nothing to read
         return angle::Result::Continue;
     }
-    gl::Rectangle flippedArea = getReadArea(context, clippedArea);
+    gl::Rectangle flippedArea = getCorrectFlippedReadArea(context, clippedArea);
 
     ContextMtl *contextMtl              = mtl::GetImpl(context);
     const gl::State &glState            = context->getState();
@@ -293,10 +293,10 @@ angle::Result FramebufferMtl::blit(const gl::Context *context,
     bool blitDepthBuffer   = (mask & GL_DEPTH_BUFFER_BIT) != 0;
     bool blitStencilBuffer = (mask & GL_STENCIL_BUFFER_BIT) != 0;
 
-    const gl::State &glState              = context->getState();
-    const gl::Framebuffer *srcFramebuffer = glState.getReadFramebuffer();
+    const gl::State &glState                = context->getState();
+    const gl::Framebuffer *glSrcFramebuffer = glState.getReadFramebuffer();
 
-    FramebufferMtl *srcFrameBuffer = mtl::GetImpl(srcFramebuffer);
+    FramebufferMtl *srcFrameBuffer = mtl::GetImpl(glSrcFramebuffer);
 
     blitColorBuffer =
         blitColorBuffer && srcFrameBuffer->getColorReadRenderTarget(context) != nullptr;
@@ -410,14 +410,17 @@ angle::Result FramebufferMtl::blit(const gl::Context *context,
         bool sameTexture = depthRt == stencilRt;
         if (blitDepthBuffer)
         {
-            ANGLE_TRY(getReadableViewForRenderTarget(context, *depthRt, clippedSourceArea, false,
-                                                     /** readableView */ &dsBlitParams.src,
-                                                     &dsBlitParams.srcLevel, &dsBlitParams.srcLayer,
-                                                     &dsBlitParams.srcRect));
-            if (sameTexture && blitStencilBuffer)
+            bool readDepthStencilSameTexture = sameTexture && blitStencilBuffer;
+            ANGLE_TRY(getReadableViewForRenderTarget(
+                context, *srcFrameBuffer, *depthRt, clippedSourceArea,
+                /** readableDepthView */ &dsBlitParams.src,
+                /** readableStencilView */
+                readDepthStencilSameTexture ? &dsBlitParams.srcStencil : nullptr,
+                &dsBlitParams.srcLevel, &dsBlitParams.srcLayer, &dsBlitParams.srcRect,
+                /** readableViewFlippedYInOut */ &dsBlitParams.srcYFlipped,
+                /** readableViewUnpackFlipYInOut */ &dsBlitParams.unpackFlipY));
+            if (readDepthStencilSameTexture)
             {
-                // If texture is packed depth stencil, we can skip the stencil view copying step.
-                dsBlitParams.srcStencil      = dsBlitParams.src->getStencilView();
                 dsBlitParams.srcStencilLevel = dsBlitParams.srcLevel;
                 dsBlitParams.srcStencilLayer = dsBlitParams.srcLayer;
             }
@@ -428,9 +431,13 @@ angle::Result FramebufferMtl::blit(const gl::Context *context,
             if (!dsBlitParams.srcStencil)
             {
                 ANGLE_TRY(getReadableViewForRenderTarget(
-                    context, *stencilRt, clippedSourceArea, true,
-                    /** readableView */ &dsBlitParams.srcStencil, &dsBlitParams.srcStencilLevel,
-                    &dsBlitParams.srcStencilLayer, &dsBlitParams.srcRect));
+                    context, *srcFrameBuffer, *stencilRt, clippedSourceArea,
+                    /** readableDepthView */ nullptr,
+                    /** readableStencilView */ &dsBlitParams.srcStencil,
+                    &dsBlitParams.srcStencilLevel, &dsBlitParams.srcStencilLayer,
+                    &dsBlitParams.srcRect,
+                    /** readableViewFlippedYInOut */ &dsBlitParams.srcYFlipped,
+                    /** readableViewUnpackFlipYInOut */ &dsBlitParams.unpackFlipY));
             }
 
             if (!contextMtl->getDisplay()->getFeatures().hasStencilOutput.enabled &&
@@ -500,6 +507,16 @@ bool FramebufferMtl::checkStatus(const gl::Context *context) const
     if (!contextMtl->getDisplay()->getFeatures().allowSeparatedDepthStencilBuffers.enabled &&
         mState.hasSeparateDepthAndStencilAttachments())
     {
+        return false;
+    }
+
+    if (mStencilRenderTarget && mStencilRenderTarget->getTexture() &&
+        mStencilRenderTarget->getFormat()->hasDepthAndStencilBits() && mDepthRenderTarget &&
+        mDepthRenderTarget->getTexture() &&
+        mStencilRenderTarget->getTexture() != mDepthRenderTarget->getTexture())
+    {
+        // If stencil attachment has depth & stencil bits, it must refer to the same texture
+        // as depth attachment.
         return false;
     }
 
@@ -787,14 +804,18 @@ angle::Result FramebufferMtl::updateCachedRenderTarget(const gl::Context *contex
     return angle::Result::Continue;
 }
 
-angle::Result FramebufferMtl::getReadableViewForRenderTarget(const gl::Context *context,
-                                                             const RenderTargetMtl &rtt,
-                                                             const gl::Rectangle &readArea,
-                                                             bool readStencil,
-                                                             mtl::TextureRef *readableView,
-                                                             uint32_t *readableViewLevel,
-                                                             uint32_t *readableViewLayer,
-                                                             gl::Rectangle *readableViewArea)
+angle::Result FramebufferMtl::getReadableViewForRenderTarget(
+    const gl::Context *context,
+    const FramebufferMtl &readFrameBuffer,
+    const RenderTargetMtl &rtt,
+    const gl::Rectangle &readArea,
+    mtl::TextureRef *readableDepthViewOut,
+    mtl::TextureRef *readableStencilViewOut,
+    uint32_t *readableViewLevel,
+    uint32_t *readableViewLayer,
+    gl::Rectangle *readableViewArea,
+    bool *readableViewFlippedYInOut,
+    bool *readableViewUnpackFlipYInOut)
 {
     ContextMtl *contextMtl     = mtl::GetImpl(context);
     mtl::TextureRef srcTexture = rtt.getTexture();
@@ -804,9 +825,18 @@ angle::Result FramebufferMtl::getReadableViewForRenderTarget(const gl::Context *
     // NOTE(hqle): slice is not used atm.
     ASSERT(slice == 0);
 
+    bool readStencil = readableStencilViewOut;
+
     if (!srcTexture)
     {
-        *readableView     = nullptr;
+        if (readableDepthViewOut)
+        {
+            *readableDepthViewOut = nullptr;
+        }
+        if (readableStencilViewOut)
+        {
+            *readableStencilViewOut = nullptr;
+        }
         *readableViewArea = readArea;
         return angle::Result::Continue;
     }
@@ -821,31 +851,52 @@ angle::Result FramebufferMtl::getReadableViewForRenderTarget(const gl::Context *
 
     if (skipCopy)
     {
-        // Texture is shader readable, just use it directly
-        *readableView      = srcTexture;
+        // Texture supports stencil view, just use it directly
+        if (readableDepthViewOut)
+        {
+            *readableDepthViewOut = srcTexture;
+        }
+        if (readableStencilViewOut)
+        {
+            *readableStencilViewOut = srcTexture;
+        }
         *readableViewLevel = level;
         *readableViewLayer = slice;
         *readableViewArea  = readArea;
     }
     else
     {
+        ASSERT(readableStencilViewOut);
         ASSERT(srcTexture->textureType() != MTLTextureType3D);
 
-        // Texture is not shader readable, copy to a interminate texture that is readable
-        *readableView = srcTexture->getReadableCopy(
+        // Texture doesn't support stencil view, copy to an interminate texture that supports
+        // stencil view.
+        gl::Rectangle flippedArea = readFrameBuffer.getCorrectFlippedReadArea(context, readArea);
+        mtl::TextureRef formatableView = srcTexture->getReadableCopy(
             contextMtl, contextMtl->getBlitCommandEncoder(), level, slice,
-            MTLRegionMake2D(readArea.x, readArea.y, readArea.width, readArea.height));
+            MTLRegionMake2D(flippedArea.x, flippedArea.y, flippedArea.width, flippedArea.height));
 
-        ANGLE_CHECK_GL_ALLOC(contextMtl, *readableView);
+        ANGLE_CHECK_GL_ALLOC(contextMtl, formatableView);
 
-        if (readStencil)
+        if (readableDepthViewOut)
         {
-            *readableView = (*readableView)->getStencilView();
+            *readableDepthViewOut = formatableView;
         }
+        *readableStencilViewOut = formatableView->getStencilView();
 
         *readableViewLevel = 0;
         *readableViewLayer = 0;
         *readableViewArea  = gl::Rectangle(0, 0, readArea.width, readArea.height);
+
+        bool originalSrcFlippedY = *readableViewFlippedYInOut;
+        bool originalUnpackFlipY = *readableViewUnpackFlipYInOut;
+        if (originalSrcFlippedY)
+        {
+            // Avoid RenderUtils flips the rectangle, since we have copied the texels to
+            // (0, 0, readArea.width, readArea.height) area.
+            *readableViewFlippedYInOut    = false;
+            *readableViewUnpackFlipYInOut = !originalUnpackFlipY;
+        }
     }
 
     return angle::Result::Continue;
@@ -1201,7 +1252,8 @@ angle::Result FramebufferMtl::invalidateImpl(ContextMtl *contextMtl,
     return angle::Result::Continue;
 }
 
-gl::Rectangle FramebufferMtl::getReadArea(const gl::Context *context, const gl::Rectangle &glArea)
+gl::Rectangle FramebufferMtl::getCorrectFlippedReadArea(const gl::Context *context,
+                                                        const gl::Rectangle &glArea) const
 {
     RenderTargetMtl *readRT = getColorReadRenderTarget(context);
     if (!readRT)
