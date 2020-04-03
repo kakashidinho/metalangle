@@ -20,6 +20,11 @@ constant bool kSourceTextureType2DMS    = kSourceTextureType == kTextureType2DMu
 constant bool kSourceTextureTypeCube    = kSourceTextureType == kTextureTypeCube;
 constant bool kSourceTextureType3D      = kSourceTextureType == kTextureType3D;
 
+constant bool kSourceTexture2Type2D      = kSourceTexture2Type == kTextureType2D;
+constant bool kSourceTexture2Type2DArray = kSourceTexture2Type == kTextureType2DArray;
+constant bool kSourceTexture2Type2DMS    = kSourceTexture2Type == kTextureType2DMultisample;
+constant bool kSourceTexture2TypeCube    = kSourceTexture2Type == kTextureTypeCube;
+
 struct BlitParams
 {
     // 0: lower left, 1: lower right, 2: upper left
@@ -28,6 +33,7 @@ struct BlitParams
     int srcLayer;   // Source texture layer. Used for color & depth blitting.
     int srcLevel2;  // Second source level. Used for stencil blitting.
     int srcLayer2;  // Second source layer. Used for stencil blitting.
+
     bool dstFlipViewportX;
     bool dstFlipViewportY;
     bool dstLuminance;  // destination texture is luminance. Unused by depth & stencil blitting.
@@ -102,7 +108,7 @@ static inline vec<T, 4> blitSampleTexture3D(texture3d<T> srcTexture,
 
 #define FORWARD_BLIT_COLOR_FS_PARAMS                                                      \
     input, srcTexture2d, srcTexture2dArray, srcTexture2dMS, srcTextureCube, srcTexture3d, \
-    textureSampler, options
+        textureSampler, options
 
 template <typename T>
 static inline MultipleColorOutputs<T> blitFS(BLIT_COLOR_FS_PARAMS(T))
@@ -170,14 +176,13 @@ struct FragmentDepthOut
     float depth [[depth(any)]];
 };
 
-static inline
-float sampleDepth(texture2d<float> srcTexture2d [[function_constant(kSourceTextureType2D)]],
-                  texture2d_array<float> srcTexture2dArray
-                  [[function_constant(kSourceTextureType2DArray)]],
-                  texture2d_ms<float> srcTexture2dMS [[function_constant(kSourceTextureType2DMS)]],
-                  texturecube<float> srcTextureCube [[function_constant(kSourceTextureTypeCube)]],
-                  float2 texCoords,
-                  constant BlitParams &options)
+static inline float sampleDepth(
+    texture2d<float> srcTexture2d [[function_constant(kSourceTextureType2D)]],
+    texture2d_array<float> srcTexture2dArray [[function_constant(kSourceTextureType2DArray)]],
+    texture2d_ms<float> srcTexture2dMS [[function_constant(kSourceTextureType2DMS)]],
+    texturecube<float> srcTextureCube [[function_constant(kSourceTextureTypeCube)]],
+    float2 texCoords,
+    constant BlitParams &options)
 {
     float4 output;
 
@@ -225,26 +230,7 @@ fragment FragmentDepthOut blitDepthFS(BlitVSOut input [[stage_in]],
     return re;
 }
 
-#if __METAL_VERSION__ >= 210 || defined GENERATE_SOURCE_STRING
-
-constant bool kSourceTexture2Type2D      = kSourceTexture2Type == kTextureType2D;
-constant bool kSourceTexture2Type2DArray = kSourceTexture2Type == kTextureType2DArray;
-constant bool kSourceTexture2Type2DMS    = kSourceTexture2Type == kTextureType2DMultisample;
-constant bool kSourceTexture2TypeCube    = kSourceTexture2Type == kTextureTypeCube;
-
-struct FragmentStencilOut
-{
-    uint32_t stencil [[stencil]];
-};
-
-struct FragmentDepthStencilOut
-{
-    float depth [[depth(any)]];
-    uint32_t stencil [[stencil]];
-};
-
-static inline
-uint32_t sampleStencil(
+static inline uint32_t sampleStencil(
     texture2d<uint32_t> srcTexture2d [[function_constant(kSourceTexture2Type2D)]],
     texture2d_array<uint32_t> srcTexture2dArray [[function_constant(kSourceTexture2Type2DArray)]],
     texture2d_ms<uint32_t> srcTexture2dMS [[function_constant(kSourceTexture2Type2DMS)]],
@@ -278,12 +264,49 @@ uint32_t sampleStencil(
     return output.r;
 }
 
+// Write stencil to a buffer
+fragment void blitStencilToBufferFS(BlitVSOut input [[stage_in]],
+                                    texture2d<uint32_t> srcTexture2d
+                                    [[texture(1), function_constant(kSourceTexture2Type2D)]],
+                                    texture2d_array<uint32_t> srcTexture2dArray
+                                    [[texture(1), function_constant(kSourceTexture2Type2DArray)]],
+                                    texture2d_ms<uint32_t> srcTexture2dMS
+                                    [[texture(1), function_constant(kSourceTexture2Type2DMS)]],
+                                    texturecube<uint32_t> srcTextureCube
+                                    [[texture(1), function_constant(kSourceTexture2TypeCube)]],
+                                    constant BlitParams &options [[buffer(0)]],
+                                    constant uint &dstBufferRowPitch [[buffer(1)]],
+                                    device uchar *buffer [[buffer(2)]])
+{
+
+    uint32_t stencil = sampleStencil(srcTexture2d, srcTexture2dArray, srcTexture2dMS,
+                                     srcTextureCube, input.texCoords, options);
+
+    uint2 coord = uint2(input.position.xy);
+
+    buffer[dstBufferRowPitch * coord.y + coord.x] = static_cast<uchar>(stencil);
+}
+
+#if __METAL_VERSION__ >= 210
+
+struct FragmentStencilOut
+{
+    uint32_t stencil [[stencil]];
+};
+
+struct FragmentDepthStencilOut
+{
+    float depth [[depth(any)]];
+    uint32_t stencil [[stencil]];
+};
+
 fragment FragmentStencilOut blitStencilFS(
     BlitVSOut input [[stage_in]],
     texture2d<uint32_t> srcTexture2d [[texture(1), function_constant(kSourceTexture2Type2D)]],
     texture2d_array<uint32_t> srcTexture2dArray
     [[texture(1), function_constant(kSourceTexture2Type2DArray)]],
-    texture2d_ms<uint32_t> srcTexture2dMS [[texture(1), function_constant(kSourceTexture2Type2DMS)]],
+    texture2d_ms<uint32_t> srcTexture2dMS
+    [[texture(1), function_constant(kSourceTexture2Type2DMS)]],
     texturecube<uint32_t> srcTextureCube [[texture(1), function_constant(kSourceTexture2TypeCube)]],
     constant BlitParams &options [[buffer(0)]])
 {

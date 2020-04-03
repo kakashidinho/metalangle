@@ -6,9 +6,8 @@
 
 // MultisampleTest: Tests of multisampled default framebuffer
 
-#include "test_utils/ANGLETest.h"
-
 #include "include/platform/FeaturesMtl.h"
+#include "test_utils/ANGLETest.h"
 #include "test_utils/gl_raii.h"
 #include "util/OSWindow.h"
 #include "util/shader_utils.h"

@@ -205,8 +205,7 @@ StreamProducerImpl *DisplayMtl::createStreamProducerD3DTexture(
 
 gl::Version DisplayMtl::getMaxSupportedESVersion() const
 {
-    if (mFeatures.hasBaseVertexInstancedDraw.enabled && mFeatures.hasStencilOutput.enabled &&
-        supportEitherGPUFamily(4, 1)
+    if (mFeatures.hasBaseVertexInstancedDraw.enabled && supportEitherGPUFamily(4, 1)
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
         && getMetalDevice().depth24Stencil8PixelFormatSupported
 #endif
@@ -543,7 +542,7 @@ void DisplayMtl::initializeExtensions() const
     mNativeExtensions.textureStorage         = true;
     mNativeExtensions.drawBuffers            = true;
     mNativeExtensions.fragDepth              = true;
-    mNativeExtensions.framebufferBlit        = mFeatures.hasStencilOutput.enabled;
+    mNativeExtensions.framebufferBlit        = true;
     mNativeExtensions.framebufferMultisample = true;
     mNativeExtensions.copyTexture            = false;
     mNativeExtensions.copyCompressedTexture  = false;

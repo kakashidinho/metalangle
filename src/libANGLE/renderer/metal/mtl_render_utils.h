@@ -16,6 +16,7 @@
 #import <Metal/Metal.h>
 
 #include "libANGLE/angletypes.h"
+#include "libANGLE/renderer/metal/RenderTargetMtl.h"
 #include "libANGLE/renderer/metal/mtl_command_buffer.h"
 #include "libANGLE/renderer/metal/mtl_state_cache.h"
 #include "libANGLE/renderer/metal/shaders/constants.h"
@@ -87,6 +88,18 @@ struct DepthStencilBlitParams : public BlitParams
     TextureRef srcStencil;
     uint32_t srcStencilLevel = 0;
     uint32_t srcStencilLayer = 0;
+};
+
+// Stencil blitting via an intermediate buffer. NOTE: source depth texture parameter is ignored.
+// See DepthStencilBlitUtils::blitStencilViaCopyBuffer()
+struct StencilBlitViaBufferParams : public DepthStencilBlitParams
+{
+    StencilBlitViaBufferParams(const DepthStencilBlitParams &src);
+
+    TextureRef dstStencil;
+    uint32_t dstStencilLevel         = 0;
+    uint32_t dstStencilLayer         = 0;
+    bool dstPackedDepthStencilFormat = false;
 };
 
 struct TriFanOrLineLoopFromArrayParams
@@ -214,7 +227,7 @@ class ClearUtils : DrawBasedUtils
                                 const ClearRectParams &params);
 
   private:
-    void ensureRenderPipelineStateInitialized(Context *ctx, uint32_t numColorAttachments);
+    void ensureRenderPipelineStateInitialized(ContextMtl *ctx, uint32_t numColorAttachments);
 
     void setupClearWithDraw(const gl::Context *context,
                             RenderCommandEncoder *cmdEncoder,
@@ -246,7 +259,7 @@ class ColorBlitUtils : BaseBlitUtils
                                     const ColorBlitParams &params);
 
   private:
-    void ensureRenderPipelineStateInitialized(Context *ctx,
+    void ensureRenderPipelineStateInitialized(ContextMtl *ctx,
                                               uint32_t numColorAttachments,
                                               int alphaPremultiplyType,
                                               int sourceTextureType,
@@ -282,25 +295,46 @@ class DepthStencilBlitUtils : BaseBlitUtils
                                            RenderCommandEncoder *cmdEncoder,
                                            const DepthStencilBlitParams &params);
 
+    // Blit stencil data using intermediate buffer. This function is used on devices with no
+    // support for direct stencil write in shader. Thus an intermediate buffer storing copied
+    // stencil data is needed.
+    // NOTE: this function shares the params struct with depth & stencil blit, but depth texture
+    // parameter is not used. This function will break existing render pass, since it will create a
+    // new render pass with no attachment (the only output is the intermediate buffer which will be
+    // written in fragment shader).
+    angle::Result blitStencilViaCopyBuffer(const gl::Context *context,
+                                           const StencilBlitViaBufferParams &params);
+
   private:
-    void ensureRenderPipelineStateInitialized(Context *ctx,
+    void ensureRenderPipelineStateInitialized(ContextMtl *ctx,
                                               int sourceDepthTextureType,
                                               int sourceStencilTextureType,
+                                              bool writeStencilToBuffer,
                                               RenderPipelineCache *cacheOut);
 
     void setupDepthStencilBlitWithDraw(const gl::Context *context,
                                        RenderCommandEncoder *cmdEncoder,
-                                       const DepthStencilBlitParams &params);
+                                       const DepthStencilBlitParams &params,
+                                       bool writeStencilToBuffer);
     id<MTLRenderPipelineState> getDepthStencilBlitRenderPipelineState(
         const gl::Context *context,
         RenderCommandEncoder *cmdEncoder,
-        const DepthStencilBlitParams &params);
+        const DepthStencilBlitParams &params,
+        bool writeStencilToBuffer);
 
     std::array<RenderPipelineCache, mtl_shader::kTextureTypeCount> mDepthBlitRenderPipelineCache;
     std::array<RenderPipelineCache, mtl_shader::kTextureTypeCount> mStencilBlitRenderPipelineCache;
+    std::array<RenderPipelineCache, mtl_shader::kTextureTypeCount>
+        mStencilBlitToBufferRenderPipelineCache;
     std::array<std::array<RenderPipelineCache, mtl_shader::kTextureTypeCount>,
                mtl_shader::kTextureTypeCount>
         mDepthStencilBlitRenderPipelineCache;
+
+    // Intermediate buffer for storing copied stencil data. Used when device doesn't support
+    // writing stencil in shader.
+    BufferRef mStencilCopyBuffer;
+    TextureRef mStencilCopyDummyTexture;
+    RenderTargetMtl mStencilCopyDummyRenderTarget;
 };
 
 // util class for generating index buffer
@@ -525,6 +559,9 @@ class RenderUtils : public Context, angle::NonCopyable
     angle::Result blitDepthStencilWithDraw(const gl::Context *context,
                                            RenderCommandEncoder *cmdEncoder,
                                            const DepthStencilBlitParams &params);
+    // See DepthStencilBlitUtils::blitStencilViaCopyBuffer()
+    angle::Result blitStencilViaCopyBuffer(const gl::Context *context,
+                                           const StencilBlitViaBufferParams &params);
 
     angle::Result convertIndexBufferGPU(ContextMtl *contextMtl,
                                         const IndexConversionParams &params);

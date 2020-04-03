@@ -423,18 +423,41 @@ angle::Result FramebufferMtl::blit(const gl::Context *context,
             }
         }
 
-        if (blitStencilBuffer && !dsBlitParams.srcStencil)
+        if (blitStencilBuffer)
         {
-            ANGLE_TRY(getReadableViewForRenderTarget(
-                context, *stencilRt, clippedSourceArea, true,
-                /** readableView */ &dsBlitParams.srcStencil, &dsBlitParams.srcStencilLevel,
-                &dsBlitParams.srcStencilLayer, &dsBlitParams.srcRect));
+            if (!dsBlitParams.srcStencil)
+            {
+                ANGLE_TRY(getReadableViewForRenderTarget(
+                    context, *stencilRt, clippedSourceArea, true,
+                    /** readableView */ &dsBlitParams.srcStencil, &dsBlitParams.srcStencilLevel,
+                    &dsBlitParams.srcStencilLayer, &dsBlitParams.srcRect));
+            }
+
+            if (!contextMtl->getDisplay()->getFeatures().hasStencilOutput.enabled &&
+                mStencilRenderTarget)
+            {
+                // Directly writing to stencil in shader is not supported, use temporary copy buffer
+                // work around.
+                mtl::StencilBlitViaBufferParams stencilOnlyBlitParams = dsBlitParams;
+                stencilOnlyBlitParams.dstStencil      = mStencilRenderTarget->getTexture();
+                stencilOnlyBlitParams.dstStencilLayer = mStencilRenderTarget->getLayerIndex();
+                stencilOnlyBlitParams.dstStencilLevel = mStencilRenderTarget->getLevelIndex();
+                stencilOnlyBlitParams.dstPackedDepthStencilFormat =
+                    mStencilRenderTarget->getFormat()->hasDepthAndStencilBits();
+
+                ANGLE_TRY(contextMtl->getDisplay()->getUtils().blitStencilViaCopyBuffer(
+                    context, stencilOnlyBlitParams));
+
+                // Prevent the stencil to be blitted with draw again
+                dsBlitParams.srcStencil = nullptr;
+            }
         }
 
+        // The actual blitting of depth and/or stencil
         renderEncoder = ensureRenderPassStarted(context);
         ANGLE_TRY(contextMtl->getDisplay()->getUtils().blitDepthStencilWithDraw(
             context, renderEncoder, dsBlitParams));
-    }
+    }  // if (blitDepthBuffer || blitStencilBuffer)
     else
     {
         renderEncoder = ensureRenderPassStarted(context);
@@ -512,7 +535,8 @@ angle::Result FramebufferMtl::syncState(const gl::Context *context,
             case gl::Framebuffer::DIRTY_BIT_DEFAULT_SAMPLES:
             case gl::Framebuffer::DIRTY_BIT_DEFAULT_FIXED_SAMPLE_LOCATIONS:
                 break;
-            default: {
+            default:
+            {
                 static_assert(gl::Framebuffer::DIRTY_BIT_COLOR_ATTACHMENT_0 == 0, "FB dirty bits");
                 if (dirtyBit < gl::Framebuffer::DIRTY_BIT_COLOR_ATTACHMENT_MAX)
                 {
@@ -1381,7 +1405,7 @@ angle::Result FramebufferMtl::readPixelsToBuffer(const gl::Context *context,
         {
             gl::Rectangle srcRowRegion(area.x, area.y, area.width, 1);
 
-            int startRow  = area.y1() - 1;
+            int startRow = area.y1() - 1;
 
             uint32_t bufferRowOffset = dstBufferOffset;
             // Copy pixels row by row

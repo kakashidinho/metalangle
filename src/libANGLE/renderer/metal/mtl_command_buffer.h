@@ -341,6 +341,10 @@ class RenderCommandEncoder final : public CommandEncoder
                                     const BufferRef &buffer,
                                     uint32_t offset,
                                     uint32_t index);
+    RenderCommandEncoder &setBufferForWrite(gl::ShaderType shaderType,
+                                            const BufferRef &buffer,
+                                            uint32_t offset,
+                                            uint32_t index);
     RenderCommandEncoder &setBytes(gl::ShaderType shaderType,
                                    const uint8_t *bytes,
                                    size_t size,

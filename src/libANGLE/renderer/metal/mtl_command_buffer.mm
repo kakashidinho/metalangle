@@ -1184,6 +1184,27 @@ RenderCommandEncoder &RenderCommandEncoder::setBuffer(gl::ShaderType shaderType,
     return *this;
 }
 
+RenderCommandEncoder &RenderCommandEncoder::setBufferForWrite(gl::ShaderType shaderType,
+                                                              const BufferRef &buffer,
+                                                              uint32_t offset,
+                                                              uint32_t index)
+{
+    if (index >= kMaxShaderBuffers)
+    {
+        return *this;
+    }
+
+    cmdBuffer().setWriteDependency(buffer);
+
+    id<MTLBuffer> mtlBuffer = (buffer ? buffer->get() : nil);
+    mCommands.push(static_cast<CmdType>(mSetBufferCmds[shaderType]))
+        .push([mtlBuffer ANGLE_MTL_RETAIN])
+        .push(offset)
+        .push(index);
+
+    return *this;
+}
+
 RenderCommandEncoder &RenderCommandEncoder::setBytes(gl::ShaderType shaderType,
                                                      const uint8_t *bytes,
                                                      size_t size,

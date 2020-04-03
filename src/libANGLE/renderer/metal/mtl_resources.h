@@ -109,6 +109,13 @@ class Texture final : public Resource,
                                        bool allowFormatView,
                                        TextureRef *refOut);
 
+    // On macOS, memory will still be allocated for this texture.
+    static angle::Result MakeMemoryLess2DTexture(ContextMtl *context,
+                                                 const Format &format,
+                                                 uint32_t width,
+                                                 uint32_t height,
+                                                 TextureRef *refOut);
+
     static angle::Result MakeCubeTexture(ContextMtl *context,
                                          const Format &format,
                                          uint32_t size,
@@ -242,12 +249,27 @@ class Texture final : public Resource,
                                      bool allowFormatView,
                                      TextureRef *refOut);
 
+    static angle::Result MakeTexture(ContextMtl *context,
+                                     const Format &mtlFormat,
+                                     MTLTextureDescriptor *desc,
+                                     uint32_t mips,
+                                     bool renderTargetOnly,
+                                     bool allowFormatView,
+                                     bool memoryLess,
+                                     TextureRef *refOut);
+
     Texture(id<MTLTexture> metalTexture);
     Texture(ContextMtl *context,
             MTLTextureDescriptor *desc,
             uint32_t mips,
             bool renderTargetOnly,
             bool allowFormatView);
+    Texture(ContextMtl *context,
+            MTLTextureDescriptor *desc,
+            uint32_t mips,
+            bool renderTargetOnly,
+            bool allowFormatView,
+            bool memoryLess);
 
     // Create a texture view
     Texture(Texture *original, MTLPixelFormat format);
