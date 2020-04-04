@@ -518,10 +518,10 @@ bool FramebufferMtl::checkStatus(const gl::Context *context) const
         return false;
     }
 
-    if (mStencilRenderTarget && mStencilRenderTarget->getTexture() &&
-        mStencilRenderTarget->getFormat()->hasDepthAndStencilBits() && mDepthRenderTarget &&
-        mDepthRenderTarget->getTexture() &&
-        mStencilRenderTarget->getTexture() != mDepthRenderTarget->getTexture())
+    if (mState.getStencilAttachment() &&
+        mState.getStencilAttachment()->getFormat().info->depthBits &&
+        mState.getStencilAttachment()->getFormat().info->stencilBits &&
+        mState.hasSeparateDepthAndStencilAttachments())
     {
         // If stencil attachment has depth & stencil bits, it must refer to the same texture
         // as depth attachment.
