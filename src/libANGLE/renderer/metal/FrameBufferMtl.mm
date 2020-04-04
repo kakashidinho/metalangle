@@ -866,11 +866,10 @@ angle::Result FramebufferMtl::getReadableViewForRenderTarget(
     }
     else
     {
-        ASSERT(readableStencilViewOut);
         ASSERT(srcTexture->textureType() != MTLTextureType3D);
 
-        // Texture doesn't support stencil view, copy to an interminate texture that supports
-        // stencil view.
+        // Texture doesn't support stencil view or not shader readable, copy to an interminate
+        // texture that supports stencil view and shader read.
         gl::Rectangle flippedArea = readFrameBuffer.getCorrectFlippedReadArea(context, readArea);
         mtl::TextureRef formatableView = srcTexture->getReadableCopy(
             contextMtl, contextMtl->getBlitCommandEncoder(), level, slice,
@@ -882,7 +881,10 @@ angle::Result FramebufferMtl::getReadableViewForRenderTarget(
         {
             *readableDepthViewOut = formatableView;
         }
-        *readableStencilViewOut = formatableView->getStencilView();
+        if (readableStencilViewOut)
+        {
+            *readableStencilViewOut = formatableView->getStencilView();
+        }
 
         *readableViewLevel = 0;
         *readableViewLayer = 0;
