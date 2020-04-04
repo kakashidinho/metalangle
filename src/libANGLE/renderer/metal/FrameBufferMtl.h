@@ -164,16 +164,13 @@ class FramebufferMtl : public FramebufferImpl
     // render target flag, then during blitting process, this texture is copied to another
     // intermidiate texture having pixel format view flag, but not render target flag.
     angle::Result getReadableViewForRenderTarget(const gl::Context *context,
-                                                 const FramebufferMtl &readFrameBuffer,
                                                  const RenderTargetMtl &rtt,
                                                  const gl::Rectangle &readArea,
                                                  mtl::TextureRef *readableDepthView,
                                                  mtl::TextureRef *readableStencilView,
                                                  uint32_t *readableViewLevel,
                                                  uint32_t *readableViewLayer,
-                                                 gl::Rectangle *readableViewArea,
-                                                 bool *readableViewFlippedYInOut,
-                                                 bool *readableViewUnpackFlipYInOut);
+                                                 gl::Rectangle *readableViewArea);
 
     angle::Result readPixelsToPBO(const gl::Context *context,
                                   const gl::Rectangle &area,

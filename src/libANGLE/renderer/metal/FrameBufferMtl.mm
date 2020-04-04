@@ -372,8 +372,18 @@ angle::Result FramebufferMtl::blit(const gl::Context *context,
         srcClippedDestArea.height = y1 - srcClippedDestArea.y;
     }
 
-    const bool unpackFlipX = sourceArea.isReversedX();
-    const bool unpackFlipY = sourceArea.isReversedY();
+    // Flip source area if necessary
+    clippedSourceArea = srcFrameBuffer->getCorrectFlippedReadArea(context, clippedSourceArea);
+
+    bool unpackFlipX = sourceArea.isReversedX();
+    bool unpackFlipY = sourceArea.isReversedY();
+
+    if (srcFrameBuffer->flipY())
+    {
+        // The rectangle already flipped by calling getCorrectFlippedReadArea(). So reverse the
+        // unpackFlipY flag.
+        unpackFlipY = !unpackFlipY;
+    }
 
     ASSERT(!destArea.isReversedX() && !destArea.isReversedY());
 
@@ -394,9 +404,11 @@ angle::Result FramebufferMtl::blit(const gl::Context *context,
     baseParams.dstRect        = srcClippedDestArea;
     baseParams.dstScissorRect = scissoredDestArea;
     baseParams.dstFlipY       = this->flipY();
-    baseParams.srcYFlipped    = srcFrameBuffer->flipY();
-    baseParams.unpackFlipX    = unpackFlipX;
-    baseParams.unpackFlipY    = unpackFlipY;
+    // This flag is for auto flipping the rect inside RenderUtils. Since we already flip it using
+    // getCorrectFlippedReadArea(). This flag is not needed.
+    baseParams.srcYFlipped = false;
+    baseParams.unpackFlipX = unpackFlipX;
+    baseParams.unpackFlipY = unpackFlipY;
 
     // Depth & stencil are special cases. Need to copy to intermediate texture that is readable
     // in shader. The copy must be done before render pass starts.
@@ -412,13 +424,11 @@ angle::Result FramebufferMtl::blit(const gl::Context *context,
         {
             bool readDepthStencilSameTexture = sameTexture && blitStencilBuffer;
             ANGLE_TRY(getReadableViewForRenderTarget(
-                context, *srcFrameBuffer, *depthRt, clippedSourceArea,
+                context, *depthRt, clippedSourceArea,
                 /** readableDepthView */ &dsBlitParams.src,
                 /** readableStencilView */
                 readDepthStencilSameTexture ? &dsBlitParams.srcStencil : nullptr,
-                &dsBlitParams.srcLevel, &dsBlitParams.srcLayer, &dsBlitParams.srcRect,
-                /** readableViewFlippedYInOut */ &dsBlitParams.srcYFlipped,
-                /** readableViewUnpackFlipYInOut */ &dsBlitParams.unpackFlipY));
+                &dsBlitParams.srcLevel, &dsBlitParams.srcLayer, &dsBlitParams.srcRect));
             if (readDepthStencilSameTexture)
             {
                 dsBlitParams.srcStencilLevel = dsBlitParams.srcLevel;
@@ -431,13 +441,11 @@ angle::Result FramebufferMtl::blit(const gl::Context *context,
             if (!dsBlitParams.srcStencil)
             {
                 ANGLE_TRY(getReadableViewForRenderTarget(
-                    context, *srcFrameBuffer, *stencilRt, clippedSourceArea,
+                    context, *stencilRt, clippedSourceArea,
                     /** readableDepthView */ nullptr,
                     /** readableStencilView */ &dsBlitParams.srcStencil,
                     &dsBlitParams.srcStencilLevel, &dsBlitParams.srcStencilLayer,
-                    &dsBlitParams.srcRect,
-                    /** readableViewFlippedYInOut */ &dsBlitParams.srcYFlipped,
-                    /** readableViewUnpackFlipYInOut */ &dsBlitParams.unpackFlipY));
+                    &dsBlitParams.srcRect));
             }
 
             if (!contextMtl->getDisplay()->getFeatures().hasStencilOutput.enabled &&
@@ -806,16 +814,13 @@ angle::Result FramebufferMtl::updateCachedRenderTarget(const gl::Context *contex
 
 angle::Result FramebufferMtl::getReadableViewForRenderTarget(
     const gl::Context *context,
-    const FramebufferMtl &readFrameBuffer,
     const RenderTargetMtl &rtt,
     const gl::Rectangle &readArea,
     mtl::TextureRef *readableDepthViewOut,
     mtl::TextureRef *readableStencilViewOut,
     uint32_t *readableViewLevel,
     uint32_t *readableViewLayer,
-    gl::Rectangle *readableViewArea,
-    bool *readableViewFlippedYInOut,
-    bool *readableViewUnpackFlipYInOut)
+    gl::Rectangle *readableViewArea)
 {
     ContextMtl *contextMtl     = mtl::GetImpl(context);
     mtl::TextureRef srcTexture = rtt.getTexture();
@@ -870,10 +875,9 @@ angle::Result FramebufferMtl::getReadableViewForRenderTarget(
 
         // Texture doesn't support stencil view or not shader readable, copy to an interminate
         // texture that supports stencil view and shader read.
-        gl::Rectangle flippedArea = readFrameBuffer.getCorrectFlippedReadArea(context, readArea);
         mtl::TextureRef formatableView = srcTexture->getReadableCopy(
             contextMtl, contextMtl->getBlitCommandEncoder(), level, slice,
-            MTLRegionMake2D(flippedArea.x, flippedArea.y, flippedArea.width, flippedArea.height));
+            MTLRegionMake2D(readArea.x, readArea.y, readArea.width, readArea.height));
 
         ANGLE_CHECK_GL_ALLOC(contextMtl, formatableView);
 
@@ -889,16 +893,6 @@ angle::Result FramebufferMtl::getReadableViewForRenderTarget(
         *readableViewLevel = 0;
         *readableViewLayer = 0;
         *readableViewArea  = gl::Rectangle(0, 0, readArea.width, readArea.height);
-
-        bool originalSrcFlippedY = *readableViewFlippedYInOut;
-        bool originalUnpackFlipY = *readableViewUnpackFlipYInOut;
-        if (originalSrcFlippedY)
-        {
-            // Avoid RenderUtils flips the rectangle, since we have copied the texels to
-            // (0, 0, readArea.width, readArea.height) area.
-            *readableViewFlippedYInOut    = false;
-            *readableViewUnpackFlipYInOut = !originalUnpackFlipY;
-        }
     }
 
     return angle::Result::Continue;
