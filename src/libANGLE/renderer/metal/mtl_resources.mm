@@ -699,6 +699,7 @@ TextureRef Texture::getReadableCopy(ContextMtl *context,
             desc.depth           = 1;
             desc.arrayLength     = 1;
             desc.resourceOptions = MTLResourceStorageModePrivate;
+            desc.sampleCount     = get().sampleCount;
             desc.usage           = MTLTextureUsageShaderRead | MTLTextureUsagePixelFormatView;
 
             id<MTLTexture> mtlTexture = [context->getMetalDevice() newTextureWithDescriptor:desc];
