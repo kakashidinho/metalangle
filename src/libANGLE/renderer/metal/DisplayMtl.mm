@@ -649,7 +649,6 @@ void DisplayMtl::initializeFeatures()
     mFeatures.hasDepthTextureFiltering.enabled = true;
     mFeatures.breakRenderPassIsCheap.enabled   = true;
 
-    // Texture swizzle is only supported if macos sdk 10.15 is present
 #elif TARGET_OS_IOS
     mFeatures.breakRenderPassIsCheap.enabled = false;
 
