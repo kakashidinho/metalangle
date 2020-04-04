@@ -180,7 +180,8 @@ angle::Result FormatTable::initialize(const DisplayMtl *display)
         mPixelFormatTable[i].init(display, formatId);
         mPixelFormatTable[i].caps = &mNativePixelFormatCapsTable[mPixelFormatTable[i].metalFormat];
 
-        if (!mPixelFormatTable[i].caps->depthRenderable)
+        if (!mPixelFormatTable[i].caps->depthRenderable &&
+            mPixelFormatTable[i].actualFormatId != mPixelFormatTable[i].intendedFormatId)
         {
             mPixelFormatTable[i].textureLoadFunctions = angle::GetLoadFunctionsMap(
                 mPixelFormatTable[i].intendedAngleFormat().glInternalFormat,
