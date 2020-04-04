@@ -476,8 +476,8 @@ class SpirvToMslCompiler : public spirv_cross::CompilerMSL
                   "array, options, offset), compare_value, shadowCompareMode);");
         statement("    float bl = ANGLEcompare(texture.sample(s, coord + float2(0.0, texelSize.y), "
                   "array, options, offset), compare_value, shadowCompareMode);");
-        statement("    float br = ANGLEcompare(texture.sample(s, coord + texelSize, options, "
-                  "offset), array, compare_value, shadowCompareMode);");
+        statement("    float br = ANGLEcompare(texture.sample(s, coord + texelSize, array, "
+                  "options, offset), compare_value, shadowCompareMode);");
         statement("    float top = mix(tl, tr, weight.x);");
         statement("    float bottom = mix(bl, br, weight.x);");
         statement("    return mix(top, bottom, weight.y);");
