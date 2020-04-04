@@ -438,6 +438,8 @@ void VertexArrayMtl::emulateInstanceDrawStep(mtl::RenderCommandEncoder *cmdEncod
             instanceId / binding.getDivisor() * mCurrentArrayBufferStrides[instanceAttribIdx];
         if (mCurrentArrayBuffers[instanceAttribIdx])
         {
+            offset += static_cast<uint32_t>(mCurrentArrayBufferOffsets[instanceAttribIdx]);
+
             cmdEncoder->setVertexBuffer(mCurrentArrayBuffers[instanceAttribIdx]->getCurrentBuffer(),
                                         offset, bufferIdx);
         }
