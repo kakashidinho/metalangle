@@ -53,10 +53,7 @@ class Resource : angle::NonCopyable
 
     void setUsedByCommandBufferWithQueueSerial(uint64_t serial, bool writing);
 
-    const std::atomic<uint64_t> &getCommandBufferQueueSerial() const
-    {
-        return mUsageRef->cmdBufferQueueSerial;
-    }
+    uint64_t getCommandBufferQueueSerial() const { return mUsageRef->cmdBufferQueueSerial; }
 
     // Flag indicate whether we should synchornize the content to CPU after GPU changed this
     // resource's content.
@@ -77,9 +74,8 @@ class Resource : angle::NonCopyable
     struct UsageRef
     {
         // The id of the last command buffer that is using this resource.
-        std::atomic<uint64_t> cmdBufferQueueSerial{0};
+        uint64_t cmdBufferQueueSerial = 0;
 
-        // NOTE(hqle): resource dirty handle is not threadsafe.
         // This flag means the resource was issued to be modified by GPU, if CPU wants to read
         // its content, explicit synchornization call must be invoked.
         bool cpuReadMemNeedSync = false;

@@ -376,7 +376,7 @@ bool CommandQueue::isResourceBeingUsedByGPU(const Resource *resource) const
     }
 
     return mCompletedBufferSerial.load(std::memory_order_relaxed) <
-           resource->getCommandBufferQueueSerial().load(std::memory_order_relaxed);
+           resource->getCommandBufferQueueSerial();
 }
 
 AutoObjCPtr<id<MTLCommandBuffer>> CommandQueue::makeMetalCommandBuffer(uint64_t *queueSerialOut)
