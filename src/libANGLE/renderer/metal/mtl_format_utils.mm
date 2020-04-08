@@ -317,6 +317,7 @@ void FormatTable::initNativeFormatCaps(const DisplayMtl *display)
     setCompressedFormatCaps(MTLPixelFormatPVRTC_RGBA_2BPP, true);
     setCompressedFormatCaps(MTLPixelFormatPVRTC_RGBA_2BPP_sRGB, true);
     setCompressedFormatCaps(MTLPixelFormatPVRTC_RGBA_4BPP, true);
+    setCompressedFormatCaps(MTLPixelFormatPVRTC_RGBA_4BPP_sRGB, true);
     setCompressedFormatCaps(MTLPixelFormatEAC_R11Unorm, true);
     setCompressedFormatCaps(MTLPixelFormatEAC_R11Snorm, true);
     setCompressedFormatCaps(MTLPixelFormatEAC_RG11Unorm, true);
