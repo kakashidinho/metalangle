@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0A028403243DD6FE00F4FFCD /* item_powerup_fish.pvr in Resources */ = {isa = PBXBuildFile; fileRef = 0A0283D8243DD6FE00F4FFCD /* item_powerup_fish.pvr */; };
+		0A028404243DD6FE00F4FFCD /* item_powerup_fish.pvr in Resources */ = {isa = PBXBuildFile; fileRef = 0A0283D8243DD6FE00F4FFCD /* item_powerup_fish.pvr */; };
+		0A028405243DD6FE00F4FFCD /* tile_floor.pvr in Resources */ = {isa = PBXBuildFile; fileRef = 0A028402243DD6FE00F4FFCD /* tile_floor.pvr */; };
+		0A028406243DD6FE00F4FFCD /* tile_floor.pvr in Resources */ = {isa = PBXBuildFile; fileRef = 0A028402243DD6FE00F4FFCD /* tile_floor.pvr */; };
+		0A028409243DD73500F4FFCD /* PVRTexture.m in Sources */ = {isa = PBXBuildFile; fileRef = 0A028408243DD73500F4FFCD /* PVRTexture.m */; };
+		0A02840A243DD73500F4FFCD /* PVRTexture.m in Sources */ = {isa = PBXBuildFile; fileRef = 0A028408243DD73500F4FFCD /* PVRTexture.m */; };
 		0A28CD26235787370081BB84 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 0A28CD25235787370081BB84 /* AppDelegate.m */; };
 		0A28CD2C235787370081BB84 /* PaintingViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 0A28CD2B235787370081BB84 /* PaintingViewController.m */; };
 		0A28CD2F235787370081BB84 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0A28CD2D235787370081BB84 /* Main.storyboard */; };
@@ -454,6 +460,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0A0283D8243DD6FE00F4FFCD /* item_powerup_fish.pvr */ = {isa = PBXFileReference; lastKnownFileType = file; path = item_powerup_fish.pvr; sourceTree = "<group>"; };
+		0A028402243DD6FE00F4FFCD /* tile_floor.pvr */ = {isa = PBXFileReference; lastKnownFileType = file; path = tile_floor.pvr; sourceTree = "<group>"; };
+		0A028407243DD73500F4FFCD /* PVRTexture.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PVRTexture.h; sourceTree = "<group>"; };
+		0A028408243DD73500F4FFCD /* PVRTexture.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PVRTexture.m; sourceTree = "<group>"; };
 		0A28CD22235787370081BB84 /* MGLPaint.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MGLPaint.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A28CD24235787370081BB84 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		0A28CD25235787370081BB84 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -733,6 +743,8 @@
 				0AAF41592354FAE9000E3CC8 /* Info.plist */,
 				0A90FA7E24068948005BA9A8 /* Info_mac.plist */,
 				0AAF415A2354FAE9000E3CC8 /* main.m */,
+				0A028407243DD73500F4FFCD /* PVRTexture.h */,
+				0A028408243DD73500F4FFCD /* PVRTexture.m */,
 			);
 			path = MGLKitSampleApp;
 			sourceTree = "<group>";
@@ -757,6 +769,8 @@
 		0AD9E4982355DECC006F5642 /* Art */ = {
 			isa = PBXGroup;
 			children = (
+				0A0283D8243DD6FE00F4FFCD /* item_powerup_fish.pvr */,
+				0A028402243DD6FE00F4FFCD /* tile_floor.pvr */,
 				0AD9E4992355DECC006F5642 /* item_powerup_fish.png */,
 				0AD9E49A2355DECC006F5642 /* tile_floor.png */,
 			);
@@ -1232,9 +1246,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				0A9A6BB72391283B006A152A /* LaunchScreen.storyboard in Resources */,
+				0A028406243DD6FE00F4FFCD /* tile_floor.pvr in Resources */,
 				0A9A6BB82391283B006A152A /* tile_floor.png in Resources */,
 				0A9A6BB92391283B006A152A /* SimpleFragment.glsl in Resources */,
 				0A9A6BBA2391283B006A152A /* item_powerup_fish.png in Resources */,
+				0A028404243DD6FE00F4FFCD /* item_powerup_fish.pvr in Resources */,
 				0A9A6BBB2391283B006A152A /* Assets.xcassets in Resources */,
 				0A9A6BBC2391283B006A152A /* Main.storyboard in Resources */,
 				0A9A6BBD2391283B006A152A /* SimpleVertex.glsl in Resources */,
@@ -1246,9 +1262,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				0AAF41582354FAE9000E3CC8 /* LaunchScreen.storyboard in Resources */,
+				0A028405243DD6FE00F4FFCD /* tile_floor.pvr in Resources */,
 				0AD9E49C2355DECC006F5642 /* tile_floor.png in Resources */,
 				0AD9E4A02355DEDF006F5642 /* SimpleFragment.glsl in Resources */,
 				0AD9E49B2355DECC006F5642 /* item_powerup_fish.png in Resources */,
+				0A028403243DD6FE00F4FFCD /* item_powerup_fish.pvr in Resources */,
 				0AAF41552354FAE9000E3CC8 /* Assets.xcassets in Resources */,
 				0AAF41532354FAE8000E3CC8 /* Main.storyboard in Resources */,
 				0AD9E49F2355DEDF006F5642 /* SimpleVertex.glsl in Resources */,
@@ -1290,6 +1308,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0A02840A243DD73500F4FFCD /* PVRTexture.m in Sources */,
 				0A9A6BAD2391283B006A152A /* CC3Kazmath.c in Sources */,
 				0A9A6BAE2391283B006A152A /* GLViewController.m in Sources */,
 				0A9A6BAF2391283B006A152A /* AppDelegate.m in Sources */,
@@ -1304,6 +1323,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0A028409243DD73500F4FFCD /* PVRTexture.m in Sources */,
 				0AD9E4952355DEA5006F5642 /* CC3Kazmath.c in Sources */,
 				0AAF41502354FAE8000E3CC8 /* GLViewController.m in Sources */,
 				0AAF414A2354FAE8000E3CC8 /* AppDelegate.m in Sources */,

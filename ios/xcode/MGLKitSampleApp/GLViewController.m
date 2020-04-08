@@ -32,6 +32,7 @@ typedef NSImage MGLKNativeImage;
 
 #else  // TARGET_OS_OSX
 #    import <UIKit/UIImage.h>
+#    import "PVRTexture.h"
 
 typedef UIImage MGLKNativeImage;
 #endif  // TARGET_OS_OSX
@@ -294,8 +295,18 @@ const GLubyte Indices2[] = {1, 0, 2, 3};
 {
     [self compileShaders];
     [self setupVBOs];
-    _floorTexture = [self setupTexture:@"tile_floor.png"];
-    _fishTexture  = [self setupTexture:@"item_powerup_fish.png"];
+#if TARGET_OS_IOS
+    if (strstr((const char*)glGetString(GL_EXTENSIONS), "IMG_texture_compression_pvrtc"))
+    {
+        _floorTexture = [PVRTexture glTextureWithContentsOfFile:@"tile_floor.pvr"];
+        _fishTexture  = [PVRTexture glTextureWithContentsOfFile:@"item_powerup_fish.pvr"];
+    }
+    else
+#endif
+    {
+        _floorTexture = [self setupTexture:@"tile_floor.png"];
+        _fishTexture  = [self setupTexture:@"item_powerup_fish.png"];
+    }
 }
 
 - (void)update
