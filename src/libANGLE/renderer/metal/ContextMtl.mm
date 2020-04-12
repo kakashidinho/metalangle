@@ -961,7 +961,7 @@ angle::Result ContextMtl::syncState(const gl::Context *context,
             case gl::State::DIRTY_BIT_PROVOKING_VERTEX:
                 break;
             case gl::State::DIRTY_BIT_EXTENDED:
-                ANGLE_TRY(syncExtendedState(context));
+                updateExtendedState(glState);
                 break;
             default:
                 UNREACHABLE();
@@ -972,26 +972,11 @@ angle::Result ContextMtl::syncState(const gl::Context *context,
     return angle::Result::Continue;
 }
 
-angle::Result ContextMtl::syncExtendedState(const gl::Context *context)
+void ContextMtl::updateExtendedState(const gl::State &glState)
 {
-    const gl::State &glState = context->getState();
-
-    for (size_t dirtyBit : glState.getExtendedDirtyBits())
-    {
-        switch (dirtyBit)
-        {
-            case gl::State::DIRTY_BIT_EXT_CLIP_DISTANCE_ENABLED:
-                invalidateDriverUniforms();
-                break;
-            case gl::State::DIRTY_BIT_EXT_GENERATE_MIPMAP_HINT:
-                break;
-            case gl::State::DIRTY_BIT_EXT_SHADER_DERIVATIVE_HINT:
-                break;
-            default:
-                UNREACHABLE();
-        }
-    }
-    return angle::Result::Continue;
+    // Handling clip distance enabled flags, mipmap generation hint & shader derivative
+    // hint.
+    invalidateDriverUniforms();
 }
 
 // Disjoint timer queries

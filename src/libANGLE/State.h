@@ -567,7 +567,7 @@ class State : angle::NonCopyable
         DIRTY_BIT_FRAMEBUFFER_SRGB,  // GL_EXT_sRGB_write_control
         DIRTY_BIT_CURRENT_VALUES,
         DIRTY_BIT_PROVOKING_VERTEX,
-        DIRTY_BIT_EXTENDED,  // additional bit is set in mExtendedDirtyBits
+        DIRTY_BIT_EXTENDED,  // clip distances, mipmap generation hint, derivative hint.
         DIRTY_BIT_INVALID,
         DIRTY_BIT_MAX = DIRTY_BIT_INVALID,
     };
@@ -592,42 +592,15 @@ class State : angle::NonCopyable
         DIRTY_OBJECT_MAX = DIRTY_OBJECT_UNKNOWN,
     };
 
-    enum ExtendedDirtyBitType
-    {
-        DIRTY_BIT_EXT_CLIP_DISTANCE_ENABLED,
-        DIRTY_BIT_EXT_GENERATE_MIPMAP_HINT,
-        DIRTY_BIT_EXT_SHADER_DERIVATIVE_HINT,
-        DIRTY_BIT_EXT_INVALID,
-        DIRTY_BIT_EXT_MAX = DIRTY_BIT_EXT_INVALID,
-    };
-
     using DirtyBits = angle::BitSet<DIRTY_BIT_MAX>;
     const DirtyBits &getDirtyBits() const { return mDirtyBits; }
-    void clearDirtyBits()
-    {
-        mDirtyBits.reset();
-        mExtendedDirtyBits.reset();
-    }
-    void clearDirtyBits(const DirtyBits &bitset)
-    {
-        mDirtyBits &= ~bitset;
-        if (bitset.test(DIRTY_BIT_EXTENDED))
-        {
-            mExtendedDirtyBits.reset();
-        }
-    }
+    void clearDirtyBits() { mDirtyBits.reset(); }
+    void clearDirtyBits(const DirtyBits &bitset) { mDirtyBits &= ~bitset; }
     void setAllDirtyBits()
     {
         mDirtyBits.set();
         mDirtyCurrentValues.set();
-        mExtendedDirtyBits.set();
     }
-
-    // Extended dirty bits
-    using DirtyBitsExtended = angle::BitSet<DIRTY_BIT_EXT_MAX>;
-    const DirtyBitsExtended &getExtendedDirtyBits() const { return mExtendedDirtyBits; }
-    void clearExtendedDirtyBits() { mExtendedDirtyBits.reset(); }
-    void clearExtendedDirtyBits(const DirtyBitsExtended &bitset) { mExtendedDirtyBits &= ~bitset; }
 
     using DirtyObjects = angle::BitSet<DIRTY_OBJECT_MAX>;
     void clearDirtyObjects() { mDirtyObjects.reset(); }
@@ -932,7 +905,6 @@ class State : angle::NonCopyable
     ActiveTextureMask mDirtyTextures;
     ActiveTextureMask mDirtySamplers;
     ImageUnitMask mDirtyImages;
-    DirtyBitsExtended mExtendedDirtyBits;
 
     // The Overlay object, used by the backend to render the overlay.
     const OverlayType *mOverlay;

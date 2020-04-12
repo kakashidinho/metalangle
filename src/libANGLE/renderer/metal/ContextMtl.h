@@ -353,7 +353,7 @@ class ContextMtl : public ContextImpl, public mtl::Context
                                   size_t bufferOffset,
                                   uint32_t instances);
 
-    angle::Result syncExtendedState(const gl::Context *context);
+    void updateExtendedState(const gl::State &glState);
 
     void updateViewport(FramebufferMtl *framebufferMtl,
                         const gl::Rectangle &viewport,
