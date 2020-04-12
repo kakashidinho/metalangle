@@ -67,7 +67,6 @@
 		0A6054A6234651CB005CEA98 /* IntermTraverse.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A60537B234651CB005CEA98 /* IntermTraverse.cpp */; };
 		0A6054A7234651CB005CEA98 /* FindSymbolNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A60537C234651CB005CEA98 /* FindSymbolNode.cpp */; };
 		0A6054A8234651CB005CEA98 /* NodeSearch.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60537D234651CB005CEA98 /* NodeSearch.h */; };
-		0A6054A9234651CB005CEA98 /* BuiltIn_autogen.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60537E234651CB005CEA98 /* BuiltIn_autogen.h */; };
 		0A6054AA234651CB005CEA98 /* FindMain.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60537F234651CB005CEA98 /* FindMain.h */; };
 		0A6054AB234651CB005CEA98 /* FindMain.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A605380234651CB005CEA98 /* FindMain.cpp */; };
 		0A6054AC234651CB005CEA98 /* IntermNodePatternMatcher.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A605381234651CB005CEA98 /* IntermNodePatternMatcher.h */; };
@@ -539,6 +538,12 @@
 		0A60604523466F45005CEA98 /* loadimage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A60603E23466F45005CEA98 /* loadimage.cpp */; };
 		0A60604823466FB8005CEA98 /* libangle_image_util.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A60602A23466F1C005CEA98 /* libangle_image_util.a */; };
 		0A60604923466FB8005CEA98 /* libangle_metal_backend.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A6055C123465399005CEA98 /* libangle_metal_backend.a */; };
+		0A7C2E1B2443922F00B75BA0 /* ReplaceClipDistanceVariable.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A7C2E192443922F00B75BA0 /* ReplaceClipDistanceVariable.h */; };
+		0A7C2E1C2443922F00B75BA0 /* ReplaceClipDistanceVariable.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A7C2E192443922F00B75BA0 /* ReplaceClipDistanceVariable.h */; };
+		0A7C2E1D2443922F00B75BA0 /* ReplaceClipDistanceVariable.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A7C2E192443922F00B75BA0 /* ReplaceClipDistanceVariable.h */; };
+		0A7C2E1E2443922F00B75BA0 /* ReplaceClipDistanceVariable.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A7C2E1A2443922F00B75BA0 /* ReplaceClipDistanceVariable.cpp */; };
+		0A7C2E1F2443922F00B75BA0 /* ReplaceClipDistanceVariable.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A7C2E1A2443922F00B75BA0 /* ReplaceClipDistanceVariable.cpp */; };
+		0A7C2E202443922F00B75BA0 /* ReplaceClipDistanceVariable.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A7C2E1A2443922F00B75BA0 /* ReplaceClipDistanceVariable.cpp */; };
 		0A90F6802405806C005BA9A8 /* MGLKitPlatform.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A90F67F2405806C005BA9A8 /* MGLKitPlatform.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		0A90F6812405806C005BA9A8 /* MGLKitPlatform.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A90F67F2405806C005BA9A8 /* MGLKitPlatform.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		0A90F6A124065A95005BA9A8 /* MemoryBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA200B723473CBC00E0B98C /* MemoryBuffer.cpp */; };
@@ -931,7 +936,6 @@
 		0A90F87D24065C0C005BA9A8 /* proc_table_egl.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A6052772346502A005CEA98 /* proc_table_egl.h */; };
 		0A90F87E24065C0C005BA9A8 /* IntermNode_util.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A605377234651CB005CEA98 /* IntermNode_util.h */; };
 		0A90F87F24065C0C005BA9A8 /* Visit.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A605378234651CB005CEA98 /* Visit.h */; };
-		0A90F88024065C0C005BA9A8 /* BuiltIn_autogen.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60537E234651CB005CEA98 /* BuiltIn_autogen.h */; };
 		0A90F88124065C0C005BA9A8 /* BreakVariableAliasingInInnerLoops.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60541F234651CB005CEA98 /* BreakVariableAliasingInInnerLoops.h */; };
 		0A90F88224065C0C005BA9A8 /* MGLKit.h in Headers */ = {isa = PBXBuildFile; fileRef = 0AAF41122354D7CE000E3CC8 /* MGLKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		0A90F88324065C0C005BA9A8 /* UnfoldShortCircuitAST.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A6053DD234651CB005CEA98 /* UnfoldShortCircuitAST.h */; };
@@ -1818,7 +1822,6 @@
 		0AA2FE5F2347260000E0B98C /* proc_table_egl.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A6052772346502A005CEA98 /* proc_table_egl.h */; };
 		0AA2FE602347260000E0B98C /* IntermNode_util.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A605377234651CB005CEA98 /* IntermNode_util.h */; };
 		0AA2FE612347260000E0B98C /* Visit.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A605378234651CB005CEA98 /* Visit.h */; };
-		0AA2FE622347260000E0B98C /* BuiltIn_autogen.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60537E234651CB005CEA98 /* BuiltIn_autogen.h */; };
 		0AA2FE632347260000E0B98C /* BreakVariableAliasingInInnerLoops.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60541F234651CB005CEA98 /* BreakVariableAliasingInInnerLoops.h */; };
 		0AA2FE642347260000E0B98C /* UnfoldShortCircuitAST.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A6053DD234651CB005CEA98 /* UnfoldShortCircuitAST.h */; };
 		0AA2FE652347260000E0B98C /* AttributeMap.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A605B37234667C3005CEA98 /* AttributeMap.h */; };
@@ -2938,7 +2941,6 @@
 		0A60537B234651CB005CEA98 /* IntermTraverse.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = IntermTraverse.cpp; sourceTree = "<group>"; };
 		0A60537C234651CB005CEA98 /* FindSymbolNode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FindSymbolNode.cpp; sourceTree = "<group>"; };
 		0A60537D234651CB005CEA98 /* NodeSearch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NodeSearch.h; sourceTree = "<group>"; };
-		0A60537E234651CB005CEA98 /* BuiltIn_autogen.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BuiltIn_autogen.h; sourceTree = "<group>"; };
 		0A60537F234651CB005CEA98 /* FindMain.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FindMain.h; sourceTree = "<group>"; };
 		0A605380234651CB005CEA98 /* FindMain.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FindMain.cpp; sourceTree = "<group>"; };
 		0A605381234651CB005CEA98 /* IntermNodePatternMatcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IntermNodePatternMatcher.h; sourceTree = "<group>"; };
@@ -3466,6 +3468,8 @@
 		0A60603C23466F45005CEA98 /* loadimage_etc.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = loadimage_etc.cpp; path = ../../src/image_util/loadimage_etc.cpp; sourceTree = "<group>"; };
 		0A60603D23466F45005CEA98 /* copyimage.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = copyimage.cpp; path = ../../src/image_util/copyimage.cpp; sourceTree = "<group>"; };
 		0A60603E23466F45005CEA98 /* loadimage.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = loadimage.cpp; path = ../../src/image_util/loadimage.cpp; sourceTree = "<group>"; };
+		0A7C2E192443922F00B75BA0 /* ReplaceClipDistanceVariable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ReplaceClipDistanceVariable.h; sourceTree = "<group>"; };
+		0A7C2E1A2443922F00B75BA0 /* ReplaceClipDistanceVariable.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ReplaceClipDistanceVariable.cpp; sourceTree = "<group>"; };
 		0A90F67F2405806C005BA9A8 /* MGLKitPlatform.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MGLKitPlatform.h; sourceTree = "<group>"; };
 		0A90F69124065A27005BA9A8 /* DisplayCGL.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = DisplayCGL.h; path = ../../src/libANGLE/renderer/gl/cgl/DisplayCGL.h; sourceTree = "<group>"; };
 		0A90F69224065A27005BA9A8 /* WindowSurfaceCGL.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = WindowSurfaceCGL.h; path = ../../src/libANGLE/renderer/gl/cgl/WindowSurfaceCGL.h; sourceTree = "<group>"; };
@@ -4586,11 +4590,12 @@
 				0A60537B234651CB005CEA98 /* IntermTraverse.cpp */,
 				0A60537C234651CB005CEA98 /* FindSymbolNode.cpp */,
 				0A60537D234651CB005CEA98 /* NodeSearch.h */,
-				0A60537E234651CB005CEA98 /* BuiltIn_autogen.h */,
 				0A60537F234651CB005CEA98 /* FindMain.h */,
 				0A605380234651CB005CEA98 /* FindMain.cpp */,
 				0A605381234651CB005CEA98 /* IntermNodePatternMatcher.h */,
 				0A605382234651CB005CEA98 /* RunAtTheEndOfShader.cpp */,
+				0A7C2E1A2443922F00B75BA0 /* ReplaceClipDistanceVariable.cpp */,
+				0A7C2E192443922F00B75BA0 /* ReplaceClipDistanceVariable.h */,
 				0A605383234651CB005CEA98 /* ReplaceVariable.h */,
 				0A605384234651CB005CEA98 /* ReplaceShadowingVariables.h */,
 				0A605385234651CB005CEA98 /* FindFunction.h */,
@@ -6142,6 +6147,7 @@
 				0A9B8401234CD4CE008BF16F /* BuiltinsWorkaroundGLSL.h in Headers */,
 				0A605589234651CC005CEA98 /* TranslatorGLSL.h in Headers */,
 				0A605D9A234667C9005CEA98 /* load_functions_table.h in Headers */,
+				0A7C2E1B2443922F00B75BA0 /* ReplaceClipDistanceVariable.h in Headers */,
 				0A605B8D234667C5005CEA98 /* MemoryProgramCache.h in Headers */,
 				0A605FCB234667CE005CEA98 /* State.h in Headers */,
 				0A6055AC234651CC005CEA98 /* Lexer.h in Headers */,
@@ -6235,7 +6241,6 @@
 				0A6052902346502A005CEA98 /* proc_table_egl.h in Headers */,
 				0A6054A2234651CB005CEA98 /* IntermNode_util.h in Headers */,
 				0A6054A3234651CB005CEA98 /* Visit.h in Headers */,
-				0A6054A9234651CB005CEA98 /* BuiltIn_autogen.h in Headers */,
 				0A605549234651CC005CEA98 /* BreakVariableAliasingInInnerLoops.h in Headers */,
 				0AAF41132354D7CE000E3CC8 /* MGLKit.h in Headers */,
 				0A605507234651CC005CEA98 /* UnfoldShortCircuitAST.h in Headers */,
@@ -6449,6 +6454,7 @@
 				0A90F82024065C0C005BA9A8 /* BuiltinsWorkaroundGLSL.h in Headers */,
 				0A90F82124065C0C005BA9A8 /* TranslatorGLSL.h in Headers */,
 				0A90F82224065C0C005BA9A8 /* load_functions_table.h in Headers */,
+				0A7C2E1C2443922F00B75BA0 /* ReplaceClipDistanceVariable.h in Headers */,
 				0A90F82324065C0C005BA9A8 /* MemoryProgramCache.h in Headers */,
 				0A90F82424065C0C005BA9A8 /* State.h in Headers */,
 				0A90F82524065C0C005BA9A8 /* Lexer.h in Headers */,
@@ -6542,7 +6548,6 @@
 				0A90F87D24065C0C005BA9A8 /* proc_table_egl.h in Headers */,
 				0A90F87E24065C0C005BA9A8 /* IntermNode_util.h in Headers */,
 				0A90F87F24065C0C005BA9A8 /* Visit.h in Headers */,
-				0A90F88024065C0C005BA9A8 /* BuiltIn_autogen.h in Headers */,
 				0A90F88124065C0C005BA9A8 /* BreakVariableAliasingInInnerLoops.h in Headers */,
 				0A90F88224065C0C005BA9A8 /* MGLKit.h in Headers */,
 				0A90F88324065C0C005BA9A8 /* UnfoldShortCircuitAST.h in Headers */,
@@ -6770,6 +6775,7 @@
 				0A9B8402234CD4CE008BF16F /* BuiltinsWorkaroundGLSL.h in Headers */,
 				0AA2FDFC2347260000E0B98C /* TranslatorGLSL.h in Headers */,
 				0AA2FDFD2347260000E0B98C /* load_functions_table.h in Headers */,
+				0A7C2E1D2443922F00B75BA0 /* ReplaceClipDistanceVariable.h in Headers */,
 				0AA2FDFE2347260000E0B98C /* MemoryProgramCache.h in Headers */,
 				0AA2FDFF2347260000E0B98C /* State.h in Headers */,
 				0AA2FE002347260000E0B98C /* Lexer.h in Headers */,
@@ -6863,7 +6869,6 @@
 				0AA2FE5F2347260000E0B98C /* proc_table_egl.h in Headers */,
 				0AA2FE602347260000E0B98C /* IntermNode_util.h in Headers */,
 				0AA2FE612347260000E0B98C /* Visit.h in Headers */,
-				0AA2FE622347260000E0B98C /* BuiltIn_autogen.h in Headers */,
 				0AA2FE632347260000E0B98C /* BreakVariableAliasingInInnerLoops.h in Headers */,
 				0AAF41142354D7CE000E3CC8 /* MGLKit.h in Headers */,
 				0AA2FE642347260000E0B98C /* UnfoldShortCircuitAST.h in Headers */,
@@ -8258,6 +8263,7 @@
 				0A6052872346502A005CEA98 /* entry_points_gles_2_0_autogen.cpp in Sources */,
 				0A6054A6234651CB005CEA98 /* IntermTraverse.cpp in Sources */,
 				0A60559A234651CC005CEA98 /* Input.cpp in Sources */,
+				0A7C2E1E2443922F00B75BA0 /* ReplaceClipDistanceVariable.cpp in Sources */,
 				0A605502234651CC005CEA98 /* RemovePow.cpp in Sources */,
 				0A60552F234651CC005CEA98 /* RecordConstantPrecision.cpp in Sources */,
 				0A605FB5234667CD005CEA98 /* validationES31.cpp in Sources */,
@@ -8826,6 +8832,7 @@
 				0A90F98C24065C0C005BA9A8 /* Operator.cpp in Sources */,
 				0A90F98D24065C0C005BA9A8 /* EmulatePrecision.cpp in Sources */,
 				0A90F98E24065C0C005BA9A8 /* validationGL13.cpp in Sources */,
+				0A7C2E1F2443922F00B75BA0 /* ReplaceClipDistanceVariable.cpp in Sources */,
 				0A90F98F24065C0C005BA9A8 /* libGLESv2_autogen.cpp in Sources */,
 				0A90F99024065C0C005BA9A8 /* Diagnostics.cpp in Sources */,
 				0A90F99124065C0C005BA9A8 /* Thread.cpp in Sources */,
@@ -9322,6 +9329,7 @@
 				0AA2FF382347260000E0B98C /* entry_points_gles_2_0_autogen.cpp in Sources */,
 				0AA2FF392347260000E0B98C /* IntermTraverse.cpp in Sources */,
 				0AA2FF3A2347260000E0B98C /* Input.cpp in Sources */,
+				0A7C2E202443922F00B75BA0 /* ReplaceClipDistanceVariable.cpp in Sources */,
 				0AA2FF3B2347260000E0B98C /* RemovePow.cpp in Sources */,
 				0AA2FF3C2347260000E0B98C /* RecordConstantPrecision.cpp in Sources */,
 				0AA2FF3D2347260000E0B98C /* validationES31.cpp in Sources */,
@@ -9782,11 +9790,11 @@
 					ANGLE_ENABLE_METAL,
 					"JSON_USE_EXCEPTION=0",
 				);
-				"GCC_PREPROCESSOR_DEFINITIONS[arch=x86_64]" = (
+				"GCC_PREPROCESSOR_DEFINITIONS[arch=arm64]" = (
 					ANGLE_IS_64_BIT_CPU,
 					"$(inherited)",
 				);
-				"GCC_PREPROCESSOR_DEFINITIONS[arch=arm64]" = (
+				"GCC_PREPROCESSOR_DEFINITIONS[arch=x86_64]" = (
 					ANGLE_IS_64_BIT_CPU,
 					"$(inherited)",
 				);
@@ -9868,11 +9876,11 @@
 					ANGLE_ENABLE_METAL,
 					"JSON_USE_EXCEPTION=0",
 				);
-				"GCC_PREPROCESSOR_DEFINITIONS[arch=x86_64]" = (
+				"GCC_PREPROCESSOR_DEFINITIONS[arch=arm64]" = (
 					ANGLE_IS_64_BIT_CPU,
 					"$(inherited)",
 				);
-				"GCC_PREPROCESSOR_DEFINITIONS[arch=arm64]" = (
+				"GCC_PREPROCESSOR_DEFINITIONS[arch=x86_64]" = (
 					ANGLE_IS_64_BIT_CPU,
 					"$(inherited)",
 				);
