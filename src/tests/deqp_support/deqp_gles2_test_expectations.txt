@@ -384,8 +384,6 @@
 3748 VULKAN WIN NVIDIA : dEQP-GLES2.functional.fbo.render.repeated_clear.* = FAIL
 
 // Fails on Metal
-4235 METAL : dEQP-GLES2.functional.shaders.struct.uniform.sampler_array_vertex = FAIL
-4235 METAL : dEQP-GLES2.functional.shaders.struct.uniform.sampler_array_fragment = FAIL
 4235 METAL : dEQP-GLES2.functional.shaders.builtin_variable.pointcoord = FAIL
 4235 METAL : dEQP-GLES2.functional.shaders.texture_functions.vertex.texturecubelod = FAIL
 4235 METAL : dEQP-GLES2.functional.texture.mipmap.2d.basic.nearest_linear_clamp = FAIL
@@ -441,17 +439,6 @@
 4235 METAL : dEQP-GLES2.functional.texture.vertex.cube.wrap.* = FAIL
 4235 METAL : dEQP-GLES2.functional.rasterization.primitives.points = FAIL
 4235 METAL : dEQP-GLES2.functional.attribute_location.bind_aliasing.*cond_* = FAIL
-4235 METAL : dEQP-GLES2.functional.uniform_api.value.assigned.by_pointer.render.struct_in_array.sampler2D_samplerCube_vertex = FAIL
-4235 METAL : dEQP-GLES2.functional.uniform_api.value.assigned.by_pointer.render.struct_in_array.sampler2D_samplerCube_fragment = FAIL
-4235 METAL : dEQP-GLES2.functional.uniform_api.value.assigned.by_pointer.render.struct_in_array.sampler2D_samplerCube_both = FAIL
-4235 METAL : dEQP-GLES2.functional.uniform_api.value.assigned.by_pointer.render.nested_structs_arrays.sampler2D_samplerCube_vertex = FAIL
-4235 METAL : dEQP-GLES2.functional.uniform_api.value.assigned.by_pointer.render.nested_structs_arrays.sampler2D_samplerCube_fragment = FAIL
-4235 METAL : dEQP-GLES2.functional.uniform_api.value.assigned.by_value.render.struct_in_array.sampler2D_samplerCube_vertex = FAIL
-4235 METAL : dEQP-GLES2.functional.uniform_api.value.assigned.by_value.render.struct_in_array.sampler2D_samplerCube_fragment = FAIL
-4235 METAL : dEQP-GLES2.functional.uniform_api.value.assigned.by_value.render.struct_in_array.sampler2D_samplerCube_both = FAIL
-4235 METAL : dEQP-GLES2.functional.uniform_api.value.assigned.by_value.render.nested_structs_arrays.sampler2D_samplerCube_vertex = FAIL
-4235 METAL : dEQP-GLES2.functional.uniform_api.value.assigned.by_value.render.nested_structs_arrays.sampler2D_samplerCube_fragment = FAIL
-4235 METAL : dEQP-GLES2.functional.uniform_api.random.3 = FAIL
 4235 METAL : dEQP-GLES2.functional.clipping.point.wide_point_clip = FAIL
 4235 METAL : dEQP-GLES2.functional.clipping.point.wide_point_clip_viewport_center = FAIL
 4235 METAL : dEQP-GLES2.functional.clipping.point.wide_point_clip_viewport_corner = FAIL
