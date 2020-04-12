@@ -384,7 +384,6 @@
 3748 VULKAN WIN NVIDIA : dEQP-GLES2.functional.fbo.render.repeated_clear.* = FAIL
 
 // Fails on Metal
-4235 METAL : dEQP-GLES2.functional.shaders.builtin_variable.pointcoord = FAIL
 4235 METAL : dEQP-GLES2.functional.shaders.texture_functions.vertex.texturecubelod = FAIL
 4235 METAL : dEQP-GLES2.functional.texture.mipmap.2d.basic.nearest_linear_clamp = FAIL
 4235 METAL : dEQP-GLES2.functional.texture.mipmap.2d.basic.nearest_linear_clamp_non_square = FAIL
@@ -437,9 +436,14 @@
 4235 METAL : dEQP-GLES2.functional.texture.vertex.cube.filtering.linear_mipmap_linear_linear_repeat = FAIL
 4235 METAL : dEQP-GLES2.functional.texture.vertex.cube.filtering.linear_mipmap_linear_linear_mirror = FAIL
 4235 METAL : dEQP-GLES2.functional.texture.vertex.cube.wrap.* = FAIL
-4235 METAL : dEQP-GLES2.functional.rasterization.primitives.points = FAIL
 4235 METAL : dEQP-GLES2.functional.attribute_location.bind_aliasing.*cond_* = FAIL
 4235 METAL : dEQP-GLES2.functional.clipping.point.wide_point_clip = FAIL
 4235 METAL : dEQP-GLES2.functional.clipping.point.wide_point_clip_viewport_center = FAIL
 4235 METAL : dEQP-GLES2.functional.clipping.point.wide_point_clip_viewport_corner = FAIL
 4235 METAL : dEQP-GLES2.functional.polygon_offset.fixed16_render_with_units = FAIL
+
+// Fails on Metal Intel
+4235 METAL INTEL : dEQP-GLES2.functional.shaders.invariance.highp.loop_4 = FAIL
+4235 METAL INTEL : dEQP-GLES2.functional.shaders.invariance.mediump.loop_4 = FAIL
+4235 METAL INTEL : dEQP-GLES2.functional.shaders.invariance.lowp.loop_2 = FAIL
+4235 METAL INTEL : dEQP-GLES2.functional.shaders.invariance.lowp.loop_4 = FAIL
