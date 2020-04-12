@@ -545,6 +545,12 @@
 		0A6AD5F8242AA458007CCD35 /* SyncMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A6AD5F6242AA458007CCD35 /* SyncMtl.mm */; };
 		0A6AD5F9242AA458007CCD35 /* SyncMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A6AD5F6242AA458007CCD35 /* SyncMtl.mm */; };
 		0A6AD5FA242AA458007CCD35 /* SyncMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A6AD5F6242AA458007CCD35 /* SyncMtl.mm */; };
+		0A7C2E12244390B000B75BA0 /* ReplaceClipDistanceVariable.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A7C2E10244390B000B75BA0 /* ReplaceClipDistanceVariable.cpp */; };
+		0A7C2E13244390B000B75BA0 /* ReplaceClipDistanceVariable.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A7C2E10244390B000B75BA0 /* ReplaceClipDistanceVariable.cpp */; };
+		0A7C2E14244390B000B75BA0 /* ReplaceClipDistanceVariable.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A7C2E10244390B000B75BA0 /* ReplaceClipDistanceVariable.cpp */; };
+		0A7C2E15244390B000B75BA0 /* ReplaceClipDistanceVariable.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A7C2E11244390B000B75BA0 /* ReplaceClipDistanceVariable.h */; };
+		0A7C2E16244390B000B75BA0 /* ReplaceClipDistanceVariable.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A7C2E11244390B000B75BA0 /* ReplaceClipDistanceVariable.h */; };
+		0A7C2E17244390B000B75BA0 /* ReplaceClipDistanceVariable.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A7C2E11244390B000B75BA0 /* ReplaceClipDistanceVariable.h */; };
 		0A90F6802405806C005BA9A8 /* MGLKitPlatform.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A90F67F2405806C005BA9A8 /* MGLKitPlatform.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		0A90F6812405806C005BA9A8 /* MGLKitPlatform.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A90F67F2405806C005BA9A8 /* MGLKitPlatform.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		0A90F6A124065A95005BA9A8 /* MemoryBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA200B723473CBC00E0B98C /* MemoryBuffer.cpp */; };
@@ -3482,13 +3488,16 @@
 		0A60603C23466F45005CEA98 /* loadimage_etc.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = loadimage_etc.cpp; path = ../../src/image_util/loadimage_etc.cpp; sourceTree = "<group>"; };
 		0A60603D23466F45005CEA98 /* copyimage.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = copyimage.cpp; path = ../../src/image_util/copyimage.cpp; sourceTree = "<group>"; };
 		0A60603E23466F45005CEA98 /* loadimage.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = loadimage.cpp; path = ../../src/image_util/loadimage.cpp; sourceTree = "<group>"; };
-		0A6AD5F1242AA41A007CCD35 /* copy_pixel_buffer.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = copy_pixel_buffer.metal; sourceTree = "<group>"; };
 		0A6AD5F2242AA41A007CCD35 /* format_autogen.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = format_autogen.h; sourceTree = "<group>"; };
 		0A6AD5F3242AA41B007CCD35 /* gen_mtl_internal_shaders.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = gen_mtl_internal_shaders.py; sourceTree = "<group>"; };
 		0A6AD5F4242AA41B007CCD35 /* constants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = constants.h; sourceTree = "<group>"; };
 		0A6AD5F5242AA41B007CCD35 /* gen_mipmap.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = gen_mipmap.metal; sourceTree = "<group>"; };
 		0A6AD5F6242AA458007CCD35 /* SyncMtl.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = SyncMtl.mm; path = ../../src/libANGLE/renderer/metal/SyncMtl.mm; sourceTree = "<group>"; };
 		0A6AD5F7242AA458007CCD35 /* SyncMtl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SyncMtl.h; path = ../../src/libANGLE/renderer/metal/SyncMtl.h; sourceTree = "<group>"; };
+		0A7C2E0E2443907A00B75BA0 /* visibility.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = visibility.metal; sourceTree = "<group>"; };
+		0A7C2E0F2443907A00B75BA0 /* copy_buffer.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = copy_buffer.metal; sourceTree = "<group>"; };
+		0A7C2E10244390B000B75BA0 /* ReplaceClipDistanceVariable.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ReplaceClipDistanceVariable.cpp; sourceTree = "<group>"; };
+		0A7C2E11244390B000B75BA0 /* ReplaceClipDistanceVariable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ReplaceClipDistanceVariable.h; sourceTree = "<group>"; };
 		0A90F67F2405806C005BA9A8 /* MGLKitPlatform.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MGLKitPlatform.h; sourceTree = "<group>"; };
 		0A90F69124065A27005BA9A8 /* DisplayCGL.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = DisplayCGL.h; path = ../../src/libANGLE/renderer/gl/cgl/DisplayCGL.h; sourceTree = "<group>"; };
 		0A90F69224065A27005BA9A8 /* WindowSurfaceCGL.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = WindowSurfaceCGL.h; path = ../../src/libANGLE/renderer/gl/cgl/WindowSurfaceCGL.h; sourceTree = "<group>"; };
@@ -3962,7 +3971,6 @@
 		0AC8B2DA241E9681003916D1 /* blit.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = blit.metal; sourceTree = "<group>"; };
 		0AC8B2DB241E9681003916D1 /* clear.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = clear.metal; sourceTree = "<group>"; };
 		0AC8B2DC241E9682003916D1 /* common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = common.h; sourceTree = "<group>"; };
-		0AC8B2DD241E9682003916D1 /* misc.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = misc.metal; sourceTree = "<group>"; };
 		0AC8B2DE241E9682003916D1 /* gen_indices.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = gen_indices.metal; sourceTree = "<group>"; };
 		0AC8B2E9241E9760003916D1 /* QueryMtl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = QueryMtl.h; path = ../../src/libANGLE/renderer/metal/QueryMtl.h; sourceTree = "<group>"; };
 		0AC8B2EA241E9761003916D1 /* mtl_occlusion_query_pool.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = mtl_occlusion_query_pool.mm; path = ../../src/libANGLE/renderer/metal/mtl_occlusion_query_pool.mm; sourceTree = "<group>"; };
@@ -4625,6 +4633,8 @@
 				0A605380234651CB005CEA98 /* FindMain.cpp */,
 				0A605381234651CB005CEA98 /* IntermNodePatternMatcher.h */,
 				0A605382234651CB005CEA98 /* RunAtTheEndOfShader.cpp */,
+				0A7C2E10244390B000B75BA0 /* ReplaceClipDistanceVariable.cpp */,
+				0A7C2E11244390B000B75BA0 /* ReplaceClipDistanceVariable.h */,
 				0A605383234651CB005CEA98 /* ReplaceVariable.h */,
 				0A605384234651CB005CEA98 /* ReplaceShadowingVariables.h */,
 				0A605385234651CB005CEA98 /* FindFunction.h */,
@@ -4860,8 +4870,9 @@
 		0A6055E6234655FD005CEA98 /* shaders */ = {
 			isa = PBXGroup;
 			children = (
+				0A7C2E0F2443907A00B75BA0 /* copy_buffer.metal */,
+				0A7C2E0E2443907A00B75BA0 /* visibility.metal */,
 				0A6AD5F4242AA41B007CCD35 /* constants.h */,
-				0A6AD5F1242AA41A007CCD35 /* copy_pixel_buffer.metal */,
 				0A6AD5F2242AA41A007CCD35 /* format_autogen.h */,
 				0A6AD5F5242AA41B007CCD35 /* gen_mipmap.metal */,
 				0A6AD5F3242AA41B007CCD35 /* gen_mtl_internal_shaders.py */,
@@ -4869,7 +4880,6 @@
 				0AC8B2DB241E9681003916D1 /* clear.metal */,
 				0AC8B2DC241E9682003916D1 /* common.h */,
 				0AC8B2DE241E9682003916D1 /* gen_indices.metal */,
-				0AC8B2DD241E9682003916D1 /* misc.metal */,
 				0A6055E7234655FD005CEA98 /* compiled */,
 			);
 			name = shaders;
@@ -6195,6 +6205,7 @@
 				0A9B8401234CD4CE008BF16F /* BuiltinsWorkaroundGLSL.h in Headers */,
 				0A605589234651CC005CEA98 /* TranslatorGLSL.h in Headers */,
 				0A605D9A234667C9005CEA98 /* load_functions_table.h in Headers */,
+				0A7C2E15244390B000B75BA0 /* ReplaceClipDistanceVariable.h in Headers */,
 				0A605B8D234667C5005CEA98 /* MemoryProgramCache.h in Headers */,
 				0A605FCB234667CE005CEA98 /* State.h in Headers */,
 				0A6055AC234651CC005CEA98 /* Lexer.h in Headers */,
@@ -6502,6 +6513,7 @@
 				0A90F82024065C0C005BA9A8 /* BuiltinsWorkaroundGLSL.h in Headers */,
 				0A90F82124065C0C005BA9A8 /* TranslatorGLSL.h in Headers */,
 				0A90F82224065C0C005BA9A8 /* load_functions_table.h in Headers */,
+				0A7C2E16244390B000B75BA0 /* ReplaceClipDistanceVariable.h in Headers */,
 				0A90F82324065C0C005BA9A8 /* MemoryProgramCache.h in Headers */,
 				0A90F82424065C0C005BA9A8 /* State.h in Headers */,
 				0A90F82524065C0C005BA9A8 /* Lexer.h in Headers */,
@@ -6823,6 +6835,7 @@
 				0A9B8402234CD4CE008BF16F /* BuiltinsWorkaroundGLSL.h in Headers */,
 				0AA2FDFC2347260000E0B98C /* TranslatorGLSL.h in Headers */,
 				0AA2FDFD2347260000E0B98C /* load_functions_table.h in Headers */,
+				0A7C2E17244390B000B75BA0 /* ReplaceClipDistanceVariable.h in Headers */,
 				0AA2FDFE2347260000E0B98C /* MemoryProgramCache.h in Headers */,
 				0AA2FDFF2347260000E0B98C /* State.h in Headers */,
 				0AA2FE002347260000E0B98C /* Lexer.h in Headers */,
@@ -8311,6 +8324,7 @@
 				0A6052872346502A005CEA98 /* entry_points_gles_2_0_autogen.cpp in Sources */,
 				0A6054A6234651CB005CEA98 /* IntermTraverse.cpp in Sources */,
 				0A60559A234651CC005CEA98 /* Input.cpp in Sources */,
+				0A7C2E12244390B000B75BA0 /* ReplaceClipDistanceVariable.cpp in Sources */,
 				0A605502234651CC005CEA98 /* RemovePow.cpp in Sources */,
 				0A60552F234651CC005CEA98 /* RecordConstantPrecision.cpp in Sources */,
 				0A605FB5234667CD005CEA98 /* validationES31.cpp in Sources */,
@@ -8889,6 +8903,7 @@
 				0A90F98C24065C0C005BA9A8 /* Operator.cpp in Sources */,
 				0A90F98D24065C0C005BA9A8 /* EmulatePrecision.cpp in Sources */,
 				0A90F98E24065C0C005BA9A8 /* validationGL13.cpp in Sources */,
+				0A7C2E13244390B000B75BA0 /* ReplaceClipDistanceVariable.cpp in Sources */,
 				0A90F98F24065C0C005BA9A8 /* libGLESv2_autogen.cpp in Sources */,
 				0A90F99024065C0C005BA9A8 /* Diagnostics.cpp in Sources */,
 				0A90F99124065C0C005BA9A8 /* Thread.cpp in Sources */,
@@ -9385,6 +9400,7 @@
 				0AA2FF382347260000E0B98C /* entry_points_gles_2_0_autogen.cpp in Sources */,
 				0AA2FF392347260000E0B98C /* IntermTraverse.cpp in Sources */,
 				0AA2FF3A2347260000E0B98C /* Input.cpp in Sources */,
+				0A7C2E14244390B000B75BA0 /* ReplaceClipDistanceVariable.cpp in Sources */,
 				0AA2FF3B2347260000E0B98C /* RemovePow.cpp in Sources */,
 				0AA2FF3C2347260000E0B98C /* RecordConstantPrecision.cpp in Sources */,
 				0AA2FF3D2347260000E0B98C /* validationES31.cpp in Sources */,
