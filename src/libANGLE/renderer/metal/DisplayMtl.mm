@@ -419,7 +419,17 @@ void DisplayMtl::ensureCapsInitialized() const
     mNativeCaps.maxCubeMapTextureSize = mNativeCaps.max2DTextureSize;
     mNativeCaps.maxRenderbufferSize   = mNativeCaps.max2DTextureSize;
     mNativeCaps.minAliasedPointSize   = 1;
-    mNativeCaps.maxAliasedPointSize   = 511;
+    // NOTE(hqle): Metal has some problems drawing big point size even though
+    // Metal-Feature-Set-Tables.pdf says that max supported point size is 511. We limit it to 255
+    // on Intel and 64 on AMD for now.
+    if ([mMetalDevice.get().name rangeOfString:@"Intel"].location != NSNotFound)
+    {
+        mNativeCaps.maxAliasedPointSize   = 255;
+    }
+    else
+    {
+        mNativeCaps.maxAliasedPointSize   = 64;
+    }
 
     mNativeCaps.minAliasedLineWidth = 1.0f;
     mNativeCaps.maxAliasedLineWidth = 1.0f;
