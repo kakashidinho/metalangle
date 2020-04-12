@@ -901,7 +901,6 @@ void State::setClipDistanceEnable(int idx, bool enable)
     }
 
     mDirtyBits.set(DIRTY_BIT_EXTENDED);
-    mExtendedDirtyBits.set(DIRTY_BIT_EXT_CLIP_DISTANCE_ENABLED);
 }
 
 void State::setEnableFeature(GLenum feature, bool enabled)
@@ -1187,14 +1186,12 @@ void State::setGenerateMipmapHint(GLenum hint)
 {
     mGenerateMipmapHint = hint;
     mDirtyBits.set(DIRTY_BIT_EXTENDED);
-    mExtendedDirtyBits.set(DIRTY_BIT_EXT_GENERATE_MIPMAP_HINT);
 }
 
 void State::setFragmentShaderDerivativeHint(GLenum hint)
 {
     mFragmentShaderDerivativeHint = hint;
     mDirtyBits.set(DIRTY_BIT_EXTENDED);
-    mExtendedDirtyBits.set(DIRTY_BIT_EXT_SHADER_DERIVATIVE_HINT);
     // TODO: Propagate the hint to shader translator so we can write
     // ddx, ddx_coarse, or ddx_fine depending on the hint.
     // Ignore for now. It is valid for implementations to ignore hint.

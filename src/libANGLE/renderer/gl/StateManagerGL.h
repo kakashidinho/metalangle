@@ -358,7 +358,6 @@ class StateManagerGL final : angle::NonCopyable
     const size_t mMaxClipDistances;
 
     gl::State::DirtyBits mLocalDirtyBits;
-    gl::State::DirtyBitsExtended mLocalDirtyBitsExtended;
     gl::AttributesMask mLocalDirtyCurrentValues;
 };
 }  // namespace rx
