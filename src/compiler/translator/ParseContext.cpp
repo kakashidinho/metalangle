@@ -1188,7 +1188,7 @@ bool TParseContext::declareVariable(const TSourceLoc &line,
             return false;
         }
     }
-    else if (type->isArray() && identifier.beginsWith("gl_ClipDistance"))
+    else if (type->isArray() && identifier == "gl_ClipDistance")
     {
         // gl_ClipDistance can be redeclared with smaller size than gl_MaxClipDistances
         const TVariable *maxClipDistances = static_cast<const TVariable *>(

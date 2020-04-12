@@ -69,7 +69,7 @@ struct GraphicsDriverUniforms
     std::array<float, 4> depthRange;
 
     // 32 bits for 32 clip planes
-    uint32_t enabledClipPlanes{};
+    uint32_t enabledClipPlanes;
 
     float padding[3];
 };

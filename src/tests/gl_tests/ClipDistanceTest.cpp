@@ -3,6 +3,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
+// ClipDistanceTest.cpp: Test cases for GL_APPLE_clip_distance/GL_EXT_clip_cull_distance extension.
+//
 
 #include "test_utils/ANGLETest.h"
 #include "test_utils/gl_raii.h"
