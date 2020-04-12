@@ -70,7 +70,6 @@
 		0A6054A6234651CB005CEA98 /* IntermTraverse.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A60537B234651CB005CEA98 /* IntermTraverse.cpp */; };
 		0A6054A7234651CB005CEA98 /* FindSymbolNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A60537C234651CB005CEA98 /* FindSymbolNode.cpp */; };
 		0A6054A8234651CB005CEA98 /* NodeSearch.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60537D234651CB005CEA98 /* NodeSearch.h */; };
-		0A6054A9234651CB005CEA98 /* BuiltIn_autogen.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60537E234651CB005CEA98 /* BuiltIn_autogen.h */; };
 		0A6054AA234651CB005CEA98 /* FindMain.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60537F234651CB005CEA98 /* FindMain.h */; };
 		0A6054AB234651CB005CEA98 /* FindMain.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A605380234651CB005CEA98 /* FindMain.cpp */; };
 		0A6054AC234651CB005CEA98 /* IntermNodePatternMatcher.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A605381234651CB005CEA98 /* IntermNodePatternMatcher.h */; };
@@ -943,7 +942,6 @@
 		0A90F87D24065C0C005BA9A8 /* proc_table_egl.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A6052772346502A005CEA98 /* proc_table_egl.h */; };
 		0A90F87E24065C0C005BA9A8 /* IntermNode_util.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A605377234651CB005CEA98 /* IntermNode_util.h */; };
 		0A90F87F24065C0C005BA9A8 /* Visit.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A605378234651CB005CEA98 /* Visit.h */; };
-		0A90F88024065C0C005BA9A8 /* BuiltIn_autogen.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60537E234651CB005CEA98 /* BuiltIn_autogen.h */; };
 		0A90F88124065C0C005BA9A8 /* BreakVariableAliasingInInnerLoops.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60541F234651CB005CEA98 /* BreakVariableAliasingInInnerLoops.h */; };
 		0A90F88224065C0C005BA9A8 /* MGLKit.h in Headers */ = {isa = PBXBuildFile; fileRef = 0AAF41122354D7CE000E3CC8 /* MGLKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		0A90F88324065C0C005BA9A8 /* UnfoldShortCircuitAST.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A6053DD234651CB005CEA98 /* UnfoldShortCircuitAST.h */; };
@@ -1833,7 +1831,6 @@
 		0AA2FE5F2347260000E0B98C /* proc_table_egl.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A6052772346502A005CEA98 /* proc_table_egl.h */; };
 		0AA2FE602347260000E0B98C /* IntermNode_util.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A605377234651CB005CEA98 /* IntermNode_util.h */; };
 		0AA2FE612347260000E0B98C /* Visit.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A605378234651CB005CEA98 /* Visit.h */; };
-		0AA2FE622347260000E0B98C /* BuiltIn_autogen.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60537E234651CB005CEA98 /* BuiltIn_autogen.h */; };
 		0AA2FE632347260000E0B98C /* BreakVariableAliasingInInnerLoops.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A60541F234651CB005CEA98 /* BreakVariableAliasingInInnerLoops.h */; };
 		0AA2FE642347260000E0B98C /* UnfoldShortCircuitAST.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A6053DD234651CB005CEA98 /* UnfoldShortCircuitAST.h */; };
 		0AA2FE652347260000E0B98C /* AttributeMap.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A605B37234667C3005CEA98 /* AttributeMap.h */; };
@@ -2961,7 +2958,6 @@
 		0A60537B234651CB005CEA98 /* IntermTraverse.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = IntermTraverse.cpp; sourceTree = "<group>"; };
 		0A60537C234651CB005CEA98 /* FindSymbolNode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FindSymbolNode.cpp; sourceTree = "<group>"; };
 		0A60537D234651CB005CEA98 /* NodeSearch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NodeSearch.h; sourceTree = "<group>"; };
-		0A60537E234651CB005CEA98 /* BuiltIn_autogen.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BuiltIn_autogen.h; sourceTree = "<group>"; };
 		0A60537F234651CB005CEA98 /* FindMain.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FindMain.h; sourceTree = "<group>"; };
 		0A605380234651CB005CEA98 /* FindMain.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FindMain.cpp; sourceTree = "<group>"; };
 		0A605381234651CB005CEA98 /* IntermNodePatternMatcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IntermNodePatternMatcher.h; sourceTree = "<group>"; };
@@ -4628,7 +4624,6 @@
 				0A60537B234651CB005CEA98 /* IntermTraverse.cpp */,
 				0A60537C234651CB005CEA98 /* FindSymbolNode.cpp */,
 				0A60537D234651CB005CEA98 /* NodeSearch.h */,
-				0A60537E234651CB005CEA98 /* BuiltIn_autogen.h */,
 				0A60537F234651CB005CEA98 /* FindMain.h */,
 				0A605380234651CB005CEA98 /* FindMain.cpp */,
 				0A605381234651CB005CEA98 /* IntermNodePatternMatcher.h */,
@@ -6299,7 +6294,6 @@
 				0A6052902346502A005CEA98 /* proc_table_egl.h in Headers */,
 				0A6054A2234651CB005CEA98 /* IntermNode_util.h in Headers */,
 				0A6054A3234651CB005CEA98 /* Visit.h in Headers */,
-				0A6054A9234651CB005CEA98 /* BuiltIn_autogen.h in Headers */,
 				0A605549234651CC005CEA98 /* BreakVariableAliasingInInnerLoops.h in Headers */,
 				0AAF41132354D7CE000E3CC8 /* MGLKit.h in Headers */,
 				0A605507234651CC005CEA98 /* UnfoldShortCircuitAST.h in Headers */,
@@ -6607,7 +6601,6 @@
 				0A90F87D24065C0C005BA9A8 /* proc_table_egl.h in Headers */,
 				0A90F87E24065C0C005BA9A8 /* IntermNode_util.h in Headers */,
 				0A90F87F24065C0C005BA9A8 /* Visit.h in Headers */,
-				0A90F88024065C0C005BA9A8 /* BuiltIn_autogen.h in Headers */,
 				0A90F88124065C0C005BA9A8 /* BreakVariableAliasingInInnerLoops.h in Headers */,
 				0A90F88224065C0C005BA9A8 /* MGLKit.h in Headers */,
 				0A90F88324065C0C005BA9A8 /* UnfoldShortCircuitAST.h in Headers */,
@@ -6929,7 +6922,6 @@
 				0AA2FE5F2347260000E0B98C /* proc_table_egl.h in Headers */,
 				0AA2FE602347260000E0B98C /* IntermNode_util.h in Headers */,
 				0AA2FE612347260000E0B98C /* Visit.h in Headers */,
-				0AA2FE622347260000E0B98C /* BuiltIn_autogen.h in Headers */,
 				0AA2FE632347260000E0B98C /* BreakVariableAliasingInInnerLoops.h in Headers */,
 				0AAF41142354D7CE000E3CC8 /* MGLKit.h in Headers */,
 				0AA2FE642347260000E0B98C /* UnfoldShortCircuitAST.h in Headers */,
