@@ -1174,6 +1174,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::NONE;
             this->vertexLoadFunction = nullptr;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = false;
             break;
 
         case angle::FormatID::R10G10B10A2_SNORM:
@@ -1181,6 +1182,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R10G10B10A2_SNORM;
             this->vertexLoadFunction = CopyNativeVertexData<GLuint, 1, 1, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R10G10B10A2_UNORM:
@@ -1188,6 +1190,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R10G10B10A2_UNORM;
             this->vertexLoadFunction = CopyNativeVertexData<GLuint, 1, 1, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R16G16B16A16_FLOAT:
@@ -1195,6 +1198,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R16G16B16A16_FLOAT;
             this->vertexLoadFunction = CopyNativeVertexData<GLhalf, 4, 4, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R16G16B16A16_SINT:
@@ -1202,6 +1206,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R16G16B16A16_SINT;
             this->vertexLoadFunction = CopyNativeVertexData<GLshort, 4, 4, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R16G16B16A16_SNORM:
@@ -1209,6 +1214,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R16G16B16A16_SNORM;
             this->vertexLoadFunction = CopyNativeVertexData<GLshort, 4, 4, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R16G16B16A16_SSCALED:
@@ -1216,6 +1222,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R16G16B16A16_SSCALED;
             this->vertexLoadFunction = CopyNativeVertexData<GLshort, 4, 4, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R16G16B16A16_UINT:
@@ -1223,6 +1230,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R16G16B16A16_UINT;
             this->vertexLoadFunction = CopyNativeVertexData<GLushort, 4, 4, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R16G16B16A16_UNORM:
@@ -1230,6 +1238,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R16G16B16A16_UNORM;
             this->vertexLoadFunction = CopyNativeVertexData<GLushort, 4, 4, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R16G16B16A16_USCALED:
@@ -1237,6 +1246,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R16G16B16A16_USCALED;
             this->vertexLoadFunction = CopyNativeVertexData<GLushort, 4, 4, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R16G16B16_FLOAT:
@@ -1246,6 +1256,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R16G16B16A16_FLOAT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLhalf, 3, 4, gl::Float16One>;
                 this->defaultAlpha       = gl::Float16One;
+                this->actualSameGLType   = true;
             }
             else
             {
@@ -1253,6 +1264,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R16G16B16_FLOAT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLhalf, 3, 3, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1263,6 +1275,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R16G16B16A16_SINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLshort, 3, 4, 1>;
                 this->defaultAlpha       = 1;
+                this->actualSameGLType   = true;
             }
             else
             {
@@ -1270,6 +1283,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R16G16B16_SINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLshort, 3, 3, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1280,7 +1294,8 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId = angle::FormatID::R16G16B16A16_SNORM;
                 this->vertexLoadFunction =
                     CopyNativeVertexData<GLshort, 3, 4, std::numeric_limits<GLshort>::max()>;
-                this->defaultAlpha = std::numeric_limits<GLshort>::max();
+                this->defaultAlpha     = std::numeric_limits<GLshort>::max();
+                this->actualSameGLType = true;
             }
             else
             {
@@ -1288,6 +1303,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R16G16B16_SNORM;
                 this->vertexLoadFunction = CopyNativeVertexData<GLshort, 3, 3, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1298,6 +1314,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R16G16B16A16_SINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLshort, 3, 4, 1>;
                 this->defaultAlpha       = 1;
+                this->actualSameGLType   = true;
             }
             else
             {
@@ -1305,6 +1322,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R16G16B16_SSCALED;
                 this->vertexLoadFunction = CopyNativeVertexData<GLshort, 3, 3, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1315,6 +1333,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R16G16B16A16_UINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLushort, 3, 4, 1>;
                 this->defaultAlpha       = 1;
+                this->actualSameGLType   = true;
             }
             else
             {
@@ -1322,6 +1341,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R16G16B16_UINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLushort, 3, 3, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1332,7 +1352,8 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId = angle::FormatID::R16G16B16A16_UNORM;
                 this->vertexLoadFunction =
                     CopyNativeVertexData<GLushort, 3, 4, std::numeric_limits<GLushort>::max()>;
-                this->defaultAlpha = std::numeric_limits<GLushort>::max();
+                this->defaultAlpha     = std::numeric_limits<GLushort>::max();
+                this->actualSameGLType = true;
             }
             else
             {
@@ -1340,6 +1361,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R16G16B16_UNORM;
                 this->vertexLoadFunction = CopyNativeVertexData<GLushort, 3, 3, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1350,6 +1372,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R16G16B16A16_UINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLushort, 3, 4, 1>;
                 this->defaultAlpha       = 1;
+                this->actualSameGLType   = true;
             }
             else
             {
@@ -1357,6 +1380,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R16G16B16_USCALED;
                 this->vertexLoadFunction = CopyNativeVertexData<GLushort, 3, 3, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1365,6 +1389,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R16G16_FLOAT;
             this->vertexLoadFunction = CopyNativeVertexData<GLhalf, 2, 2, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R16G16_SINT:
@@ -1372,6 +1397,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R16G16_SINT;
             this->vertexLoadFunction = CopyNativeVertexData<GLshort, 2, 2, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R16G16_SNORM:
@@ -1379,6 +1405,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R16G16_SNORM;
             this->vertexLoadFunction = CopyNativeVertexData<GLshort, 2, 2, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R16G16_SSCALED:
@@ -1386,6 +1413,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R16G16_SSCALED;
             this->vertexLoadFunction = CopyNativeVertexData<GLshort, 2, 2, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R16G16_UINT:
@@ -1393,6 +1421,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R16G16_UINT;
             this->vertexLoadFunction = CopyNativeVertexData<GLushort, 2, 2, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R16G16_UNORM:
@@ -1400,6 +1429,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R16G16_UNORM;
             this->vertexLoadFunction = CopyNativeVertexData<GLushort, 2, 2, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R16G16_USCALED:
@@ -1407,15 +1437,17 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R16G16_USCALED;
             this->vertexLoadFunction = CopyNativeVertexData<GLushort, 2, 2, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R16_FLOAT:
             if (tightlyPacked)
             {
-                this->metalFormat        = MTLVertexFormatFloat;
-                this->actualFormatId     = angle::FormatID::R32_FLOAT;
-                this->vertexLoadFunction = CopyTo32FVertexData<GLhalf, 1, 1, false>;
+                this->metalFormat        = MTLVertexFormatHalf2;
+                this->actualFormatId     = angle::FormatID::R16G16_FLOAT;
+                this->vertexLoadFunction = CopyNativeVertexData<GLhalf, 1, 2, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             else
             {
@@ -1423,6 +1455,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R16_FLOAT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLhalf, 1, 1, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1433,6 +1466,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R16G16_SINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLshort, 1, 2, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             else
             {
@@ -1440,6 +1474,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R16_SINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLshort, 1, 1, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1450,6 +1485,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R16G16_SNORM;
                 this->vertexLoadFunction = CopyNativeVertexData<GLshort, 1, 2, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             else
             {
@@ -1457,6 +1493,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R16_SNORM;
                 this->vertexLoadFunction = CopyNativeVertexData<GLshort, 1, 1, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1467,6 +1504,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R16G16_SINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLshort, 1, 2, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             else
             {
@@ -1474,6 +1512,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R16_SSCALED;
                 this->vertexLoadFunction = CopyNativeVertexData<GLshort, 1, 1, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1484,6 +1523,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R16G16_UINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLushort, 1, 2, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             else
             {
@@ -1491,6 +1531,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R16_UINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLushort, 1, 1, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1501,6 +1542,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R16G16_UNORM;
                 this->vertexLoadFunction = CopyNativeVertexData<GLushort, 1, 2, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             else
             {
@@ -1508,6 +1550,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R16_UNORM;
                 this->vertexLoadFunction = CopyNativeVertexData<GLushort, 1, 1, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1518,6 +1561,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R16G16_UINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLushort, 1, 2, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             else
             {
@@ -1525,6 +1569,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R16_USCALED;
                 this->vertexLoadFunction = CopyNativeVertexData<GLushort, 1, 1, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1533,6 +1578,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32G32B32A32_FLOAT;
             this->vertexLoadFunction = CopyNativeVertexData<GLfloat, 4, 4, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R32G32B32A32_SINT:
@@ -1540,6 +1586,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32G32B32A32_SINT;
             this->vertexLoadFunction = CopyNativeVertexData<GLint, 4, 4, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R32G32B32A32_UINT:
@@ -1547,6 +1594,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32G32B32A32_UINT;
             this->vertexLoadFunction = CopyNativeVertexData<GLuint, 4, 4, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R32G32B32_FLOAT:
@@ -1554,6 +1602,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
             this->vertexLoadFunction = CopyNativeVertexData<GLfloat, 3, 3, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R32G32B32_SINT:
@@ -1561,6 +1610,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32G32B32_SINT;
             this->vertexLoadFunction = CopyNativeVertexData<GLint, 3, 3, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R32G32B32_UINT:
@@ -1568,6 +1618,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32G32B32_UINT;
             this->vertexLoadFunction = CopyNativeVertexData<GLuint, 3, 3, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R32G32_FLOAT:
@@ -1575,6 +1626,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32G32_FLOAT;
             this->vertexLoadFunction = CopyNativeVertexData<GLfloat, 2, 2, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R32G32_SINT:
@@ -1582,6 +1634,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32G32_SINT;
             this->vertexLoadFunction = CopyNativeVertexData<GLint, 2, 2, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R32G32_UINT:
@@ -1589,6 +1642,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32G32_UINT;
             this->vertexLoadFunction = CopyNativeVertexData<GLuint, 2, 2, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R32_FLOAT:
@@ -1596,6 +1650,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32_FLOAT;
             this->vertexLoadFunction = CopyNativeVertexData<GLfloat, 1, 1, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R32_SINT:
@@ -1603,6 +1658,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32_SINT;
             this->vertexLoadFunction = CopyNativeVertexData<GLint, 1, 1, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R32_UINT:
@@ -1610,6 +1666,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32_UINT;
             this->vertexLoadFunction = CopyNativeVertexData<GLuint, 1, 1, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R8G8B8A8_SINT:
@@ -1617,6 +1674,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R8G8B8A8_SINT;
             this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 4, 4, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R8G8B8A8_SNORM:
@@ -1624,6 +1682,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R8G8B8A8_SNORM;
             this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 4, 4, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R8G8B8A8_SSCALED:
@@ -1631,6 +1690,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R8G8B8A8_SSCALED;
             this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 4, 4, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R8G8B8A8_UINT:
@@ -1638,6 +1698,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R8G8B8A8_UINT;
             this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 4, 4, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R8G8B8A8_UNORM:
@@ -1645,6 +1706,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R8G8B8A8_UNORM;
             this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 4, 4, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R8G8B8A8_USCALED:
@@ -1652,6 +1714,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R8G8B8A8_USCALED;
             this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 4, 4, 0>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = true;
             break;
 
         case angle::FormatID::R8G8B8_SINT:
@@ -1661,6 +1724,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R8G8B8A8_SINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 3, 4, 1>;
                 this->defaultAlpha       = 1;
+                this->actualSameGLType   = true;
             }
             else
             {
@@ -1668,6 +1732,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R8G8B8_SINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 3, 3, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1678,7 +1743,8 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId = angle::FormatID::R8G8B8A8_SNORM;
                 this->vertexLoadFunction =
                     CopyNativeVertexData<GLbyte, 3, 4, std::numeric_limits<GLbyte>::max()>;
-                this->defaultAlpha = std::numeric_limits<GLbyte>::max();
+                this->defaultAlpha     = std::numeric_limits<GLbyte>::max();
+                this->actualSameGLType = true;
             }
             else
             {
@@ -1686,6 +1752,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R8G8B8_SNORM;
                 this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 3, 3, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1696,6 +1763,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R8G8B8A8_SINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 3, 4, 1>;
                 this->defaultAlpha       = 1;
+                this->actualSameGLType   = true;
             }
             else
             {
@@ -1703,6 +1771,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R8G8B8_SSCALED;
                 this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 3, 3, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1713,6 +1782,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R8G8B8A8_UINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 3, 4, 1>;
                 this->defaultAlpha       = 1;
+                this->actualSameGLType   = true;
             }
             else
             {
@@ -1720,6 +1790,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R8G8B8_UINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 3, 3, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1730,7 +1801,8 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM;
                 this->vertexLoadFunction =
                     CopyNativeVertexData<GLubyte, 3, 4, std::numeric_limits<GLubyte>::max()>;
-                this->defaultAlpha = std::numeric_limits<GLubyte>::max();
+                this->defaultAlpha     = std::numeric_limits<GLubyte>::max();
+                this->actualSameGLType = true;
             }
             else
             {
@@ -1738,6 +1810,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R8G8B8_UNORM;
                 this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 3, 3, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1748,6 +1821,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R8G8B8A8_UINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 3, 4, 1>;
                 this->defaultAlpha       = 1;
+                this->actualSameGLType   = true;
             }
             else
             {
@@ -1755,6 +1829,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R8G8B8_USCALED;
                 this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 3, 3, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1765,6 +1840,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R8G8B8A8_SINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 2, 4, 1>;
                 this->defaultAlpha       = 1;
+                this->actualSameGLType   = true;
             }
             else
             {
@@ -1772,6 +1848,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R8G8_SINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 2, 2, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1782,7 +1859,8 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId = angle::FormatID::R8G8B8A8_SNORM;
                 this->vertexLoadFunction =
                     CopyNativeVertexData<GLbyte, 2, 4, std::numeric_limits<GLbyte>::max()>;
-                this->defaultAlpha = std::numeric_limits<GLbyte>::max();
+                this->defaultAlpha     = std::numeric_limits<GLbyte>::max();
+                this->actualSameGLType = true;
             }
             else
             {
@@ -1790,6 +1868,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R8G8_SNORM;
                 this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 2, 2, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1800,6 +1879,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R8G8B8A8_SINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 2, 4, 1>;
                 this->defaultAlpha       = 1;
+                this->actualSameGLType   = true;
             }
             else
             {
@@ -1807,6 +1887,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R8G8_SSCALED;
                 this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 2, 2, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1817,6 +1898,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R8G8B8A8_UINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 2, 4, 1>;
                 this->defaultAlpha       = 1;
+                this->actualSameGLType   = true;
             }
             else
             {
@@ -1824,6 +1906,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R8G8_UINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 2, 2, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1834,7 +1917,8 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM;
                 this->vertexLoadFunction =
                     CopyNativeVertexData<GLubyte, 2, 4, std::numeric_limits<GLubyte>::max()>;
-                this->defaultAlpha = std::numeric_limits<GLubyte>::max();
+                this->defaultAlpha     = std::numeric_limits<GLubyte>::max();
+                this->actualSameGLType = true;
             }
             else
             {
@@ -1842,6 +1926,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R8G8_UNORM;
                 this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 2, 2, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1852,6 +1937,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R8G8B8A8_UINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 2, 4, 1>;
                 this->defaultAlpha       = 1;
+                this->actualSameGLType   = true;
             }
             else
             {
@@ -1859,6 +1945,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R8G8_USCALED;
                 this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 2, 2, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1869,6 +1956,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R8G8B8A8_SINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 1, 4, 1>;
                 this->defaultAlpha       = 1;
+                this->actualSameGLType   = true;
             }
             else
             {
@@ -1876,6 +1964,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R8_SINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 1, 1, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1886,7 +1975,8 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId = angle::FormatID::R8G8B8A8_SNORM;
                 this->vertexLoadFunction =
                     CopyNativeVertexData<GLbyte, 1, 4, std::numeric_limits<GLbyte>::max()>;
-                this->defaultAlpha = std::numeric_limits<GLbyte>::max();
+                this->defaultAlpha     = std::numeric_limits<GLbyte>::max();
+                this->actualSameGLType = true;
             }
             else
             {
@@ -1894,6 +1984,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R8_SNORM;
                 this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 1, 1, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1904,6 +1995,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R8G8B8A8_SINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 1, 4, 1>;
                 this->defaultAlpha       = 1;
+                this->actualSameGLType   = true;
             }
             else
             {
@@ -1911,6 +2003,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R8_SSCALED;
                 this->vertexLoadFunction = CopyNativeVertexData<GLbyte, 1, 1, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1921,6 +2014,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R8G8B8A8_UINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 1, 4, 1>;
                 this->defaultAlpha       = 1;
+                this->actualSameGLType   = true;
             }
             else
             {
@@ -1928,6 +2022,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R8_UINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 1, 1, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1938,7 +2033,8 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId = angle::FormatID::R8G8B8A8_UNORM;
                 this->vertexLoadFunction =
                     CopyNativeVertexData<GLubyte, 1, 4, std::numeric_limits<GLubyte>::max()>;
-                this->defaultAlpha = std::numeric_limits<GLubyte>::max();
+                this->defaultAlpha     = std::numeric_limits<GLubyte>::max();
+                this->actualSameGLType = true;
             }
             else
             {
@@ -1946,6 +2042,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R8_UNORM;
                 this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 1, 1, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1956,6 +2053,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R8G8B8A8_UINT;
                 this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 1, 4, 1>;
                 this->defaultAlpha       = 1;
+                this->actualSameGLType   = true;
             }
             else
             {
@@ -1963,6 +2061,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
                 this->actualFormatId     = angle::FormatID::R8_USCALED;
                 this->vertexLoadFunction = CopyNativeVertexData<GLubyte, 1, 1, 0>;
                 this->defaultAlpha       = 0;
+                this->actualSameGLType   = true;
             }
             break;
 
@@ -1971,6 +2070,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32G32B32A32_FLOAT;
             this->vertexLoadFunction = CopyXYZ10W2ToXYZW32FVertexData<true, false, true>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = false;
             break;
 
         case angle::FormatID::R10G10B10A2_SSCALED:
@@ -1978,6 +2078,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32G32B32A32_FLOAT;
             this->vertexLoadFunction = CopyXYZ10W2ToXYZW32FVertexData<true, false, true>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = false;
             break;
 
         case angle::FormatID::R10G10B10A2_UINT:
@@ -1985,6 +2086,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32G32B32A32_FLOAT;
             this->vertexLoadFunction = CopyXYZ10W2ToXYZW32FVertexData<false, false, true>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = false;
             break;
 
         case angle::FormatID::R10G10B10A2_USCALED:
@@ -1992,6 +2094,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32G32B32A32_FLOAT;
             this->vertexLoadFunction = CopyXYZ10W2ToXYZW32FVertexData<false, false, true>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = false;
             break;
 
         case angle::FormatID::R32G32B32A32_FIXED:
@@ -1999,6 +2102,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32G32B32A32_FLOAT;
             this->vertexLoadFunction = Copy32FixedTo32FVertexData<4, 4>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = false;
             break;
 
         case angle::FormatID::R32G32B32A32_SNORM:
@@ -2006,6 +2110,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32G32B32A32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLint, 4, 4, true>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = false;
             break;
 
         case angle::FormatID::R32G32B32A32_SSCALED:
@@ -2013,6 +2118,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32G32B32A32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLint, 4, 4, false>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = false;
             break;
 
         case angle::FormatID::R32G32B32A32_UNORM:
@@ -2020,6 +2126,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32G32B32A32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLuint, 4, 4, true>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = false;
             break;
 
         case angle::FormatID::R32G32B32A32_USCALED:
@@ -2027,6 +2134,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32G32B32A32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLuint, 4, 4, false>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = false;
             break;
 
         case angle::FormatID::R32G32B32_FIXED:
@@ -2034,6 +2142,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
             this->vertexLoadFunction = Copy32FixedTo32FVertexData<3, 3>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = false;
             break;
 
         case angle::FormatID::R32G32B32_SNORM:
@@ -2041,6 +2150,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLint, 3, 3, true>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = false;
             break;
 
         case angle::FormatID::R32G32B32_SSCALED:
@@ -2048,6 +2158,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLint, 3, 3, false>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = false;
             break;
 
         case angle::FormatID::R32G32B32_UNORM:
@@ -2055,6 +2166,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLuint, 3, 3, true>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = false;
             break;
 
         case angle::FormatID::R32G32B32_USCALED:
@@ -2062,6 +2174,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32G32B32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLuint, 3, 3, false>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = false;
             break;
 
         case angle::FormatID::R32G32_FIXED:
@@ -2069,6 +2182,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32G32_FLOAT;
             this->vertexLoadFunction = Copy32FixedTo32FVertexData<2, 2>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = false;
             break;
 
         case angle::FormatID::R32G32_SNORM:
@@ -2076,6 +2190,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32G32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLint, 2, 2, true>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = false;
             break;
 
         case angle::FormatID::R32G32_SSCALED:
@@ -2083,6 +2198,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32G32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLint, 2, 2, false>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = false;
             break;
 
         case angle::FormatID::R32G32_UNORM:
@@ -2090,6 +2206,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32G32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLuint, 2, 2, true>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = false;
             break;
 
         case angle::FormatID::R32G32_USCALED:
@@ -2097,6 +2214,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32G32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLuint, 2, 2, false>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = false;
             break;
 
         case angle::FormatID::R32_FIXED:
@@ -2104,6 +2222,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32_FLOAT;
             this->vertexLoadFunction = Copy32FixedTo32FVertexData<1, 1>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = false;
             break;
 
         case angle::FormatID::R32_SNORM:
@@ -2111,6 +2230,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLint, 1, 1, true>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = false;
             break;
 
         case angle::FormatID::R32_SSCALED:
@@ -2118,6 +2238,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLint, 1, 1, false>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = false;
             break;
 
         case angle::FormatID::R32_UNORM:
@@ -2125,6 +2246,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLuint, 1, 1, true>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = false;
             break;
 
         case angle::FormatID::R32_USCALED:
@@ -2132,6 +2254,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::R32_FLOAT;
             this->vertexLoadFunction = CopyTo32FVertexData<GLuint, 1, 1, false>;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = false;
             break;
 
         default:
@@ -2139,6 +2262,7 @@ void VertexFormat::init(angle::FormatID angleFormatId, bool tightlyPacked)
             this->actualFormatId     = angle::FormatID::NONE;
             this->vertexLoadFunction = nullptr;
             this->defaultAlpha       = 0;
+            this->actualSameGLType   = false;
     }
 }
 

@@ -124,6 +124,7 @@ case_vertex_format_template1 = """        case angle::FormatID::{angle_format}:
             this->actualFormatId = angle::FormatID::{actual_angle_format};
             this->vertexLoadFunction = {vertex_copy_function};
             this->defaultAlpha = {default_alpha};
+            this->actualSameGLType = {same_gl_type};
             break;
 
 """
@@ -135,6 +136,7 @@ case_vertex_format_template2 = """        case angle::FormatID::{angle_format}:
                 this->actualFormatId = angle::FormatID::{actual_angle_format_packed};
                 this->vertexLoadFunction = {vertex_copy_function_packed};
                 this->defaultAlpha = {default_alpha_packed};
+                this->actualSameGLType = {same_gl_type_packed};
             }}
             else
             {{
@@ -142,6 +144,7 @@ case_vertex_format_template2 = """        case angle::FormatID::{angle_format}:
                 this->actualFormatId = angle::FormatID::{actual_angle_format};
                 this->vertexLoadFunction = {vertex_copy_function};
                 this->defaultAlpha = {default_alpha};
+                this->actualSameGLType = {same_gl_type};
             }}
             break;
 
@@ -150,23 +153,24 @@ case_vertex_format_template2 = """        case angle::FormatID::{angle_format}:
 
 # NOTE(hqle): This is a modified version of the get_vertex_copy_function() function in
 # src/libANGLE/renderer/angle_format.py
+# - Return value is a tuple {copy_function, default_alpha_value, have_same_gl_type}.
 def get_vertex_copy_function_and_default_alpha(src_format, dst_format):
     if dst_format == "NONE":
-        return "nullptr", 0
+        return "nullptr", 0, "false"
 
     num_channel = len(angle_format_utils.get_channel_tokens(src_format))
     if num_channel < 1 or num_channel > 4:
-        return "nullptr", 0
+        return "nullptr", 0, "false"
 
     src_gl_type = angle_format_utils.get_format_gl_type(src_format)
     dst_gl_type = angle_format_utils.get_format_gl_type(dst_format)
 
     if src_gl_type == dst_gl_type:
         if src_format.startswith('R10G10B10A2'):
-            return 'CopyNativeVertexData<GLuint, 1, 1, 0>', 0
+            return 'CopyNativeVertexData<GLuint, 1, 1, 0>', 0, "true"
 
         if src_gl_type == None:
-            return 'nullptr', 0
+            return 'nullptr', 0, "true"
         dst_num_channel = len(angle_format_utils.get_channel_tokens(dst_format))
         default_alpha = '1'
 
@@ -180,16 +184,16 @@ def get_vertex_copy_function_and_default_alpha(src_format, dst_format):
             default_alpha = 'std::numeric_limits<%s>::max()' % (src_gl_type)
 
         return 'CopyNativeVertexData<%s, %d, %d, %s>' % (src_gl_type, num_channel, dst_num_channel,
-                                                         default_alpha), default_alpha
+                                                         default_alpha), default_alpha, "true"
 
     if src_format.startswith('R10G10B10A2'):
         assert 'FLOAT' in dst_format, (
             'get_vertex_copy_function: can only convert to float,' + ' not to ' + dst_format)
         is_signed = 'true' if 'SINT' in src_format or 'SNORM' in src_format or 'SSCALED' in src_format else 'false'
         is_normal = 'true' if 'NORM' in src_format else 'false'
-        return 'CopyXYZ10W2ToXYZW32FVertexData<%s, %s, true>' % (is_signed, is_normal), 0
+        return 'CopyXYZ10W2ToXYZW32FVertexData<%s, %s, true>' % (is_signed, is_normal), 0, "false"
 
-    return angle_format_utils.get_vertex_copy_function(src_format, dst_format), 0
+    return angle_format_utils.get_vertex_copy_function(src_format, dst_format), 0, "false"
 
 
 # Generate format conversion switch case (generic case)
@@ -353,25 +357,29 @@ def gen_image_map_switch_string(image_table, angle_to_gl):
 
 def gen_vertex_map_switch_case(angle_fmt, actual_angle_fmt, angle_to_mtl_map, override_packed_map):
     mtl_format = angle_to_mtl_map[actual_angle_fmt]
-    copy_function, default_alpha = get_vertex_copy_function_and_default_alpha(
+    copy_function, default_alpha, same_gl_type = get_vertex_copy_function_and_default_alpha(
         angle_fmt, actual_angle_fmt)
+
     if actual_angle_fmt in override_packed_map:
         # This format has an override when used in tightly packed buffer,
         # Return if else block
         angle_fmt_packed = override_packed_map[actual_angle_fmt]
         mtl_format_packed = angle_to_mtl_map[angle_fmt_packed]
-        copy_function_packed, default_alpha_packed = get_vertex_copy_function_and_default_alpha(
+        copy_function_packed, default_alpha_packed, same_gl_type_packed = get_vertex_copy_function_and_default_alpha(
             angle_fmt, angle_fmt_packed)
+
         return case_vertex_format_template2.format(
             angle_format=angle_fmt,
             mtl_format_packed=mtl_format_packed,
             actual_angle_format_packed=angle_fmt_packed,
             vertex_copy_function_packed=copy_function_packed,
             default_alpha_packed=default_alpha_packed,
+            same_gl_type_packed=same_gl_type_packed,
             mtl_format=mtl_format,
             actual_angle_format=actual_angle_fmt,
             vertex_copy_function=copy_function,
-            default_alpha=default_alpha)
+            default_alpha=default_alpha,
+            same_gl_type=same_gl_type)
     else:
         # This format has no packed buffer's override, return ordinary block.
         return case_vertex_format_template1.format(
@@ -379,7 +387,8 @@ def gen_vertex_map_switch_case(angle_fmt, actual_angle_fmt, angle_to_mtl_map, ov
             mtl_format=mtl_format,
             actual_angle_format=actual_angle_fmt,
             vertex_copy_function=copy_function,
-            default_alpha=default_alpha)
+            default_alpha=default_alpha,
+            same_gl_type=same_gl_type)
 
 
 def gen_vertex_map_switch_string(vertex_table):
@@ -401,6 +410,7 @@ def gen_vertex_map_switch_string(vertex_table):
     switch_data += "            this->actualFormatId = angle::FormatID::NONE;\n"
     switch_data += "            this->vertexLoadFunction = nullptr;"
     switch_data += "            this->defaultAlpha = 0;"
+    switch_data += "            this->actualSameGLType = false;"
     return switch_data
 
 
