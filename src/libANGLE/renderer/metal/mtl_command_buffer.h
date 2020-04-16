@@ -255,6 +255,50 @@ class IntermediateCommandStream
     size_t mReadPtr = 0;
 };
 
+// Per shader stage's states
+struct RenderCommandEncoderShaderStates
+{
+    RenderCommandEncoderShaderStates();
+
+    void reset();
+
+    std::array<id<MTLBuffer>, kMaxShaderBuffers> buffers;
+    std::array<uint32_t, kMaxShaderBuffers> bufferOffsets;
+    std::array<id<MTLSamplerState>, kMaxShaderSamplers> samplers;
+    std::array<Optional<std::pair<float, float>>, kMaxShaderSamplers> samplerLodClamps;
+    std::array<id<MTLTexture>, kMaxShaderSamplers> textures;
+};
+
+// Per render pass's states
+struct RenderCommandEncoderStates
+{
+    RenderCommandEncoderStates();
+
+    void reset();
+
+    id<MTLRenderPipelineState> renderPipeline;
+
+    MTLTriangleFillMode triangleFillMode;
+    MTLWinding winding;
+    MTLCullMode cullMode;
+
+    id<MTLDepthStencilState> depthStencilState;
+    float depthBias, depthSlopeScale, depthClamp;
+
+    uint32_t stencilFrontRef, stencilBackRef;
+
+    Optional<MTLViewport> viewport;
+    Optional<MTLScissorRect> scissorRect;
+
+    std::array<float, 4> blendColor;
+
+    gl::ShaderMap<RenderCommandEncoderShaderStates> perShaderStates;
+
+    MTLVisibilityResultMode visibilityResultMode;
+    size_t visibilityResultBufferOffset;
+};
+
+// Encoder for encoding render commands
 class RenderCommandEncoder final : public CommandEncoder
 {
   public:
@@ -438,6 +482,11 @@ class RenderCommandEncoder final : public CommandEncoder
     void simulateDiscardFramebuffer();
     void endEncodingImpl(bool considerDiscardSimulation);
 
+    RenderCommandEncoder &commonSetBuffer(gl::ShaderType shaderType,
+                                          id<MTLBuffer> mtlBuffer,
+                                          uint32_t offset,
+                                          uint32_t index);
+
     RenderPassDesc mRenderPassDesc;
     // Cached Objective-C render pass desc to avoid re-allocate every frame.
     mtl::AutoObjCObj<MTLRenderPassDescriptor> mCachedRenderPassDescObjC;
@@ -448,9 +497,12 @@ class RenderCommandEncoder final : public CommandEncoder
     IntermediateCommandStream mCommands;
 
     gl::ShaderMap<uint8_t> mSetBufferCmds;
+    gl::ShaderMap<uint8_t> mSetBufferOffsetCmds;
     gl::ShaderMap<uint8_t> mSetBytesCmds;
     gl::ShaderMap<uint8_t> mSetTextureCmds;
     gl::ShaderMap<uint8_t> mSetSamplerCmds;
+
+    RenderCommandEncoderStates mStateCache = {};
 };
 
 class BlitCommandEncoder final : public CommandEncoder

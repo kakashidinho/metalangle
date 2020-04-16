@@ -19,6 +19,17 @@
 #include "libANGLE/renderer/metal/mtl_occlusion_query_pool.h"
 #include "libANGLE/renderer/metal/mtl_resources.h"
 
+// Use to compare the new values with the values already set in the command encoder:
+static inline bool operator==(const MTLViewport &lhs, const MTLViewport &rhs)
+{
+    return memcmp(&lhs, &rhs, sizeof(lhs)) == 0;
+}
+
+static inline bool operator==(const MTLScissorRect &lhs, const MTLScissorRect &rhs)
+{
+    return memcmp(&lhs, &rhs, sizeof(lhs)) == 0;
+}
+
 namespace rx
 {
 namespace mtl
@@ -40,10 +51,12 @@ namespace
     PROC(SetScissorRect)                 \
     PROC(SetBlendColor)                  \
     PROC(SetVertexBuffer)                \
+    PROC(SetVertexBufferOffset)          \
     PROC(SetVertexBytes)                 \
     PROC(SetVertexSamplerState)          \
     PROC(SetVertexTexture)               \
     PROC(SetFragmentBuffer)              \
+    PROC(SetFragmentBufferOffset)        \
     PROC(SetFragmentBytes)               \
     PROC(SetFragmentSamplerState)        \
     PROC(SetFragmentTexture)             \
@@ -153,6 +166,14 @@ void SetVertexBufferCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommand
     [buffer ANGLE_MTL_RELEASE];
 }
 
+void SetVertexBufferOffsetCmd(id<MTLRenderCommandEncoder> encoder,
+                              IntermediateCommandStream *stream)
+{
+    auto offset = stream->fetch<uint32_t>();
+    auto index  = stream->fetch<uint32_t>();
+    [encoder setVertexBufferOffset:offset atIndex:index];
+}
+
 void SetVertexBytesCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
 {
     auto size  = stream->fetch<size_t>();
@@ -191,6 +212,14 @@ void SetFragmentBufferCmd(id<MTLRenderCommandEncoder> encoder, IntermediateComma
     auto index  = stream->fetch<uint32_t>();
     [encoder setFragmentBuffer:buffer offset:offset atIndex:index];
     [buffer ANGLE_MTL_RELEASE];
+}
+
+void SetFragmentBufferOffsetCmd(id<MTLRenderCommandEncoder> encoder,
+                                IntermediateCommandStream *stream)
+{
+    auto offset = stream->fetch<uint32_t>();
+    auto index  = stream->fetch<uint32_t>();
+    [encoder setFragmentBufferOffset:offset atIndex:index];
 }
 
 void SetFragmentBytesCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
@@ -838,6 +867,73 @@ void CommandEncoder::insertDebugSignImpl(NSString *label)
     [get() insertDebugSignpost:label];
 }
 
+// RenderCommandEncoderShaderStates implementation
+RenderCommandEncoderShaderStates::RenderCommandEncoderShaderStates()
+{
+    reset();
+}
+
+void RenderCommandEncoderShaderStates::reset()
+{
+    for (id<MTLBuffer> &buffer : buffers)
+    {
+        buffer = nil;
+    }
+
+    for (uint32_t &offset : bufferOffsets)
+    {
+        offset = 0;
+    }
+
+    for (id<MTLSamplerState> &sampler : samplers)
+    {
+        sampler = nil;
+    }
+
+    for (Optional<std::pair<float, float>> &lodClampRange : samplerLodClamps)
+    {
+        lodClampRange.reset();
+    }
+
+    for (id<MTLTexture> &texture : textures)
+    {
+        texture = nil;
+    }
+}
+
+// RenderCommandEncoderStates implementation
+RenderCommandEncoderStates::RenderCommandEncoderStates()
+{
+    reset();
+}
+
+void RenderCommandEncoderStates::reset()
+{
+    renderPipeline = nil;
+
+    triangleFillMode = MTLTriangleFillModeFill;
+    winding          = MTLWindingClockwise;
+    cullMode         = MTLCullModeNone;
+
+    depthStencilState = nil;
+    depthBias = depthSlopeScale = depthClamp = 0;
+
+    stencilFrontRef = stencilBackRef = 0;
+
+    viewport.reset();
+    scissorRect.reset();
+
+    blendColor = {0, 0, 0, 0};
+
+    for (RenderCommandEncoderShaderStates &shaderStates : perShaderStates)
+    {
+        shaderStates.reset();
+    }
+
+    visibilityResultMode         = MTLVisibilityResultModeDisabled;
+    visibilityResultBufferOffset = 0;
+}
+
 // RenderCommandEncoder implemtation
 RenderCommandEncoder::RenderCommandEncoder(CommandBuffer *cmdBuffer,
                                            const OcclusionQueryPool &queryPool)
@@ -859,6 +955,11 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer *cmdBuffer,
 
     mSetBufferCmds[gl::ShaderType::Vertex]   = static_cast<uint8_t>(CmdType::SetVertexBuffer);
     mSetBufferCmds[gl::ShaderType::Fragment] = static_cast<uint8_t>(CmdType::SetFragmentBuffer);
+
+    mSetBufferOffsetCmds[gl::ShaderType::Vertex] =
+        static_cast<uint8_t>(CmdType::SetVertexBufferOffset);
+    mSetBufferOffsetCmds[gl::ShaderType::Fragment] =
+        static_cast<uint8_t>(CmdType::SetFragmentBufferOffset);
 
     mSetBytesCmds[gl::ShaderType::Vertex]   = static_cast<uint8_t>(CmdType::SetVertexBytes);
     mSetBytesCmds[gl::ShaderType::Fragment] = static_cast<uint8_t>(CmdType::SetFragmentBytes);
@@ -970,6 +1071,7 @@ void RenderCommandEncoder::endEncodingImpl(bool considerDiscardSimulation)
 
     // reset state
     mRenderPassDesc = RenderPassDesc();
+    mStateCache.reset();
 }
 
 inline void RenderCommandEncoder::initWriteDependency(const TextureRef &texture)
@@ -1109,24 +1211,48 @@ RenderCommandEncoder &RenderCommandEncoder::restart(const RenderPassDesc &desc)
 
 RenderCommandEncoder &RenderCommandEncoder::setRenderPipelineState(id<MTLRenderPipelineState> state)
 {
+    if (mStateCache.renderPipeline == state)
+    {
+        return *this;
+    }
+    mStateCache.renderPipeline = state;
+
     mCommands.push(CmdType::SetRenderPipelineState).push([state ANGLE_MTL_RETAIN]);
 
     return *this;
 }
 RenderCommandEncoder &RenderCommandEncoder::setTriangleFillMode(MTLTriangleFillMode mode)
 {
+    if (mStateCache.triangleFillMode == mode)
+    {
+        return *this;
+    }
+    mStateCache.triangleFillMode = mode;
+
     mCommands.push(CmdType::SetTriangleFillMode).push(mode);
 
     return *this;
 }
 RenderCommandEncoder &RenderCommandEncoder::setFrontFacingWinding(MTLWinding winding)
 {
+    if (mStateCache.winding == winding)
+    {
+        return *this;
+    }
+    mStateCache.winding = winding;
+
     mCommands.push(CmdType::SetFrontFacingWinding).push(winding);
 
     return *this;
 }
 RenderCommandEncoder &RenderCommandEncoder::setCullMode(MTLCullMode mode)
 {
+    if (mStateCache.cullMode == mode)
+    {
+        return *this;
+    }
+    mStateCache.cullMode = mode;
+
     mCommands.push(CmdType::SetCullMode).push(mode);
 
     return *this;
@@ -1134,6 +1260,12 @@ RenderCommandEncoder &RenderCommandEncoder::setCullMode(MTLCullMode mode)
 
 RenderCommandEncoder &RenderCommandEncoder::setDepthStencilState(id<MTLDepthStencilState> state)
 {
+    if (mStateCache.depthStencilState == state)
+    {
+        return *this;
+    }
+    mStateCache.depthStencilState = state;
+
     mCommands.push(CmdType::SetDepthStencilState).push([state ANGLE_MTL_RETAIN]);
 
     return *this;
@@ -1142,6 +1274,15 @@ RenderCommandEncoder &RenderCommandEncoder::setDepthBias(float depthBias,
                                                          float slopeScale,
                                                          float clamp)
 {
+    if (mStateCache.depthBias == depthBias && mStateCache.depthSlopeScale == slopeScale &&
+        mStateCache.depthClamp == clamp)
+    {
+        return *this;
+    }
+    mStateCache.depthBias       = depthBias;
+    mStateCache.depthSlopeScale = slopeScale;
+    mStateCache.depthClamp      = clamp;
+
     mCommands.push(CmdType::SetDepthBias).push(depthBias).push(slopeScale).push(clamp);
 
     return *this;
@@ -1151,6 +1292,13 @@ RenderCommandEncoder &RenderCommandEncoder::setStencilRefVals(uint32_t frontRef,
     // Metal has some bugs when reference values are larger than 0xff
     ASSERT(frontRef == (frontRef & kStencilMaskAll));
     ASSERT(backRef == (backRef & kStencilMaskAll));
+
+    if (mStateCache.stencilFrontRef == frontRef && mStateCache.stencilBackRef == backRef)
+    {
+        return *this;
+    }
+    mStateCache.stencilFrontRef = frontRef;
+    mStateCache.stencilBackRef  = backRef;
 
     mCommands.push(CmdType::SetStencilRefVals).push(frontRef).push(backRef);
 
@@ -1164,6 +1312,12 @@ RenderCommandEncoder &RenderCommandEncoder::setStencilRefVal(uint32_t ref)
 
 RenderCommandEncoder &RenderCommandEncoder::setViewport(const MTLViewport &viewport)
 {
+    if (mStateCache.viewport.valid() && mStateCache.viewport.value() == viewport)
+    {
+        return *this;
+    }
+    mStateCache.viewport = viewport;
+
     mCommands.push(CmdType::SetViewport).push(viewport);
 
     return *this;
@@ -1171,6 +1325,12 @@ RenderCommandEncoder &RenderCommandEncoder::setViewport(const MTLViewport &viewp
 
 RenderCommandEncoder &RenderCommandEncoder::setScissorRect(const MTLScissorRect &rect)
 {
+    if (mStateCache.scissorRect.valid() && mStateCache.scissorRect.value() == rect)
+    {
+        return *this;
+    }
+    mStateCache.scissorRect = rect;
+
     mCommands.push(CmdType::SetScissorRect).push(rect);
 
     return *this;
@@ -1178,6 +1338,16 @@ RenderCommandEncoder &RenderCommandEncoder::setScissorRect(const MTLScissorRect 
 
 RenderCommandEncoder &RenderCommandEncoder::setBlendColor(float r, float g, float b, float a)
 {
+    if (mStateCache.blendColor[0] == r && mStateCache.blendColor[1] == g &&
+        mStateCache.blendColor[2] == b && mStateCache.blendColor[3] == a)
+    {
+        return *this;
+    }
+    mStateCache.blendColor[0] = r;
+    mStateCache.blendColor[1] = g;
+    mStateCache.blendColor[2] = b;
+    mStateCache.blendColor[3] = a;
+
     mCommands.push(CmdType::SetBlendColor).push(r).push(g).push(b).push(a);
 
     return *this;
@@ -1196,12 +1366,8 @@ RenderCommandEncoder &RenderCommandEncoder::setBuffer(gl::ShaderType shaderType,
     cmdBuffer().setReadDependency(buffer);
 
     id<MTLBuffer> mtlBuffer = (buffer ? buffer->get() : nil);
-    mCommands.push(static_cast<CmdType>(mSetBufferCmds[shaderType]))
-        .push([mtlBuffer ANGLE_MTL_RETAIN])
-        .push(offset)
-        .push(index);
 
-    return *this;
+    return commonSetBuffer(shaderType, mtlBuffer, offset, index);
 }
 
 RenderCommandEncoder &RenderCommandEncoder::setBufferForWrite(gl::ShaderType shaderType,
@@ -1217,6 +1383,36 @@ RenderCommandEncoder &RenderCommandEncoder::setBufferForWrite(gl::ShaderType sha
     cmdBuffer().setWriteDependency(buffer);
 
     id<MTLBuffer> mtlBuffer = (buffer ? buffer->get() : nil);
+
+    return commonSetBuffer(shaderType, mtlBuffer, offset, index);
+}
+
+RenderCommandEncoder &RenderCommandEncoder::commonSetBuffer(gl::ShaderType shaderType,
+                                                            id<MTLBuffer> mtlBuffer,
+                                                            uint32_t offset,
+                                                            uint32_t index)
+{
+    RenderCommandEncoderShaderStates &shaderStates = mStateCache.perShaderStates[shaderType];
+    if (shaderStates.buffers[index] == mtlBuffer)
+    {
+        if (shaderStates.bufferOffsets[index] == offset)
+        {
+            return *this;
+        }
+
+        // If buffer already bound but with different offset, then update the offer only.
+        shaderStates.bufferOffsets[index] = offset;
+
+        mCommands.push(static_cast<CmdType>(mSetBufferOffsetCmds[shaderType]))
+            .push(offset)
+            .push(index);
+
+        return *this;
+    }
+
+    shaderStates.buffers[index]       = mtlBuffer;
+    shaderStates.bufferOffsets[index] = offset;
+
     mCommands.push(static_cast<CmdType>(mSetBufferCmds[shaderType]))
         .push([mtlBuffer ANGLE_MTL_RETAIN])
         .push(offset)
@@ -1234,6 +1430,10 @@ RenderCommandEncoder &RenderCommandEncoder::setBytes(gl::ShaderType shaderType,
     {
         return *this;
     }
+
+    RenderCommandEncoderShaderStates &shaderStates = mStateCache.perShaderStates[shaderType];
+    shaderStates.buffers[index]                    = nil;
+    shaderStates.bufferOffsets[index]              = 0;
 
     mCommands.push(static_cast<CmdType>(mSetBytesCmds[shaderType]))
         .push(size)
@@ -1253,6 +1453,20 @@ RenderCommandEncoder &RenderCommandEncoder::setSamplerState(gl::ShaderType shade
     {
         return *this;
     }
+
+    RenderCommandEncoderShaderStates &shaderStates = mStateCache.perShaderStates[shaderType];
+    if (shaderStates.samplers[index] == state && shaderStates.samplerLodClamps[index].valid())
+    {
+        const std::pair<float, float> &currentLodClampRange =
+            shaderStates.samplerLodClamps[index].value();
+        if (currentLodClampRange.first == lodMinClamp && currentLodClampRange.second == lodMaxClamp)
+        {
+            return *this;
+        }
+    }
+
+    shaderStates.samplers[index]         = state;
+    shaderStates.samplerLodClamps[index] = {lodMinClamp, lodMaxClamp};
 
     mCommands.push(static_cast<CmdType>(mSetSamplerCmds[shaderType]))
         .push([state ANGLE_MTL_RETAIN])
@@ -1274,6 +1488,13 @@ RenderCommandEncoder &RenderCommandEncoder::setTexture(gl::ShaderType shaderType
     cmdBuffer().setReadDependency(texture);
 
     id<MTLTexture> mtlTexture = (texture ? texture->get() : nil);
+
+    RenderCommandEncoderShaderStates &shaderStates = mStateCache.perShaderStates[shaderType];
+    if (shaderStates.textures[index] == mtlTexture)
+    {
+        return *this;
+    }
+    shaderStates.textures[index] = mtlTexture;
 
     mCommands.push(static_cast<CmdType>(mSetTextureCmds[shaderType]))
         .push([mtlTexture ANGLE_MTL_RETAIN])
@@ -1389,6 +1610,14 @@ RenderCommandEncoder &RenderCommandEncoder::drawIndexedInstancedBaseVertex(
 RenderCommandEncoder &RenderCommandEncoder::setVisibilityResultMode(MTLVisibilityResultMode mode,
                                                                     size_t offset)
 {
+    if (mStateCache.visibilityResultMode == mode &&
+        mStateCache.visibilityResultBufferOffset == offset)
+    {
+        return *this;
+    }
+    mStateCache.visibilityResultMode         = mode;
+    mStateCache.visibilityResultBufferOffset = offset;
+
     mCommands.push(CmdType::SetVisibilityResultMode).push(mode).push(offset);
     return *this;
 }
