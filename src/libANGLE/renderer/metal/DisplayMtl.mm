@@ -633,6 +633,7 @@ void DisplayMtl::initializeFeatures()
     // default values:
     mFeatures.hasBaseVertexInstancedDraw.enabled        = true;
     mFeatures.hasDepthTextureFiltering.enabled          = false;
+    mFeatures.hasExplicitMemBarrier.enabled             = false;
     mFeatures.hasNonUniformDispatch.enabled             = true;
     mFeatures.hasStencilOutput.enabled                  = false;
     mFeatures.hasTextureSwizzle.enabled                 = false;
@@ -658,6 +659,11 @@ void DisplayMtl::initializeFeatures()
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
     mFeatures.hasDepthTextureFiltering.enabled = true;
     mFeatures.breakRenderPassIsCheap.enabled   = true;
+
+    if (ANGLE_APPLE_AVAILABLE_XC(10.14, 13.0))
+    {
+        mFeatures.hasExplicitMemBarrier.enabled = true;
+    }
 
 #elif TARGET_OS_IOS
     mFeatures.breakRenderPassIsCheap.enabled = false;

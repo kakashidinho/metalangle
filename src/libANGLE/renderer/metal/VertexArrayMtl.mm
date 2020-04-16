@@ -843,7 +843,7 @@ angle::Result VertexArrayMtl::convertVertexBuffer(const gl::Context *glContext,
 
     if (canConvertToFloatOnGPU || canExpandComponentsOnGPU)
     {
-        ANGLE_TRY(convertVertexBufferGPU(contextMtl, srcBuffer, binding, attribIndex,
+        ANGLE_TRY(convertVertexBufferGPU(glContext, srcBuffer, binding, attribIndex,
                                          convertedFormat, stride, numVertices,
                                          canExpandComponentsOnGPU, conversion));
     }
@@ -900,7 +900,7 @@ angle::Result VertexArrayMtl::convertVertexBufferCPU(ContextMtl *contextMtl,
     return angle::Result::Continue;
 }
 
-angle::Result VertexArrayMtl::convertVertexBufferGPU(ContextMtl *contextMtl,
+angle::Result VertexArrayMtl::convertVertexBufferGPU(const gl::Context *glContext,
                                                      BufferMtl *srcBuffer,
                                                      const gl::VertexBinding &binding,
                                                      size_t attribIndex,
@@ -910,6 +910,8 @@ angle::Result VertexArrayMtl::convertVertexBufferGPU(ContextMtl *contextMtl,
                                                      bool isExpandingComponents,
                                                      ConversionBufferMtl *conversion)
 {
+    ContextMtl *contextMtl = mtl::GetImpl(glContext);
+
     mtl::BufferRef newBuffer;
     size_t newBufferOffset;
     ANGLE_TRY(conversion->data.allocate(contextMtl, numVertices * targetStride, nullptr, &newBuffer,
@@ -933,16 +935,36 @@ angle::Result VertexArrayMtl::convertVertexBufferGPU(ContextMtl *contextMtl,
 
     params.vertexCount = static_cast<uint32_t>(numVertices);
 
-    mtl::RenderUtils &utils = contextMtl->getDisplay()->getUtils();
-    if (!isExpandingComponents)
+    mtl::RenderUtils &utils                  = contextMtl->getDisplay()->getUtils();
+    mtl::RenderCommandEncoder *renderEncoder = contextMtl->getRenderCommandEncoder();
+    if (renderEncoder && contextMtl->getDisplay()->getFeatures().hasExplicitMemBarrier.enabled)
     {
-        ANGLE_TRY(utils.convertVertexFormatToFloat(contextMtl,
-                                                   convertedFormat.intendedAngleFormat(), params));
+        // If we are in the middle of a render pass, use vertex shader based buffer conversion to
+        // avoid breaking the render pass.
+        if (!isExpandingComponents)
+        {
+            ANGLE_TRY(utils.convertVertexFormatToFloatVS(
+                glContext, renderEncoder, convertedFormat.intendedAngleFormat(), params));
+        }
+        else
+        {
+            ANGLE_TRY(utils.expandVertexFormatComponentsVS(
+                glContext, renderEncoder, convertedFormat.intendedAngleFormat(), params));
+        }
     }
     else
     {
-        ANGLE_TRY(utils.expandVertexFormatComponents(
-            contextMtl, convertedFormat.intendedAngleFormat(), params));
+        // Compute based buffer conversion.
+        if (!isExpandingComponents)
+        {
+            ANGLE_TRY(utils.convertVertexFormatToFloatCS(
+                contextMtl, convertedFormat.intendedAngleFormat(), params));
+        }
+        else
+        {
+            ANGLE_TRY(utils.expandVertexFormatComponentsCS(
+                contextMtl, convertedFormat.intendedAngleFormat(), params));
+        }
     }
 
     ANGLE_TRY(conversion->data.commit(contextMtl));

@@ -195,16 +195,14 @@ static inline vec<T, 4> textureRead(ushort2 gIndices,
 
 // Per format handling code:
 #define READ_FORMAT_SWITCH_CASE(format)                                      \
-    case FormatID::format:                                                   \
-    {                                                                        \
+    case FormatID::format: {                                                 \
         auto color = read##format(FORWARD_COMMON_READ_FUNC_PARAMS);          \
         textureWrite(gIndices, options, color, FORWARD_DEST_TEXTURE_PARAMS); \
     }                                                                        \
     break;
 
 #define WRITE_FORMAT_SWITCH_CASE(format)                                         \
-    case FormatID::format:                                                       \
-    {                                                                            \
+    case FormatID::format: {                                                     \
         auto color = textureRead(gIndices, options, FORWARD_SRC_TEXTURE_PARAMS); \
         write##format(FORWARD_COMMON_WRITE_FUNC_PARAMS);                         \
     }                                                                            \
@@ -296,7 +294,7 @@ static inline int4 readR10G10B10A2_SINT(COMMON_READ_FUNC_PARAMS)
     int4 color;
     int src = bytesToInt<int>(buffer, bufferOffset);
 
-    constexpr int3 rgbSignMask(0x200);       // 1 set at the 9 bit
+    constexpr int3 rgbSignMask(0x200);        // 1 set at the 9 bit
     constexpr int3 negativeMask(0xfffffc00);  // All bits from 10 to 31 set to 1
     constexpr int alphaSignMask = 0x2;
     constexpr int alphaNegMask  = 0xfffffffc;
@@ -306,11 +304,11 @@ static inline int4 readR10G10B10A2_SINT(COMMON_READ_FUNC_PARAMS)
     color.b = getShiftedData<10, 20>(src);
 
     int3 isRgbNegative = (color.rgb & rgbSignMask) >> 9;
-    color.rgb = (isRgbNegative * negativeMask) | color.rgb;
+    color.rgb          = (isRgbNegative * negativeMask) | color.rgb;
 
-    color.a = getShiftedData<2, 30>(src);
+    color.a             = getShiftedData<2, 30>(src);
     int isAlphaNegative = color.a & alphaSignMask >> 1;
-    color.a = (isAlphaNegative * alphaNegMask) | color.a;
+    color.a             = (isAlphaNegative * alphaNegMask) | color.a;
     return color;
 }
 // R10G10B10A2_UINT
@@ -1576,14 +1574,12 @@ inline void writeFloatVertex(constant CopyVertexParams &options,
     }
 }
 
-// Kernel to convert from any vertex format to float vertex format
-kernel void convertToFloatVertexFormat(uint index [[thread_position_in_grid]],
-                                       constant CopyVertexParams &options [[buffer(0)]],
-                                       constant uchar *srcBuffer [[buffer(1)]],
-                                       device uchar *dstBuffer [[buffer(2)]])
+// Function to convert from any vertex format to float vertex format
+static inline void convertToFloatVertexFormat(uint index,
+                                              constant CopyVertexParams &options,
+                                              constant uchar *srcBuffer,
+                                              device uchar *dstBuffer)
 {
-    ANGLE_KERNEL_GUARD(index, options.vertexCount);
-
 #define SUPPORTED_FORMATS(PROC)                   \
     FORMAT_BITS_PROC(8, INT_FORMAT_PROC, PROC)    \
     FORMAT_BITS_PROC(16, INT_FORMAT_PROC, PROC)   \
@@ -1599,8 +1595,7 @@ kernel void convertToFloatVertexFormat(uint index [[thread_position_in_grid]],
     uint bufferOffset = options.srcBufferStartOffset + options.srcStride * index;
 
 #define COMVERT_FLOAT_VERTEX_SWITCH_CASE(FORMAT)           \
-    case FormatID::FORMAT:                                 \
-    {                                                      \
+    case FormatID::FORMAT: {                               \
         auto data = read##FORMAT(bufferOffset, srcBuffer); \
         writeFloatVertex(options, index, data, dstBuffer); \
     }                                                      \
@@ -1614,14 +1609,31 @@ kernel void convertToFloatVertexFormat(uint index [[thread_position_in_grid]],
 #undef SUPPORTED_FORMATS
 }
 
-// Kernel to expand (or just simply copy) the components of the vertex
-kernel void expandVertexFormatComponents(uint index [[thread_position_in_grid]],
+// Kernel to convert from any vertex format to float vertex format
+kernel void convertToFloatVertexFormatCS(uint index [[thread_position_in_grid]],
                                          constant CopyVertexParams &options [[buffer(0)]],
                                          constant uchar *srcBuffer [[buffer(1)]],
                                          device uchar *dstBuffer [[buffer(2)]])
 {
     ANGLE_KERNEL_GUARD(index, options.vertexCount);
+    convertToFloatVertexFormat(index, options, srcBuffer, dstBuffer);
+}
 
+// Vertex shader to convert from any vertex format to float vertex format
+vertex void convertToFloatVertexFormatVS(uint index [[vertex_id]],
+                                         constant CopyVertexParams &options [[buffer(0)]],
+                                         constant uchar *srcBuffer [[buffer(1)]],
+                                         device uchar *dstBuffer [[buffer(2)]])
+{
+    convertToFloatVertexFormat(index, options, srcBuffer, dstBuffer);
+}
+
+// Function to expand (or just simply copy) the components of the vertex
+static inline void expandVertexFormatComponents(uint index,
+                                                constant CopyVertexParams &options,
+                                                constant uchar *srcBuffer,
+                                                device uchar *dstBuffer)
+{
     uint srcOffset = options.srcBufferStartOffset + options.srcStride * index;
     uint dstOffset = options.dstBufferStartOffset + options.dstStride * index;
 
@@ -1653,4 +1665,24 @@ kernel void expandVertexFormatComponents(uint index [[thread_position_in_grid]],
             dstBuffer[dstOffset + byte] = options.srcDefaultAlphaData[byte];
         }
     }
+}
+
+// Kernel to expand (or just simply copy) the components of the vertex
+kernel void expandVertexFormatComponentsCS(uint index [[thread_position_in_grid]],
+                                           constant CopyVertexParams &options [[buffer(0)]],
+                                           constant uchar *srcBuffer [[buffer(1)]],
+                                           device uchar *dstBuffer [[buffer(2)]])
+{
+    ANGLE_KERNEL_GUARD(index, options.vertexCount);
+
+    expandVertexFormatComponents(index, options, srcBuffer, dstBuffer);
+}
+
+// Vertex shader to expand (or just simply copy) the components of the vertex
+vertex void expandVertexFormatComponentsVS(uint index [[vertex_id]],
+                                           constant CopyVertexParams &options [[buffer(0)]],
+                                           constant uchar *srcBuffer [[buffer(1)]],
+                                           device uchar *dstBuffer [[buffer(2)]])
+{
+    expandVertexFormatComponents(index, options, srcBuffer, dstBuffer);
 }

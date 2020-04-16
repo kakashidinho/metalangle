@@ -164,12 +164,21 @@ class VertexAttributeTest : public ANGLETest
                  Source sourceIn,
                  const void *inputDataIn,
                  const GLfloat *expectedDataIn)
+            : TestData(typeIn, normalizedIn, sourceIn, inputDataIn, expectedDataIn, false)
+        {}
+        TestData(GLenum typeIn,
+                 GLboolean normalizedIn,
+                 Source sourceIn,
+                 const void *inputDataIn,
+                 const GLfloat *expectedDataIn,
+                 bool clearBeforeDrawIn)
             : type(typeIn),
               normalized(normalizedIn),
               bufferOffset(0),
               source(sourceIn),
               inputData(inputDataIn),
-              expectedData(expectedDataIn)
+              expectedData(expectedDataIn),
+              clearBeforeDraw(clearBeforeDrawIn)
         {}
 
         GLenum type;
@@ -179,6 +188,8 @@ class VertexAttributeTest : public ANGLETest
 
         const void *inputData;
         const GLfloat *expectedData;
+
+        const bool clearBeforeDraw;
     };
 
     void setupTest(const TestData &test, GLint typeSize)
@@ -268,6 +279,11 @@ class VertexAttributeTest : public ANGLETest
         {
             GLint typeSize = i + 1;
             setupTest(test, typeSize);
+
+            if (test.clearBeforeDraw)
+            {
+                glClear(GL_COLOR_BUFFER_BIT);
+            }
 
             drawQuad(mProgram, "position", 0.5f);
 
@@ -949,6 +965,27 @@ TEST_P(VertexAttributeTestES3, IntUnnormalized)
     runTest(data);
 }
 
+// Same as IntUnnormalized but with glClear() before running the test to force
+// starting a render pass. This to verify that buffer format conversion within
+// an active render pass works as expected in Metal back-end.
+TEST_P(VertexAttributeTestES3, IntUnnormalizedWithClear)
+{
+    GLint lo                                  = std::numeric_limits<GLint>::min();
+    GLint hi                                  = std::numeric_limits<GLint>::max();
+    std::array<GLint, kVertexCount> inputData = {
+        {0, 1, 2, 3, -1, -2, -3, -4, -1, hi, hi - 1, lo, lo + 1}};
+    std::array<GLfloat, kVertexCount> expectedData;
+    for (size_t i = 0; i < kVertexCount; i++)
+    {
+        expectedData[i] = static_cast<GLfloat>(inputData[i]);
+    }
+
+    TestData data(GL_INT, GL_FALSE, Source::BUFFER, inputData.data(), expectedData.data(),
+                  /** clearBeforeDraw */ true);
+
+    runTest(data);
+}
+
 TEST_P(VertexAttributeTestES3, IntNormalized)
 {
     GLint lo                                  = std::numeric_limits<GLint>::min();
@@ -1356,6 +1393,84 @@ TEST_P(VertexAttributeTest, DrawArraysWithUnalignedBufferOffset)
 
     // Unaligned buffer offset (3)
     GLsizei dataSize = kVertexCount * TypeStride(GL_FLOAT) + 3;
+    glBindBuffer(GL_ARRAY_BUFFER, mBuffer);
+    glBufferData(GL_ARRAY_BUFFER, dataSize, nullptr, GL_STATIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 3, dataSize - 3, inputData.data());
+    glVertexAttribPointer(mTestAttrib, 1, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<void *>(3));
+    glEnableVertexAttribArray(mTestAttrib);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glVertexAttribPointer(mExpectedAttrib, 1, GL_FLOAT, GL_FALSE, 0, expectedData.data());
+    glEnableVertexAttribArray(mExpectedAttrib);
+
+    // Vertex draw with no start vertex offset (second argument is zero).
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    checkPixels();
+
+    // Draw offset by one vertex.
+    glDrawArrays(GL_TRIANGLES, 1, 6);
+    checkPixels();
+
+    EXPECT_GL_NO_ERROR();
+}
+
+// Verify that using both aligned and unaligned offsets doesn't mess up the draw.
+TEST_P(VertexAttributeTest, DrawArraysWithAlignedAndUnalignedBufferOffset)
+{
+    // TODO(jmadill): Diagnose this failure.
+    ANGLE_SKIP_TEST_IF(IsD3D11_FL93());
+
+    // TODO(geofflang): Figure out why this is broken on AMD OpenGL
+    ANGLE_SKIP_TEST_IF(IsAMD() && IsOpenGL());
+
+    // TODO(cnorthrop): Test this again on more recent drivers. http://anglebug.com/3951
+    ANGLE_SKIP_TEST_IF(IsLinux() && IsNVIDIA() && IsVulkan());
+
+    initBasicProgram();
+    glUseProgram(mProgram);
+
+    std::array<GLfloat, kVertexCount> inputData;
+    std::array<GLfloat, kVertexCount> expectedData;
+    InitTestData(inputData, expectedData);
+
+    auto quadVertices        = GetQuadVertices();
+    GLsizei quadVerticesSize = static_cast<GLsizei>(quadVertices.size() * sizeof(quadVertices[0]));
+
+    glGenBuffers(1, &mQuadBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, mQuadBuffer);
+    glBufferData(GL_ARRAY_BUFFER, quadVerticesSize + sizeof(Vector3), nullptr, GL_STATIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, quadVerticesSize, quadVertices.data());
+
+    GLint positionLocation = glGetAttribLocation(mProgram, "position");
+    ASSERT_NE(-1, positionLocation);
+    glVertexAttribPointer(positionLocation, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    glEnableVertexAttribArray(positionLocation);
+
+    // ----------- Aligned buffer offset (4) -------------
+    GLsizei dataSize = kVertexCount * TypeStride(GL_FLOAT) + 4;
+    GLBuffer alignedBufer;
+    glBindBuffer(GL_ARRAY_BUFFER, alignedBufer);
+    glBufferData(GL_ARRAY_BUFFER, dataSize, nullptr, GL_STATIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 4, dataSize - 4, inputData.data());
+    glVertexAttribPointer(mTestAttrib, 1, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<void *>(4));
+    glEnableVertexAttribArray(mTestAttrib);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glVertexAttribPointer(mExpectedAttrib, 1, GL_FLOAT, GL_FALSE, 0, expectedData.data());
+    glEnableVertexAttribArray(mExpectedAttrib);
+
+    // Vertex draw with no start vertex offset (second argument is zero).
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    checkPixels();
+
+    // Draw offset by one vertex.
+    glDrawArrays(GL_TRIANGLES, 1, 6);
+    checkPixels();
+
+    // ----------- Unaligned buffer offset (3) -------------
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    dataSize = kVertexCount * TypeStride(GL_FLOAT) + 3;
     glBindBuffer(GL_ARRAY_BUFFER, mBuffer);
     glBufferData(GL_ARRAY_BUFFER, dataSize, nullptr, GL_STATIC_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 3, dataSize - 3, inputData.data());
@@ -2625,6 +2740,7 @@ ANGLE_INSTANTIATE_TEST(VertexAttributeTest,
                        ES2_D3D9(),
                        ES2_D3D11(),
                        ES2_METAL(),
+                       ES3_METAL(),
                        ES2_OPENGL(),
                        ES3_OPENGL(),
                        ES2_OPENGLES(),

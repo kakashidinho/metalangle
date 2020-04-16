@@ -54,6 +54,7 @@ namespace
     PROC(DrawIndexedInstancedBaseVertex) \
     PROC(SetVisibilityResultMode)        \
     PROC(UseResource)                    \
+    PROC(MemoryBarrierWithResource)      \
     PROC(InsertDebugsign)                \
     PROC(PushDebugGroup)                 \
     PROC(PopDebugGroup)
@@ -319,6 +320,24 @@ void UseResourceCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStre
     {
         [encoder useResource:resource usage:usage];
     }
+}
+
+void MemoryBarrierWithResourceCmd(id<MTLRenderCommandEncoder> encoder,
+                                  IntermediateCommandStream *stream)
+{
+    auto resource = stream->fetch<id<MTLResource>>();
+    auto after    = stream->fetch<mtl::RenderStages>();
+    auto before   = stream->fetch<mtl::RenderStages>();
+#if defined(__MAC_10_14)
+    if (ANGLE_APPLE_AVAILABLE_XC(10.14, 13.0))
+    {
+        [encoder memoryBarrierWithResources:&resource
+                                      count:1
+                                afterStages:after
+                               beforeStages:before];
+    }
+#endif
+    [resource ANGLE_MTL_RELEASE];
 }
 
 void InsertDebugsignCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
@@ -1388,6 +1407,25 @@ RenderCommandEncoder &RenderCommandEncoder::useResource(const BufferRef &resourc
         .push([resource->get() ANGLE_MTL_RETAIN])
         .push(usage)
         .push(states);
+
+    return *this;
+}
+
+RenderCommandEncoder &RenderCommandEncoder::memoryBarrierWithResource(const BufferRef &resource,
+                                                                      mtl::RenderStages after,
+                                                                      mtl::RenderStages before)
+{
+    if (!resource)
+    {
+        return *this;
+    }
+
+    cmdBuffer().setWriteDependency(resource);
+
+    mCommands.push(CmdType::MemoryBarrierWithResource)
+        .push([resource->get() ANGLE_MTL_RETAIN])
+        .push(after)
+        .push(before);
 
     return *this;
 }

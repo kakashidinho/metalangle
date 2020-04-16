@@ -26,6 +26,10 @@ struct FeaturesMtl : FeatureSetBase
         "has_depth_texture_filtering", FeatureCategory::MetalFeatures,
         "The renderer supports depth texture's filtering other than nearest", &members};
 
+    // Support explicit memory barrier
+    Feature hasExplicitMemBarrier = {"has_explicit_mem_barrier", FeatureCategory::MetalFeatures,
+                                     "The renderer supports explicit memory barrier", &members};
+
     // Non-uniform compute shader dispatch support, i.e. Group size is not necessarily to be fixed:
     Feature hasNonUniformDispatch = {
         "has_non_uniform_dispatch", FeatureCategory::MetalFeatures,

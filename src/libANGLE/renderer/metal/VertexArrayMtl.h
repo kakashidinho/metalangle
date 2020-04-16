@@ -111,7 +111,7 @@ class VertexArrayMtl : public VertexArrayImpl
                                          GLuint targetStride,
                                          size_t vertexCount,
                                          ConversionBufferMtl *conversion);
-    angle::Result convertVertexBufferGPU(ContextMtl *contextMtl,
+    angle::Result convertVertexBufferGPU(const gl::Context *glContext,
                                          BufferMtl *srcBuffer,
                                          const gl::VertexBinding &binding,
                                          size_t attribIndex,
