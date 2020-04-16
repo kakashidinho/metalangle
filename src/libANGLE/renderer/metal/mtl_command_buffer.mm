@@ -320,6 +320,7 @@ void UseResourceCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStre
     {
         [encoder useResource:resource usage:usage];
     }
+    [resource ANGLE_MTL_RELEASE];
 }
 
 void MemoryBarrierWithResourceCmd(id<MTLRenderCommandEncoder> encoder,
