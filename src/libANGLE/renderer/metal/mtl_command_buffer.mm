@@ -358,7 +358,9 @@ void MemoryBarrierWithResourceCmd(id<MTLRenderCommandEncoder> encoder,
     auto resource = stream->fetch<id<MTLResource>>();
     auto after    = stream->fetch<mtl::RenderStages>();
     auto before   = stream->fetch<mtl::RenderStages>();
-#if defined(__MAC_10_14)
+    ANGLE_UNUSED_VARIABLE(after);
+    ANGLE_UNUSED_VARIABLE(before);
+#if defined(__MAC_10_14) && (TARGET_OS_OSX || TARGET_OS_MACCATALYST)
     if (ANGLE_APPLE_AVAILABLE_XC(10.14, 13.0))
     {
         [encoder memoryBarrierWithResources:&resource
