@@ -1,7 +1,7 @@
 # MetalANGLE Development
 
-MetalANGLE provides OpenGL ES 2.0 and EGL 1.4 libraries.  You can use these to build and run OpenGL
-ES 2.0 applications on Mac and iOS that make uses of underlying Metal API.
+MetalANGLE provides OpenGL ES 2.0 (partial ES 3.0 support) and EGL 1.4 libraries.  You can use these
+to build and run OpenGL ES 2.0 applications on Mac and iOS that make uses of underlying Metal API.
 
 ## Development setup
 

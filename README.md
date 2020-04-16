@@ -39,6 +39,7 @@ to continue operate on Apple platforms by translating OpenGL ES draw calls to Me
   Hence, draw calls that use unsupported offsets, strides, and vertex formats will force MetalANGLE
   to do conversions on the fly.
 - ~~MSAA is not supported yet.~~
+- Old OpenGL ES 2.0 only implementation can be found on [gles2 branch](https://github.com/kakashidinho/metalangle/tree/gles2)
 - __Platforms supports__:
   - MetalANGLE only supports __MacOS 10.13+__ for Mac.
   - For iOS, the min supported version is __iOS 9.0__. However, Metal acceleration is only available

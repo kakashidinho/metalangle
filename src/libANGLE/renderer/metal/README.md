@@ -5,7 +5,7 @@
 - ~~No triangle fan, line loop support.~~
 - ~~iOS pre iPhone 6S: No array of samplers support in shader.~~
 - ~~No multisample support.~~
-- unsigned byte index is not natively supported. Metal backend will do CPU of GPU (whenever
+- unsigned byte index is not natively supported. Metal backend will do CPU or GPU (whenever
   possible) conversion during draw calls.
 - offset passed to glVertexAttribPointer() must be multiple of attribute's format's bytes.
   Otherwise, ~~a CPU conversion will take place.~~ it will be converted (using GPU whenever
