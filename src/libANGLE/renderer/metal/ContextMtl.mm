@@ -753,6 +753,9 @@ angle::Result ContextMtl::syncState(const gl::Context *context,
 {
     const gl::State &glState = context->getState();
 
+    // Initialize incomplete texture set.
+    ANGLE_TRY(ensureIncompleteTexturesCreated(context));
+
     for (size_t dirtyBit : dirtyBits)
     {
         switch (dirtyBit)
@@ -1720,9 +1723,6 @@ angle::Result ContextMtl::setupDraw(const gl::Context *context,
 
     // instances=0 means no instanced draw.
     GLsizei instanceCount = instances ? instances : 1;
-
-    // Must be called before the render command encoder is started.
-    ANGLE_TRY(ensureIncompleteTexturesCreated(context));
 
     if (context->getStateCache().hasAnyActiveClientAttrib())
     {
