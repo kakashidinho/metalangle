@@ -133,6 +133,8 @@ class VertexArrayMtl : public VertexArrayImpl
     // Array of host buffers storing converted data for client attributes that are small enough.
     gl::AttribArray<angle::MemoryBuffer> mConvertedClientSmallArrays;
     gl::AttribArray<const uint8_t *> mCurrentArrayInlineDataPointers;
+    // Max size of inline constant data that can be used for client vertex attribute.
+    size_t mInlineDataMaxSize;
 
     // Stride per vertex attribute
     gl::AttribArray<GLuint> mCurrentArrayBufferStrides;

@@ -637,7 +637,9 @@ void DisplayMtl::initializeFeatures()
     mFeatures.hasNonUniformDispatch.enabled             = true;
     mFeatures.hasStencilOutput.enabled                  = false;
     mFeatures.hasTextureSwizzle.enabled                 = false;
+    mFeatures.allowInlineConstVertexData.enabled        = true;
     mFeatures.allowSeparatedDepthStencilBuffers.enabled = false;
+    mFeatures.forceBufferGPUStorage.enabled             = false;
 
     ANGLE_FEATURE_CONDITION((&mFeatures), hasDepthAutoResolve, supportEitherGPUFamily(3, 2));
     ANGLE_FEATURE_CONDITION((&mFeatures), hasStencilAutoResolve, supportEitherGPUFamily(5, 2));

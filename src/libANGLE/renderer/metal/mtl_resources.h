@@ -58,7 +58,7 @@ class Resource : angle::NonCopyable
 
     uint64_t getCommandBufferQueueSerial() const { return mUsageRef->cmdBufferQueueSerial; }
 
-    // Flag indicate whether we should synchornize the content to CPU after GPU changed this
+    // Flag indicate whether we should synchronize the content to CPU after GPU changed this
     // resource's content.
     bool isCPUReadMemNeedSync() const { return mUsageRef->cpuReadMemNeedSync; }
     void resetCPUReadMemNeedSync() { mUsageRef->cpuReadMemNeedSync = false; }
@@ -322,10 +322,15 @@ class Buffer final : public Resource,
     uint8_t *map(ContextMtl *context, bool readonly, bool noSync);
 
     void unmap(ContextMtl *context);
+    // Same as unmap but do not do implicit flush()
+    void unmapNoFlush(ContextMtl *context);
     void unmap(ContextMtl *context, size_t offsetWritten, size_t sizeWritten);
+    void flush(ContextMtl *context, size_t offsetWritten, size_t sizeWritten);
 
     size_t size() const;
     bool useSharedMem() const;
+
+    bool mappedForWrite() const { return !mMapReadOnly; }
 
     // Explicitly sync content between CPU and GPU
     void syncContent(ContextMtl *context, mtl::BlitCommandEncoder *encoder);

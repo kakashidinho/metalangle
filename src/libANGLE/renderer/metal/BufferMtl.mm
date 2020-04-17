@@ -12,6 +12,7 @@
 #include "common/debug.h"
 #include "common/utilities.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
+#include "libANGLE/renderer/metal/DisplayMtl.h"
 
 namespace rx
 {
@@ -83,11 +84,7 @@ VertexConversionBufferMtl::VertexConversionBufferMtl(ContextMtl *context,
       formatID(formatIDIn),
       stride(strideIn),
       offset(offsetIn)
-{
-    // Due to Metal's strict requirement for offset and stride, we need to always allocate new
-    // buffer for every conversion.
-    data.setAlwaysAllocateNewBuffer(true);
-}
+{}
 
 // BufferMtl implementation
 BufferMtl::BufferMtl(const gl::BufferState &state)
@@ -307,7 +304,11 @@ ConversionBufferMtl *BufferMtl::getVertexConversionBuffer(ContextMtl *context,
     }
 
     mVertexConversionBuffers.emplace_back(context, formatID, stride, offset);
-    return &mVertexConversionBuffers.back();
+    ConversionBufferMtl *conv        = &mVertexConversionBuffers.back();
+    const angle::Format &angleFormat = angle::Format::Get(formatID);
+    conv->data.updateAlignment(context, angleFormat.pixelBytes);
+
+    return conv;
 }
 
 IndexConversionBufferMtl *BufferMtl::getIndexConversionBuffer(ContextMtl *context,

@@ -5,6 +5,7 @@
 //
 #include "anglebase/numerics/safe_conversions.h"
 #include "common/mathutil.h"
+#include "platform/FeaturesMtl.h"
 #include "platform/FeaturesVk.h"
 #include "test_utils/ANGLETest.h"
 #include "test_utils/gl_raii.h"
@@ -941,6 +942,45 @@ TEST_P(VertexAttributeTest, UnsignedPacked1010102ExtensionNormalized)
         glDisableVertexAttribArray(mExpectedAttrib);
         checkPixels();
     };
+}
+
+class VertexAttributeTestMetalNoInlineClientData : public VertexAttributeTest
+{
+    // Override metal feature to force using buffer for client vertex data.
+    void overrideFeaturesMetal(FeaturesMtl *features) override
+    {
+        features->overrideFeatures({"allow_inline_const_vertex_data"}, false);
+        // Force using managed buffers on macOS:
+        features->overrideFeatures({"force_buffer_gpu_storage"}, true);
+    }
+};
+
+// Verify that using the same client memory pointer in different format won't mess up the draw.
+TEST_P(VertexAttributeTestMetalNoInlineClientData, UsingDifferentFormatAndSameClientMemoryPointer)
+{
+    std::array<GLshort, kVertexCount> inputData = {
+        {0, 1, 2, 3, -1, -2, -3, -4, 32766, 32767, -32768, -32767, -32766}};
+
+    std::array<GLfloat, kVertexCount> unnormalizedExpectedData;
+    for (size_t i = 0; i < kVertexCount; i++)
+    {
+        unnormalizedExpectedData[i] = inputData[i];
+    }
+
+    TestData unnormalizedData(GL_SHORT, GL_FALSE, Source::IMMEDIATE, inputData.data(),
+                              unnormalizedExpectedData.data());
+    runTest(unnormalizedData);
+
+    std::array<GLfloat, kVertexCount> normalizedExpectedData;
+    for (size_t i = 0; i < kVertexCount; i++)
+    {
+        inputData[i]              = -inputData[i];
+        normalizedExpectedData[i] = Normalize(inputData[i]);
+    }
+
+    TestData normalizedData(GL_SHORT, GL_TRUE, Source::IMMEDIATE, inputData.data(),
+                            normalizedExpectedData.data());
+    runTest(normalizedData);
 }
 
 class VertexAttributeTestES3 : public VertexAttributeTest
@@ -2747,6 +2787,8 @@ ANGLE_INSTANTIATE_TEST(VertexAttributeTest,
                        ES3_OPENGLES(),
                        ES2_VULKAN(),
                        ES3_VULKAN());
+
+ANGLE_INSTANTIATE_TEST(VertexAttributeTestMetalNoInlineClientData, ES2_METAL(), ES3_METAL());
 
 ANGLE_INSTANTIATE_TEST(VertexAttributeOORTest,
                        ES2_D3D9(),

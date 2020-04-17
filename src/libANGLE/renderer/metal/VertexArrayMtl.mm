@@ -170,10 +170,7 @@ VertexArrayMtl::VertexArrayMtl(const gl::VertexArrayState &state, ContextMtl *co
       mDefaultFloatVertexFormat(
           context->getVertexFormat(angle::FormatID::R32G32B32A32_FLOAT, false)),
       mDefaultIntVertexFormat(context->getVertexFormat(angle::FormatID::R32G32B32A32_SINT, false)),
-      mDefaultUIntVertexFormat(context->getVertexFormat(angle::FormatID::R32G32B32A32_UINT, false)),
-      // Due to Metal's strict requirement for offset and stride, we need to always allocate new
-      // buffer for every conversion.
-      mDynamicVertexData(true)
+      mDefaultUIntVertexFormat(context->getVertexFormat(angle::FormatID::R32G32B32A32_UINT, false))
 {
     reset(context);
 
@@ -226,6 +223,15 @@ void VertexArrayMtl::reset(ContextMtl *context)
     for (const uint8_t *&clientPointer : mCurrentArrayInlineDataPointers)
     {
         clientPointer = nullptr;
+    }
+
+    if (context->getDisplay()->getFeatures().allowInlineConstVertexData.enabled)
+    {
+        mInlineDataMaxSize = mtl::kInlineConstDataMaxSize;
+    }
+    else
+    {
+        mInlineDataMaxSize = 0;
     }
 
     mVertexArrayDirty = true;
@@ -409,7 +415,7 @@ angle::Result VertexArrayMtl::setupDraw(const gl::Context *glContext,
                 else
                 {
                     // No buffer specified, use the client memory directly as inline constant data
-                    ASSERT(mCurrentArrayInlineDataSizes[v] <= mtl::kInlineConstDataMaxSize);
+                    ASSERT(mCurrentArrayInlineDataSizes[v] <= mInlineDataMaxSize);
                     cmdEncoder->setVertexBytes(mCurrentArrayInlineDataPointers[v],
                                                mCurrentArrayInlineDataSizes[v], bufferIdx);
                 }
@@ -446,7 +452,7 @@ void VertexArrayMtl::emulateInstanceDrawStep(mtl::RenderCommandEncoder *cmdEncod
         else
         {
             // No buffer specified, use the client memory directly as inline constant data
-            ASSERT(mCurrentArrayInlineDataSizes[instanceAttribIdx] <= mtl::kInlineConstDataMaxSize);
+            ASSERT(mCurrentArrayInlineDataSizes[instanceAttribIdx] <= mInlineDataMaxSize);
             if (offset > mCurrentArrayInlineDataSizes[instanceAttribIdx])
             {
                 offset = static_cast<uint32_t>(mCurrentArrayInlineDataSizes[instanceAttribIdx]);
@@ -510,7 +516,7 @@ angle::Result VertexArrayMtl::updateClientAttribs(const gl::Context *context,
         bool needStreaming              = format.actualFormatId != format.intendedFormatId ||
                              (binding.getStride() % mtl::kVertexAttribBufferStrideAlignment) != 0 ||
                              (binding.getStride() < format.actualAngleFormat().pixelBytes) ||
-                             bytesIntendedToUse > mtl::kInlineConstDataMaxSize;
+                             bytesIntendedToUse > mInlineDataMaxSize;
 
         if (!needStreaming)
         {
@@ -539,7 +545,7 @@ angle::Result VertexArrayMtl::updateClientAttribs(const gl::Context *context,
             mCurrentArrayBufferFormats[attribIndex] = &streamFormat;
             mCurrentArrayBufferStrides[attribIndex] = convertedStride;
 
-            if (bytesToAllocate <= mtl::kInlineConstDataMaxSize)
+            if (bytesToAllocate <= mInlineDataMaxSize)
             {
                 // If the data is small enough, use host memory instead of creating GPU buffer. To
                 // avoid synchronizing access to GPU buffer that is still in use.
@@ -563,6 +569,8 @@ angle::Result VertexArrayMtl::updateClientAttribs(const gl::Context *context,
             {
                 // Stream the client data to a GPU buffer. Synchronization might happen if buffer is
                 // in use.
+                mDynamicVertexData.updateAlignment(contextMtl,
+                                                   streamFormat.actualAngleFormat().pixelBytes);
                 ANGLE_TRY(StreamVertexData(contextMtl, &mDynamicVertexData, src, bytesToAllocate,
                                            destOffset, elementCount, binding.getStride(),
                                            streamFormat.vertexLoadFunction,
@@ -839,6 +847,8 @@ angle::Result VertexArrayMtl::convertVertexBuffer(const gl::Context *glContext,
     }
 
     conversion->data.releaseInFlightBuffers(contextMtl);
+
+    ASSERT((conversion->data.getAlignment() % convertedAngleFormat.pixelBytes) == 0);
 
     if (canConvertToFloatOnGPU || canExpandComponentsOnGPU)
     {

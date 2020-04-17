@@ -68,7 +68,7 @@ class BufferPool
                            size_t *offsetOut           = nullptr,
                            bool *newBufferAllocatedOut = nullptr);
 
-    // After a sequence of writes, call commit to ensure the data is visible to the device.
+    // After a sequence of CPU writes, call commit to ensure the data is visible to the device.
     angle::Result commit(ContextMtl *contextMtl);
 
     // This releases all the buffers that have been allocated since this was last called.
@@ -97,14 +97,16 @@ class BufferPool
     void setAlwaysUseGPUMem() { setMemoryPolicy(BufferPoolMemPolicy::AlwaysGPUMem); }
 
   private:
-    bool shouldAllocateInSharedMem() const;
+    bool shouldAllocateInSharedMem(ContextMtl *contextMtl) const;
     void reset();
     angle::Result allocateNewBuffer(ContextMtl *contextMtl);
     void destroyBufferList(ContextMtl *contextMtl, std::deque<BufferRef> *buffers);
+    angle::Result finalizePendingBuffer(ContextMtl *contextMtl);
 
     size_t mInitialSize;
     BufferRef mBuffer;
     uint32_t mNextAllocationOffset;
+    uint32_t mLastFlushOffset;
     size_t mSize;
     size_t mAlignment;
 
