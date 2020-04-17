@@ -209,7 +209,6 @@ angle::Result ContextMtl::initialize()
     mLineLoopLastSegmentIndexBuffer.initialize(this, 2 * sizeof(uint32_t),
                                                mtl::kIndexBufferOffsetAlignment,
                                                kMaxTriFanLineLoopBuffersPerFrame);
-    mLineLoopIndexBuffer.setAlwaysAllocateNewBuffer(true);
 
     return angle::Result::Continue;
 }
