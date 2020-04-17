@@ -179,43 +179,8 @@ struct VertexFormatConvertParams
     uint32_t vertexCount = 0;
 };
 
-class ComputeBasedUtils
-{
-  public:
-    virtual ~ComputeBasedUtils() = default;
-
-    void dispatchCompute(ContextMtl *contextMtl,
-                         ComputeCommandEncoder *encoder,
-                         id<MTLComputePipelineState> pipelineState,
-                         size_t numThreads);
-
-    void dispatchCompute(ContextMtl *contextMtl,
-                         ComputeCommandEncoder *encoder,
-                         bool allowNonUniform,
-                         const MTLSize &numThreads,
-                         const MTLSize &threadsPerThreadGroup);
-};
-
 // Utils class for clear & blitting
-class DrawBasedUtils
-{
-  protected:
-    void setupDrawCommonStates(RenderCommandEncoder *cmdEncoder);
-};
-
-class BaseBlitUtils : public DrawBasedUtils
-{
-  protected:
-    void setupCommonBlitWithDraw(const gl::Context *context,
-                                 RenderCommandEncoder *cmdEncoder,
-                                 const BlitParams &params,
-                                 bool isColorBlit);
-    void setupBlitWithDrawUniformData(RenderCommandEncoder *cmdEncoder,
-                                      const BlitParams &params,
-                                      bool isColorBlit);
-};
-
-class ClearUtils : DrawBasedUtils
+class ClearUtils
 {
   public:
     ClearUtils() = default;
@@ -247,7 +212,7 @@ class ClearUtils : DrawBasedUtils
     std::array<RenderPipelineCache, kMaxRenderTargets + 1> mClearRenderPipelineCache;
 };
 
-class ColorBlitUtils : BaseBlitUtils
+class ColorBlitUtils
 {
   public:
     ColorBlitUtils() = default;
@@ -289,7 +254,7 @@ class ColorBlitUtils : BaseBlitUtils
     ColorBlitRenderPipelineCacheArray mBlitUnmultiplyAlphaRenderPipelineCache;
 };
 
-class DepthStencilBlitUtils : BaseBlitUtils, ComputeBasedUtils
+class DepthStencilBlitUtils
 {
   public:
     void onDestroy();
@@ -340,7 +305,7 @@ class DepthStencilBlitUtils : BaseBlitUtils, ComputeBasedUtils
 };
 
 // util class for generating index buffer
-class IndexGeneratorUtils : public ComputeBasedUtils
+class IndexGeneratorUtils
 {
   public:
     void onDestroy();
@@ -427,7 +392,7 @@ class IndexGeneratorUtils : public ComputeBasedUtils
 };
 
 // Util class for handling visibility query result
-class VisibilityResultUtils : public ComputeBasedUtils
+class VisibilityResultUtils
 {
   public:
     void onDestroy();
@@ -448,7 +413,7 @@ class VisibilityResultUtils : public ComputeBasedUtils
 };
 
 // Util class for handling mipmap generation
-class MipmapUtils : public ComputeBasedUtils
+class MipmapUtils
 {
   public:
     void onDestroy();
@@ -472,7 +437,7 @@ class MipmapUtils : public ComputeBasedUtils
 };
 
 // Util class for handling pixels copy between buffers and textures
-class CopyPixelsUtils : public ComputeBasedUtils
+class CopyPixelsUtils
 {
   public:
     CopyPixelsUtils() = default;
@@ -506,7 +471,7 @@ class CopyPixelsUtils : public ComputeBasedUtils
 };
 
 // Util class for handling vertex format conversion on GPU
-class VertexFormatConversionUtils : public ComputeBasedUtils
+class VertexFormatConversionUtils
 {
   public:
     void onDestroy();

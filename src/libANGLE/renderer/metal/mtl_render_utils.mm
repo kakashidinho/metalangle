@@ -601,6 +601,20 @@ void EnsureSpecializedVertexShaderOnlyPipelineCacheInitialized(
     }
 }
 
+// Get pipeline descriptor for render pipeline that contains vertex shader acting as compute shader.
+ANGLE_INLINE
+RenderPipelineDesc GetComputingVertexShaderOnlyRenderPipelineDesc(RenderCommandEncoder *cmdEncoder)
+{
+    RenderPipelineDesc pipelineDesc;
+    const RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
+
+    renderPassDesc.populateRenderPipelineOutputDesc(&pipelineDesc.outputDescriptor);
+    pipelineDesc.rasterizationEnabled   = false;
+    pipelineDesc.inputPrimitiveTopology = kPrimitiveTopologyClassPoint;
+
+    return pipelineDesc;
+}
+
 template <typename T>
 void ClearRenderPipelineCacheArray(T *pipelineCacheArray)
 {
@@ -635,6 +649,142 @@ void ClearPipelineState2DArray(T *pipelineCache2DArray)
     {
         ClearPipelineStateArray(&level1Array);
     }
+}
+
+void DispatchCompute(ContextMtl *contextMtl,
+                     ComputeCommandEncoder *encoder,
+                     bool allowNonUniform,
+                     const MTLSize &numThreads,
+                     const MTLSize &threadsPerThreadgroup)
+{
+    if (allowNonUniform && contextMtl->getDisplay()->getFeatures().hasNonUniformDispatch.enabled)
+    {
+        encoder->dispatchNonUniform(numThreads, threadsPerThreadgroup);
+    }
+    else
+    {
+        MTLSize groups = MTLSizeMake(
+            (numThreads.width + threadsPerThreadgroup.width - 1) / threadsPerThreadgroup.width,
+            (numThreads.height + threadsPerThreadgroup.height - 1) / threadsPerThreadgroup.height,
+            (numThreads.depth + threadsPerThreadgroup.depth - 1) / threadsPerThreadgroup.depth);
+        encoder->dispatch(groups, threadsPerThreadgroup);
+    }
+}
+
+void DispatchCompute(ContextMtl *contextMtl,
+                     ComputeCommandEncoder *cmdEncoder,
+                     id<MTLComputePipelineState> pipelineState,
+                     size_t numThreads)
+{
+    NSUInteger w = std::min<NSUInteger>(pipelineState.threadExecutionWidth, numThreads);
+    MTLSize threadsPerThreadgroup = MTLSizeMake(w, 1, 1);
+
+    if (contextMtl->getDisplay()->getFeatures().hasNonUniformDispatch.enabled)
+    {
+        MTLSize threads = MTLSizeMake(numThreads, 1, 1);
+        cmdEncoder->dispatchNonUniform(threads, threadsPerThreadgroup);
+    }
+    else
+    {
+        MTLSize groups = MTLSizeMake((numThreads + w - 1) / w, 1, 1);
+        cmdEncoder->dispatch(groups, threadsPerThreadgroup);
+    }
+}
+
+void SetupFullscreenQuadDrawCommonStates(RenderCommandEncoder *cmdEncoder)
+{
+    cmdEncoder->setCullMode(MTLCullModeNone);
+    cmdEncoder->setTriangleFillMode(MTLTriangleFillModeFill);
+    cmdEncoder->setDepthBias(0, 0, 0);
+}
+
+void SetupBlitWithDrawUniformData(RenderCommandEncoder *cmdEncoder,
+                                  const BlitParams &params,
+                                  bool isColorBlit)
+{
+
+    BlitParamsUniform uniformParams;
+    uniformParams.dstFlipX = params.dstFlipX ? 1 : 0;
+    uniformParams.dstFlipY = params.dstFlipY ? 1 : 0;
+    uniformParams.srcLevel = params.srcLevel;
+    uniformParams.srcLayer = params.srcLayer;
+    if (isColorBlit)
+    {
+        const auto colorParams     = static_cast<const ColorBlitParams *>(&params);
+        uniformParams.dstLuminance = colorParams->dstLuminance ? 1 : 0;
+    }
+    else
+    {
+        const auto dsParams     = static_cast<const DepthStencilBlitParams *>(&params);
+        uniformParams.srcLevel2 = dsParams->srcStencilLevel;
+        uniformParams.srcLayer2 = dsParams->srcStencilLayer;
+    }
+
+    // Compute source texCoords
+    uint32_t srcWidth = 0, srcHeight = 0;
+    if (params.src)
+    {
+        srcWidth  = params.src->width(params.srcLevel);
+        srcHeight = params.src->height(params.srcLevel);
+    }
+    else if (!isColorBlit)
+    {
+        const DepthStencilBlitParams *dsParams =
+            static_cast<const DepthStencilBlitParams *>(&params);
+        srcWidth  = dsParams->srcStencil->width(dsParams->srcStencilLevel);
+        srcHeight = dsParams->srcStencil->height(dsParams->srcStencilLevel);
+    }
+    else
+    {
+        UNREACHABLE();
+    }
+
+    float u0, v0, u1, v1;
+    GetBlitTexCoords(srcWidth, srcHeight, params.srcRect, params.srcYFlipped, params.unpackFlipX,
+                     params.unpackFlipY, &u0, &v0, &u1, &v1);
+
+    auto du = u1 - u0;
+    auto dv = v1 - v0;
+
+    // lower left
+    uniformParams.srcTexCoords[0][0] = u0;
+    uniformParams.srcTexCoords[0][1] = v0;
+
+    // lower right
+    uniformParams.srcTexCoords[1][0] = u1 + du;
+    uniformParams.srcTexCoords[1][1] = v0;
+
+    // upper left
+    uniformParams.srcTexCoords[2][0] = u0;
+    uniformParams.srcTexCoords[2][1] = v1 + dv;
+
+    cmdEncoder->setVertexData(uniformParams, 0);
+    cmdEncoder->setFragmentData(uniformParams, 0);
+}
+
+void SetupCommonBlitWithDrawStates(const gl::Context *context,
+                                   RenderCommandEncoder *cmdEncoder,
+                                   const BlitParams &params,
+                                   bool isColorBlit)
+{
+    // Setup states
+    SetupFullscreenQuadDrawCommonStates(cmdEncoder);
+
+    // Viewport
+    MTLViewport viewportMtl =
+        GetViewport(params.dstRect, params.dstTextureSize.height, params.dstFlipY);
+    MTLScissorRect scissorRectMtl =
+        GetScissorRect(params.dstScissorRect, params.dstTextureSize.height, params.dstFlipY);
+    cmdEncoder->setViewport(viewportMtl);
+    cmdEncoder->setScissorRect(scissorRectMtl);
+
+    if (params.src)
+    {
+        cmdEncoder->setFragmentTexture(params.src, 0);
+    }
+
+    // Uniform
+    SetupBlitWithDrawUniformData(cmdEncoder, params, isColorBlit);
 }
 
 // Overloaded functions to be used with both compute and render command encoder.
@@ -1076,7 +1226,7 @@ void ClearUtils::setupClearWithDraw(const gl::Context *context,
     auto renderPipelineState = getClearRenderPipelineState(context, cmdEncoder, params);
     ASSERT(renderPipelineState);
     // Setup states
-    setupDrawCommonStates(cmdEncoder);
+    SetupFullscreenQuadDrawCommonStates(cmdEncoder);
     cmdEncoder->setRenderPipelineState(renderPipelineState);
 
     id<MTLDepthStencilState> dsState = getClearDepthStencilState(context, params);
@@ -1280,7 +1430,7 @@ void ColorBlitUtils::setupColorBlitWithDraw(const gl::Context *context,
     cmdEncoder->setDepthStencilState(
         contextMtl->getDisplay()->getStateCache().getNullDepthStencilState(contextMtl));
 
-    setupCommonBlitWithDraw(context, cmdEncoder, params, true);
+    SetupCommonBlitWithDrawStates(context, cmdEncoder, params, true);
 
     // Set sampler state
     SamplerDesc samplerDesc;
@@ -1462,7 +1612,7 @@ void DepthStencilBlitUtils::setupDepthStencilBlitWithDraw(const gl::Context *con
 
     ASSERT(params.src || params.srcStencil);
 
-    setupCommonBlitWithDraw(context, cmdEncoder, params, false);
+    SetupCommonBlitWithDrawStates(context, cmdEncoder, params, false);
 
     // Generate render pipeline state
     auto renderPipelineState = getDepthStencilBlitRenderPipelineState(context, cmdEncoder, params);
@@ -1601,7 +1751,7 @@ angle::Result DepthStencilBlitUtils::blitStencilViaCopyBuffer(
 
     NSUInteger w                  = pipeline.threadExecutionWidth;
     MTLSize threadsPerThreadgroup = MTLSizeMake(w, 1, 1);
-    dispatchCompute(contextMtl, cmdEncoder, /** allowNonUniform */ true,
+    DispatchCompute(contextMtl, cmdEncoder, /** allowNonUniform */ true,
                     MTLSizeMake(params.dstRect.width, params.dstRect.height, 1),
                     threadsPerThreadgroup);
 
@@ -1631,111 +1781,15 @@ angle::Result DepthStencilBlitUtils::blitStencilViaCopyBuffer(
     return angle::Result::Continue;
 }
 
-// DrawBasedUtils implementation
-void DrawBasedUtils::setupDrawCommonStates(RenderCommandEncoder *cmdEncoder)
-{
-    cmdEncoder->setCullMode(MTLCullModeNone);
-    cmdEncoder->setTriangleFillMode(MTLTriangleFillModeFill);
-    cmdEncoder->setDepthBias(0, 0, 0);
-}
-
-// BaseBlitUtils implementation
-void BaseBlitUtils::setupCommonBlitWithDraw(const gl::Context *context,
-                                            RenderCommandEncoder *cmdEncoder,
-                                            const BlitParams &params,
-                                            bool isColorBlit)
-{
-    // Setup states
-    setupDrawCommonStates(cmdEncoder);
-
-    // Viewport
-    MTLViewport viewportMtl =
-        GetViewport(params.dstRect, params.dstTextureSize.height, params.dstFlipY);
-    MTLScissorRect scissorRectMtl =
-        GetScissorRect(params.dstScissorRect, params.dstTextureSize.height, params.dstFlipY);
-    cmdEncoder->setViewport(viewportMtl);
-    cmdEncoder->setScissorRect(scissorRectMtl);
-
-    if (params.src)
-    {
-        cmdEncoder->setFragmentTexture(params.src, 0);
-    }
-
-    // Uniform
-    setupBlitWithDrawUniformData(cmdEncoder, params, isColorBlit);
-}
-
-void BaseBlitUtils::setupBlitWithDrawUniformData(RenderCommandEncoder *cmdEncoder,
-                                                 const BlitParams &params,
-                                                 bool isColorBlit)
-{
-
-    BlitParamsUniform uniformParams;
-    uniformParams.dstFlipX = params.dstFlipX ? 1 : 0;
-    uniformParams.dstFlipY = params.dstFlipY ? 1 : 0;
-    uniformParams.srcLevel = params.srcLevel;
-    uniformParams.srcLayer = params.srcLayer;
-    if (isColorBlit)
-    {
-        const auto colorParams     = static_cast<const ColorBlitParams *>(&params);
-        uniformParams.dstLuminance = colorParams->dstLuminance ? 1 : 0;
-    }
-    else
-    {
-        const auto dsParams     = static_cast<const DepthStencilBlitParams *>(&params);
-        uniformParams.srcLevel2 = dsParams->srcStencilLevel;
-        uniformParams.srcLayer2 = dsParams->srcStencilLayer;
-    }
-
-    // Compute source texCoords
-    uint32_t srcWidth = 0, srcHeight = 0;
-    if (params.src)
-    {
-        srcWidth  = params.src->width(params.srcLevel);
-        srcHeight = params.src->height(params.srcLevel);
-    }
-    else if (!isColorBlit)
-    {
-        const DepthStencilBlitParams *dsParams =
-            static_cast<const DepthStencilBlitParams *>(&params);
-        srcWidth  = dsParams->srcStencil->width(dsParams->srcStencilLevel);
-        srcHeight = dsParams->srcStencil->height(dsParams->srcStencilLevel);
-    }
-    else
-    {
-        UNREACHABLE();
-    }
-
-    float u0, v0, u1, v1;
-    GetBlitTexCoords(srcWidth, srcHeight, params.srcRect, params.srcYFlipped, params.unpackFlipX,
-                     params.unpackFlipY, &u0, &v0, &u1, &v1);
-
-    auto du = u1 - u0;
-    auto dv = v1 - v0;
-
-    // lower left
-    uniformParams.srcTexCoords[0][0] = u0;
-    uniformParams.srcTexCoords[0][1] = v0;
-
-    // lower right
-    uniformParams.srcTexCoords[1][0] = u1 + du;
-    uniformParams.srcTexCoords[1][1] = v0;
-
-    // upper left
-    uniformParams.srcTexCoords[2][0] = u0;
-    uniformParams.srcTexCoords[2][1] = v1 + dv;
-
-    cmdEncoder->setVertexData(uniformParams, 0);
-    cmdEncoder->setFragmentData(uniformParams, 0);
-}
-
 // IndexGeneratorUtils implementation
 void IndexGeneratorUtils::onDestroy()
 {
     ClearPipelineState2DArray(&mIndexConversionPipelineCaches);
     ClearPipelineState2DArray(&mTriFanFromElemArrayGeneratorPipelineCaches);
+    ClearPipelineState2DArray(&mLineLoopFromElemArrayGeneratorPipelineCaches);
 
-    mTriFanFromArraysGeneratorPipeline = nil;
+    mTriFanFromArraysGeneratorPipeline   = nil;
+    mLineLoopFromArraysGeneratorPipeline = nil;
 }
 
 AutoObjCPtr<id<MTLComputePipelineState>> IndexGeneratorUtils::getIndexConversionPipeline(
@@ -1880,7 +1934,7 @@ angle::Result IndexGeneratorUtils::convertIndexBufferGPU(ContextMtl *contextMtl,
     cmdEncoder->setBuffer(params.srcBuffer, 0, 1);
     cmdEncoder->setBufferForWrite(params.dstBuffer, params.dstOffset, 2);
 
-    dispatchCompute(contextMtl, cmdEncoder, pipelineState, params.indexCount);
+    DispatchCompute(contextMtl, cmdEncoder, pipelineState, params.indexCount);
 
     return angle::Result::Continue;
 }
@@ -1907,7 +1961,7 @@ angle::Result IndexGeneratorUtils::generateTriFanBufferFromArrays(
     cmdEncoder->setData(uniform, 0);
     cmdEncoder->setBufferForWrite(params.dstBuffer, params.dstOffset, 2);
 
-    dispatchCompute(contextMtl, cmdEncoder, mTriFanFromArraysGeneratorPipeline,
+    DispatchCompute(contextMtl, cmdEncoder, mTriFanFromArraysGeneratorPipeline,
                     uniform.vertexCount);
 
     return angle::Result::Continue;
@@ -1980,7 +2034,7 @@ angle::Result IndexGeneratorUtils::generateTriFanBufferFromElementsArrayGPU(
     cmdEncoder->setBuffer(srcBuffer, 0, 1);
     cmdEncoder->setBufferForWrite(dstBuffer, dstOffset, 2);
 
-    dispatchCompute(contextMtl, cmdEncoder, pipelineState, uniform.indexCount);
+    DispatchCompute(contextMtl, cmdEncoder, pipelineState, uniform.indexCount);
 
     return angle::Result::Continue;
 }
@@ -2030,7 +2084,7 @@ angle::Result IndexGeneratorUtils::generateLineLoopBufferFromArrays(
     cmdEncoder->setData(uniform, 0);
     cmdEncoder->setBufferForWrite(params.dstBuffer, params.dstOffset, 2);
 
-    dispatchCompute(contextMtl, cmdEncoder, mLineLoopFromArraysGeneratorPipeline,
+    DispatchCompute(contextMtl, cmdEncoder, mLineLoopFromArraysGeneratorPipeline,
                     uniform.vertexCount + 1);
 
     return angle::Result::Continue;
@@ -2106,7 +2160,7 @@ angle::Result IndexGeneratorUtils::generateLineLoopBufferFromElementsArrayGPU(
     cmdEncoder->setBuffer(srcBuffer, 0, 1);
     cmdEncoder->setBufferForWrite(dstBuffer, dstOffset, 2);
 
-    dispatchCompute(contextMtl, cmdEncoder, pipelineState, uniform.indexCount + 1);
+    DispatchCompute(contextMtl, cmdEncoder, pipelineState, uniform.indexCount + 1);
 
     return angle::Result::Continue;
 }
@@ -2282,7 +2336,7 @@ void VisibilityResultUtils::combineVisibilityResult(
     cmdEncoder->setBuffer(renderPassResultBuf, 0, 1);
     cmdEncoder->setBufferForWrite(finalResultBuf, 0, 2);
 
-    dispatchCompute(contextMtl, cmdEncoder, pipeline, 1);
+    DispatchCompute(contextMtl, cmdEncoder, pipeline, 1);
 }
 
 // MipmapUtils implementation
@@ -2393,7 +2447,7 @@ angle::Result MipmapUtils::generateMipmapCS(ContextMtl *contextMtl,
 
         uint32_t threadsPerZ = std::max(slices, firstMipView->depth());
 
-        dispatchCompute(contextMtl, cmdEncoder,
+        DispatchCompute(contextMtl, cmdEncoder,
                         /** allowNonUniform */ false,
                         MTLSizeMake(firstMipView->width(), firstMipView->height(), threadsPerZ),
                         threadGroupSize);
@@ -2497,7 +2551,7 @@ angle::Result CopyPixelsUtils::unpackPixelsFromBufferToTexture(
     MTLSize threads =
         MTLSizeMake(params.textureArea.width, params.textureArea.height, params.textureArea.depth);
 
-    dispatchCompute(contextMtl, cmdEncoder,
+    DispatchCompute(contextMtl, cmdEncoder,
                     /** allowNonUniform */ true, threads, threadsPerThreadgroup);
 
     return angle::Result::Continue;
@@ -2535,7 +2589,7 @@ angle::Result CopyPixelsUtils::packPixelsFromTextureToBuffer(ContextMtl *context
 
     MTLSize threads = MTLSizeMake(params.textureArea.width, params.textureArea.height, 1);
 
-    dispatchCompute(contextMtl, cmdEncoder,
+    DispatchCompute(contextMtl, cmdEncoder,
                     /** allowNonUniform */ true, threads, threadsPerThreadgroup);
 
     return angle::Result::Continue;
@@ -2565,7 +2619,7 @@ angle::Result VertexFormatConversionUtils::convertVertexFormatToFloatCS(
     ANGLE_TRY(setupCommonConvertVertexFormatToFloat(contextMtl, cmdEncoder, pipeline,
                                                     srcAngleFormat, params));
 
-    dispatchCompute(contextMtl, cmdEncoder, pipeline, params.vertexCount);
+    DispatchCompute(contextMtl, cmdEncoder, pipeline, params.vertexCount);
     return angle::Result::Continue;
 }
 
@@ -2636,7 +2690,7 @@ angle::Result VertexFormatConversionUtils::expandVertexFormatComponentsCS(
     ANGLE_TRY(setupCommonExpandVertexFormatComponents(
         contextMtl, cmdEncoder, mComponentsExpandCompPipeline, srcAngleFormat, params));
 
-    dispatchCompute(contextMtl, cmdEncoder, mComponentsExpandCompPipeline, params.vertexCount);
+    DispatchCompute(contextMtl, cmdEncoder, mComponentsExpandCompPipeline, params.vertexCount);
     return angle::Result::Continue;
 }
 
@@ -2710,12 +2764,7 @@ VertexFormatConversionUtils::getComponentsExpandRenderPipeline(ContextMtl *conte
     EnsureVertexShaderOnlyPipelineCacheInitialized(contextMtl, @"expandVertexFormatComponentsVS",
                                                    &mComponentsExpandRenderPipelineCache);
 
-    RenderPipelineDesc pipelineDesc;
-    const RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
-
-    renderPassDesc.populateRenderPipelineOutputDesc(&pipelineDesc.outputDescriptor);
-    pipelineDesc.rasterizationEnabled   = false;
-    pipelineDesc.inputPrimitiveTopology = kPrimitiveTopologyClassPoint;
+    RenderPipelineDesc pipelineDesc = GetComputingVertexShaderOnlyRenderPipelineDesc(cmdEncoder);
 
     return mComponentsExpandRenderPipelineCache.getRenderPipelineState(contextMtl, pipelineDesc);
 }
@@ -2772,55 +2821,9 @@ VertexFormatConversionUtils::getFloatConverstionRenderPipeline(ContextMtl *conte
         }
     }
 
-    RenderPipelineDesc pipelineDesc;
-    const RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
-
-    renderPassDesc.populateRenderPipelineOutputDesc(&pipelineDesc.outputDescriptor);
-    pipelineDesc.rasterizationEnabled   = false;
-    pipelineDesc.inputPrimitiveTopology = kPrimitiveTopologyClassPoint;
+    RenderPipelineDesc pipelineDesc = GetComputingVertexShaderOnlyRenderPipelineDesc(cmdEncoder);
 
     return cache.getRenderPipelineState(contextMtl, pipelineDesc);
-}
-
-// ComputeBasedUtils implementation
-void ComputeBasedUtils::dispatchCompute(ContextMtl *contextMtl,
-                                        ComputeCommandEncoder *encoder,
-                                        bool allowNonUniform,
-                                        const MTLSize &numThreads,
-                                        const MTLSize &threadsPerThreadgroup)
-{
-    if (allowNonUniform && contextMtl->getDisplay()->getFeatures().hasNonUniformDispatch.enabled)
-    {
-        encoder->dispatchNonUniform(numThreads, threadsPerThreadgroup);
-    }
-    else
-    {
-        MTLSize groups = MTLSizeMake(
-            (numThreads.width + threadsPerThreadgroup.width - 1) / threadsPerThreadgroup.width,
-            (numThreads.height + threadsPerThreadgroup.height - 1) / threadsPerThreadgroup.height,
-            (numThreads.depth + threadsPerThreadgroup.depth - 1) / threadsPerThreadgroup.depth);
-        encoder->dispatch(groups, threadsPerThreadgroup);
-    }
-}
-
-void ComputeBasedUtils::dispatchCompute(ContextMtl *contextMtl,
-                                        ComputeCommandEncoder *cmdEncoder,
-                                        id<MTLComputePipelineState> pipelineState,
-                                        size_t numThreads)
-{
-    NSUInteger w = std::min<NSUInteger>(pipelineState.threadExecutionWidth, numThreads);
-    MTLSize threadsPerThreadgroup = MTLSizeMake(w, 1, 1);
-
-    if (contextMtl->getDisplay()->getFeatures().hasNonUniformDispatch.enabled)
-    {
-        MTLSize threads = MTLSizeMake(numThreads, 1, 1);
-        cmdEncoder->dispatchNonUniform(threads, threadsPerThreadgroup);
-    }
-    else
-    {
-        MTLSize groups = MTLSizeMake((numThreads + w - 1) / w, 1, 1);
-        cmdEncoder->dispatch(groups, threadsPerThreadgroup);
-    }
 }
 
 }  // namespace mtl
