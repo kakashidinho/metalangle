@@ -225,7 +225,7 @@ void ContextMtl::onDestroy(const gl::Context *context)
 
 angle::Result ContextMtl::ensureIncompleteTexturesCreated(const gl::Context *context)
 {
-    if (!mIncompleteTexturesInitialized)
+    if (ANGLE_UNLIKELY(!mIncompleteTexturesInitialized))
     {
         constexpr gl::TextureType supportedTextureTypes[] = {
             gl::TextureType::_2D, gl::TextureType::_2DArray, gl::TextureType::_3D,
