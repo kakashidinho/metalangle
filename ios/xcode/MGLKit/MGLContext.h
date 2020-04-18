@@ -15,9 +15,19 @@ typedef enum MGLRenderingAPI : int
     kMGLRenderingAPIOpenGLES3 = 3,
 } MGLRenderingAPI;
 
+@interface MGLSharegroup : NSObject
+@end
+
 @interface MGLContext : NSObject
 
 - (id)initWithAPI:(MGLRenderingAPI)api;
+
+// NOTE: If you use sharegroup to share resources between contexts, make sure to call glFlush()
+// when you finish the works of one context on a thread to make the changes visible to other
+// contexts.
+- (id)initWithAPI:(MGLRenderingAPI)api sharegroup:(MGLSharegroup *_Nullable)sharegroup;
+
+@property(readonly) MGLSharegroup *sharegroup;
 
 // Present the content of layer on screen as soon as possible.
 - (BOOL)present:(MGLLayer *)layer;

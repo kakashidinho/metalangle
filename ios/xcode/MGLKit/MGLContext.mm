@@ -38,16 +38,43 @@ void Throw(NSString *msg)
 }
 }
 
+// MGLSharegroup implementation
+@interface MGLSharegroup ()
+@property(atomic) MGLContext *firstContext;
+@end
+
+@implementation MGLSharegroup
+@end
+
 // MGLContext implementation
 
 @implementation MGLContext
 
 - (id)initWithAPI:(MGLRenderingAPI)api
 {
+    return [self initWithAPI:api sharegroup:nil];
+}
+
+- (id)initWithAPI:(MGLRenderingAPI)api sharegroup:(MGLSharegroup *)sharegroup
+{
     if (self = [super init])
     {
         _renderingApi = api;
         _display      = [MGLDisplay defaultDisplay];
+        if (sharegroup)
+        {
+            _sharegroup = sharegroup;
+        }
+        else
+        {
+            _sharegroup = [MGLSharegroup new];
+        }
+
+        if (!_sharegroup.firstContext)
+        {
+            _sharegroup.firstContext = self;
+        }
+
         [self initContext];
     }
     return self;
@@ -121,7 +148,12 @@ void Throw(NSString *msg)
     EGLint ctxAttribs[] = {EGL_CONTEXT_MAJOR_VERSION, ctxMajorVersion, EGL_CONTEXT_MINOR_VERSION,
                            ctxMinorVersion, EGL_NONE};
 
-    _eglContext = eglCreateContext(_display.eglDisplay, config, EGL_NO_CONTEXT, ctxAttribs);
+    EGLContext sharedContext = EGL_NO_CONTEXT;
+    if (_sharegroup.firstContext != self)
+    {
+        sharedContext = _sharegroup.firstContext.eglContext;
+    }
+    _eglContext = eglCreateContext(_display.eglDisplay, config, sharedContext, ctxAttribs);
     if (_eglContext == EGL_NO_CONTEXT)
     {
         Throw(@"Failed to call eglCreateContext()");

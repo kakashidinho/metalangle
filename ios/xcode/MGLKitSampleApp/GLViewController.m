@@ -48,6 +48,7 @@ typedef UIImage MGLKNativeImage;
     GLuint _modelViewUniform;
     float _currentRotation;
 
+    GLuint _programHandle;
     GLuint _floorTexture;
     GLuint _fishTexture;
     GLuint _texCoordSlot;
@@ -56,6 +57,10 @@ typedef UIImage MGLKNativeImage;
     GLuint _indexBuffer;
     GLuint _vertexBuffer2;
     GLuint _indexBuffer2;
+
+    MGLContext *_asyncLoadContext;
+
+    BOOL _resourceLoadFinish;
 }
 
 @end
@@ -216,18 +221,17 @@ const GLubyte Indices2[] = {1, 0, 2, 3};
 
     // 4
     glUseProgram(programHandle);
+    _programHandle = programHandle;
 
     // 5
     _positionSlot = glGetAttribLocation(programHandle, "Position");
     _colorSlot    = glGetAttribLocation(programHandle, "SourceColor");
-    glEnableVertexAttribArray(_positionSlot);
-    glEnableVertexAttribArray(_colorSlot);
 
     _projectionUniform = glGetUniformLocation(programHandle, "Projection");
     _modelViewUniform  = glGetUniformLocation(programHandle, "Modelview");
 
     _texCoordSlot = glGetAttribLocation(programHandle, "TexCoordIn");
-    glEnableVertexAttribArray(_texCoordSlot);
+
     _textureUniform = glGetUniformLocation(programHandle, "Texture");
 }
 
@@ -291,12 +295,13 @@ const GLubyte Indices2[] = {1, 0, 2, 3};
     return texName;
 }
 
-- (void)setupGL
+- (void)loadResources
 {
     [self compileShaders];
     [self setupVBOs];
+
 #if TARGET_OS_IOS
-    if (strstr((const char*)glGetString(GL_EXTENSIONS), "IMG_texture_compression_pvrtc"))
+    if (strstr((const char *)glGetString(GL_EXTENSIONS), "IMG_texture_compression_pvrtc"))
     {
         _floorTexture = [PVRTexture glTextureWithContentsOfFile:@"tile_floor.pvr"];
         _fishTexture  = [PVRTexture glTextureWithContentsOfFile:@"item_powerup_fish.pvr"];
@@ -306,6 +311,32 @@ const GLubyte Indices2[] = {1, 0, 2, 3};
     {
         _floorTexture = [self setupTexture:@"tile_floor.png"];
         _fishTexture  = [self setupTexture:@"item_powerup_fish.png"];
+    }
+}
+
+- (void)setupGL
+{
+    if (!getenv("MGL_SAMPLE_ASYNC_RESOURCE_LOAD"))
+    {
+        // Immediate resource loading.
+        [self loadResources];
+        _resourceLoadFinish = YES;
+    }
+    else
+    {
+        // Do asynchronous resource loading
+        _asyncLoadContext = [[MGLContext alloc] initWithAPI:kMGLRenderingAPIOpenGLES2 sharegroup:self.glView.context.sharegroup];
+        __auto_type bgQueue = dispatch_get_global_queue(QOS_CLASS_BACKGROUND, 0);
+        dispatch_async(bgQueue, ^{
+            [MGLContext setCurrentContext:self->_asyncLoadContext];
+            [self loadResources];
+
+            glFlush();
+
+            dispatch_async(dispatch_get_main_queue(), ^{
+                self->_resourceLoadFinish = YES;
+            });
+        });
     }
 }
 
@@ -320,6 +351,13 @@ const GLubyte Indices2[] = {1, 0, 2, 3};
     glClearColor(0, 104.0 / 255.0, 55.0 / 255.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
+
+    if (!_resourceLoadFinish)
+    {
+        return;
+    }
+
+    glUseProgram(_programHandle);
 
     CC3GLMatrix *projection = [CC3GLMatrix matrix];
     float h                 = 4.0f * self.size.height / self.size.width;
@@ -366,6 +404,10 @@ const GLubyte Indices2[] = {1, 0, 2, 3};
     glUniform1i(_textureUniform, 0);  // unnecc in practice
 
     glUniformMatrix4fv(_modelViewUniform, 1, 0, modelView.glMatrix);
+
+    glEnableVertexAttribArray(_positionSlot);
+    glEnableVertexAttribArray(_colorSlot);
+    glEnableVertexAttribArray(_texCoordSlot);
 
     glVertexAttribPointer(_positionSlot, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
     glVertexAttribPointer(_colorSlot, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex),
