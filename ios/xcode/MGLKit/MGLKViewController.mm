@@ -24,6 +24,15 @@
 #    include "MGLKViewController+iOS.mm"
 #endif
 
+- (instancetype)init
+{
+    if (self = [super init])
+    {
+        [self constructor];
+    }
+    return self;
+}
+
 - (instancetype)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
 {
     if (self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil])
