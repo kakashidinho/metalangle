@@ -158,3 +158,211 @@ standard Khronos EGL and GLES2 header files.
    `MGLKView`, `MGLKViewController`, similar to Apple's provided GLKit classes such as
    `CAEAGLContext`, `CAEAGLLayer`, `GLKView`, `GLKViewController`. Please see the sample app making
    use of this MGLKit classes in `MGLKitSamples.xcodeproj`
+
+##### Porting from Apple's EAGL & GLKit to MGLKit
+- Apple's `EAGL` & `GLKit` classes provide high level APIs to manage OpenGL ES contexts and views.
+  `MetalANGLE` provides similar classes but with different names, to port your apps from using
+  `EAGL` & `GLKit` to use `MGLKit`, a bit of modifications have to be done.
+  Even though most of the `MGLKit` classes mimic the same functionalities as Apple's respective
+  ones, there are still some minor differences, for example, `CAEAGLLayer` requires devs to manually
+  create default framebuffer's storage via `[EAGLContext renderbufferStorage: fromDrawable:]` call.
+  On the other hand, `MGLLayer` automatically does it for you, so no need for manual default
+  framebuffer creation.
+
+- Equivalent classes:
+
+|    Apple                      |     MetalANGLE           |
+|-------------------------------|--------------------------|
+|    EAGLContext                |      MGLContext          |
+|    CAEAGLLayer                |      MGLLayer            |
+|  EAGLRenderingAPI             |      MGLRenderingAPI     |
+|    GLKView                    |      MGLKView            |
+|   GLKViewDelegate             |      MGLKViewDelegate    |
+|  GLKViewController            |      MGLKViewController  |
+| GLKViewDrawableColorFormat    | MGLDrawableColorFormat   |
+| GLKViewDrawableDepthFormat    | MGLDrawableDepthFormat   |
+| GLKViewDrawableStencilFormat  | MGLDrawableStencilFormat |
+| GLKViewDrawableMultisample    | MGLDrawableMultisample   |
+
+- In typical old code, one usually configures  `[GLKViewController viewDidLoad]` with `EAGLContext` and `GLKView`:
+```
+- (void)viewDidLoad
+{
+    [super viewDidLoad];
+
+    // Create an OpenGL ES context and assign it to the view loaded from storyboard
+    GLKView *view = (GLKView *)self.view;
+    view.context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
+
+    // Configure renderbuffers created by the view
+    view.drawableColorFormat = GLKViewDrawableColorFormatRGBA8888;
+    view.drawableDepthFormat = GLKViewDrawableDepthFormat24;
+    view.drawableStencilFormat = GLKViewDrawableStencilFormat8;
+
+    // Enable multisampling
+    view.drawableMultisample = GLKViewDrawableMultisample4X;
+}
+```
+- When porting the `MetalANGLE`, the above should be changed to `[MGLKViewController viewDidLoad]` like this:
+```
+- (void)viewDidLoad
+{
+    [super viewDidLoad];
+
+    // Create an OpenGL ES context and assign it to the view loaded from storyboard
+    MLKView *view = (MLKView *)self.view;
+    view.context = [[MGLContext alloc] initWithAPI:kMGLRenderingAPIOpenGLES2];
+
+    // Configure renderbuffers created by the view
+    view.drawableColorFormat = MGLDrawableColorFormatRGBA8888;
+    view.drawableDepthFormat = MGLDrawableDepthFormat24;
+    view.drawableStencilFormat = MGLDrawableStencilFormat8;
+
+    // Enable multisampling
+    view.drawableMultisample = MGLDrawableMultisample4X;
+}
+```
+
+- Alternatively, if the app uses `CAEAGLLayer` directly with a custom `UIView`, for example:
+```
+@interface PaintingView()
+{
+    EAGLContext *context;
+    GLuint viewFramebuffer, viewRenderbuffer;
+}
+
++ (Class)layerClass
+{
+    return [CAEAGLLayer class];
+}
+
+- (id)initWithCoder:(NSCoder*)coder
+{
+    if ((self = [super initWithCoder:coder]))
+    {
+        CAEAGLLayer *eaglLayer = (CAEAGLLayer *)self.layer;
+
+        eaglLayer.opaque = YES;
+        // In this application, we want to retain the drawable contents after a call to presentRenderbuffer.
+        eaglLayer.drawableProperties = [NSDictionary dictionaryWithObjectsAndKeys:
+                      [NSNumber numberWithBool:YES], kEAGLDrawablePropertyRetainedBacking,
+                      kEAGLColorFormatRGBA8, kEAGLDrawablePropertyColorFormat,
+                      nil];
+
+        // Set the view's scale factor as you wish
+        self.contentScaleFactor = [[UIScreen mainScreen] scale];
+
+        // Initialize OpenGL context
+        context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
+
+        // Set context current
+        if (!context || ![EAGLContext setCurrentContext:context]) {
+            return nil;
+        }
+
+        // Allocate default framebuffer and renderbuffer:
+        glGenFramebuffers(1, &viewFramebuffer);
+        glGenRenderbuffers(1, &viewRenderbuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, viewFramebuffer);
+        glBindRenderbuffer(GL_RENDERBUFFER, viewRenderbuffer);
+
+        [context renderbufferStorage:GL_RENDERBUFFER fromDrawable:eaglLayer];
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, viewRenderbuffer);
+
+        // Retrieve renderbuffer size
+        GLint backingWidth, backingHeight;
+        glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &backingWidth);
+        glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &backingHeight);
+
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        {
+          NSLog(@"Failed to make complete framebuffer objectz %x",
+                glCheckFramebufferStatus(GL_FRAMEBUFFER));
+          return nil;
+        }
+    }
+
+    return self;
+}
+
+- (void) renderFunc
+{
+    [EAGLContext setCurrentContext:context];
+
+    // Clear the buffer
+    glBindFramebuffer(GL_FRAMEBUFFER, viewFramebuffer);
+    glClearColor(0.0, 0.0, 0.0, 0.0);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    // Display the buffer
+    glBindRenderbuffer(GL_RENDERBUFFER, viewRenderbuffer);
+    [context presentRenderbuffer:GL_RENDERBUFFER];
+}
+@end
+```
+
+- If you use `MetalANGLE`, the above would be changed to the following (Note: unlike `CAEAGLLayer`,
+`MGLLayer` automatically creates default framebuffer for you, so no need for creating custom
+renderbuffer with `[EAGLContext renderbufferStorage: fromDrawable:]`):
+```
+@interface PaintingView()
+{
+    MGLContext *context;
+}
+
++ (Class)layerClass
+{
+    return [MGLLayer class];
+}
+
+- (id)initWithCoder:(NSCoder*)coder
+{
+    if ((self = [super initWithCoder:coder]))
+    {
+        MGLLayer *mglLayer = (MGLLayer *)self.layer;
+
+        mglLayer.opaque = YES;
+        // In this application, we want to retain the EAGLDrawable contents after a call to present.
+        mglLayer.retainedBacking = YES:
+        mglLayer.drawableColorFormat = MGLDrawableColorFormatRGBA8888;
+
+        // Set the layer's scale factor as you wish
+        mglLayer.contentScale = [[UIScreen mainScreen] scale];
+
+        // Initialize OpenGL context
+        context = [[MGLContext alloc] initWithAPI:kMGLRenderingAPIOpenGLES2];
+
+        // Set context current
+        if (!context || ![MGLContext setCurrentContext:context]) {
+            return nil;
+        }
+
+        // Retrieve renderbuffer size.
+        // NOTE: unlike CAEAGLLayer, you don't need to manually create default framebuffer and
+        // renderbuffer.
+        // MGLLayer already creates them internally.
+        GLuint backingWidth, backingHeight;
+        backingWidth = mglLayer.drawableSize.width;
+        backingHeight = mglLayer.drawableSize.height;
+    }
+
+    return self;
+}
+
+- (void) renderFunc
+{
+    MGLLayer *mglLayer = (MGLLayer *)self.layer;
+    [MGLContext setCurrentContext:context forLayer:mglLayer];
+
+    // Clear the buffer. The following glBindFramebuffer() call is optionally. Only needed if you
+    // have custom framebuffers aside from the default one.
+    glBindFramebuffer(GL_FRAMEBUFFER, mglLayer.defaultOpenGLFrameBufferID);
+    glClearColor(0.0, 0.0, 0.0, 0.0);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    // Display the buffer
+    [context present:mglLayer];
+}
+
+@end
+```

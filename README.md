@@ -64,7 +64,9 @@ Currently, for convenience, MetalANGLE can also be built using an Xcode project 
 [MGLKit](src/libANGLE/renderer/metal/DevSetup.md#MGLKit) utilities wrapper library which provides
 `MGLContext`, `MGLLayer`, `MGLKView`, `MGLKViewController`, similar to Apple's provided GLKit
 classes such as `CAEAGLContext`, `CAEAGLLayer`, `GLKView`, `GLKViewController`. Please open
-`MGLKitSamples.xcodeproj` for example iOS app using this MGLKit library.
+`MGLKitSamples.xcodeproj` for example iOS app using this `MGLKit` library.
+This [documents](src/libANGLE/renderer/metal/DevSetup.md#MGLKit) contains some guides to port `GLKit`
+apps to use `MGLKit`.
 
 Nevertheless, you still need to setup the required environment and dependencies properly as mentioned in
 [Metal backend's Dev setup instructions](src/libANGLE/renderer/metal/DevSetup.md) first.
