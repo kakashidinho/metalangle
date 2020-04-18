@@ -210,7 +210,7 @@ standard Khronos EGL and GLES2 header files.
     [super viewDidLoad];
 
     // Create an OpenGL ES context and assign it to the view loaded from storyboard
-    MLKView *view = (MLKView *)self.view;
+    MGLKView *view = (MGLKView *)self.view;
     view.context = [[MGLContext alloc] initWithAPI:kMGLRenderingAPIOpenGLES2];
 
     // Configure renderbuffers created by the view
