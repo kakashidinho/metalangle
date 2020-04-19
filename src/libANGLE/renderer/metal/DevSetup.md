@@ -25,11 +25,16 @@ MacOS version:
 - If you want to build the sample app using [MGLKit](#MGLKit) library. Open `MGKitSamples.xcodeproj`
   instead of `OpenGLES.xcodeproj`, DO NOT open both at the same time. As `MGKitSamples.xcodeproj`
   will open the `OpenGLES.xcodeproj` inside its workspace.
+- The sample app `MGLKitSampleApp_mac` demonstrates how to use `MGLKit` to setup view and GL context
+  on macOS.
+- See [MGLKit](#MGLKit) section for more info about how to port your apps from `EAGL`/`GLKit` to
+  `MGLKit`.
 
 iOS version:
 
 - Open `OpenGLES.xcodeproj` in `ios/xcode` folder.
 - The target `MetalANGLE` will build OpenGL ES framework named `MetalANGLE.framework`.
+- If you want to build tvOS version, choose `MetalANGLE_tvos` target.
 - __Note__: in order to test sample apps on real devices. You have to change their Bundle Identifier
   in Xcode to something you like, since only one development team can use one ID at a time. And this
   is global restriction across the globes. Once one person install the sample apps using his Apple
@@ -39,6 +44,11 @@ iOS version:
   instead of `OpenGLES.xcodeproj`, DO NOT open both at the same time. As
   `MGKitSamples.xcodeproj`will open the `OpenGLES.xcodeproj` inside its workspace.
 - Running and testing on iOS Simulator requires Xcode 11+ and MacOS Catalina (10.15+).
+- The sample app `MGLKitSampleApp` demonstrates how to use `MGLKit` to setup view and GL context on
+  iOS.
+- The sample app `MGLKitSampleApp_tvos` demonstrates how to use `MGLKit` to setup view and GL
+  context on tvOS.
+- The sample app `MGLPaint` is a port of Apple's old `GLPaint` sample app.
 
 
 ### Standard ANGLE build with all test suites
