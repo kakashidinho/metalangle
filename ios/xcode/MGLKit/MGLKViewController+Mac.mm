@@ -36,6 +36,18 @@
     NSLog(@"MGLKViewController viewDidMoveToWindow");
     if (self.view.window)
     {
+        // Obtain current window's screen refresh rate.
+        CGDirectDisplayID displayID =
+            (CGDirectDisplayID)[self.view.window.screen
+                                    .deviceDescription[@"NSScreenNumber"] unsignedIntegerValue];
+
+        CGDisplayModeRef displayModeRef = CGDisplayCopyDisplayMode(displayID);
+        if (displayModeRef)
+        {
+            _currentScreenRefreshRate = CGDisplayModeGetRefreshRate(displayModeRef);
+        }
+        CGDisplayModeRelease(displayModeRef);
+
         // Call resume to reset display link's window
         [self resume];
 
@@ -115,7 +127,9 @@ static CVReturn CVFrameDisplayCallback(CVDisplayLinkRef displayLink,
         return;
     }
 
-    if (_preferredFramesPerSecond == 1)
+    if (_preferredFramesPerSecond == 1 ||
+        (_currentScreenRefreshRate &&
+         fabs(_preferredFramesPerSecond - _currentScreenRefreshRate) < 0.00001))
     {
         NSWindow *window = _glView.window;
         if (!window)

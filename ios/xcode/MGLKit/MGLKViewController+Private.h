@@ -15,6 +15,7 @@
     NSTimer *_displayTimer;            // Used to render with irregular framerate
     CVDisplayLinkRef _displayLink;     // Used to render in sync with display refresh rate
     dispatch_source_t _displaySource;  // Used together with displayLink
+    double _currentScreenRefreshRate;
     NSWindow *_observedWindow;
 #else
     CADisplayLink *_displayLink;
