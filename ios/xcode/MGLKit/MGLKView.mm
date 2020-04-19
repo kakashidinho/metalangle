@@ -194,7 +194,7 @@ void Throw(NSString *msg)
     _drawing = NO;
 }
 
-#if TARGET_OS_IOS
+#if TARGET_OS_IOS || TARGET_OS_TV
 static void freeImageData(void *info, const void *data, size_t size)
 {
     delete[] static_cast<uint8_t *>(info);
@@ -242,6 +242,6 @@ static void freeImageData(void *info, const void *data, size_t size)
     CGImageRelease(imageRef);
     return image;
 }
-#endif  // TARGET_OS_IOS
+#endif  // TARGET_OS_IOS || TARGET_OS_TV
 
 @end

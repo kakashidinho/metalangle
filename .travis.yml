@@ -24,16 +24,20 @@ jobs:
       on:
         tags: true
 
-  - name: "macos xcode project 11.2"
+  - name: "macos & tvos xcode project 11.2"
     osx_image: xcode11.2
     python: "3.5"
     script:
       - mac/xcode/travis_build_mac.sh Release macosx ${TRAVIS_BUILD_DIR}/build_mac
+      - ios/xcode/travis_build_ios.sh Release appletvos ${TRAVIS_BUILD_DIR}/build_tvos
       - cd ${TRAVIS_BUILD_DIR}/build_mac/Build/Products/Release && zip --symlinks -r ${TRAVIS_BUILD_DIR}/MetalANGLE.framework.mac.zip MetalANGLE.framework
+      - cd ${TRAVIS_BUILD_DIR}/build_tvos/Build/Products/Release && zip --symlinks -r ${TRAVIS_BUILD_DIR}/MetalANGLE.framework.tvos.zip MetalANGLE.framework
     deploy:
       provider: releases
       api_key: ${GITHUB_TOKEN}
-      file: ${TRAVIS_BUILD_DIR}/MetalANGLE.framework.mac.zip
+      file:
+        - ${TRAVIS_BUILD_DIR}/MetalANGLE.framework.mac.zip
+        - ${TRAVIS_BUILD_DIR}/MetalANGLE.framework.tvos.zip
       draft: true
       skip_cleanup: true
       overwrite: true
@@ -67,10 +71,11 @@ jobs:
     script:
       - ios/xcode/travis_build_ios.sh Release
     osx_image: xcode9.4
-  - name: "macos xcode project 9.4"
+  - name: "macos & tvos xcode project 9.4"
     python: "3.5"
     script:
       - mac/xcode/travis_build_mac.sh Release
+      - ios/xcode/travis_build_ios.sh Release appletvos
     osx_image: xcode9.4
   - name: "macos gn xcode 9.4"
     python: "3.5"

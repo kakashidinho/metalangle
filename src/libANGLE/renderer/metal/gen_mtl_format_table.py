@@ -341,7 +341,7 @@ def gen_image_map_switch_string(image_table, angle_to_gl):
                                                      angle_to_gl, mac_angle_to_mtl, mac_fallbacks)
 
     # iOS specific
-    switch_data += "#elif TARGET_OS_IOS  // TARGET_OS_OSX || TARGET_OS_MACCATALYST\n"
+    switch_data += "#elif TARGET_OS_IOS || TARGET_OS_TV // TARGET_OS_OSX || TARGET_OS_MACCATALYST\n"
     for angle_format in sorted(ios_specific_map.keys()):
         switch_data += gen_image_map_switch_simple_case(angle_format, angle_format, angle_to_gl,
                                                         ios_specific_map)

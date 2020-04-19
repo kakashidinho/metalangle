@@ -300,7 +300,7 @@ const GLubyte Indices2[] = {1, 0, 2, 3};
     [self compileShaders];
     [self setupVBOs];
 
-#if TARGET_OS_IOS
+#if TARGET_OS_IOS || TARGET_OS_TV
     if (strstr((const char *)glGetString(GL_EXTENSIONS), "IMG_texture_compression_pvrtc"))
     {
         _floorTexture = [PVRTexture glTextureWithContentsOfFile:@"tile_floor.pvr"];

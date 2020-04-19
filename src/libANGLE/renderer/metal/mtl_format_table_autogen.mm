@@ -938,7 +938,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
-#elif TARGET_OS_IOS  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
+#elif TARGET_OS_IOS || TARGET_OS_TV  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
         case angle::FormatID::EAC_R11G11_SNORM_BLOCK:
 
             this->metalFormat    = MTLPixelFormatEAC_RG11Snorm;

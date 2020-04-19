@@ -667,17 +667,17 @@ void DisplayMtl::initializeFeatures()
         mFeatures.hasExplicitMemBarrier.enabled = true;
     }
 
-#elif TARGET_OS_IOS
+#elif TARGET_OS_IOS || TARGET_OS_TV
     mFeatures.breakRenderPassIsCheap.enabled = false;
 
     // Base Vertex drawing is only supported since GPU family 3.
     ANGLE_FEATURE_CONDITION((&mFeatures), hasBaseVertexInstancedDraw, supportiOSGPUFamily(3));
 
-    ANGLE_FEATURE_CONDITION((&mFeatures), hasNonUniformDispatch, supportiOSGPUFamily(4));
+    ANGLE_FEATURE_CONDITION((&mFeatures), hasNonUniformDispatch,
+                            TARGET_OS_IOS && supportiOSGPUFamily(4));
 
-#    if !TARGET_OS_SIMULATOR
-    mFeatures.allowSeparatedDepthStencilBuffers.enabled = true;
-#    endif
+    ANGLE_FEATURE_CONDITION((&mFeatures), allowSeparatedDepthStencilBuffers, !TARGET_OS_SIMULATOR);
+
 #endif
 
     angle::PlatformMethods *platform = ANGLEPlatformCurrent();
@@ -732,11 +732,11 @@ angle::Result DisplayMtl::initializeShaderLibrary()
 
 bool DisplayMtl::supportiOSGPUFamily(uint8_t iOSFamily) const
 {
-#if !TARGET_OS_IOS || TARGET_OS_MACCATALYST
+#if (!TARGET_OS_IOS && !TARGET_OS_TV) || TARGET_OS_MACCATALYST
     return false;
 #else
-#    if (__IPHONE_OS_VERSION_MAX_ALLOWED >= 130000) || \
-        (defined(__TV_OS_VERSION_MAX_ALLOWED) && __TV_OS_VERSION_MAX_ALLOWED >= 130000)
+#    if (__IPHONE_OS_VERSION_MAX_ALLOWED >= 130000) || (__TV_OS_VERSION_MAX_ALLOWED >= 130000)
+    // If device supports [MTLDevice supportsFamily:], then use it.
     if (ANGLE_APPLE_AVAILABLE_I(13.0))
     {
         MTLGPUFamily family;
@@ -757,19 +757,24 @@ bool DisplayMtl::supportiOSGPUFamily(uint8_t iOSFamily) const
             case 5:
                 family = MTLGPUFamilyApple5;
                 break;
+#        if TARGET_OS_IOS
             case 6:
                 family = MTLGPUFamilyApple6;
                 break;
+#        endif
             default:
                 return false;
         }
         return [getMetalDevice() supportsFamily:family];
     }  // Metal 2.2
 #    endif  // __IPHONE_OS_VERSION_MAX_ALLOWED
-    // NOTE(hqle): Support tvOS
+
+    // If device doesn't support [MTLDevice supportsFamily:], then use
+    // [MTLDevice supportsFeatureSet:].
     MTLFeatureSet featureSet;
     switch (iOSFamily)
     {
+#    if TARGET_OS_IOS
         case 1:
             featureSet = MTLFeatureSet_iOS_GPUFamily1_v1;
             break;
@@ -782,23 +787,33 @@ bool DisplayMtl::supportiOSGPUFamily(uint8_t iOSFamily) const
         case 4:
             featureSet = MTLFeatureSet_iOS_GPUFamily4_v1;
             break;
-#    if __IPHONE_OS_VERSION_MAX_ALLOWED >= 120000
+#        if __IPHONE_OS_VERSION_MAX_ALLOWED >= 120000
         case 5:
             featureSet = MTLFeatureSet_iOS_GPUFamily5_v1;
             break;
-#    endif
+#        endif  // __IPHONE_OS_VERSION_MAX_ALLOWED
+#    elif TARGET_OS_TV
+        case 1:
+        case 2:
+            featureSet = MTLFeatureSet_tvOS_GPUFamily1_v1;
+            break;
+        case 3:
+            featureSet = MTLFeatureSet_tvOS_GPUFamily2_v1;
+            break;
+#    endif  // TARGET_OS_IOS
         default:
             return false;
     }
 
     return [getMetalDevice() supportsFeatureSet:featureSet];
-#endif  // TARGET_OS_IOS
+#endif      // TARGET_OS_IOS || TARGET_OS_TV
 }
 
 bool DisplayMtl::supportMacGPUFamily(uint8_t macFamily) const
 {
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
 #    if defined(__MAC_10_15)
+    // If device supports [MTLDevice supportsFamily:], then use it.
     if (ANGLE_APPLE_AVAILABLE_XC(10.15, 13.0))
     {
         MTLGPUFamily family;
@@ -828,6 +843,8 @@ bool DisplayMtl::supportMacGPUFamily(uint8_t macFamily) const
     }  // Metal 2.2
 #    endif
 
+    // If device doesn't support [MTLDevice supportsFamily:], then use
+    // [MTLDevice supportsFeatureSet:].
 #    if TARGET_OS_MACCATALYST
     UNREACHABLE();
     return false;

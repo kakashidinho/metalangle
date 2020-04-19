@@ -32,10 +32,12 @@ static IOSWindow *gMainIOSWindow;
 - (BOOL)application:(UIApplication *)application
     didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
+#if !TARGET_OS_TV
     [[UIApplication sharedApplication] setStatusBarHidden:YES];  // hide status bar
 
     // Listen to orientation change.
     [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
+#endif
 
     if (gMainIOSWindow)
     {
@@ -58,7 +60,9 @@ static IOSWindow *gMainIOSWindow;
         gMainIOSWindow->appWillTerminate();
     }
 
+#if !TARGET_OS_TV
     [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
+#endif
 }
 
 - (void)applicationDidEnterBackground:(UIApplication *)application
@@ -84,6 +88,7 @@ static IOSWindow *gMainIOSWindow;
 
 @implementation IOSWindowViewController
 
+#if !TARGET_OS_TV
 - (BOOL)shouldAutorotate
 {
     return YES;
@@ -98,6 +103,7 @@ static IOSWindow *gMainIOSWindow;
 {
     return UIInterfaceOrientationMaskLandscapeRight;
 }
+#endif // !TARGET_OS_TV
 
 - (void)deviceOrientationDidChange:(NSNotification *)notification
 {
@@ -146,7 +152,9 @@ static IOSWindow *gMainIOSWindow;
 {
     if ((self = [super initWithFrame:frameRect]) != nil)
     {
+#if !TARGET_OS_TV
         self.multipleTouchEnabled = YES;
+#endif
     }
     return self;
 }

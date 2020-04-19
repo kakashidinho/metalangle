@@ -38,7 +38,7 @@
 // Return the size of the OpenGL default framebuffer.
 @property(readonly) CGSize drawableSize;
 
-#if TARGET_OS_IOS
+#if TARGET_OS_IOS || TARGET_OS_TV
 @property(readonly, strong) UIImage *snapshot;
 #endif
 

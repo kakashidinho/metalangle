@@ -33,13 +33,14 @@
         ANGLE_APPLE_AVAILABLE_XI(macVer, iOSVer)
 
 #    define ANGLE_APPLE_AVAILABLE_XC(macVer, macCatalystVer) @available(macOS macVer, *)
-#    define ANGLE_APPLE_AVAILABLE_CI(macCatalystVer, iOSVer) @available(iOS iOSVer, *)
+#    define ANGLE_APPLE_AVAILABLE_CI(macCatalystVer, iOSVer) @available(iOS iOSVer, tvOS iOSVer, *)
 #endif
 
 // ANGLE_APPLE_AVAILABLE_XI: check if either of the 2 platforms (OSX/iOS) min verions is available:
-#define ANGLE_APPLE_AVAILABLE_XI(macVer, iOSVer) @available(macOS macVer, iOS iOSVer, *)
+#define ANGLE_APPLE_AVAILABLE_XI(macVer, iOSVer) \
+    @available(macOS macVer, iOS iOSVer, tvOS iOSVer, *)
 
 // ANGLE_APPLE_AVAILABLE_I: check if a particular iOS version is available
-#define ANGLE_APPLE_AVAILABLE_I(iOSVer) @available(iOS iOSVer, *)
+#define ANGLE_APPLE_AVAILABLE_I(iOSVer) @available(iOS iOSVer, tvOS iOSVer, *)
 
 #endif

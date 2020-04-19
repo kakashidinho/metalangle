@@ -35,6 +35,9 @@
 #    if !defined(__IPHONE_OS_VERSION_MAX_ALLOWED)
 #        define __IPHONE_OS_VERSION_MAX_ALLOWED __IPHONE_11_0
 #    endif
+#    if !defined(__TV_OS_VERSION_MAX_ALLOWED)
+#        define __TV_OS_VERSION_MAX_ALLOWED __IPHONE_11_0
+#    endif
 #endif
 
 #define ANGLE_MTL_OBJC_SCOPE @autoreleasepool

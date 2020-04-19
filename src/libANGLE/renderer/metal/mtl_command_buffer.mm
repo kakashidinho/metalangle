@@ -2171,7 +2171,11 @@ ComputeCommandEncoder &ComputeCommandEncoder::dispatch(const MTLSize &threadGrou
 ComputeCommandEncoder &ComputeCommandEncoder::dispatchNonUniform(const MTLSize &threadsPerGrid,
                                                                  const MTLSize &threadsPerGroup)
 {
+#if TARGET_OS_TV
+    UNREACHABLE();
+#else
     [get() dispatchThreads:threadsPerGrid threadsPerThreadgroup:threadsPerGroup];
+#endif
     return *this;
 }
 

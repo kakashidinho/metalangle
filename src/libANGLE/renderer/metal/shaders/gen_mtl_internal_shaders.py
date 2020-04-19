@@ -86,6 +86,31 @@ def gen_precompiled_shaders(mac_version, ios_version, variable_name, additional_
         'xcrun -sdk iphonesimulator metallib {object_files} -o compiled/default.ios_sim.{ios_version}.metallib'
         .format(ios_version=ios_version, object_files=object_files))
 
+    # tvOS device version's compilation
+    print('Compiling tvos {0} version of default shaders ...'.format(ios_version))
+    object_files = ''
+    for src_file in src_files:
+        object_file = 'compiled/default.tvos.{0}.{1}.air'.format(ios_version, src_file)
+        object_files += ' ' + object_file
+        os.system('xcrun -sdk appletvos metal -mtvos-version-min={0} {1} {2} -c -o {3}'.format(
+            ios_version, additional_flags, src_file, object_file))
+    os.system(
+        'xcrun -sdk appletvos metallib {object_files} -o compiled/default.tvos.{ios_version}.metallib'
+        .format(ios_version=ios_version, object_files=object_files))
+
+    # tvOS simulator version's compilation
+    print('Compiling tvos {0} simulator version of default shaders ...'.format(ios_version))
+    object_files = ''
+    object_files = ''
+    for src_file in src_files:
+        object_file = 'compiled/default.tvos_sim.{0}.{1}.air'.format(ios_version, src_file)
+        object_files += ' ' + object_file
+        os.system('xcrun -sdk appletvsimulator metal {0} {1} -c -o {2}'.format(
+            additional_flags, src_file, object_file))
+    os.system(
+        'xcrun -sdk appletvsimulator metallib {object_files} -o compiled/default.tvos_sim.{ios_version}.metallib'
+        .format(ios_version=ios_version, object_files=object_files))
+
     # Mac version's byte array string
     os.system(
         'echo "#if TARGET_OS_OSX || TARGET_OS_MACCATALYST\n" >> compiled/mtl_default_shaders.inc')
@@ -97,7 +122,7 @@ def gen_precompiled_shaders(mac_version, ios_version, variable_name, additional_
 
     # iOS simulator version's byte array string
     os.system(
-        'echo "\n#elif TARGET_OS_SIMULATOR  // TARGET_OS_OSX || TARGET_OS_MACCATALYST\n" >> compiled/mtl_default_shaders.inc'
+        'echo "\n#elif TARGET_OS_IOS && TARGET_OS_SIMULATOR  // TARGET_OS_OSX || TARGET_OS_MACCATALYST\n" >> compiled/mtl_default_shaders.inc'
     )
 
     append_file_as_byte_array_string(variable_name,
@@ -113,6 +138,28 @@ def gen_precompiled_shaders(mac_version, ios_version, variable_name, additional_
 
     append_file_as_byte_array_string(variable_name,
                                      'compiled/default.ios.{0}.metallib'.format(ios_version),
+                                     'compiled/mtl_default_shaders.inc')
+    os.system('echo "constexpr size_t {0}_len=sizeof({0});" >> compiled/mtl_default_shaders.inc'
+              .format(variable_name))
+
+    # tvOS simulator version's byte array string
+    os.system(
+        'echo "\n#elif TARGET_OS_TV && TARGET_OS_SIMULATOR  // TARGET_OS_OSX || TARGET_OS_MACCATALYST\n" >> compiled/mtl_default_shaders.inc'
+    )
+
+    append_file_as_byte_array_string(variable_name,
+                                     'compiled/default.tvos_sim.{0}.metallib'.format(ios_version),
+                                     'compiled/mtl_default_shaders.inc')
+    os.system('echo "constexpr size_t {0}_len=sizeof({0});" >> compiled/mtl_default_shaders.inc'
+              .format(variable_name))
+
+    # tvOS version's byte array string
+    os.system(
+        'echo "\n#elif TARGET_OS_TV  // TARGET_OS_OSX || TARGET_OS_MACCATALYST\n" >> compiled/mtl_default_shaders.inc'
+    )
+
+    append_file_as_byte_array_string(variable_name,
+                                     'compiled/default.tvos.{0}.metallib'.format(ios_version),
                                      'compiled/mtl_default_shaders.inc')
     os.system('echo "constexpr size_t {0}_len=sizeof({0});" >> compiled/mtl_default_shaders.inc'
               .format(variable_name))

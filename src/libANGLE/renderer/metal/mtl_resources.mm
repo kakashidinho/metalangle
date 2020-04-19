@@ -325,7 +325,7 @@ Texture::Texture(ContextMtl *context,
 
         if (memoryLess)
         {
-#if TARGET_OS_IOS && !TARGET_OS_MACCATALYST
+#if (TARGET_OS_IOS || TARGET_OS_TV) && !TARGET_OS_MACCATALYST
             desc.resourceOptions = MTLResourceStorageModeMemoryless;
 #else
             desc.resourceOptions = MTLResourceStorageModePrivate;
