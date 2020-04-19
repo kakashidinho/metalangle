@@ -49,6 +49,7 @@ invoke_xcodebuild()
 
 ./fetchDependencies.sh
 
+invoke_xcodebuild MetalANGLE_static
 invoke_xcodebuild MGLKitSampleApp
 invoke_xcodebuild MGLPaint
 invoke_xcodebuild MGLKitSampleApp_ios9.0

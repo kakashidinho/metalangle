@@ -49,6 +49,7 @@ invoke_xcodebuild()
 
 ./fetchDependencies.sh
 
+invoke_xcodebuild MetalANGLE_static_tvos
 invoke_xcodebuild MGLKitSampleApp_tvos
 invoke_xcodebuild MGLPaint_tvos
 invoke_xcodebuild simple_vertex_shader_tvos
