@@ -9,6 +9,7 @@
 #import "MGLContext.h"
 #import "MGLContext+Private.h"
 
+#include <pthread.h>
 #include <vector>
 
 #include <EGL/egl.h>
@@ -26,10 +27,35 @@ struct ThreadLocalInfo
     __weak MGLLayer *currentLayer     = nil;
 };
 
+#if TARGET_OS_SIMULATOR
+pthread_key_t gThreadSpecificKey;
+void ThreadTLSDestructor(void *data)
+{
+    auto tlsData = reinterpret_cast<ThreadLocalInfo *>(data);
+    delete tlsData;
+}
+
+#endif
+
 ThreadLocalInfo &CurrentTLS()
 {
+#if TARGET_OS_SIMULATOR
+    // There are some issuess with C++11 TLS could not be compiled on iOS
+    // simulator, so we have to fallback to use pthread TLS.
+    static pthread_once_t sKeyOnce = PTHREAD_ONCE_INIT;
+    pthread_once(&sKeyOnce, [] { pthread_key_create(&gThreadSpecificKey, ThreadTLSDestructor); });
+
+    auto tlsData = reinterpret_cast<ThreadLocalInfo *>(pthread_getspecific(gThreadSpecificKey));
+    if (!tlsData)
+    {
+        tlsData = new ThreadLocalInfo();
+        pthread_setspecific(gThreadSpecificKey, tlsData);
+    }
+    return *tlsData;
+#else  // TARGET_OS_SIMULATOR
     static thread_local ThreadLocalInfo tls;
     return tls;
+#endif
 }
 
 void Throw(NSString *msg)
@@ -228,8 +254,9 @@ void Throw(NSString *msg)
         }
     }
 
-    CurrentTLS().currentContext = self;
-    CurrentTLS().currentLayer   = layer;
+    ThreadLocalInfo &tlsData = CurrentTLS();
+    tlsData.currentContext   = self;
+    tlsData.currentLayer     = layer;
 
     return YES;
 }
