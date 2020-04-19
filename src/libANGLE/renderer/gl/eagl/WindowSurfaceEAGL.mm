@@ -89,6 +89,7 @@ egl::Error WindowSurfaceEAGL::initialize(const egl::Display *display)
     mSwapLayer       = [[CAEAGLLayer alloc] init];
     mSwapLayer.frame = mLayer.frame;
     [mLayer addSublayer:mSwapLayer];
+    [mSwapLayer setContentsScale:[mLayer contentsScale]];
 
     mFunctions->genRenderbuffers(1, &mColorRenderbuffer);
     mStateManager->bindRenderbuffer(GL_RENDERBUFFER, mColorRenderbuffer);
@@ -181,12 +182,12 @@ void WindowSurfaceEAGL::setSwapInterval(EGLint interval)
 
 EGLint WindowSurfaceEAGL::getWidth() const
 {
-    return (EGLint)CGRectGetWidth([mLayer frame]);
+    return static_cast<EGLint>(CGRectGetWidth([mLayer frame]) * [mLayer contentsScale]);
 }
 
 EGLint WindowSurfaceEAGL::getHeight() const
 {
-    return (EGLint)CGRectGetHeight([mLayer frame]);
+    return static_cast<EGLint>(CGRectGetHeight([mLayer frame]) * [mLayer contentsScale]);
 }
 
 EGLint WindowSurfaceEAGL::isPostSubBufferSupported() const
