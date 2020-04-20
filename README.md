@@ -3,12 +3,14 @@
 [![Build Status](https://travis-ci.com/kakashidinho/metalangle.svg?branch=master)](https://travis-ci.com/kakashidinho/metalangle)
 [![Build Status](https://ci.appveyor.com/api/projects/status/github/kakashidinho/metalangle?svg=true&branch=master)](https://ci.appveyor.com/project/kakashidinho/metalangle)
 
-This is a fork of Goolge's [ANGLE project](https://chromium.googlesource.com/angle/angle). It adds Metal API backend support.
+This is a fork of Google's [ANGLE project](https://chromium.googlesource.com/angle/angle). It adds Metal API backend support.
 Apple announced OpenGL (ES) deprecation in 2018. So the purpose of MetalANGLE is to allow OpenGL ES applications
 to continue operate on Apple platforms by translating OpenGL ES draw calls to Metal draw calls under the hood.
 
 ### Current Metal backend implementation status
-- MetalANGLE is being migrated into official ANGLE repo. So this repo might not get updated for a while.
+- MetalANGLE is being migrated into official ANGLE repo. So this repo might not get updated for a
+  while. See current [Differences between MetalANGLE and official
+  ANGLE](#differences-between-metalangle-and-googles-angle).
 - __OpenGL ES 2.0__ functionalities are 100% completed.
 - __OpenGL ES 3.0__ status:
   - [x] Occlusion queries.
@@ -70,6 +72,15 @@ apps to use `MGLKit`.
 
 Nevertheless, you still need to setup the required environment and dependencies properly as mentioned in
 [Metal backend's Dev setup instructions](src/libANGLE/renderer/metal/DevSetup.md) first.
+
+## Differences between MetalANGLE and Google's ANGLE
+- Most of the Metal back-end code are shared between `MetalANGLE` and `ANGLE`.
+- Some Metal's updates and bug fixes will be available in `MetalANGLE` first before being merged
+  into `ANGLE` (it might take a long time some time).
+- `MetalANGLE` includes iOS supports and high level API such as
+  [MGLKit](src/libANGLE/renderer/metal/DevSetup.md#MGLKit) that mimics Apple's deprecated `EAGL` &
+  `GLKit` API. These features are unlikely to be merged into `ANGLE` since `ANGLE` project doesn't
+  have any plan to support iOS in near future.
 
 ------
 # Google's ANGLE - Almost Native Graphics Layer Engine
