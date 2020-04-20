@@ -86,6 +86,7 @@ TEST_P(APPLEClipDistanceTest, CompileFailsWithExtensionWithoutPragma)
     EXPECT_FALSE(TestShaderCompile(""));
 }
 
+
 // With extension flag and extension directive, compiling succeeds.
 // Also test that the extension directive state is reset correctly.
 TEST_P(APPLEClipDistanceTest, CompileSucceedsWithExtensionAndPragma)
@@ -97,15 +98,31 @@ TEST_P(APPLEClipDistanceTest, CompileSucceedsWithExtensionAndPragma)
     // Test reset functionality.
     EXPECT_FALSE(TestShaderCompile(""));
     EXPECT_TRUE(TestShaderCompile(EXTPragma));
+}
 
-#ifdef ANGLE_ENABLE_METAL
-    InitializeCompiler(SH_GLSL_METAL_OUTPUT);
-    EXPECT_TRUE(TestShaderCompile(EXTPragma));
-#elif defined(ANGLE_ENABLE_VULKAN)
+#if defined(ANGLE_ENABLE_VULKAN)
+// With extension flag and extension directive, compiling using TranslatorVulkan succeeds.
+TEST_P(APPLEClipDistanceTest, CompileSucceedsVulkan)
+{
+    mResources.APPLE_clip_distance = 1;
+    mResources.MaxClipDistances    = 8;
+
     InitializeCompiler(SH_GLSL_VULKAN_OUTPUT);
     EXPECT_TRUE(TestShaderCompile(EXTPragma));
-#endif
 }
+#endif
+
+#if defined(ANGLE_ENABLE_METAL)
+// With extension flag and extension directive, compiling using TranslatorMetal succeeds.
+TEST_P(APPLEClipDistanceTest, CompileSucceedsMetal)
+{
+    mResources.APPLE_clip_distance = 1;
+    mResources.MaxClipDistances    = 8;
+
+    InitializeCompiler(SH_GLSL_METAL_OUTPUT);
+    EXPECT_TRUE(TestShaderCompile(EXTPragma));
+}
+#endif
 
 // The SL #version 100 shaders that are correct work similarly
 // in both GL2 and GL3, with and without the version string.
