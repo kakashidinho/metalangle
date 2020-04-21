@@ -20,7 +20,7 @@
   "src/libANGLE/renderer/metal/shaders/gen_mipmap.metal":
     "194b57ab92d6a28948561192d7e6ab07",
   "src/libANGLE/renderer/metal/shaders/gen_mtl_internal_shaders.py":
-    "16588be2529713fb6f704ac725495530",
+    "8afd8f60ca8af7ea8343e78ad7283d5a",
   "src/libANGLE/renderer/metal/shaders/visibility.metal":
     "998d705656c63849edd0187cd8062fc7"
 }

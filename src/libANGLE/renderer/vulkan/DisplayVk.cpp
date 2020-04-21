@@ -196,6 +196,7 @@ void DisplayVk::generateExtensions(egl::DisplayExtensions *outExtensions) const
     outExtensions->glRenderbufferImage   = true;
     outExtensions->imageNativeBuffer =
         getRenderer()->getFeatures().supportsAndroidHardwareBuffer.enabled;
+    outExtensions->glColorspace = getRenderer()->getFeatures().supportsSwapchainColorspace.enabled;
 
     outExtensions->noConfigContext = true;
 }

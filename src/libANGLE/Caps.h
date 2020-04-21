@@ -943,6 +943,24 @@ struct DisplayExtensions
 
     // EGL_KHR_no_config_context
     bool noConfigContext = false;
+
+    // EGL_KHR_gl_colorspace
+    bool glColorspace = false;
+
+    // EGL_EXT_gl_colorspace_display_p3_linear
+    bool glColorspaceDisplayP3Linear = false;
+
+    // EGL_EXT_gl_colorspace_display_p3
+    bool glColorspaceDisplayP3 = false;
+
+    // EGL_EXT_gl_colorspace_scrgb
+    bool glColorspaceScrgb = false;
+
+    // EGL_EXT_gl_colorspace_scrgb_linear
+    bool glColorspaceScrgbLinear = false;
+
+    // EGL_EXT_gl_colorspace_display_p3_passthrough
+    bool glColorspaceDisplayP3Passthrough = false;
 };
 
 struct DeviceExtensions
