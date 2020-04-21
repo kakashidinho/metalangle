@@ -458,8 +458,9 @@ GLint LinkProgram(GLuint program)
         ScopedTextureBind bindTexture(tempTexture);
         gl::TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl::TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        gl::TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, static_cast<GLint>(srcSize.width),
-                       static_cast<GLint>(srcSize.height), 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+        gl::TexImage2D(GL_TEXTURE_2D, 0, _offscreenColorUnsizedFormat,
+                       static_cast<GLint>(srcSize.width), static_cast<GLint>(srcSize.height), 0,
+                       _offscreenColorUnsizedFormat, _offscreenColorFormatDataType, 0);
 
         ScopedFramebuffer tempFBO;
         gl::GenFramebuffers(1, &tempFBO.get());
@@ -656,15 +657,19 @@ GLint LinkProgram(GLuint program)
     [self checkLayerSize];
 
     int red = 8, green = 8, blue = 8, alpha = 8;
+    int colorSpace;
     switch (_drawableColorFormat)
     {
         case MGLDrawableColorFormatRGBA8888:
-            red = green = blue = alpha = 8;
-            break;
+        // RGB565 default framebuffer is not supported by Metal atm.
+        // Fallback to RGBA8.
         case MGLDrawableColorFormatRGB565:
-            red = blue = 5;
-            green      = 6;
-            alpha      = 0;
+            red = green = blue = alpha = 8;
+            colorSpace                 = EGL_GL_COLORSPACE_LINEAR_KHR;
+            break;
+        case MGLDrawableColorFormatSRGBA8888:
+            red = green = blue = alpha = 8;
+            colorSpace                 = EGL_GL_COLORSPACE_SRGB_KHR;
             break;
         default:
             UNREACHABLE();
@@ -692,7 +697,7 @@ GLint LinkProgram(GLuint program)
     }
 
     EGLint creationAttribs[] = {EGL_FLEXIBLE_SURFACE_COMPATIBILITY_SUPPORTED_ANGLE, EGL_TRUE,
-                                EGL_NONE};
+                                EGL_GL_COLORSPACE_KHR, colorSpace, EGL_NONE};
 
     EGLNativeWindowType nativeWindowPtr;
 
@@ -902,10 +907,15 @@ GLint LinkProgram(GLuint program)
     switch (_drawableColorFormat)
     {
         case MGLDrawableColorFormatRGBA8888:
-            sizedFormat = GL_RGBA8_OES;
-            break;
         case MGLDrawableColorFormatRGB565:
-            sizedFormat = GL_RGB565;
+            sizedFormat                   = GL_RGBA8_OES;
+            _offscreenColorUnsizedFormat  = GL_RGBA;
+            _offscreenColorFormatDataType = GL_UNSIGNED_BYTE;
+            break;
+        case MGLDrawableColorFormatSRGBA8888:
+            sizedFormat                   = GL_SRGB8_ALPHA8_EXT;
+            _offscreenColorUnsizedFormat  = GL_SRGB_ALPHA_EXT;
+            _offscreenColorFormatDataType = GL_UNSIGNED_BYTE;
             break;
         default:
             UNREACHABLE();
@@ -952,19 +962,22 @@ GLint LinkProgram(GLuint program)
     switch (_drawableColorFormat)
     {
         case MGLDrawableColorFormatRGBA8888:
+        case MGLDrawableColorFormatRGB565:
             textureSizedFormat = GL_RGBA8_OES;
             textureFormat      = GL_RGBA;
             type               = GL_UNSIGNED_BYTE;
-            break;
-        case MGLDrawableColorFormatRGB565:
-            textureSizedFormat = GL_RGB8_OES;
-            textureFormat      = GL_RGB;
-            type               = GL_UNSIGNED_SHORT_5_6_5;
+        case MGLDrawableColorFormatSRGBA8888:
+            textureSizedFormat = GL_SRGB8_ALPHA8_EXT;
+            textureFormat      = GL_SRGB_ALPHA_EXT;
+            type               = GL_UNSIGNED_BYTE;
             break;
         default:
             UNREACHABLE();
             break;
     }
+
+    _offscreenColorUnsizedFormat  = textureFormat;
+    _offscreenColorFormatDataType = type;
 
     if (rx::IsMetalDisplayAvailable())
     {

@@ -20,8 +20,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 typedef enum MGLDrawableColorFormat : int
 {
-    MGLDrawableColorFormatRGBA8888 = 32,
-    MGLDrawableColorFormatRGB565   = 16,
+    MGLDrawableColorFormatRGBA8888  = 32,
+    MGLDrawableColorFormatSRGBA8888 = -32,
+    MGLDrawableColorFormatRGB565    = 16,
 } MGLDrawableColorFormat;
 
 typedef enum MGLDrawableStencilFormat : int

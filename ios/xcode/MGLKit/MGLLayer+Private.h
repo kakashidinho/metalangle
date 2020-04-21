@@ -24,6 +24,8 @@
     CAMetalLayer *_metalLayer;
 
     // Textures used to retain the content of framebuffer.
+    GLuint _offscreenColorUnsizedFormat;
+    GLuint _offscreenColorFormatDataType;
     GLuint _offscreenTexture;       // Use if glBlitFramebufferANGLE is not available
     GLuint _offscreenRenderBuffer;  // Use if glBlitFramebufferANGLE is available
     GLuint _offscreenDepthStencilBuffer;
