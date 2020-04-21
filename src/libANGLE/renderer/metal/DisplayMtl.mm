@@ -237,6 +237,7 @@ void DisplayMtl::generateExtensions(egl::DisplayExtensions *outExtensions) const
     outExtensions->flexibleSurfaceCompatibility = true;
     outExtensions->fenceSync                    = true;
     outExtensions->waitSync                     = true;
+    outExtensions->glColorspace                 = true;
 }
 
 void DisplayMtl::generateCaps(egl::Caps *outCaps) const {}
