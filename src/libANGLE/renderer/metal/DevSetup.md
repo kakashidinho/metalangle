@@ -348,9 +348,11 @@ renderbuffer with `[EAGLContext renderbufferStorage: fromDrawable:]`):
         }
 
         // Retrieve renderbuffer size.
-        // NOTE: unlike CAEAGLLayer, you don't need to manually create default framebuffer and
-        // renderbuffer.
-        // MGLLayer already creates them internally.
+        // NOTES:
+        // - Unlike CAEAGLLayer, you don't need to manually create default framebuffer and
+        //   renderbuffer. MGLLayer already creates them internally.
+        // - The size could be changed at any time, for example when user resizes the view or
+        //   rotates it on iOS devices. So it's better not to cache it.
         GLuint backingWidth, backingHeight;
         backingWidth = mglLayer.drawableSize.width;
         backingHeight = mglLayer.drawableSize.height;
