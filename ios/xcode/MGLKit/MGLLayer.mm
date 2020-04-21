@@ -371,6 +371,10 @@ GLint LinkProgram(GLuint program)
 {
     if (rx::IsMetalDisplayAvailable())
     {
+        if (_metalLayer.drawableSize.width == 0 && _metalLayer.drawableSize.height == 0)
+        {
+            [self checkLayerSize];
+        }
         return _metalLayer.drawableSize;
     }
 
@@ -712,7 +716,7 @@ GLint LinkProgram(GLuint program)
 
 - (BOOL)ensureOffscreenFBOCreated
 {
-    ASSERT([MGLContext currentContext]);
+    ASSERT(eglGetCurrentContext() != EGL_NO_CONTEXT);
 
     ScopedTexture oldOffscreenTexture           = 0;
     ScopedRenderbuffer oldOffscreenRenderbuffer = 0;
