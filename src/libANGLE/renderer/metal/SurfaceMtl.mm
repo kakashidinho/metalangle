@@ -572,7 +572,7 @@ angle::Result SurfaceMtl::obtainNextDrawable(const gl::Context *context)
         if (!mDrawableTexture)
         {
             mDrawableTexture = mtl::Texture::MakeFromMetal(mCurrentDrawable.get().texture);
-            mColorRenderTarget.set(mDrawableTexture, 0, 0, mColorFormat);
+            mColorRenderTarget.set(mDrawableTexture, mMSColorTexture, 0, 0, mColorFormat);
         }
         else
         {
