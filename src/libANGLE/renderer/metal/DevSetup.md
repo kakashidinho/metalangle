@@ -342,7 +342,9 @@ renderbuffer with `[EAGLContext renderbufferStorage: fromDrawable:]`):
         // Initialize OpenGL context
         context = [[MGLContext alloc] initWithAPI:kMGLRenderingAPIOpenGLES2];
 
-        // Set context current
+        // Set context current without any active layer for now. It is perfectly fine to create
+        // textures, buffers without any active layer. But before calling any GL draw commands,
+        // you must call [MGLContext setCurrentContext: forLayer:], see renderFunc code below.
         if (!context || ![MGLContext setCurrentContext:context]) {
             return nil;
         }
@@ -363,6 +365,8 @@ renderbuffer with `[EAGLContext renderbufferStorage: fromDrawable:]`):
 
 - (void) renderFunc
 {
+    // Set layer as destination for drawing commands. NOTE: this is important, and must be called
+    // before issuing any GL draw commands.
     MGLLayer *mglLayer = (MGLLayer *)self.layer;
     [MGLContext setCurrentContext:context forLayer:mglLayer];
 
