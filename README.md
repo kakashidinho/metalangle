@@ -24,6 +24,8 @@ to continue operate on Apple platforms by translating OpenGL ES draw calls to Me
   - [ ] Primitive Restart. Metal's primitive restart doesn't work reliably.
   - [ ] Flat shading with last provoking vertex. Metal's default is first provoking vertex.
   - [ ] Transform feedbacks.
+- __OpenGL ES 1.0__ is not recommended to be used. Its implementation is not actively maintained by
+  original `ANGLE` project and currently buggy/not fully compliant.
 - All basic samples are working.
 - __Almost all of ANGLE end2end tests have been passed__. See [List of failed tests](src/libANGLE/renderer/metal/README.md#Failed-ANGLE-end2end-tests).
 - __98% of OpenGL ES 2.0 conformance tests passed__. __90%+ of OpenGL ES 3.0 conformance tests passed__. See [Khronos VK-GL-CTS](https://github.com/KhronosGroup/VK-GL-CTS).
