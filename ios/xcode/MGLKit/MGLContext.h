@@ -35,7 +35,9 @@ typedef enum MGLRenderingAPI : int
 + (MGLContext *)currentContext;
 + (MGLLayer *)currentLayer;
 
-// Set current context without layer
+// Set current context without layer. NOTE: this function is only useful if you want to
+// create OpenGL resources such as textures/buffers before creating the presentation layer.
+// Before drawing to a layer, use [MGLContext setCurrentContext: forLayer:] function instead.
 + (BOOL)setCurrentContext:(MGLContext *_Nullable)context;
 
 // Set current context to render to the given layer.
