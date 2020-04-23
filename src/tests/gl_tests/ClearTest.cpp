@@ -633,7 +633,7 @@ TEST_P(ClearTest, MaskedClearThenDrawWithUniform)
 TEST_P(ClearTestES3, ClearMultipleAttachmentsFollowedBySpecificOne)
 {
     constexpr uint32_t kSize            = 16;
-    constexpr uint32_t kAttachmentCount = 5;
+    constexpr uint32_t kAttachmentCount = 4;
     std::vector<unsigned char> pixelData(kSize * kSize * 4, 255);
 
     glBindFramebuffer(GL_FRAMEBUFFER, mFBOs[0]);
@@ -1482,7 +1482,12 @@ ANGLE_INSTANTIATE_TEST(ClearTest,
                        ES3_OPENGLES(),
                        ES2_VULKAN(),
                        ES3_VULKAN());
-ANGLE_INSTANTIATE_TEST(ClearTestES3, ES3_D3D11(), ES3_OPENGL(), ES3_OPENGLES(), ES3_VULKAN());
+ANGLE_INSTANTIATE_TEST(ClearTestES3,
+                       ES3_D3D11(),
+                       ES3_OPENGL(),
+                       ES3_OPENGLES(),
+                       ES3_VULKAN(),
+                       ES3_METAL());
 ANGLE_INSTANTIATE_TEST_COMBINE_4(MaskedScissoredClearTest,
                                  MaskedScissoredClearVariationsTestPrint,
                                  testing::Range(0, 3),
@@ -1493,6 +1498,7 @@ ANGLE_INSTANTIATE_TEST_COMBINE_4(MaskedScissoredClearTest,
                                  ES2_D3D11(),
                                  ES3_D3D11(),
                                  ES2_METAL(),
+                                 ES3_METAL(),
                                  ES2_OPENGL(),
                                  ES3_OPENGL(),
                                  ES2_OPENGLES(),

@@ -4,7 +4,7 @@
 // found in the LICENSE file.
 //
 
-#include "include/platform/FeaturesMtl.h"
+#include "platform/FeaturesMtl.h"
 #include "test_utils/ANGLETest.h"
 #include "util/EGLWindow.h"
 #include "util/random_utils.h"

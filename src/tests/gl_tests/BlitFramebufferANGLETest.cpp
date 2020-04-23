@@ -1364,7 +1364,7 @@ TEST_P(BlitFramebufferTest, ScissoredMultisampleStencil)
     ANGLE_SKIP_TEST_IF(IsAMD() && IsOpenGL() && IsWindows());
 
     // Fails verifying that the middle pixel is red. http://anglebug.com/3496
-    ANGLE_SKIP_TEST_IF((IsIntel() || IsAMD()) && IsOSX());
+    ANGLE_SKIP_TEST_IF((IsIntel() || IsAMD()) && IsOSX() && IsOpenGL());
 
     constexpr GLuint kSize = 256;
 
