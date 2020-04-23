@@ -41,11 +41,23 @@ using CubeFaceArray = std::array<T, gl::kCubeFaceCount>;
 
 struct MultisampledRenderToTextureInfo
 {
-    MultisampledRenderToTextureInfo(const GLsizei samples, const gl::ImageIndex index);
+    MultisampledRenderToTextureInfo(const GLsizei samples,
+                                    const gl::ImageIndex &indexSS,
+                                    const gl::ImageIndex &indexMS);
     ~MultisampledRenderToTextureInfo();
 
+    // How many samples the multisampled texture contains
     GLsizei samples;
-    gl::ImageIndex index;
+    // This is the image index for the single sampled texture
+    // This will hold the relevant level information
+    gl::ImageIndex indexSS;
+    // This is the image index for the multisampled texture
+    // For multisampled indexes, there is no level Index since they should
+    // account for the entire level.
+    gl::ImageIndex indexMS;
+    // True when multisampled texture has been written to and needs to be
+    // resolved to the single sampled texture
+    bool msTextureNeedsResolve;
     std::unique_ptr<TextureStorage11_2DMultisample> msTex;
 };
 
@@ -306,7 +318,7 @@ class TextureStorage11_2D : public TextureStorage11
 
     angle::Result ensureTextureExists(const gl::Context *context, int mipLevels);
 
-    angle::Result resolveAndReleaseTexture(const gl::Context *context) override;
+    angle::Result resolveTexture(const gl::Context *context) override;
 
   private:
     angle::Result createSRVForSampler(const gl::Context *context,
@@ -549,7 +561,7 @@ class TextureStorage11_Cube : public TextureStorage11
 
     angle::Result ensureTextureExists(const gl::Context *context, int mipLevels);
 
-    angle::Result resolveAndReleaseTexture(const gl::Context *context) override;
+    angle::Result resolveTexture(const gl::Context *context) override;
 
   private:
     angle::Result createSRVForSampler(const gl::Context *context,

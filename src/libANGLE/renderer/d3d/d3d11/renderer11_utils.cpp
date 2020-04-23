@@ -1387,6 +1387,7 @@ void GenerateCaps(ID3D11Device *device,
                   ID3D11DeviceContext *deviceContext,
                   const Renderer11DeviceCaps &renderer11DeviceCaps,
                   const angle::FeaturesD3D &features,
+                  const char *description,
                   gl::Caps *caps,
                   gl::TextureCapsMap *textureCapsMap,
                   gl::Extensions *extensions,
@@ -1649,17 +1650,20 @@ void GenerateCaps(ID3D11Device *device,
     extensions->copyTexture                      = true;
     extensions->copyCompressedTexture            = true;
     extensions->textureStorageMultisample2DArray = true;
-    extensions->multiviewMultisample        = ((extensions->multiview || extensions->multiview2) &&
+    extensions->multiviewMultisample     = ((extensions->multiview || extensions->multiview2) &&
                                         extensions->textureStorageMultisample2DArray);
-    extensions->copyTexture3d               = true;
-    extensions->textureBorderClamp          = true;
-    extensions->textureMultisample          = true;
-    extensions->provokingVertex             = true;
-    extensions->blendFuncExtended           = true;
-    extensions->maxDualSourceDrawBuffers    = 1;
-    extensions->texture3DOES                = true;
-    extensions->baseVertexBaseInstance      = true;
-    extensions->multisampledRenderToTexture = true;
+    extensions->copyTexture3d            = true;
+    extensions->textureBorderClamp       = true;
+    extensions->textureMultisample       = true;
+    extensions->provokingVertex          = true;
+    extensions->blendFuncExtended        = true;
+    extensions->maxDualSourceDrawBuffers = 1;
+    extensions->texture3DOES             = true;
+    extensions->baseVertexBaseInstance   = true;
+    if (!strstr(description, "Adreno"))
+    {
+        extensions->multisampledRenderToTexture = true;
+    }
 
     // D3D11 cannot support reading depth texture as a luminance texture.
     // It treats it as a red-channel-only texture.
@@ -2388,6 +2392,7 @@ void InitializeFeatures(const Renderer11DeviceCaps &deviceCaps,
     bool isSkylake                 = false;
     bool isBroadwell               = false;
     bool isHaswell                 = false;
+    bool isIvyBridge               = false;
     bool isAMD                     = IsAMD(adapterDesc.VendorId);
     bool isFeatureLevel9_3         = (deviceCaps.featureLevel <= D3D_FEATURE_LEVEL_9_3);
     IntelDriverVersion capsVersion = IntelDriverVersion(0);
@@ -2398,6 +2403,7 @@ void InitializeFeatures(const Renderer11DeviceCaps &deviceCaps,
         isSkylake   = IsSkylake(adapterDesc.DeviceId);
         isBroadwell = IsBroadwell(adapterDesc.DeviceId);
         isHaswell   = IsHaswell(adapterDesc.DeviceId);
+        isIvyBridge = IsIvyBridge(adapterDesc.DeviceId);
     }
 
     if (isNvidia)
@@ -2412,46 +2418,47 @@ void InitializeFeatures(const Renderer11DeviceCaps &deviceCaps,
             // Disable the workaround to fix a second driver bug on newer NVIDIA.
             ANGLE_FEATURE_CONDITION(
                 features, depthStencilBlitExtraCopy,
-                (part1 <= 13u && part2 < 6881) && isNvidia && driverVersionValid)
+                (part1 <= 13u && part2 < 6881) && isNvidia && driverVersionValid);
         }
         else
         {
             ANGLE_FEATURE_CONDITION(features, depthStencilBlitExtraCopy,
-                                    isNvidia && !driverVersionValid)
+                                    isNvidia && !driverVersionValid);
         }
     }
 
-    ANGLE_FEATURE_CONDITION(features, mrtPerfWorkaround, true)
-    ANGLE_FEATURE_CONDITION(features, zeroMaxLodWorkaround, isFeatureLevel9_3)
-    ANGLE_FEATURE_CONDITION(features, useInstancedPointSpriteEmulation, isFeatureLevel9_3)
+    ANGLE_FEATURE_CONDITION(features, mrtPerfWorkaround, true);
+    ANGLE_FEATURE_CONDITION(features, zeroMaxLodWorkaround, isFeatureLevel9_3);
+    ANGLE_FEATURE_CONDITION(features, useInstancedPointSpriteEmulation, isFeatureLevel9_3);
 
     // TODO(jmadill): Disable workaround when we have a fixed compiler DLL.
-    ANGLE_FEATURE_CONDITION(features, expandIntegerPowExpressions, true)
+    ANGLE_FEATURE_CONDITION(features, expandIntegerPowExpressions, true);
 
-    ANGLE_FEATURE_CONDITION(features, flushAfterEndingTransformFeedback, isNvidia)
-    ANGLE_FEATURE_CONDITION(features, getDimensionsIgnoresBaseLevel, isNvidia)
-    ANGLE_FEATURE_CONDITION(features, skipVSConstantRegisterZero, isNvidia)
-    ANGLE_FEATURE_CONDITION(features, forceAtomicValueResolution, isNvidia)
+    ANGLE_FEATURE_CONDITION(features, flushAfterEndingTransformFeedback, isNvidia);
+    ANGLE_FEATURE_CONDITION(features, getDimensionsIgnoresBaseLevel, isNvidia);
+    ANGLE_FEATURE_CONDITION(features, skipVSConstantRegisterZero, isNvidia);
+    ANGLE_FEATURE_CONDITION(features, forceAtomicValueResolution, isNvidia);
 
-    ANGLE_FEATURE_CONDITION(features, preAddTexelFetchOffsets, isIntel)
-    ANGLE_FEATURE_CONDITION(features, useSystemMemoryForConstantBuffers, isIntel)
+    ANGLE_FEATURE_CONDITION(features, preAddTexelFetchOffsets, isIntel);
+    ANGLE_FEATURE_CONDITION(features, useSystemMemoryForConstantBuffers, isIntel);
 
     ANGLE_FEATURE_CONDITION(features, callClearTwice,
-                            isIntel && isSkylake && capsVersion < IntelDriverVersion(4771))
+                            isIntel && isSkylake && capsVersion < IntelDriverVersion(4771));
     ANGLE_FEATURE_CONDITION(features, emulateIsnanFloat,
-                            isIntel && isSkylake && capsVersion < IntelDriverVersion(4542))
+                            isIntel && isSkylake && capsVersion < IntelDriverVersion(4542));
     ANGLE_FEATURE_CONDITION(
         features, rewriteUnaryMinusOperator,
-        isIntel && (isBroadwell || isHaswell) && capsVersion < IntelDriverVersion(4624))
+        isIntel && (isBroadwell || isHaswell) && capsVersion < IntelDriverVersion(4624));
 
     ANGLE_FEATURE_CONDITION(features, addDummyTextureNoRenderTarget,
-                            isIntel && capsVersion < IntelDriverVersion(4815))
+                            isIntel && capsVersion < IntelDriverVersion(4815));
 
-    // Haswell drivers occasionally corrupt (small?) (vertex?) texture data uploads.
-    ANGLE_FEATURE_CONDITION(features, setDataFasterThanImageUpload, !(isBroadwell || isHaswell))
+    // Haswell/Ivybridge drivers occasionally corrupt (small?) (vertex?) texture data uploads.
+    ANGLE_FEATURE_CONDITION(features, setDataFasterThanImageUpload,
+                            !(isIvyBridge || isBroadwell || isHaswell));
 
     ANGLE_FEATURE_CONDITION(features, disableB5G6R5Support,
-                            (isIntel && capsVersion < IntelDriverVersion(4539)) || isAMD)
+                            (isIntel && capsVersion < IntelDriverVersion(4539)) || isAMD);
 
     // TODO(jmadill): Disable when we have a fixed driver version.
     // The tiny stencil texture workaround involves using CopySubresource or UpdateSubresource on a
@@ -2459,15 +2466,15 @@ void InitializeFeatures(const Renderer11DeviceCaps &deviceCaps,
     // possible to support ES3 on these devices, there is no need for the workaround to begin with
     // (anglebug.com/1572).
     ANGLE_FEATURE_CONDITION(features, emulateTinyStencilTextures,
-                            isAMD && !(deviceCaps.featureLevel < D3D_FEATURE_LEVEL_10_1))
+                            isAMD && !(deviceCaps.featureLevel < D3D_FEATURE_LEVEL_10_1));
 
     // If the VPAndRTArrayIndexFromAnyShaderFeedingRasterizer feature is not available, we have to
     // select the viewport / RT array index in the geometry shader.
     ANGLE_FEATURE_CONDITION(features, selectViewInGeometryShader,
-                            !deviceCaps.supportsVpRtIndexWriteFromVertexShader)
+                            !deviceCaps.supportsVpRtIndexWriteFromVertexShader);
 
     // Never clear for robust resource init.  This matches Chrome's texture clearning behaviour.
-    ANGLE_FEATURE_CONDITION(features, allowClearForRobustResourceInit, false)
+    ANGLE_FEATURE_CONDITION(features, allowClearForRobustResourceInit, false);
 
     // Call platform hooks for testing overrides.
     auto *platform = ANGLEPlatformCurrent();

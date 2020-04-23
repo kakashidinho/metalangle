@@ -72,7 +72,6 @@ class ANGLE_UTIL_EXPORT OSWindow
   protected:
     OSWindow();
     virtual ~OSWindow();
-    friend ANGLE_UTIL_EXPORT void FreeOSWindow(OSWindow *window);
 
     int mX;
     int mY;

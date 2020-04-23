@@ -6,6 +6,7 @@
 
 import("../../../../gni/angle.gni")
 
+assert(is_mac)
 assert(angle_enable_metal)
 
 _metal_backend_sources = [
@@ -64,12 +65,15 @@ _metal_backend_sources = [
   "mtl_utils.h",
   "mtl_utils.mm",
   "shaders/constants.h",
-  "shaders/mtl_default_shaders_src_autogen.inc",
   "shaders/compiled/mtl_default_shaders.inc",
 ]
 
 config("angle_metal_backend_config") {
   defines = [ "ANGLE_ENABLE_METAL" ]
+  ldflags = [
+    "-weak_framework",
+    "Metal",
+  ]
 }
 
 angle_source_set("angle_metal_backend") {
@@ -97,12 +101,9 @@ angle_source_set("angle_metal_backend") {
     "-Wno-nullability-completeness",
     "-Wno-unguarded-availability",
     "-fno-objc-arc",
-    "-Wno-extra-semi-stmt",
   ]
   cflags_objc += objc_flags
   cflags_objcc += objc_flags
-
-  libs += [ "Metal.framework" ]
 
   if (is_mac) {
     libs += [

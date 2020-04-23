@@ -193,9 +193,19 @@ int SampleApplication::runIteration()
     while (popEvent(&event))
     {
         // If the application did not catch a close event, close now
-        if (event.Type == Event::EVENT_CLOSED)
+        switch (event.Type)
         {
-            exit();
+            case Event::EVENT_CLOSED:
+                exit();
+                break;
+            case Event::EVENT_KEY_RELEASED:
+                onKeyUp(event.Key);
+                break;
+            case Event::EVENT_KEY_PRESSED:
+                onKeyDown(event.Key);
+                break;
+            default:
+                break;
         }
     }
 
@@ -257,4 +267,14 @@ void SampleApplication::exit()
 bool SampleApplication::popEvent(Event *event)
 {
     return mOSWindow->popEvent(event);
+}
+
+void SampleApplication::onKeyUp(const Event::KeyEvent &keyEvent)
+{
+    // Default no-op.
+}
+
+void SampleApplication::onKeyDown(const Event::KeyEvent &keyEvent)
+{
+    // Default no-op.
 }

@@ -807,9 +807,9 @@ class Traverser final : public TIntermTraverser, public ArrayTraverser
         // Also includes samplers in arrays of arrays.
         virtual void visitSamplerInStructParam(const ImmutableString &name,
                                                const TType *type,
-                                               size_t paramIndex)                              = 0;
-        virtual void visitStructParam(const TFunction *function, size_t paramIndex)            = 0;
-        virtual void visitNonStructParam(const TFunction *function, size_t paramIndex)         = 0;
+                                               size_t paramIndex)                      = 0;
+        virtual void visitStructParam(const TFunction *function, size_t paramIndex)    = 0;
+        virtual void visitNonStructParam(const TFunction *function, size_t paramIndex) = 0;
 
       private:
         bool traverseStructContainingSamplers(const ImmutableString &baseName,

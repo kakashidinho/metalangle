@@ -2577,8 +2577,8 @@ TEST_P(Texture2DTestES3, FramebufferTextureChangingBaselevel)
     // TODO(geofflang): Investigate on D3D11. http://anglebug.com/2291
     ANGLE_SKIP_TEST_IF(IsD3D11());
 
-    // TODO(cnorthrop): Framebuffer level support. http://anglebug.com/3184
-    ANGLE_SKIP_TEST_IF(IsVulkan());
+    // TODO(cnorthrop): Failing on Vulkan/Windows/AMD. http://anglebug.com/3996
+    ANGLE_SKIP_TEST_IF(IsVulkan() && IsWindows() && IsAMD());
 
     setUpProgram();
 
@@ -3689,9 +3689,6 @@ TEST_P(ShadowSamplerPlusSampler3DTestES3, ShadowSamplerPlusSampler3DDraw)
 // samplerCubeShadow: TextureCube + SamplerComparisonState
 TEST_P(SamplerTypeMixTestES3, SamplerTypeMixDraw)
 {
-    // TODO(cnorthrop): Requires non-color staging buffer support. http://anglebug.com/3949
-    ANGLE_SKIP_TEST_IF(IsVulkan());
-
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, mTexture2D);
     GLubyte texData[4];
@@ -3726,6 +3723,8 @@ TEST_P(SamplerTypeMixTestES3, SamplerTypeMixDraw)
     glTexStorage2D(GL_TEXTURE_CUBE_MAP, 1, GL_DEPTH_COMPONENT32F, 1, 1);
     glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, 0, 0, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT,
                     depthTexData);
+
+    // http://anglebug.com/3949: TODO: Add a DS texture case
 
     EXPECT_GL_NO_ERROR();
 
@@ -5027,8 +5026,13 @@ class Texture2DNorm16TestES3 : public Texture2DTestES3
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        EXPECT_PIXEL_COLOR_EQ(0, 0, SliceFormatColor(format, GLColor::white));
+
+        glBindTexture(GL_TEXTURE_2D, mTextures[1]);
         glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, 1, 1);
 
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mTextures[1],
+                               0);
         EXPECT_PIXEL_COLOR_EQ(0, 0, SliceFormatColor(format, GLColor::white));
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -5044,6 +5048,12 @@ class Texture2DNorm16TestES3 : public Texture2DTestES3
 // Test texture formats enabled by the GL_EXT_texture_norm16 extension.
 TEST_P(Texture2DNorm16TestES3, TextureNorm16Test)
 {
+    // TODO(crbug.com/angleproject/4089) Fails on Nexus5X Adreno
+    // TODO(crbug.com/1024387) Fails on Nexus6P
+    ANGLE_SKIP_TEST_IF(IsNexus5X() || IsNexus6P());
+    // TODO(crbug.com/angleproject/4089) Fails on Win Intel OpenGL driver
+    ANGLE_SKIP_TEST_IF(IsIntel() && IsOpenGL());
+
     ANGLE_SKIP_TEST_IF(!IsGLExtensionEnabled("GL_EXT_texture_norm16"));
 
     testNorm16Texture(GL_R16_EXT, GL_RED, GL_UNSIGNED_SHORT);
@@ -5610,6 +5620,8 @@ TEST_P(Texture2DFloatTestES2, TextureHalfFloatLinearLegacyTest)
 // Test color-renderability for ES3 float and half float textures
 TEST_P(Texture2DFloatTestES3, TextureFloatRenderTest)
 {
+    // http://anglebug.com/4092
+    ANGLE_SKIP_TEST_IF(IsD3D9());
     // EXT_color_buffer_float covers float, half float, and 11-11-10 float formats
     ANGLE_SKIP_TEST_IF(!IsGLExtensionEnabled("GL_EXT_color_buffer_float"));
 
@@ -5632,6 +5644,8 @@ TEST_P(Texture2DFloatTestES2, TextureFloatRenderTest)
     ANGLE_SKIP_TEST_IF(!IsGLExtensionEnabled("GL_EXT_color_buffer_half_float"));
     // https://crbug.com/1003971
     ANGLE_SKIP_TEST_IF(IsOzone());
+    // http://anglebug.com/4092
+    ANGLE_SKIP_TEST_IF(IsD3D9());
 
     bool atLeastOneSupported = false;
 
@@ -5989,6 +6003,10 @@ TEST_P(Texture2DDepthTest, DepthTextureES2Compatibility)
 {
     ANGLE_SKIP_TEST_IF(IsD3D11());
     ANGLE_SKIP_TEST_IF(IsIntel() && IsD3D9());
+    ANGLE_SKIP_TEST_IF(!IsGLExtensionEnabled("GL_ANGLE_depth_texture") &&
+                       !IsGLExtensionEnabled("GL_OES_depth_texture"));
+    // http://anglebug.com/4092
+    ANGLE_SKIP_TEST_IF(IsOpenGL() || IsOpenGLES());
 
     // When the depth texture is specified with unsized internalformat implementations follow
     // OES_depth_texture behavior. Otherwise they follow GLES 3.0 behavior.
@@ -6649,221 +6667,41 @@ TEST_P(Texture3DIntegerTestES3, NonZeroBaseLevel)
 
 // Use this to select which configurations (e.g. which renderer, which GLES major version) these
 // tests should be run against.
-ANGLE_INSTANTIATE_TEST(Texture2DTest,
-                       ES2_D3D9(),
-                       ES2_D3D11(),
-                       ES2_METAL(),
-                       ES2_OPENGL(),
-                       ES2_OPENGLES(),
-                       ES2_VULKAN());
-ANGLE_INSTANTIATE_TEST(TextureCubeTest,
-                       ES2_D3D9(),
-                       ES2_D3D11(),
-                       ES2_METAL(),
-                       ES2_OPENGL(),
-                       ES2_OPENGLES(),
-                       ES2_VULKAN());
-ANGLE_INSTANTIATE_TEST(Texture2DTestWithDrawScale,
-                       ES2_D3D9(),
-                       ES2_D3D11(),
-                       ES2_METAL(),
-                       ES2_OPENGL(),
-                       ES2_OPENGLES(),
-                       ES2_VULKAN());
-ANGLE_INSTANTIATE_TEST(Sampler2DAsFunctionParameterTest,
-                       ES2_D3D9(),
-                       ES2_D3D11(),
-                       ES2_METAL(),
-                       ES2_OPENGL(),
-                       ES2_OPENGLES(),
-                       ES2_VULKAN());
-ANGLE_INSTANTIATE_TEST(SamplerArrayTest,
-                       ES2_D3D9(),
-                       ES2_D3D11(),
-                       ES2_METAL(),
-                       ES2_OPENGL(),
-                       ES2_OPENGLES(),
-                       ES2_VULKAN());
-ANGLE_INSTANTIATE_TEST(SamplerArrayAsFunctionParameterTest,
-                       ES2_D3D9(),
-                       ES2_D3D11(),
-                       ES2_METAL(),
-                       ES2_OPENGL(),
-                       ES2_OPENGLES(),
-                       ES2_VULKAN());
-ANGLE_INSTANTIATE_TEST(Texture3DTestES2,
-                       ES2_D3D9(),
-                       ES2_D3D11(),
-                       ES2_METAL(),
-                       ES2_OPENGL(),
-                       ES2_OPENGLES(),
-                       ES2_VULKAN());
-ANGLE_INSTANTIATE_TEST(Texture2DTestES3,
-                       ES3_D3D11(),
-                       ES3_METAL(),
-                       ES3_OPENGL(),
-                       ES3_OPENGLES(),
-                       ES3_VULKAN());
-ANGLE_INSTANTIATE_TEST(Texture3DTestES3, ES3_D3D11(), ES3_OPENGL(), ES3_OPENGLES(), ES3_VULKAN());
-ANGLE_INSTANTIATE_TEST(Texture2DIntegerAlpha1TestES3,
-                       ES3_D3D11(),
-                       ES3_METAL(),
-                       ES3_OPENGL(),
-                       ES3_OPENGLES(),
-                       ES3_VULKAN());
-ANGLE_INSTANTIATE_TEST(Texture2DUnsignedIntegerAlpha1TestES3,
-                       ES3_D3D11(),
-                       ES3_METAL(),
-                       ES3_OPENGL(),
-                       ES3_OPENGLES(),
-                       ES3_VULKAN());
-ANGLE_INSTANTIATE_TEST(ShadowSamplerTestES3,
-                       ES3_D3D11(),
-                       ES3_METAL(),
-                       ES3_OPENGL(),
-                       ES3_OPENGLES());
-ANGLE_INSTANTIATE_TEST(SimulatedMissingRuntimeCompareModeShadowSamplerTestES3, ES3_METAL());
-ANGLE_INSTANTIATE_TEST(ShadowSamplerPlusSampler3DTestES3,
-                       ES3_D3D11(),
-                       ES3_METAL(),
-                       ES3_OPENGL(),
-                       ES3_OPENGLES());
-ANGLE_INSTANTIATE_TEST(SamplerTypeMixTestES3,
-                       ES3_D3D11(),
-                       ES3_METAL(),
-                       ES3_OPENGL(),
-                       ES3_OPENGLES(),
-                       ES3_VULKAN());
-ANGLE_INSTANTIATE_TEST(Texture2DArrayTestES3,
-                       ES3_D3D11(),
-                       ES3_METAL(),
-                       ES3_OPENGL(),
-                       ES3_OPENGLES(),
-                       ES3_VULKAN());
-ANGLE_INSTANTIATE_TEST(TextureSizeTextureArrayTest,
-                       ES3_D3D11(),
-                       ES3_METAL(),
-                       ES3_OPENGL(),
-                       ES3_VULKAN());
-ANGLE_INSTANTIATE_TEST(SamplerInStructTest,
-                       ES2_D3D11(),
-                       ES2_D3D9(),
-                       ES2_METAL(),
-                       ES2_OPENGL(),
-                       ES2_OPENGLES(),
-                       ES2_VULKAN());
-ANGLE_INSTANTIATE_TEST(SamplerInStructAsFunctionParameterTest,
-                       ES2_D3D11(),
-                       ES2_D3D9(),
-                       ES2_METAL(),
-                       ES2_OPENGL(),
-                       ES2_OPENGLES(),
-                       ES2_VULKAN());
-ANGLE_INSTANTIATE_TEST(SamplerInStructArrayAsFunctionParameterTest,
-                       ES2_D3D11(),
-                       ES2_D3D9(),
-                       ES2_METAL(),
-                       ES2_OPENGL(),
-                       ES2_OPENGLES(),
-                       ES2_VULKAN());
-ANGLE_INSTANTIATE_TEST(SamplerInNestedStructAsFunctionParameterTest,
-                       ES2_D3D11(),
-                       ES2_D3D9(),
-                       ES2_METAL(),
-                       ES2_OPENGL(),
-                       ES2_OPENGLES(),
-                       ES2_VULKAN());
-ANGLE_INSTANTIATE_TEST(SamplerInStructAndOtherVariableTest,
-                       ES2_D3D11(),
-                       ES2_D3D9(),
-                       ES2_METAL(),
-                       ES2_OPENGL(),
-                       ES2_OPENGLES(),
-                       ES2_VULKAN());
-ANGLE_INSTANTIATE_TEST(TextureAnisotropyTest,
-                       ES2_D3D11(),
-                       ES2_D3D9(),
-                       ES2_METAL(),
-                       ES2_OPENGL(),
-                       ES2_OPENGLES(),
-                       ES2_VULKAN());
-ANGLE_INSTANTIATE_TEST(TextureBorderClampTest,
-                       ES2_D3D11(),
-                       ES2_D3D9(),
-                       ES2_METAL(),
-                       ES2_OPENGL(),
-                       ES2_OPENGLES(),
-                       ES2_VULKAN());
-ANGLE_INSTANTIATE_TEST(TextureBorderClampTestES3, ES3_D3D11(), ES3_OPENGL(), ES3_OPENGLES());
-ANGLE_INSTANTIATE_TEST(TextureBorderClampIntegerTestES3, ES3_D3D11(), ES3_OPENGL(), ES3_OPENGLES());
-ANGLE_INSTANTIATE_TEST(TextureLimitsTest,
-                       ES2_D3D11(),
-                       ES2_METAL(),
-                       ES2_OPENGL(),
-                       ES2_OPENGLES(),
-                       ES2_VULKAN());
-ANGLE_INSTANTIATE_TEST(Texture2DNorm16TestES3, ES3_D3D11(), ES3_OPENGL(), ES3_OPENGLES());
-ANGLE_INSTANTIATE_TEST(Texture2DRGTest,
-                       ES2_D3D11(),
-                       ES3_D3D11(),
-                       ES2_METAL(),
-                       ES3_METAL(),
-                       ES2_OPENGL(),
-                       ES3_OPENGL(),
-                       ES2_OPENGLES(),
-                       ES3_OPENGLES(),
-                       ES2_VULKAN(),
-                       ES3_VULKAN());
-ANGLE_INSTANTIATE_TEST(Texture2DFloatTestES3,
-                       ES3_D3D11(),
-                       ES3_OPENGL(),
-                       ES3_OPENGLES(),
-                       ES3_VULKAN());
-ANGLE_INSTANTIATE_TEST(Texture2DFloatTestES2,
-                       ES2_D3D11(),
-                       ES2_OPENGL(),
-                       ES2_OPENGLES(),
-                       ES2_VULKAN());
-ANGLE_INSTANTIATE_TEST(TextureCubeTestES3,
-                       ES3_D3D11(),
-                       ES3_METAL(),
-                       ES3_OPENGL(),
-                       ES3_OPENGLES(),
-                       ES3_VULKAN());
-ANGLE_INSTANTIATE_TEST(Texture2DIntegerTestES3,
-                       ES3_D3D11(),
-                       ES3_METAL(),
-                       ES3_OPENGL(),
-                       ES3_VULKAN());
-ANGLE_INSTANTIATE_TEST(TextureCubeIntegerTestES3,
-                       ES3_D3D11(),
-                       ES3_METAL(),
-                       ES3_OPENGL(),
-                       ES3_VULKAN());
-ANGLE_INSTANTIATE_TEST(TextureCubeIntegerEdgeTestES3, ES3_D3D11(), ES3_METAL(), ES3_OPENGL());
-ANGLE_INSTANTIATE_TEST(Texture2DIntegerProjectiveOffsetTestES3,
-                       ES3_D3D11(),
-                       ES3_METAL(),
-                       ES3_OPENGL(),
-                       ES3_VULKAN());
-ANGLE_INSTANTIATE_TEST(Texture2DArrayIntegerTestES3,
-                       ES3_D3D11(),
-                       ES3_METAL(),
-                       ES3_OPENGL(),
-                       ES3_VULKAN());
-ANGLE_INSTANTIATE_TEST(Texture3DIntegerTestES3,
-                       ES3_D3D11(),
-                       ES3_METAL(),
-                       ES3_OPENGL(),
-                       ES3_VULKAN());
-ANGLE_INSTANTIATE_TEST(Texture2DDepthTest,
-                       ES2_D3D9(),
-                       ES2_D3D11(),
-                       ES2_METAL(),
-                       ES2_OPENGL(),
-                       ES2_OPENGLES(),
-                       ES2_VULKAN(),
-                       ES3_VULKAN(),
-                       ES3_METAL());
+ANGLE_INSTANTIATE_TEST_ES2(Texture2DTest);
+ANGLE_INSTANTIATE_TEST_ES2(TextureCubeTest);
+ANGLE_INSTANTIATE_TEST_ES2(Texture2DTestWithDrawScale);
+ANGLE_INSTANTIATE_TEST_ES2(Sampler2DAsFunctionParameterTest);
+ANGLE_INSTANTIATE_TEST_ES2(SamplerArrayTest);
+ANGLE_INSTANTIATE_TEST_ES2(SamplerArrayAsFunctionParameterTest);
+ANGLE_INSTANTIATE_TEST_ES3(Texture2DTestES3);
+ANGLE_INSTANTIATE_TEST_ES3(Texture3DTestES3);
+ANGLE_INSTANTIATE_TEST_ES3(Texture2DIntegerAlpha1TestES3);
+ANGLE_INSTANTIATE_TEST_ES3(Texture2DUnsignedIntegerAlpha1TestES3);
+ANGLE_INSTANTIATE_TEST_ES3(ShadowSamplerPlusSampler3DTestES3);
+ANGLE_INSTANTIATE_TEST_ES3(SamplerTypeMixTestES3);
+ANGLE_INSTANTIATE_TEST_ES3(Texture2DArrayTestES3);
+ANGLE_INSTANTIATE_TEST_ES3(TextureSizeTextureArrayTest);
+ANGLE_INSTANTIATE_TEST_ES2(SamplerInStructTest);
+ANGLE_INSTANTIATE_TEST_ES2(SamplerInStructAsFunctionParameterTest);
+ANGLE_INSTANTIATE_TEST_ES2(SamplerInStructArrayAsFunctionParameterTest);
+ANGLE_INSTANTIATE_TEST_ES2(SamplerInNestedStructAsFunctionParameterTest);
+ANGLE_INSTANTIATE_TEST_ES2(SamplerInStructAndOtherVariableTest);
+ANGLE_INSTANTIATE_TEST_ES2(TextureAnisotropyTest);
+ANGLE_INSTANTIATE_TEST_ES2(TextureBorderClampTest);
+ANGLE_INSTANTIATE_TEST_ES3(TextureBorderClampTestES3);
+ANGLE_INSTANTIATE_TEST_ES3(TextureBorderClampIntegerTestES3);
+ANGLE_INSTANTIATE_TEST_ES2(TextureLimitsTest);
+ANGLE_INSTANTIATE_TEST_ES3(Texture2DNorm16TestES3);
+ANGLE_INSTANTIATE_TEST_ES2_AND_ES3(Texture2DRGTest);
+ANGLE_INSTANTIATE_TEST_ES3(Texture2DFloatTestES3);
+ANGLE_INSTANTIATE_TEST_ES2(Texture2DFloatTestES2);
+ANGLE_INSTANTIATE_TEST_ES3(TextureCubeTestES3);
+ANGLE_INSTANTIATE_TEST_ES3(Texture2DIntegerTestES3);
+ANGLE_INSTANTIATE_TEST_ES3(TextureCubeIntegerTestES3);
+ANGLE_INSTANTIATE_TEST_ES3(TextureCubeIntegerEdgeTestES3);
+ANGLE_INSTANTIATE_TEST_ES3(Texture2DIntegerProjectiveOffsetTestES3);
+ANGLE_INSTANTIATE_TEST_ES3(Texture2DArrayIntegerTestES3);
+ANGLE_INSTANTIATE_TEST_ES3(Texture3DIntegerTestES3);
+ANGLE_INSTANTIATE_TEST_ES2_AND_ES3(Texture2DDepthTest);
 
 }  // anonymous namespace

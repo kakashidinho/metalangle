@@ -103,7 +103,7 @@ static IOSWindow *gMainIOSWindow;
 {
     return UIInterfaceOrientationMaskLandscapeRight;
 }
-#endif // !TARGET_OS_TV
+#endif  // !TARGET_OS_TV
 
 - (void)deviceOrientationDidChange:(NSNotification *)notification
 {

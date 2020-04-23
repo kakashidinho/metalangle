@@ -26,7 +26,7 @@
 
 // Version number for shader translation API.
 // It is incremented every time the API changes.
-#define ANGLE_SH_VERSION 217
+#define ANGLE_SH_VERSION 218
 
 enum ShShaderSpec
 {
@@ -308,6 +308,9 @@ const ShCompileOptions SH_USE_OLD_REWRITE_STRUCT_SAMPLERS = UINT64_C(1) << 47;
 // when angle_BaseVertex is available.
 const ShCompileOptions SH_ADD_BASE_VERTEX_TO_VERTEX_ID = UINT64_C(1) << 48;
 
+// This works around the dynamic lvalue indexing of swizzled vectors on various platforms.
+const ShCompileOptions SH_REMOVE_DYNAMIC_INDEXING_OF_SWIZZLED_VECTOR = UINT64_C(1) << 49;
+
 // Defines alternate strategies for implementing array index clamping.
 enum ShArrayIndexClampingStrategy
 {
@@ -502,6 +505,9 @@ struct ShBuiltInResources
     int MaxGeometryShaderStorageBlocks;
     int MaxGeometryShaderInvocations;
     int MaxGeometryImageUniforms;
+
+    // Subpixel bits used in rasterization.
+    int SubPixelBits;
 
     // APPLE_clip_distance/EXT_clip_cull_distance constant
     int MaxClipDistances;

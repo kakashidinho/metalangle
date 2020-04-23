@@ -438,6 +438,7 @@ Error ValidateGetPlatformDisplayCommon(EGLenum platform,
     {
         EGLAttrib platformType       = EGL_PLATFORM_ANGLE_TYPE_DEFAULT_ANGLE;
         bool enableAutoTrimSpecified = false;
+        bool enableD3D11on12         = false;
         bool presentPathSpecified    = false;
 
         Optional<EGLAttrib> majorVersion;
@@ -482,6 +483,25 @@ Error ValidateGetPlatformDisplayCommon(EGLenum platform,
                             return EglBadAttribute() << "Invalid automatic trim attribute";
                     }
                     enableAutoTrimSpecified = true;
+                    break;
+
+                case EGL_PLATFORM_ANGLE_D3D11ON12_ANGLE:
+                    if (!clientExtensions.platformANGLED3D ||
+                        !clientExtensions.platformANGLED3D11ON12)
+                    {
+                        return EglBadAttribute()
+                               << "EGL_PLATFORM_ANGLE_D3D11ON12_ANGLE extension not active.";
+                    }
+
+                    switch (value)
+                    {
+                        case EGL_TRUE:
+                        case EGL_FALSE:
+                            break;
+                        default:
+                            return EglBadAttribute() << "Invalid D3D11on12 attribute";
+                    }
+                    enableD3D11on12 = true;
                     break;
 
                 case EGL_EXPERIMENTAL_PRESENT_PATH_ANGLE:
@@ -599,6 +619,24 @@ Error ValidateGetPlatformDisplayCommon(EGLenum platform,
             return EglBadAttribute() << "EGL_PLATFORM_ANGLE_ENABLE_AUTOMATIC_TRIM_ANGLE "
                                         "requires a device type of "
                                         "EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE.";
+        }
+
+        if (enableD3D11on12)
+        {
+            if (platformType != EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE)
+            {
+                return EglBadAttribute() << "EGL_PLATFORM_ANGLE_D3D11ON12_ANGLE "
+                                            "requires a platform type of "
+                                            "EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE.";
+            }
+
+            if (deviceType.valid() && deviceType != EGL_PLATFORM_ANGLE_DEVICE_TYPE_HARDWARE_ANGLE &&
+                deviceType != EGL_PLATFORM_ANGLE_DEVICE_TYPE_D3D_WARP_ANGLE)
+            {
+                return EglBadAttribute() << "EGL_PLATFORM_ANGLE_D3D11ON12_ANGLE requires a device "
+                                            "type of EGL_PLATFORM_ANGLE_DEVICE_TYPE_HARDWARE_ANGLE "
+                                            "or EGL_PLATFORM_ANGLE_DEVICE_TYPE_D3D_WARP_ANGLE";
+            }
         }
 
         if (presentPathSpecified && platformType != EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE)
@@ -1443,6 +1481,14 @@ Error ValidateCreateWindowSurface(Display *display,
                 {
                     return EglBadAttribute() << "EGL_ROBUST_RESOURCE_INITIALIZATION_ANGLE must be "
                                                 "either EGL_TRUE or EGL_FALSE.";
+                }
+                break;
+
+            case EGL_GGP_STREAM_DESCRIPTOR_ANGLE:
+                if (!display->getExtensions().ggpStreamDescriptor)
+                {
+                    return EglBadAttribute() << "EGL_GGP_STREAM_DESCRIPTOR_ANGLE requires "
+                                                "EGL_ANGLE_ggp_stream_descriptor.";
                 }
                 break;
 
@@ -3031,44 +3077,28 @@ Error ValidateStreamPostD3DTextureANGLE(const Display *display,
 }
 
 Error ValidateGetSyncValuesCHROMIUM(const Display *display,
-                                    const Surface *surface,
+                                    const Surface *eglSurface,
                                     const EGLuint64KHR *ust,
                                     const EGLuint64KHR *msc,
                                     const EGLuint64KHR *sbc)
 {
     ANGLE_TRY(ValidateDisplay(display));
+    ANGLE_TRY(ValidateSurface(display, eglSurface));
 
     const DisplayExtensions &displayExtensions = display->getExtensions();
-    if (!displayExtensions.getSyncValues)
+    if (!displayExtensions.syncControlCHROMIUM)
     {
-        return EglBadAccess() << "getSyncValues extension not active";
-    }
-
-    if (display->isDeviceLost())
-    {
-        return EglContextLost() << "Context is lost.";
-    }
-
-    if (surface == EGL_NO_SURFACE)
-    {
-        return EglBadSurface() << "getSyncValues surface cannot be EGL_NO_SURFACE";
-    }
-
-    if (!surface->directComposition())
-    {
-        return EglBadSurface() << "getSyncValues surface requires Direct Composition to be enabled";
+        return EglBadAccess() << "syncControlCHROMIUM extension not active";
     }
 
     if (ust == nullptr)
     {
         return EglBadParameter() << "ust is null";
     }
-
     if (msc == nullptr)
     {
         return EglBadParameter() << "msc is null";
     }
-
     if (sbc == nullptr)
     {
         return EglBadParameter() << "sbc is null";
@@ -4087,4 +4117,19 @@ Error ValidateDupNativeFenceFDANDROID(const Display *display, const Sync *sync)
     return NoError();
 }
 
+Error ValidateSwapBuffersWithFrameTokenANGLE(const Display *display,
+                                             const Surface *surface,
+                                             EGLFrameTokenANGLE frametoken)
+{
+    ANGLE_TRY(ValidateDisplay(display));
+
+    if (!display->getExtensions().swapWithFrameToken)
+    {
+        return EglBadDisplay() << "EGL_ANGLE_swap_buffers_with_frame_token is not available.";
+    }
+
+    ANGLE_TRY(ValidateSurface(display, surface));
+
+    return NoError();
+}
 }  // namespace egl

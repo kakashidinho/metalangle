@@ -353,10 +353,7 @@ def get_step_info(build_name, step_name):
                         append_errors.append(key)
                         LOGGER.warning("Too many characters in column '" + key +
                                        "'. Output capped.")
-
-    if validate_step_info(step_info, build_name, step_name):
-        return step_info
-    return None
+    return step_info
 
 
 # Returns the info for each step run on a given bot_name.
@@ -365,7 +362,11 @@ def get_bot_info(bot_name):
     info['step_names'] = get_step_names(info['build_name'])
     for step_name in info['step_names']:
         LOGGER.info("Parsing step '" + step_name + "'...")
-        info[step_name] = get_step_info(info['build_name'], step_name)
+        step_info = get_step_info(info['build_name'], step_name)
+        if validate_step_info(step_info, info['build_name'], step_name):
+            info[step_name] = step_info
+        else:
+            info['step_names'].remove(step_name)
     return info
 
 
@@ -555,6 +556,7 @@ def update_filters(service, spreadsheet_id, headers, info, spreadsheet):
         LOGGER.info('Updating sheet filters...')
         batch_update(service, spreadsheet_id, updates)
 
+
 # Populates the headers with any missing/desired rows based on the info struct, and calls
 # batch update to update the corresponding sheets if necessary.
 def update_headers(service, spreadsheet_id, headers, info):
@@ -650,6 +652,7 @@ def generate_duplicate_formula_helper(headers):
     else:
         # Final result needs to be prepended with =
         return "=" + formula
+
 
 # Uses the list of headers and the info struct to come up with a list of values for each step
 # from the latest builds.

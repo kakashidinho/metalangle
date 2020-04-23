@@ -51,8 +51,7 @@ Copyright (C) 2014 Apple Inc. All Rights Reserved.
 
 #import <MetalANGLE/GLES2/gl2.h>
 
-@interface PVRTexture : NSObject
-{
+@interface PVRTexture : NSObject {
     NSMutableArray *_imageData;
 
     GLuint _name;
@@ -67,10 +66,10 @@ Copyright (C) 2014 Apple Inc. All Rights Reserved.
 + (id)pvrTextureWithContentsOfURL:(NSURL *)url;
 + (GLuint)glTextureWithContentsOfFile:(NSString *)path;
 
-@property (readonly) GLuint name;
-@property (readonly) uint32_t width;
-@property (readonly) uint32_t height;
-@property (readonly) GLenum internalFormat;
-@property (readonly) BOOL hasAlpha;
+@property(readonly) GLuint name;
+@property(readonly) uint32_t width;
+@property(readonly) uint32_t height;
+@property(readonly) GLenum internalFormat;
+@property(readonly) BOOL hasAlpha;
 
 @end

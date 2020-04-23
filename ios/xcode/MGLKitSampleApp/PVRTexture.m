@@ -51,7 +51,7 @@ Copyright (C) 2014 Apple Inc. All Rights Reserved.
 
 #import <MetalANGLE/GLES2/gl2ext.h>
 
-#define PVR_TEXTURE_FLAG_TYPE_MASK  0xff
+#define PVR_TEXTURE_FLAG_TYPE_MASK 0xff
 
 static char gPVRTexIdentifier[4] = "PVR!";
 
@@ -78,19 +78,17 @@ typedef struct _PVRTexHeader
     uint32_t numSurfs;
 } PVRTexHeader;
 
-
 @implementation PVRTexture
 
-@synthesize name = _name;
-@synthesize width = _width;
-@synthesize height = _height;
+@synthesize name           = _name;
+@synthesize width          = _width;
+@synthesize height         = _height;
 @synthesize internalFormat = _internalFormat;
-@synthesize hasAlpha = _hasAlpha;
-
+@synthesize hasAlpha       = _hasAlpha;
 
 - (BOOL)unpackPVRData:(NSData *)data
 {
-    BOOL success = FALSE;
+    BOOL success         = FALSE;
     PVRTexHeader *header = NULL;
     uint32_t flags, pvrTag;
     uint32_t dataLength = 0, dataOffset = 0, dataSize = 0;
@@ -103,15 +101,15 @@ typedef struct _PVRTexHeader
 
     pvrTag = CFSwapInt32LittleToHost(header->pvrTag);
 
-    if (gPVRTexIdentifier[0] != ((pvrTag >>  0) & 0xff) ||
-        gPVRTexIdentifier[1] != ((pvrTag >>  8) & 0xff) ||
+    if (gPVRTexIdentifier[0] != ((pvrTag >> 0) & 0xff) ||
+        gPVRTexIdentifier[1] != ((pvrTag >> 8) & 0xff) ||
         gPVRTexIdentifier[2] != ((pvrTag >> 16) & 0xff) ||
         gPVRTexIdentifier[3] != ((pvrTag >> 24) & 0xff))
     {
         return FALSE;
     }
 
-    flags = CFSwapInt32LittleToHost(header->flags);
+    flags       = CFSwapInt32LittleToHost(header->flags);
     formatFlags = flags & PVR_TEXTURE_FLAG_TYPE_MASK;
 
     if (formatFlags == kPVRTextureFlagTypePVRTC_4 || formatFlags == kPVRTextureFlagTypePVRTC_2)
@@ -140,17 +138,17 @@ typedef struct _PVRTexHeader
         {
             if (formatFlags == kPVRTextureFlagTypePVRTC_4)
             {
-                blockSize = 4 * 4; // Pixel by pixel block size for 4bpp
-                widthBlocks = width / 4;
+                blockSize    = 4 * 4;  // Pixel by pixel block size for 4bpp
+                widthBlocks  = width / 4;
                 heightBlocks = height / 4;
-                bpp = 4;
+                bpp          = 4;
             }
             else
             {
-                blockSize = 8 * 4; // Pixel by pixel block size for 2bpp
-                widthBlocks = width / 8;
+                blockSize    = 8 * 4;  // Pixel by pixel block size for 2bpp
+                widthBlocks  = width / 8;
                 heightBlocks = height / 4;
-                bpp = 2;
+                bpp          = 2;
             }
 
             // Clamp to minimum number of blocks
@@ -159,13 +157,13 @@ typedef struct _PVRTexHeader
             if (heightBlocks < 2)
                 heightBlocks = 2;
 
-            dataSize = widthBlocks * heightBlocks * ((blockSize  * bpp) / 8);
+            dataSize = widthBlocks * heightBlocks * ((blockSize * bpp) / 8);
 
-            [_imageData addObject:[NSData dataWithBytes:bytes+dataOffset length:dataSize]];
+            [_imageData addObject:[NSData dataWithBytes:bytes + dataOffset length:dataSize]];
 
             dataOffset += dataSize;
 
-            width = MAX(width >> 1, 1);
+            width  = MAX(width >> 1, 1);
             height = MAX(height >> 1, 1);
         }
 
@@ -175,10 +173,9 @@ typedef struct _PVRTexHeader
     return success;
 }
 
-
 - (BOOL)createGLTexture
 {
-    int width = _width;
+    int width  = _width;
     int height = _height;
     NSData *data;
     GLenum err;
@@ -197,10 +194,11 @@ typedef struct _PVRTexHeader
     else
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-    for (int i=0; i < [_imageData count]; i++)
+    for (int i = 0; i < [_imageData count]; i++)
     {
         data = [_imageData objectAtIndex:i];
-        glCompressedTexImage2D(GL_TEXTURE_2D, i, _internalFormat, width, height, 0, (int)[data length], [data bytes]);
+        glCompressedTexImage2D(GL_TEXTURE_2D, i, _internalFormat, width, height, 0,
+                               (int)[data length], [data bytes]);
 
         err = glGetError();
         if (err != GL_NO_ERROR)
@@ -209,7 +207,7 @@ typedef struct _PVRTexHeader
             return FALSE;
         }
 
-        width = MAX(width >> 1, 1);
+        width  = MAX(width >> 1, 1);
         height = MAX(height >> 1, 1);
     }
 
@@ -217,7 +215,6 @@ typedef struct _PVRTexHeader
 
     return TRUE;
 }
-
 
 - (id)initWithContentsOfFile:(NSString *)relpath
 {
@@ -228,10 +225,10 @@ typedef struct _PVRTexHeader
 
         _imageData = [[NSMutableArray alloc] initWithCapacity:10];
 
-        _name = 0;
+        _name  = 0;
         _width = _height = 0;
-        _internalFormat = GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG;
-        _hasAlpha = FALSE;
+        _internalFormat  = GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG;
+        _hasAlpha        = FALSE;
 
         if (!data || ![self unpackPVRData:data] || ![self createGLTexture])
         {
@@ -241,7 +238,6 @@ typedef struct _PVRTexHeader
 
     return self;
 }
-
 
 - (id)initWithContentsOfURL:(NSURL *)url
 {
@@ -253,12 +249,10 @@ typedef struct _PVRTexHeader
     return [self initWithContentsOfFile:[url path]];
 }
 
-
 + (id)pvrTextureWithContentsOfFile:(NSString *)path
 {
     return [[self alloc] initWithContentsOfFile:path];
 }
-
 
 + (id)pvrTextureWithContentsOfURL:(NSURL *)url
 {

@@ -491,6 +491,8 @@ TEST_P(StateChangeTestES3, CopyTexSubImage3DSync)
 // Ensure that BlitFramebuffer syncs framebuffer changes.
 TEST_P(StateChangeTestES3, BlitFramebufferSync)
 {
+    // http://anglebug.com/4092
+    ANGLE_SKIP_TEST_IF(IsVulkan());
     glBindFramebuffer(GL_FRAMEBUFFER, mFramebuffer);
 
     // Init first texture to red
@@ -560,6 +562,8 @@ TEST_P(StateChangeTestES3, ReadBufferAndDrawBuffersSync)
 // Adapted partially from WebGL 2 test "renderbuffers/invalidate-framebuffer"
 TEST_P(StateChangeTestES3, IncompleteRenderbufferAttachmentInvalidateSync)
 {
+    // http://anglebug.com/4092
+    ANGLE_SKIP_TEST_IF(IsVulkan());
     glBindFramebuffer(GL_FRAMEBUFFER, mFramebuffer);
     glBindRenderbuffer(GL_RENDERBUFFER, mRenderbuffer);
     GLint samples = 0;
@@ -984,14 +988,30 @@ TEST_P(StateChangeTestES3, VertexArrayObjectAndDisabledAttributes)
         "{\n"
         "    colorOut = varyColor;\n"
         "}";
-    ANGLE_GL_PROGRAM(dualProgram, kDualVS, kDualFS);
-    GLint positionLocation = glGetAttribLocation(dualProgram, "position");
-    ASSERT_NE(-1, positionLocation);
-    GLint colorLocation = glGetAttribLocation(dualProgram, "color");
-    ASSERT_NE(-1, colorLocation);
 
-    GLint singlePositionLocation = glGetAttribLocation(singleProgram, "position");
-    ASSERT_NE(-1, singlePositionLocation);
+    ANGLE_GL_PROGRAM(dualProgram, kDualVS, kDualFS);
+
+    // Force consistent attribute locations
+    constexpr GLint positionLocation = 0;
+    constexpr GLint colorLocation    = 1;
+
+    glBindAttribLocation(singleProgram, positionLocation, "position");
+    glBindAttribLocation(dualProgram, positionLocation, "position");
+    glBindAttribLocation(dualProgram, colorLocation, "color");
+
+    {
+        glLinkProgram(singleProgram);
+        GLint linkStatus;
+        glGetProgramiv(singleProgram, GL_LINK_STATUS, &linkStatus);
+        ASSERT_NE(linkStatus, 0);
+    }
+
+    {
+        glLinkProgram(dualProgram);
+        GLint linkStatus;
+        glGetProgramiv(dualProgram, GL_LINK_STATUS, &linkStatus);
+        ASSERT_NE(linkStatus, 0);
+    }
 
     glUseProgram(singleProgram);
 
@@ -1006,8 +1026,8 @@ TEST_P(StateChangeTestES3, VertexArrayObjectAndDisabledAttributes)
     GLVertexArray vertexArray;
     glBindVertexArray(vertexArray);
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    glVertexAttribPointer(singlePositionLocation, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-    glEnableVertexAttribArray(singlePositionLocation);
+    glVertexAttribPointer(positionLocation, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    glEnableVertexAttribArray(positionLocation);
 
     // Should draw red.
     glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -1088,6 +1108,8 @@ void main()
 // Tests that changing an active program invalidates the sampler metadata properly.
 TEST_P(StateChangeTestES3, SamplerMetadataUpdateOnSetProgram)
 {
+    // http://anglebug.com/4092
+    ANGLE_SKIP_TEST_IF(IsAndroid() && IsOpenGLES());
     GLVertexArray vertexArray;
     glBindVertexArray(vertexArray);
 
@@ -1128,6 +1150,8 @@ TEST_P(StateChangeTestES3, SamplerMetadataUpdateOnSetProgram)
 // Tests that redefining Buffer storage syncs with the Transform Feedback object.
 TEST_P(StateChangeTestES3, RedefineTransformFeedbackBuffer)
 {
+    // http://anglebug.com/4092
+    ANGLE_SKIP_TEST_IF(IsVulkan());
     // Create the most simple program possible - simple a passthrough for a float attribute.
     constexpr char kVertexShader[] = R"(#version 300 es
 in float valueIn;
@@ -1255,9 +1279,6 @@ class LineLoopStateChangeTest : public StateChangeTest
 // Draw an hourglass with a drawElements call followed by a square with drawArrays.
 TEST_P(LineLoopStateChangeTest, DrawElementsThenDrawArrays)
 {
-    // http://anglebug.com/3361
-    ANGLE_SKIP_TEST_IF(IsAMD() && IsVulkan() && IsWindows());
-
     ANGLE_GL_PROGRAM(program, essl1_shaders::vs::Simple(), essl1_shaders::fs::Blue());
     glUseProgram(program);
 
@@ -1526,6 +1547,8 @@ void SimpleStateChangeTest::simpleDrawWithColor(const GLColor &color)
 // frame.
 TEST_P(SimpleStateChangeTest, DrawArraysThenDrawElements)
 {
+    // http://anglebug.com/4121
+    ANGLE_SKIP_TEST_IF(IsIntel() && IsLinux() && IsOpenGLES());
     ANGLE_GL_PROGRAM(program, essl1_shaders::vs::Simple(), essl1_shaders::fs::Blue());
     glUseProgram(program);
 
@@ -1973,8 +1996,6 @@ TEST_P(SimpleStateChangeTest, RedefineBufferInUse)
 // Tests updating a buffer's contents while in use, without redefining it.
 TEST_P(SimpleStateChangeTest, UpdateBufferInUse)
 {
-    // tobine: Started failing w/ custom cmd buffers. http://anglebug.com/3255
-    ANGLE_SKIP_TEST_IF(IsAMD() && IsWindows() && IsVulkan());
     std::vector<GLColor> redColorData(6, GLColor::red);
 
     GLBuffer buffer;
@@ -2365,6 +2386,8 @@ void SimpleStateChangeTest::updateTextureBoundToFramebufferHelper(UpdateFunc upd
 // Tests that TexSubImage updates are flushed before rendering.
 TEST_P(SimpleStateChangeTest, TexSubImageOnTextureBoundToFrambuffer)
 {
+    // http://anglebug.com/4092
+    ANGLE_SKIP_TEST_IF(IsAndroid() && IsOpenGLES());
     auto updateFunc = [](GLenum textureBinding, GLTexture *tex, GLint x, GLint y,
                          const GLColor &color) {
         glBindTexture(textureBinding, *tex);
@@ -2407,6 +2430,9 @@ TEST_P(SimpleStateChangeTest, CopyTexSubImageOnTextureBoundToFrambuffer)
 // target.
 TEST_P(SimpleStateChangeTestES3, ReadFramebufferDrawFramebufferDifferentAttachments)
 {
+    // http://anglebug.com/4092
+    ANGLE_SKIP_TEST_IF(IsAndroid() && IsOpenGLES());
+
     GLRenderbuffer drawColorBuffer;
     glBindRenderbuffer(GL_RENDERBUFFER, drawColorBuffer);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, 1, 1);
@@ -2860,6 +2886,8 @@ TEST_P(SimpleStateChangeTest, ChangeFramebufferSizeBetweenTwoDraws)
 // Tries to relink a program in use and use it again to draw something else.
 TEST_P(SimpleStateChangeTest, RelinkProgram)
 {
+    // http://anglebug.com/4121
+    ANGLE_SKIP_TEST_IF(IsIntel() && IsLinux() && IsOpenGLES());
     const GLuint program = glCreateProgram();
 
     GLuint vs     = CompileShader(GL_VERTEX_SHADER, essl1_shaders::vs::Simple());
@@ -3245,9 +3273,6 @@ TEST_P(SimpleStateChangeTestES31, UpdateImageTextureInUse)
 // Test that we can alternate between image textures between different dispatchs.
 TEST_P(SimpleStateChangeTestES31, DispatchImageTextureAThenTextureBThenTextureA)
 {
-    // Fails in the last EXPECT call.  http://anglebug.com/3879
-    ANGLE_SKIP_TEST_IF(IsVulkan() && IsWindows() && IsAMD());
-
     std::array<GLColor, 4> colorsTexA = {
         {GLColor::cyan, GLColor::cyan, GLColor::cyan, GLColor::cyan}};
 
@@ -4515,36 +4540,14 @@ TEST_P(SimpleStateChangeTestES3, RasterizerDiscardState)
 }
 }  // anonymous namespace
 
-ANGLE_INSTANTIATE_TEST(StateChangeTest,
-                       ES2_METAL(),
-                       ES2_D3D9(),
-                       ES2_D3D11(),
-                       ES2_OPENGL(),
-                       ES2_VULKAN());
-ANGLE_INSTANTIATE_TEST(LineLoopStateChangeTest,
-                       ES2_METAL(),
-                       ES2_D3D9(),
-                       ES2_D3D11(),
-                       ES2_OPENGL(),
-                       ES2_VULKAN());
-ANGLE_INSTANTIATE_TEST(StateChangeRenderTest,
-                       ES2_METAL(),
-                       ES2_D3D9(),
-                       ES2_D3D11(),
-                       ES2_OPENGL(),
-                       ES2_VULKAN());
-ANGLE_INSTANTIATE_TEST(StateChangeTestES3, ES3_D3D11(), ES3_OPENGL());
-ANGLE_INSTANTIATE_TEST(SimpleStateChangeTest, ES2_METAL(), ES2_D3D11(), ES2_VULKAN(), ES2_OPENGL());
-ANGLE_INSTANTIATE_TEST(SimpleStateChangeTestES3,
-                       ES3_OPENGL(),
-                       ES3_METAL(),
-                       ES3_D3D11(),
-                       ES3_VULKAN());
-ANGLE_INSTANTIATE_TEST(SimpleStateChangeTestES31, ES31_OPENGL(), ES31_D3D11(), ES31_VULKAN());
-ANGLE_INSTANTIATE_TEST(ValidationStateChangeTest, ES3_D3D11(), ES3_OPENGL(), ES3_VULKAN());
-ANGLE_INSTANTIATE_TEST(WebGL2ValidationStateChangeTest, ES3_D3D11(), ES3_OPENGL(), ES3_VULKAN());
-ANGLE_INSTANTIATE_TEST(ValidationStateChangeTestES31, ES31_OPENGL(), ES31_D3D11(), ES31_VULKAN());
-ANGLE_INSTANTIATE_TEST(WebGLComputeValidationStateChangeTest,
-                       ES31_D3D11(),
-                       ES31_OPENGL(),
-                       ES31_VULKAN());
+ANGLE_INSTANTIATE_TEST_ES2(StateChangeTest);
+ANGLE_INSTANTIATE_TEST_ES2(LineLoopStateChangeTest);
+ANGLE_INSTANTIATE_TEST_ES2(StateChangeRenderTest);
+ANGLE_INSTANTIATE_TEST_ES3(StateChangeTestES3);
+ANGLE_INSTANTIATE_TEST_ES2(SimpleStateChangeTest);
+ANGLE_INSTANTIATE_TEST_ES3(SimpleStateChangeTestES3);
+ANGLE_INSTANTIATE_TEST_ES31(SimpleStateChangeTestES31);
+ANGLE_INSTANTIATE_TEST_ES3(ValidationStateChangeTest);
+ANGLE_INSTANTIATE_TEST_ES3(WebGL2ValidationStateChangeTest);
+ANGLE_INSTANTIATE_TEST_ES31(ValidationStateChangeTestES31);
+ANGLE_INSTANTIATE_TEST_ES31(WebGLComputeValidationStateChangeTest);

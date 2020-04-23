@@ -36,7 +36,8 @@ inline bool OperatingSystemVersionNumbers(int32_t *majorVersion, int32_t *minorV
     if (sSavedMajorVersion == -1 || sSavedMinorVersion == -1)
     {
 #if defined(ANGLE_PLATFORM_WINDOWS)
-        OSVERSIONINFOEX version_info = {sizeof version_info};
+        OSVERSIONINFOEX version_info     = {};
+        version_info.dwOSVersionInfoSize = sizeof(version_info);
         ::GetVersionEx(reinterpret_cast<OSVERSIONINFO *>(&version_info));
         sSavedMajorVersion = version_info.dwMajorVersion;
         *majorVersion      = sSavedMajorVersion;
@@ -460,6 +461,12 @@ inline bool IsPixel2()
     return IsAndroidDevice("Pixel 2");
 }
 
+// Check whether the system is a Pixel 2XL device.
+inline bool IsPixel2XL()
+{
+    return IsAndroidDevice("Pixel 2 XL");
+}
+
 // Check whether the active GPU is a specific device based on the string device ID.
 inline bool IsDeviceIdGPU(const std::string &gpuDeviceId)
 {
@@ -564,7 +571,7 @@ GPUTestConfig::GPUTestConfig()
     mConditions[kConditionMetal]       = true;
 
     mConditions[kConditionNexus5X]          = IsNexus5X();
-    mConditions[kConditionPixel2]           = IsPixel2();
+    mConditions[kConditionPixel2OrXL]       = IsPixel2() || IsPixel2XL();
     mConditions[kConditionNVIDIAQuadroP400] = IsNVIDIAQuadroP400();
 }
 

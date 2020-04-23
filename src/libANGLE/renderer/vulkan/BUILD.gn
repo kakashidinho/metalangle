@@ -17,7 +17,9 @@ declare_args() {
   angle_enable_vulkan_gpu_trace_events = false
 
   # Currently SwiftShader's Vulkan front-end doesn't build on Android.
-  angle_swiftshader = !is_android
+  # SwiftShader is not needed on Fuchsia because Vulkan is supported on all
+  # devices that run Fuchsia.
+  angle_swiftshader = !is_android && !is_fuchsia && !is_ggp
 }
 
 _vulkan_backend_sources = [
@@ -83,6 +85,7 @@ _vulkan_backend_sources = [
   "vk_cache_utils.h",
   "vk_caps_utils.cpp",
   "vk_caps_utils.h",
+  "vk_ext_provoking_vertex.h",
   "vk_format_table_autogen.cpp",
   "vk_format_utils.h",
   "vk_format_utils.cpp",
@@ -116,7 +119,7 @@ if (is_win) {
   ]
 }
 
-if (is_linux) {
+if (angle_use_x11) {
   _vulkan_backend_sources += [
     "xcb/DisplayVkXcb.cpp",
     "xcb/DisplayVkXcb.h",
@@ -134,11 +137,25 @@ if (is_fuchsia) {
   ]
 }
 
+if (is_ggp) {
+  _vulkan_backend_sources += [
+    "ggp/DisplayVkGGP.cpp",
+    "ggp/DisplayVkGGP.h",
+    "ggp/WindowSurfaceVkGGP.cpp",
+    "ggp/WindowSurfaceVkGGP.h",
+  ]
+}
+
 config("vulkan_config") {
+  _sws_icd = "./libvk_swiftshader_icd.json"
+  if (is_win) {
+    _sws_icd = ".\\\\libvk_swiftshader_icd.json"
+  }
+
   defines = [
     "ANGLE_VK_LAYERS_DIR=\"$angle_data_dir\"",
     "ANGLE_VK_MOCK_ICD_JSON=\"$angle_data_dir/VkICD_mock_icd.json\"",
-    "ANGLE_VK_SWIFTSHADER_ICD_JSON=\"swiftshader/libvk_swiftshader_icd.json\"",
+    "ANGLE_VK_SWIFTSHADER_ICD_JSON=\"${_sws_icd}\"",
   ]
   if (is_android) {
     libs = [ "vulkan" ]
@@ -173,20 +190,20 @@ if (angle_swiftshader) {
     sources += [ "$root_gen_dir/angle/libvk_swiftshader_icd.json" ]
 
     outputs = [
-      "$root_out_dir/swiftshader/libvk_swiftshader_icd.json",
+      "$root_out_dir/libvk_swiftshader_icd.json",
     ]
     data = outputs
 
     _raw_sws_in = rebase_path("$root_gen_dir/angle", root_build_dir)
-    _raw_sws_out = rebase_path("$root_out_dir/swiftshader", root_build_dir)
+    _raw_sws_out = rebase_path("$root_out_dir", root_build_dir)
 
     _sws_output = ""
     if (is_win) {
-      _sws_output += "vk_swiftshader.dll"
+      _sws_output += ".\\vk_swiftshader.dll"
     } else if (is_mac) {
-      _sws_output += "libvk_swiftshader.dylib"
+      _sws_output += "./libvk_swiftshader.dylib"
     } else {
-      _sws_output += "libvk_swiftshader.so"
+      _sws_output += "./libvk_swiftshader.so"
     }
 
     args = [

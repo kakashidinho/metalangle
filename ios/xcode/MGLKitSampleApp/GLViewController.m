@@ -325,17 +325,18 @@ const GLubyte Indices2[] = {1, 0, 2, 3};
     else
     {
         // Do asynchronous resource loading
-        _asyncLoadContext = [[MGLContext alloc] initWithAPI:kMGLRenderingAPIOpenGLES2 sharegroup:self.glView.context.sharegroup];
+        _asyncLoadContext   = [[MGLContext alloc] initWithAPI:kMGLRenderingAPIOpenGLES2
+                                                 sharegroup:self.glView.context.sharegroup];
         __auto_type bgQueue = dispatch_get_global_queue(QOS_CLASS_BACKGROUND, 0);
         dispatch_async(bgQueue, ^{
-            [MGLContext setCurrentContext:self->_asyncLoadContext];
-            [self loadResources];
+          [MGLContext setCurrentContext:self->_asyncLoadContext];
+          [self loadResources];
 
-            glFlush();
+          glFlush();
 
-            dispatch_async(dispatch_get_main_queue(), ^{
-                self->_resourceLoadFinish = YES;
-            });
+          dispatch_async(dispatch_get_main_queue(), ^{
+            self->_resourceLoadFinish = YES;
+          });
         });
     }
 }

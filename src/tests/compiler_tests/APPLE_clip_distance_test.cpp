@@ -86,7 +86,6 @@ TEST_P(APPLEClipDistanceTest, CompileFailsWithExtensionWithoutPragma)
     EXPECT_FALSE(TestShaderCompile(""));
 }
 
-
 // With extension flag and extension directive, compiling succeeds.
 // Also test that the extension directive state is reset correctly.
 TEST_P(APPLEClipDistanceTest, CompileSucceedsWithExtensionAndPragma)

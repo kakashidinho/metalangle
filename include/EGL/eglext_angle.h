@@ -65,6 +65,11 @@
 #define EGL_PLATFORM_ANGLE_ENABLE_AUTOMATIC_TRIM_ANGLE 0x320F
 #endif /* EGL_ANGLE_platform_angle_d3d */
 
+#ifndef EGL_ANGLE_platform_angle_d3d11on12
+#define EGL_ANGLE_platform_angle_d3d11on12 1
+#define EGL_PLATFORM_ANGLE_D3D11ON12_ANGLE 0x3488
+#endif /* EGL_ANGLE_platform_angle_d3d11on12 */
+
 #ifndef EGL_ANGLE_platform_angle_opengl
 #define EGL_ANGLE_platform_angle_opengl 1
 #define EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE 0x320D
@@ -253,6 +258,20 @@ EGLAPI EGLBoolean EGLAPIENTRY eglQueryDisplayAttribANGLE(EGLDisplay dpy, EGLint 
 #define EGL_CGL_CONTEXT_ANGLE 0x3485
 #define EGL_CGL_PIXEL_FORMAT_ANGLE 0x3486
 #endif
+
+#ifndef EGL_ANGLE_ggp_stream_descriptor
+#define EGL_ANGLE_ggp_stream_descriptor 1
+#define EGL_GGP_STREAM_DESCRIPTOR_ANGLE 0x348B
+#endif /* EGL_ANGLE_ggp_stream_descriptor */
+
+#ifndef EGL_ANGLE_swap_with_frame_token
+#define EGL_ANGLE_swap_with_frame_token 1
+typedef khronos_uint64_t EGLFrameTokenANGLE;
+typedef EGLBoolean (EGLAPIENTRYP PFNEGLSWAPBUFFERSWITHFRAMETOKENANGLEPROC)(EGLDisplay dpy, EGLSurface surface, EGLFrameTokenANGLE frametoken);
+#ifdef EGL_EGLEXT_PROTOTYPES
+EGLAPI EGLBoolean EGLAPIENTRY eglSwapBuffersWithFrameTokenANGLE(EGLDisplay dpy, EGLSurface surface, EGLFrameTokenANGLE frametoken);
+#endif
+#endif /* EGL_ANGLE_swap_with_frame_token */
 
 // clang-format on
 

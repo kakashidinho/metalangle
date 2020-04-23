@@ -183,6 +183,7 @@ class CollectVariablesTraverser : public TIntermTraverser
     // Fragment Shader builtins
     bool mPointCoordAdded;
     bool mFrontFacingAdded;
+    bool mHelperInvocationAdded;
     bool mFragCoordAdded;
     bool mLastFragDataAdded;
     bool mFragColorAdded;
@@ -240,6 +241,7 @@ CollectVariablesTraverser::CollectVariablesTraverser(
       mClipDistanceAdded(false),
       mPointCoordAdded(false),
       mFrontFacingAdded(false),
+      mHelperInvocationAdded(false),
       mFragCoordAdded(false),
       mLastFragDataAdded(false),
       mFragColorAdded(false),
@@ -470,6 +472,10 @@ void CollectVariablesTraverser::visitSymbol(TIntermSymbol *symbol)
                 return;
             case EvqFrontFacing:
                 recordBuiltInVaryingUsed(symbol->variable(), &mFrontFacingAdded, mInputVaryings);
+                return;
+            case EvqHelperInvocation:
+                recordBuiltInVaryingUsed(symbol->variable(), &mHelperInvocationAdded,
+                                         mInputVaryings);
                 return;
             case EvqPointCoord:
                 recordBuiltInVaryingUsed(symbol->variable(), &mPointCoordAdded, mInputVaryings);

@@ -355,6 +355,18 @@ struct FeaturesGL : FeatureSetBase
         "Mac incorrectly executes both sides of && and || expressions when they should "
         "short-circuit.",
         &members, "http://anglebug.com/482"};
+
+    Feature emulatePrimitiveRestartFixedIndex = {
+        "emulate_primitive_restart_fixed_index", FeatureCategory::OpenGLWorkarounds,
+        "When GL_PRIMITIVE_RESTART_FIXED_INDEX is not available, emulate it with "
+        "GL_PRIMITIVE_RESTART and glPrimitiveRestartIndex.",
+        &members, "http://anglebug.com/3997"};
+
+    // Dynamic indexing of swizzled l-values doesn't work correctly on various platforms.
+    Feature removeDynamicIndexingOfSwizzledVector = {
+        "remove_dynamic_indexing_of_swizzled_vector", FeatureCategory::OpenGLWorkarounds,
+        "Dynamic indexing of swizzled l-values doesn't work correctly on various platforms.",
+        &members, "http://crbug.com/709351"};
 };
 
 inline FeaturesGL::FeaturesGL()  = default;

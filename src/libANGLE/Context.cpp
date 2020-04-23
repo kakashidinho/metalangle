@@ -47,12 +47,6 @@
 #include "libANGLE/renderer/Format.h"
 #include "libANGLE/validationES.h"
 
-// TODO(http://anglebug.com/3730): Autogenerate these enums from gl.xml
-// HACK: Defines for queries that are not in GLES
-#define GL_CONTEXT_PROFILE_MASK 0x9126
-#define GL_CONTEXT_COMPATIBILITY_PROFILE_BIT 0x00000002
-#define GL_CONTEXT_CORE_PROFILE_BIT 0x00000001
-
 namespace gl
 {
 namespace
@@ -268,12 +262,6 @@ void GetObjectLabelBase(const std::string &objectLabel,
     {
         *length = static_cast<GLsizei>(writeLength);
     }
-}
-
-template <typename CapT, typename MaxT>
-void LimitCap(CapT *cap, MaxT maximum)
-{
-    *cap = std::min(*cap, static_cast<CapT>(maximum));
 }
 
 // The rest default to false.
@@ -492,6 +480,7 @@ void Context::initialize()
     mDrawDirtyObjects.set(State::DIRTY_OBJECT_TEXTURES);
     mDrawDirtyObjects.set(State::DIRTY_OBJECT_PROGRAM);
     mDrawDirtyObjects.set(State::DIRTY_OBJECT_SAMPLERS);
+    mDrawDirtyObjects.set(State::DIRTY_OBJECT_IMAGES);
 
     mPathOperationDirtyObjects.set(State::DIRTY_OBJECT_DRAW_FRAMEBUFFER);
     mPathOperationDirtyObjects.set(State::DIRTY_OBJECT_VERTEX_ARRAY);
@@ -1946,7 +1935,7 @@ void Context::getInteger64vImpl(GLenum pname, GLint64 *params)
     }
 }
 
-void Context::getPointerv(GLenum pname, void **params) const
+void Context::getPointerv(GLenum pname, void **params)
 {
     mState.getPointerv(this, pname, params);
 }
@@ -2107,10 +2096,24 @@ void Context::getRenderbufferParameterivRobust(GLenum target,
     getRenderbufferParameteriv(target, pname, params);
 }
 
+void Context::texBuffer(GLenum target, GLenum internalformat, BufferID buffer)
+{
+    UNIMPLEMENTED();
+}
+
+void Context::texBufferRange(GLenum target,
+                             GLenum internalformat,
+                             BufferID buffer,
+                             GLintptr offset,
+                             GLsizeiptr size)
+{
+    UNIMPLEMENTED();
+}
+
 void Context::getTexParameterfv(TextureType target, GLenum pname, GLfloat *params)
 {
     const Texture *const texture = getTextureByType(target);
-    QueryTexParameterfv(texture, pname, params);
+    QueryTexParameterfv(this, texture, pname, params);
 }
 
 void Context::getTexParameterfvRobust(TextureType target,
@@ -2125,19 +2128,19 @@ void Context::getTexParameterfvRobust(TextureType target,
 void Context::getTexParameteriv(TextureType target, GLenum pname, GLint *params)
 {
     const Texture *const texture = getTextureByType(target);
-    QueryTexParameteriv(texture, pname, params);
+    QueryTexParameteriv(this, texture, pname, params);
 }
 
 void Context::getTexParameterIiv(TextureType target, GLenum pname, GLint *params)
 {
     const Texture *const texture = getTextureByType(target);
-    QueryTexParameterIiv(texture, pname, params);
+    QueryTexParameterIiv(this, texture, pname, params);
 }
 
 void Context::getTexParameterIuiv(TextureType target, GLenum pname, GLuint *params)
 {
     const Texture *const texture = getTextureByType(target);
-    QueryTexParameterIuiv(texture, pname, params);
+    QueryTexParameterIuiv(this, texture, pname, params);
 }
 
 void Context::getTexParameterivRobust(TextureType target,
@@ -2306,6 +2309,25 @@ void Context::drawElementsInstanced(PrimitiveMode mode,
     MarkShaderStorageBufferUsage(this);
 }
 
+void Context::drawElementsBaseVertex(GLenum mode,
+                                     GLsizei count,
+                                     GLenum type,
+                                     const void *indices,
+                                     GLint basevertex)
+{
+    UNIMPLEMENTED();
+}
+
+void Context::drawElementsInstancedBaseVertex(GLenum mode,
+                                              GLsizei count,
+                                              GLenum type,
+                                              const void *indices,
+                                              GLsizei instancecount,
+                                              GLint basevertex)
+{
+    UNIMPLEMENTED();
+}
+
 void Context::drawRangeElements(PrimitiveMode mode,
                                 GLuint start,
                                 GLuint end,
@@ -2323,6 +2345,17 @@ void Context::drawRangeElements(PrimitiveMode mode,
     ANGLE_CONTEXT_TRY(
         mImplementation->drawRangeElements(this, mode, start, end, count, type, indices));
     MarkShaderStorageBufferUsage(this);
+}
+
+void Context::drawRangeElementsBaseVertex(GLenum mode,
+                                          GLuint start,
+                                          GLuint end,
+                                          GLsizei count,
+                                          GLenum type,
+                                          const void *indices,
+                                          GLint basevertex)
+{
+    UNIMPLEMENTED();
 }
 
 void Context::drawArraysIndirect(PrimitiveMode mode, const void *indirect)
@@ -3199,12 +3232,30 @@ bool Context::isExtensionRequestable(const char *name)
            mSupportedExtensions.*(extension->second.ExtensionsMember);
 }
 
+bool Context::isExtensionDisablable(const char *name)
+{
+    const ExtensionInfoMap &extensionInfos = GetExtensionInfoMap();
+    auto extension                         = extensionInfos.find(name);
+
+    return extension != extensionInfos.end() && extension->second.Disablable &&
+           mSupportedExtensions.*(extension->second.ExtensionsMember);
+}
+
 void Context::requestExtension(const char *name)
+{
+    setExtensionEnabled(name, true);
+}
+void Context::disableExtension(const char *name)
+{
+    setExtensionEnabled(name, false);
+}
+
+void Context::setExtensionEnabled(const char *name, bool enabled)
 {
     // OVR_multiview is implicitly enabled when OVR_multiview2 is enabled
     if (strcmp(name, "GL_OVR_multiview2") == 0)
     {
-        requestExtension("GL_OVR_multiview");
+        setExtensionEnabled("GL_OVR_multiview", enabled);
     }
     const ExtensionInfoMap &extensionInfos = GetExtensionInfoMap();
     ASSERT(extensionInfos.find(name) != extensionInfos.end());
@@ -3212,13 +3263,19 @@ void Context::requestExtension(const char *name)
     ASSERT(extension.Requestable);
     ASSERT(isExtensionRequestable(name));
 
-    if (mState.mExtensions.*(extension.ExtensionsMember))
+    if (mState.mExtensions.*(extension.ExtensionsMember) == enabled)
     {
-        // Extension already enabled
+        // No change
         return;
     }
 
-    mState.mExtensions.*(extension.ExtensionsMember) = true;
+    mState.mExtensions.*(extension.ExtensionsMember) = enabled;
+
+    reinitializeAfterExtensionsChanged();
+}
+
+void Context::reinitializeAfterExtensionsChanged()
+{
     updateCaps();
     initExtensionStrings();
 
@@ -3454,8 +3511,27 @@ void Context::initCaps()
         mState.mCaps.maxSmoothLineWidth            = 1.0f;
     }
 
+#if 0
+// This logging can generate a lot of spam in test suites that create many contexts
+#    define ANGLE_LOG_LIMITED_CAP(cap, limit)                                               \
+        INFO() << "Limiting " << #cap << " to implementation limit " << (limit) << " (was " \
+               << (cap) << ")."
+#else
+#    define ANGLE_LOG_LIMITED_CAP(cap, limit)
+#endif
+
+#define ANGLE_LIMIT_CAP(cap, limit)            \
+    do                                         \
+    {                                          \
+        if ((cap) > (limit))                   \
+        {                                      \
+            ANGLE_LOG_LIMITED_CAP(cap, limit); \
+            (cap) = (limit);                   \
+        }                                      \
+    } while (0)
+
     // Apply/Verify implementation limits
-    LimitCap(&mState.mCaps.maxVertexAttributes, MAX_VERTEX_ATTRIBS);
+    ANGLE_LIMIT_CAP(mState.mCaps.maxVertexAttributes, MAX_VERTEX_ATTRIBS);
 
     ASSERT(mState.mCaps.minAliasedPointSize >= 1.0f);
 
@@ -3465,66 +3541,77 @@ void Context::initCaps()
     }
     else
     {
-        LimitCap(&mState.mCaps.maxVertexAttribBindings, MAX_VERTEX_ATTRIB_BINDINGS);
+        ANGLE_LIMIT_CAP(mState.mCaps.maxVertexAttribBindings, MAX_VERTEX_ATTRIB_BINDINGS);
     }
 
-    LimitCap(&mState.mCaps.maxShaderUniformBlocks[ShaderType::Vertex],
-             IMPLEMENTATION_MAX_VERTEX_SHADER_UNIFORM_BUFFERS);
-    LimitCap(&mState.mCaps.maxShaderUniformBlocks[ShaderType::Geometry],
-             IMPLEMENTATION_MAX_GEOMETRY_SHADER_UNIFORM_BUFFERS);
-    LimitCap(&mState.mCaps.maxShaderUniformBlocks[ShaderType::Fragment],
-             IMPLEMENTATION_MAX_FRAGMENT_SHADER_UNIFORM_BUFFERS);
-    LimitCap(&mState.mCaps.maxShaderUniformBlocks[ShaderType::Compute],
-             IMPLEMENTATION_MAX_COMPUTE_SHADER_UNIFORM_BUFFERS);
-    LimitCap(&mState.mCaps.maxCombinedUniformBlocks,
-             IMPLEMENTATION_MAX_COMBINED_SHADER_UNIFORM_BUFFERS);
-    LimitCap(&mState.mCaps.maxUniformBufferBindings, IMPLEMENTATION_MAX_UNIFORM_BUFFER_BINDINGS);
+    ANGLE_LIMIT_CAP(mState.mCaps.max2DTextureSize, IMPLEMENTATION_MAX_2D_TEXTURE_SIZE);
+    ANGLE_LIMIT_CAP(mState.mCaps.maxCubeMapTextureSize, IMPLEMENTATION_MAX_CUBE_MAP_TEXTURE_SIZE);
+    ANGLE_LIMIT_CAP(mState.mCaps.max3DTextureSize, IMPLEMENTATION_MAX_3D_TEXTURE_SIZE);
+    ANGLE_LIMIT_CAP(mState.mCaps.maxArrayTextureLayers, IMPLEMENTATION_MAX_2D_ARRAY_TEXTURE_LAYERS);
+    ANGLE_LIMIT_CAP(mState.mCaps.maxRectangleTextureSize, IMPLEMENTATION_MAX_2D_TEXTURE_SIZE);
 
-    LimitCap(&mState.mCaps.maxVertexOutputComponents, IMPLEMENTATION_MAX_VARYING_VECTORS * 4);
-    LimitCap(&mState.mCaps.maxFragmentInputComponents, IMPLEMENTATION_MAX_VARYING_VECTORS * 4);
+    ANGLE_LIMIT_CAP(mState.mCaps.maxShaderUniformBlocks[ShaderType::Vertex],
+                    IMPLEMENTATION_MAX_VERTEX_SHADER_UNIFORM_BUFFERS);
+    ANGLE_LIMIT_CAP(mState.mCaps.maxShaderUniformBlocks[ShaderType::Geometry],
+                    IMPLEMENTATION_MAX_GEOMETRY_SHADER_UNIFORM_BUFFERS);
+    ANGLE_LIMIT_CAP(mState.mCaps.maxShaderUniformBlocks[ShaderType::Fragment],
+                    IMPLEMENTATION_MAX_FRAGMENT_SHADER_UNIFORM_BUFFERS);
+    ANGLE_LIMIT_CAP(mState.mCaps.maxShaderUniformBlocks[ShaderType::Compute],
+                    IMPLEMENTATION_MAX_COMPUTE_SHADER_UNIFORM_BUFFERS);
+    ANGLE_LIMIT_CAP(mState.mCaps.maxCombinedUniformBlocks,
+                    IMPLEMENTATION_MAX_COMBINED_SHADER_UNIFORM_BUFFERS);
+    ANGLE_LIMIT_CAP(mState.mCaps.maxUniformBufferBindings,
+                    IMPLEMENTATION_MAX_UNIFORM_BUFFER_BINDINGS);
 
-    LimitCap(&mState.mCaps.maxTransformFeedbackInterleavedComponents,
-             IMPLEMENTATION_MAX_TRANSFORM_FEEDBACK_INTERLEAVED_COMPONENTS);
-    LimitCap(&mState.mCaps.maxTransformFeedbackSeparateAttributes,
-             IMPLEMENTATION_MAX_TRANSFORM_FEEDBACK_SEPARATE_ATTRIBS);
-    LimitCap(&mState.mCaps.maxTransformFeedbackSeparateComponents,
-             IMPLEMENTATION_MAX_TRANSFORM_FEEDBACK_SEPARATE_COMPONENTS);
+    ANGLE_LIMIT_CAP(mState.mCaps.maxVertexOutputComponents, IMPLEMENTATION_MAX_VARYING_VECTORS * 4);
+    ANGLE_LIMIT_CAP(mState.mCaps.maxFragmentInputComponents,
+                    IMPLEMENTATION_MAX_VARYING_VECTORS * 4);
+
+    ANGLE_LIMIT_CAP(mState.mCaps.maxTransformFeedbackInterleavedComponents,
+                    IMPLEMENTATION_MAX_TRANSFORM_FEEDBACK_INTERLEAVED_COMPONENTS);
+    ANGLE_LIMIT_CAP(mState.mCaps.maxTransformFeedbackSeparateAttributes,
+                    IMPLEMENTATION_MAX_TRANSFORM_FEEDBACK_SEPARATE_ATTRIBS);
+    ANGLE_LIMIT_CAP(mState.mCaps.maxTransformFeedbackSeparateComponents,
+                    IMPLEMENTATION_MAX_TRANSFORM_FEEDBACK_SEPARATE_COMPONENTS);
 
     // Limit textures as well, so we can use fast bitsets with texture bindings.
-    LimitCap(&mState.mCaps.maxCombinedTextureImageUnits, IMPLEMENTATION_MAX_ACTIVE_TEXTURES);
+    ANGLE_LIMIT_CAP(mState.mCaps.maxCombinedTextureImageUnits, IMPLEMENTATION_MAX_ACTIVE_TEXTURES);
     for (ShaderType shaderType : AllShaderTypes())
     {
-        LimitCap(&mState.mCaps.maxShaderTextureImageUnits[shaderType],
-                 IMPLEMENTATION_MAX_SHADER_TEXTURES);
+        ANGLE_LIMIT_CAP(mState.mCaps.maxShaderTextureImageUnits[shaderType],
+                        IMPLEMENTATION_MAX_SHADER_TEXTURES);
     }
 
-    LimitCap(&mState.mCaps.maxImageUnits, IMPLEMENTATION_MAX_IMAGE_UNITS);
-    LimitCap(&mState.mCaps.maxCombinedImageUniforms, IMPLEMENTATION_MAX_IMAGE_UNITS);
+    ANGLE_LIMIT_CAP(mState.mCaps.maxImageUnits, IMPLEMENTATION_MAX_IMAGE_UNITS);
+    ANGLE_LIMIT_CAP(mState.mCaps.maxCombinedImageUniforms, IMPLEMENTATION_MAX_IMAGE_UNITS);
     for (ShaderType shaderType : AllShaderTypes())
     {
-        LimitCap(&mState.mCaps.maxShaderImageUniforms[shaderType], IMPLEMENTATION_MAX_IMAGE_UNITS);
+        ANGLE_LIMIT_CAP(mState.mCaps.maxShaderImageUniforms[shaderType],
+                        IMPLEMENTATION_MAX_IMAGE_UNITS);
     }
-
-    for (ShaderType shaderType : AllShaderTypes())
-    {
-        LimitCap(&mState.mCaps.maxShaderAtomicCounterBuffers[shaderType],
-                 IMPLEMENTATION_MAX_ATOMIC_COUNTER_BUFFERS);
-    }
-    LimitCap(&mState.mCaps.maxCombinedAtomicCounterBuffers,
-             IMPLEMENTATION_MAX_ATOMIC_COUNTER_BUFFERS);
 
     for (ShaderType shaderType : AllShaderTypes())
     {
-        LimitCap(&mState.mCaps.maxShaderStorageBlocks[shaderType],
-                 IMPLEMENTATION_MAX_SHADER_STORAGE_BUFFER_BINDINGS);
+        ANGLE_LIMIT_CAP(mState.mCaps.maxShaderAtomicCounterBuffers[shaderType],
+                        IMPLEMENTATION_MAX_ATOMIC_COUNTER_BUFFERS);
     }
-    LimitCap(&mState.mCaps.maxShaderStorageBufferBindings,
-             IMPLEMENTATION_MAX_SHADER_STORAGE_BUFFER_BINDINGS);
-    LimitCap(&mState.mCaps.maxCombinedShaderStorageBlocks,
-             IMPLEMENTATION_MAX_SHADER_STORAGE_BUFFER_BINDINGS);
+    ANGLE_LIMIT_CAP(mState.mCaps.maxCombinedAtomicCounterBuffers,
+                    IMPLEMENTATION_MAX_ATOMIC_COUNTER_BUFFERS);
 
-    mState.mCaps.maxSampleMaskWords =
-        std::min<GLuint>(mState.mCaps.maxSampleMaskWords, MAX_SAMPLE_MASK_WORDS);
+    for (ShaderType shaderType : AllShaderTypes())
+    {
+        ANGLE_LIMIT_CAP(mState.mCaps.maxShaderStorageBlocks[shaderType],
+                        IMPLEMENTATION_MAX_SHADER_STORAGE_BUFFER_BINDINGS);
+    }
+    ANGLE_LIMIT_CAP(mState.mCaps.maxShaderStorageBufferBindings,
+                    IMPLEMENTATION_MAX_SHADER_STORAGE_BUFFER_BINDINGS);
+    ANGLE_LIMIT_CAP(mState.mCaps.maxCombinedShaderStorageBlocks,
+                    IMPLEMENTATION_MAX_SHADER_STORAGE_BUFFER_BINDINGS);
+
+    ANGLE_LIMIT_CAP(mState.mCaps.maxSampleMaskWords, MAX_SAMPLE_MASK_WORDS);
+
+#undef ANGLE_LIMIT_CAP
+#undef ANGLE_LOG_CAP_LIMIT
 
     // WebGL compatibility
     mState.mExtensions.webglCompatibility = mWebGLContext;
@@ -3983,6 +4070,25 @@ void Context::copyTexSubImage3D(TextureTarget target,
     Framebuffer *framebuffer = mState.getReadFramebuffer();
     Texture *texture         = getTextureByTarget(target);
     ANGLE_CONTEXT_TRY(texture->copySubImage(this, index, destOffset, sourceArea, framebuffer));
+}
+
+void Context::copyImageSubData(GLuint srcName,
+                               GLenum srcTarget,
+                               GLint srcLevel,
+                               GLint srcX,
+                               GLint srcY,
+                               GLint srcZ,
+                               GLuint dstName,
+                               GLenum dstTarget,
+                               GLint dstLevel,
+                               GLint dstX,
+                               GLint dstY,
+                               GLint dstZ,
+                               GLsizei srcWidth,
+                               GLsizei srcHeight,
+                               GLsizei srcDepth)
+{
+    UNIMPLEMENTED();
 }
 
 void Context::framebufferTexture2D(GLenum target,
@@ -4734,6 +4840,11 @@ void Context::activeTexture(GLenum texture)
     mState.setActiveSampler(texture - GL_TEXTURE0);
 }
 
+void Context::blendBarrier()
+{
+    UNIMPLEMENTED();
+}
+
 void Context::blendColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 {
     mState.setBlendColor(clamp01(red), clamp01(green), clamp01(blue), clamp01(alpha));
@@ -4744,9 +4855,19 @@ void Context::blendEquation(GLenum mode)
     mState.setBlendEquation(mode, mode);
 }
 
+void Context::blendEquationi(GLuint buf, GLenum mode)
+{
+    UNIMPLEMENTED();
+}
+
 void Context::blendEquationSeparate(GLenum modeRGB, GLenum modeAlpha)
 {
     mState.setBlendEquation(modeRGB, modeAlpha);
+}
+
+void Context::blendEquationSeparatei(GLuint buf, GLenum modeRGB, GLenum modeAlpha)
+{
+    UNIMPLEMENTED();
 }
 
 void Context::blendFunc(GLenum sfactor, GLenum dfactor)
@@ -4754,9 +4875,23 @@ void Context::blendFunc(GLenum sfactor, GLenum dfactor)
     mState.setBlendFactors(sfactor, dfactor, sfactor, dfactor);
 }
 
+void Context::blendFunci(GLuint buf, GLenum src, GLenum dst)
+{
+    UNIMPLEMENTED();
+}
+
 void Context::blendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha)
 {
     mState.setBlendFactors(srcRGB, dstRGB, srcAlpha, dstAlpha);
+}
+
+void Context::blendFuncSeparatei(GLuint buf,
+                                 GLenum srcRGB,
+                                 GLenum dstRGB,
+                                 GLenum srcAlpha,
+                                 GLenum dstAlpha)
+{
+    UNIMPLEMENTED();
 }
 
 void Context::clearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
@@ -4779,6 +4914,11 @@ void Context::colorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolea
     mState.setColorMask(ConvertToBool(red), ConvertToBool(green), ConvertToBool(blue),
                         ConvertToBool(alpha));
     mStateCache.onColorMaskChange(this);
+}
+
+void Context::colorMaski(GLuint index, GLboolean r, GLboolean g, GLboolean b, GLboolean a)
+{
+    UNIMPLEMENTED();
 }
 
 void Context::cullFace(CullFaceMode mode)
@@ -4807,6 +4947,11 @@ void Context::disable(GLenum cap)
     mStateCache.onContextCapChange(this);
 }
 
+void Context::disablei(GLenum target, GLuint index)
+{
+    UNIMPLEMENTED();
+}
+
 void Context::disableVertexAttribArray(GLuint index)
 {
     mState.setEnableVertexAttribArray(index, false);
@@ -4817,6 +4962,11 @@ void Context::enable(GLenum cap)
 {
     mState.setEnableFeature(cap, true);
     mStateCache.onContextCapChange(this);
+}
+
+void Context::enablei(GLenum target, GLuint index)
+{
+    UNIMPLEMENTED();
 }
 
 void Context::enableVertexAttribArray(GLuint index)
@@ -5265,6 +5415,18 @@ void Context::popDebugGroup()
 {
     mState.getDebug().popGroup();
     mImplementation->popDebugGroup();
+}
+
+void Context::primitiveBoundingBox(GLfloat minX,
+                                   GLfloat minY,
+                                   GLfloat minZ,
+                                   GLfloat minW,
+                                   GLfloat maxX,
+                                   GLfloat maxY,
+                                   GLfloat maxZ,
+                                   GLfloat maxW)
+{
+    UNIMPLEMENTED();
 }
 
 void Context::bufferData(BufferBinding target, GLsizeiptr size, const void *data, BufferUsage usage)
@@ -5901,11 +6063,11 @@ void Context::drawElementsInstancedBaseVertexBaseInstance(PrimitiveMode mode,
     }
 
 void Context::multiDrawArraysInstancedBaseInstance(PrimitiveMode mode,
-                                                   GLsizei drawcount,
+                                                   const GLint *firsts,
                                                    const GLsizei *counts,
                                                    const GLsizei *instanceCounts,
-                                                   const GLint *firsts,
-                                                   const GLuint *baseInstances)
+                                                   const GLuint *baseInstances,
+                                                   GLsizei drawcount)
 {
     ANGLE_CONTEXT_TRY(prepareForDraw(mode));
     Program *programObject     = mState.getLinkedProgram(this);
@@ -5933,13 +6095,13 @@ void Context::multiDrawArraysInstancedBaseInstance(PrimitiveMode mode,
 }
 
 void Context::multiDrawElementsInstancedBaseVertexBaseInstance(PrimitiveMode mode,
-                                                               DrawElementsType type,
-                                                               GLsizei drawcount,
                                                                const GLsizei *counts,
-                                                               const GLsizei *instanceCounts,
+                                                               DrawElementsType type,
                                                                const GLvoid *const *indices,
+                                                               const GLsizei *instanceCounts,
                                                                const GLint *baseVertices,
-                                                               const GLuint *baseInstances)
+                                                               const GLuint *baseInstances,
+                                                               GLsizei drawcount)
 {
     ANGLE_CONTEXT_TRY(prepareForDraw(mode));
     Program *programObject     = mState.getLinkedProgram(this);
@@ -6432,6 +6594,12 @@ GLboolean Context::isEnabled(GLenum cap)
     return mState.getEnableFeature(cap);
 }
 
+GLboolean Context::isEnabledi(GLenum target, GLuint index)
+{
+    UNIMPLEMENTED();
+    return false;
+}
+
 GLboolean Context::isFramebuffer(FramebufferID framebuffer)
 {
     if (framebuffer.value == 0)
@@ -6558,6 +6726,11 @@ void Context::stencilMask(GLuint mask)
 void Context::stencilOp(GLenum fail, GLenum zfail, GLenum zpass)
 {
     stencilOpSeparate(GL_FRONT_AND_BACK, fail, zfail, zpass);
+}
+
+void Context::patchParameteri(GLenum pname, GLint value)
+{
+    UNIMPLEMENTED();
 }
 
 void Context::uniform1f(GLint location, GLfloat x)
@@ -7208,6 +7381,11 @@ void Context::deleteSamplers(GLsizei count, const SamplerID *samplers)
 
         mState.mSamplerManager->deleteObject(this, sampler);
     }
+}
+
+void Context::minSampleShading(GLfloat value)
+{
+    UNIMPLEMENTED();
 }
 
 void Context::getInternalformativ(GLenum target,
@@ -7951,774 +8129,7 @@ void Context::texStorage1D(GLenum target, GLsizei levels, GLenum internalformat,
 
 bool Context::getQueryParameterInfo(GLenum pname, GLenum *type, unsigned int *numParams) const
 {
-    // Please note: the query type returned for DEPTH_CLEAR_VALUE in this implementation
-    // is FLOAT rather than INT, as would be suggested by the GL ES 2.0 spec. This is due
-    // to the fact that it is stored internally as a float, and so would require conversion
-    // if returned from Context::getIntegerv. Since this conversion is already implemented
-    // in the case that one calls glGetIntegerv to retrieve a float-typed state variable, we
-    // place DEPTH_CLEAR_VALUE with the floats. This should make no difference to the calling
-    // application.
-    switch (pname)
-    {
-        case GL_COMPRESSED_TEXTURE_FORMATS:
-        {
-            *type      = GL_INT;
-            *numParams = static_cast<unsigned int>(getCaps().compressedTextureFormats.size());
-            return true;
-        }
-        case GL_SHADER_BINARY_FORMATS:
-        {
-            *type      = GL_INT;
-            *numParams = static_cast<unsigned int>(getCaps().shaderBinaryFormats.size());
-            return true;
-        }
-
-        case GL_MAX_VERTEX_ATTRIBS:
-        case GL_MAX_VERTEX_UNIFORM_VECTORS:
-        case GL_MAX_VARYING_VECTORS:
-        case GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS:
-        case GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS:
-        case GL_MAX_TEXTURE_IMAGE_UNITS:
-        case GL_MAX_FRAGMENT_UNIFORM_VECTORS:
-        case GL_MAX_RENDERBUFFER_SIZE:
-        case GL_NUM_SHADER_BINARY_FORMATS:
-        case GL_NUM_COMPRESSED_TEXTURE_FORMATS:
-        case GL_ARRAY_BUFFER_BINDING:
-        case GL_FRAMEBUFFER_BINDING:  // GL_FRAMEBUFFER_BINDING now equivalent to
-                                      // GL_DRAW_FRAMEBUFFER_BINDING_ANGLE
-        case GL_RENDERBUFFER_BINDING:
-        case GL_CURRENT_PROGRAM:
-        case GL_PACK_ALIGNMENT:
-        case GL_UNPACK_ALIGNMENT:
-        case GL_GENERATE_MIPMAP_HINT:
-        case GL_RED_BITS:
-        case GL_GREEN_BITS:
-        case GL_BLUE_BITS:
-        case GL_ALPHA_BITS:
-        case GL_DEPTH_BITS:
-        case GL_STENCIL_BITS:
-        case GL_ELEMENT_ARRAY_BUFFER_BINDING:
-        case GL_CULL_FACE_MODE:
-        case GL_FRONT_FACE:
-        case GL_ACTIVE_TEXTURE:
-        case GL_STENCIL_FUNC:
-        case GL_STENCIL_VALUE_MASK:
-        case GL_STENCIL_REF:
-        case GL_STENCIL_FAIL:
-        case GL_STENCIL_PASS_DEPTH_FAIL:
-        case GL_STENCIL_PASS_DEPTH_PASS:
-        case GL_STENCIL_BACK_FUNC:
-        case GL_STENCIL_BACK_VALUE_MASK:
-        case GL_STENCIL_BACK_REF:
-        case GL_STENCIL_BACK_FAIL:
-        case GL_STENCIL_BACK_PASS_DEPTH_FAIL:
-        case GL_STENCIL_BACK_PASS_DEPTH_PASS:
-        case GL_DEPTH_FUNC:
-        case GL_BLEND_SRC_RGB:
-        case GL_BLEND_SRC_ALPHA:
-        case GL_BLEND_DST_RGB:
-        case GL_BLEND_DST_ALPHA:
-        case GL_BLEND_EQUATION_RGB:
-        case GL_BLEND_EQUATION_ALPHA:
-        case GL_STENCIL_WRITEMASK:
-        case GL_STENCIL_BACK_WRITEMASK:
-        case GL_STENCIL_CLEAR_VALUE:
-        case GL_SUBPIXEL_BITS:
-        case GL_MAX_TEXTURE_SIZE:
-        case GL_MAX_CUBE_MAP_TEXTURE_SIZE:
-        case GL_SAMPLE_BUFFERS:
-        case GL_SAMPLES:
-        case GL_IMPLEMENTATION_COLOR_READ_TYPE:
-        case GL_IMPLEMENTATION_COLOR_READ_FORMAT:
-        case GL_TEXTURE_BINDING_2D:
-        case GL_TEXTURE_BINDING_CUBE_MAP:
-        case GL_RESET_NOTIFICATION_STRATEGY_EXT:
-        {
-            *type      = GL_INT;
-            *numParams = 1;
-            return true;
-        }
-        case GL_PACK_REVERSE_ROW_ORDER_ANGLE:
-        {
-            if (!getExtensions().packReverseRowOrder)
-            {
-                return false;
-            }
-            *type      = GL_INT;
-            *numParams = 1;
-            return true;
-        }
-        case GL_MAX_RECTANGLE_TEXTURE_SIZE_ANGLE:
-        case GL_TEXTURE_BINDING_RECTANGLE_ANGLE:
-        {
-            if (!getExtensions().textureRectangle)
-            {
-                return false;
-            }
-            *type      = GL_INT;
-            *numParams = 1;
-            return true;
-        }
-        case GL_MAX_DRAW_BUFFERS_EXT:
-        case GL_MAX_COLOR_ATTACHMENTS_EXT:
-        {
-            if ((getClientMajorVersion() < 3) && !getExtensions().drawBuffers)
-            {
-                return false;
-            }
-            *type      = GL_INT;
-            *numParams = 1;
-            return true;
-        }
-        case GL_MAX_VIEWPORT_DIMS:
-        {
-            *type      = GL_INT;
-            *numParams = 2;
-            return true;
-        }
-        case GL_VIEWPORT:
-        case GL_SCISSOR_BOX:
-        {
-            *type      = GL_INT;
-            *numParams = 4;
-            return true;
-        }
-        case GL_SHADER_COMPILER:
-        case GL_SAMPLE_COVERAGE_INVERT:
-        case GL_DEPTH_WRITEMASK:
-        case GL_CULL_FACE:                 // CULL_FACE through DITHER are natural to IsEnabled,
-        case GL_POLYGON_OFFSET_FILL:       // but can be retrieved through the Get{Type}v queries.
-        case GL_SAMPLE_ALPHA_TO_COVERAGE:  // For this purpose, they are treated here as
-                                           // bool-natural
-        case GL_SAMPLE_COVERAGE:
-        case GL_SCISSOR_TEST:
-        case GL_STENCIL_TEST:
-        case GL_DEPTH_TEST:
-        case GL_BLEND:
-        case GL_DITHER:
-        case GL_CONTEXT_ROBUST_ACCESS_EXT:
-        {
-            *type      = GL_BOOL;
-            *numParams = 1;
-            return true;
-        }
-        case GL_COLOR_WRITEMASK:
-        {
-            *type      = GL_BOOL;
-            *numParams = 4;
-            return true;
-        }
-        case GL_POLYGON_OFFSET_FACTOR:
-        case GL_POLYGON_OFFSET_UNITS:
-        case GL_SAMPLE_COVERAGE_VALUE:
-        case GL_DEPTH_CLEAR_VALUE:
-        case GL_LINE_WIDTH:
-        {
-            *type      = GL_FLOAT;
-            *numParams = 1;
-            return true;
-        }
-        case GL_ALIASED_LINE_WIDTH_RANGE:
-        case GL_ALIASED_POINT_SIZE_RANGE:
-        case GL_DEPTH_RANGE:
-        {
-            *type      = GL_FLOAT;
-            *numParams = 2;
-            return true;
-        }
-        case GL_COLOR_CLEAR_VALUE:
-        case GL_BLEND_COLOR:
-        {
-            *type      = GL_FLOAT;
-            *numParams = 4;
-            return true;
-        }
-        case GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT:
-            if (!getExtensions().textureFilterAnisotropic)
-            {
-                return false;
-            }
-            *type      = GL_FLOAT;
-            *numParams = 1;
-            return true;
-        case GL_TIMESTAMP_EXT:
-            if (!getExtensions().disjointTimerQuery)
-            {
-                return false;
-            }
-            *type      = GL_INT_64_ANGLEX;
-            *numParams = 1;
-            return true;
-        case GL_GPU_DISJOINT_EXT:
-            if (!getExtensions().disjointTimerQuery)
-            {
-                return false;
-            }
-            *type      = GL_INT;
-            *numParams = 1;
-            return true;
-        case GL_COVERAGE_MODULATION_CHROMIUM:
-            if (!getExtensions().framebufferMixedSamples)
-            {
-                return false;
-            }
-            *type      = GL_INT;
-            *numParams = 1;
-            return true;
-        case GL_TEXTURE_BINDING_EXTERNAL_OES:
-            if (!getExtensions().eglStreamConsumerExternal && !getExtensions().eglImageExternal)
-            {
-                return false;
-            }
-            *type      = GL_INT;
-            *numParams = 1;
-            return true;
-        case GL_MAX_CLIP_DISTANCES_EXT:  // case GL_MAX_CLIP_PLANES
-            if (getClientMajorVersion() < 2)
-            {
-                break;
-            }
-            if (!getExtensions().clipDistanceAPPLE)
-            {
-                // NOTE(hqle): if client version is 1. GL_MAX_CLIP_DISTANCES_EXT is equal
-                // to GL_MAX_CLIP_PLANES which is a valid enum.
-                return false;
-            }
-            *type      = GL_INT;
-            *numParams = 1;
-            return true;
-    }
-
-    if (getClientType() == EGL_OPENGL_API)
-    {
-        switch (pname)
-        {
-            case GL_CONTEXT_FLAGS:
-            case GL_CONTEXT_PROFILE_MASK:
-            {
-                *type      = GL_INT;
-                *numParams = 1;
-                return true;
-            }
-        }
-    }
-
-    if (getExtensions().debug)
-    {
-        switch (pname)
-        {
-            case GL_DEBUG_LOGGED_MESSAGES:
-            case GL_DEBUG_NEXT_LOGGED_MESSAGE_LENGTH:
-            case GL_DEBUG_GROUP_STACK_DEPTH:
-            case GL_MAX_DEBUG_MESSAGE_LENGTH:
-            case GL_MAX_DEBUG_LOGGED_MESSAGES:
-            case GL_MAX_DEBUG_GROUP_STACK_DEPTH:
-            case GL_MAX_LABEL_LENGTH:
-                *type      = GL_INT;
-                *numParams = 1;
-                return true;
-
-            case GL_DEBUG_OUTPUT_SYNCHRONOUS:
-            case GL_DEBUG_OUTPUT:
-                *type      = GL_BOOL;
-                *numParams = 1;
-                return true;
-        }
-    }
-
-    if (getExtensions().multisampleCompatibility)
-    {
-        switch (pname)
-        {
-            case GL_MULTISAMPLE_EXT:
-            case GL_SAMPLE_ALPHA_TO_ONE_EXT:
-                *type      = GL_BOOL;
-                *numParams = 1;
-                return true;
-        }
-    }
-
-    if (getExtensions().pathRendering)
-    {
-        switch (pname)
-        {
-            case GL_PATH_MODELVIEW_MATRIX_CHROMIUM:
-            case GL_PATH_PROJECTION_MATRIX_CHROMIUM:
-                *type      = GL_FLOAT;
-                *numParams = 16;
-                return true;
-        }
-    }
-
-    if (getExtensions().bindGeneratesResource)
-    {
-        switch (pname)
-        {
-            case GL_BIND_GENERATES_RESOURCE_CHROMIUM:
-                *type      = GL_BOOL;
-                *numParams = 1;
-                return true;
-        }
-    }
-
-    if (getExtensions().clientArrays)
-    {
-        switch (pname)
-        {
-            case GL_CLIENT_ARRAYS_ANGLE:
-                *type      = GL_BOOL;
-                *numParams = 1;
-                return true;
-        }
-    }
-
-    if (getExtensions().sRGBWriteControl)
-    {
-        switch (pname)
-        {
-            case GL_FRAMEBUFFER_SRGB_EXT:
-                *type      = GL_BOOL;
-                *numParams = 1;
-                return true;
-        }
-    }
-
-    if (getExtensions().robustResourceInitialization &&
-        pname == GL_ROBUST_RESOURCE_INITIALIZATION_ANGLE)
-    {
-        *type      = GL_BOOL;
-        *numParams = 1;
-        return true;
-    }
-
-    if (getExtensions().programCacheControl && pname == GL_PROGRAM_CACHE_ENABLED_ANGLE)
-    {
-        *type      = GL_BOOL;
-        *numParams = 1;
-        return true;
-    }
-
-    if (getExtensions().parallelShaderCompile && pname == GL_MAX_SHADER_COMPILER_THREADS_KHR)
-    {
-        *type      = GL_INT;
-        *numParams = 1;
-        return true;
-    }
-
-    if (getExtensions().blendFuncExtended && pname == GL_MAX_DUAL_SOURCE_DRAW_BUFFERS_EXT)
-    {
-        *type      = GL_INT;
-        *numParams = 1;
-        return true;
-    }
-
-    // Check for ES3.0+ parameter names which are also exposed as ES2 extensions
-    switch (pname)
-    {
-        // GL_DRAW_FRAMEBUFFER_BINDING_ANGLE equivalent to FRAMEBUFFER_BINDING
-        case GL_READ_FRAMEBUFFER_BINDING_ANGLE:
-            if ((getClientMajorVersion() < 3) && !getExtensions().framebufferBlit)
-            {
-                return false;
-            }
-            *type      = GL_INT;
-            *numParams = 1;
-            return true;
-
-        case GL_NUM_PROGRAM_BINARY_FORMATS_OES:
-            if ((getClientMajorVersion() < 3) && !getExtensions().getProgramBinary)
-            {
-                return false;
-            }
-            *type      = GL_INT;
-            *numParams = 1;
-            return true;
-
-        case GL_PROGRAM_BINARY_FORMATS_OES:
-            if ((getClientMajorVersion() < 3) && !getExtensions().getProgramBinary)
-            {
-                return false;
-            }
-            *type      = GL_INT;
-            *numParams = static_cast<unsigned int>(getCaps().programBinaryFormats.size());
-            return true;
-
-        case GL_PACK_ROW_LENGTH:
-        case GL_PACK_SKIP_ROWS:
-        case GL_PACK_SKIP_PIXELS:
-            if ((getClientMajorVersion() < 3) && !getExtensions().packSubimage)
-            {
-                return false;
-            }
-            *type      = GL_INT;
-            *numParams = 1;
-            return true;
-        case GL_UNPACK_ROW_LENGTH:
-        case GL_UNPACK_SKIP_ROWS:
-        case GL_UNPACK_SKIP_PIXELS:
-            if ((getClientMajorVersion() < 3) && !getExtensions().unpackSubimage)
-            {
-                return false;
-            }
-            *type      = GL_INT;
-            *numParams = 1;
-            return true;
-        case GL_VERTEX_ARRAY_BINDING:
-            if ((getClientMajorVersion() < 3) && !getExtensions().vertexArrayObject)
-            {
-                return false;
-            }
-            *type      = GL_INT;
-            *numParams = 1;
-            return true;
-        case GL_PIXEL_PACK_BUFFER_BINDING:
-        case GL_PIXEL_UNPACK_BUFFER_BINDING:
-            if ((getClientMajorVersion() < 3) && !getExtensions().pixelBufferObject)
-            {
-                return false;
-            }
-            *type      = GL_INT;
-            *numParams = 1;
-            return true;
-        case GL_MAX_SAMPLES:
-        {
-            static_assert(GL_MAX_SAMPLES_ANGLE == GL_MAX_SAMPLES,
-                          "GL_MAX_SAMPLES_ANGLE not equal to GL_MAX_SAMPLES");
-            if ((getClientMajorVersion() < 3) && !(getExtensions().framebufferMultisample ||
-                                                   getExtensions().multisampledRenderToTexture))
-            {
-                return false;
-            }
-            *type      = GL_INT;
-            *numParams = 1;
-            return true;
-
-            case GL_FRAGMENT_SHADER_DERIVATIVE_HINT:
-                if ((getClientMajorVersion() < 3) && !getExtensions().standardDerivatives)
-                {
-                    return false;
-                }
-                *type      = GL_INT;
-                *numParams = 1;
-                return true;
-        }
-        case GL_TEXTURE_BINDING_3D:
-            if ((getClientMajorVersion() < 3) && !getExtensions().texture3DOES)
-            {
-                return false;
-            }
-            *type      = GL_INT;
-            *numParams = 1;
-            return true;
-        case GL_MAX_3D_TEXTURE_SIZE:
-            if ((getClientMajorVersion() < 3) && !getExtensions().texture3DOES)
-            {
-                return false;
-            }
-            *type      = GL_INT;
-            *numParams = 1;
-            return true;
-    }
-
-    if (pname >= GL_DRAW_BUFFER0_EXT && pname <= GL_DRAW_BUFFER15_EXT)
-    {
-        if ((getClientVersion() < Version(3, 0)) && !getExtensions().drawBuffers)
-        {
-            return false;
-        }
-        *type      = GL_INT;
-        *numParams = 1;
-        return true;
-    }
-
-    if ((getExtensions().multiview2 || getExtensions().multiview) && pname == GL_MAX_VIEWS_OVR)
-    {
-        *type      = GL_INT;
-        *numParams = 1;
-        return true;
-    }
-
-    if (getClientVersion() < Version(2, 0))
-    {
-        switch (pname)
-        {
-            case GL_ALPHA_TEST_FUNC:
-            case GL_CLIENT_ACTIVE_TEXTURE:
-            case GL_MATRIX_MODE:
-            case GL_MAX_TEXTURE_UNITS:
-            case GL_MAX_MODELVIEW_STACK_DEPTH:
-            case GL_MAX_PROJECTION_STACK_DEPTH:
-            case GL_MAX_TEXTURE_STACK_DEPTH:
-            case GL_MAX_LIGHTS:
-            case GL_MAX_CLIP_PLANES:
-            case GL_VERTEX_ARRAY_STRIDE:
-            case GL_NORMAL_ARRAY_STRIDE:
-            case GL_COLOR_ARRAY_STRIDE:
-            case GL_TEXTURE_COORD_ARRAY_STRIDE:
-            case GL_VERTEX_ARRAY_SIZE:
-            case GL_COLOR_ARRAY_SIZE:
-            case GL_TEXTURE_COORD_ARRAY_SIZE:
-            case GL_VERTEX_ARRAY_TYPE:
-            case GL_NORMAL_ARRAY_TYPE:
-            case GL_COLOR_ARRAY_TYPE:
-            case GL_TEXTURE_COORD_ARRAY_TYPE:
-            case GL_VERTEX_ARRAY_BUFFER_BINDING:
-            case GL_NORMAL_ARRAY_BUFFER_BINDING:
-            case GL_COLOR_ARRAY_BUFFER_BINDING:
-            case GL_TEXTURE_COORD_ARRAY_BUFFER_BINDING:
-            case GL_POINT_SIZE_ARRAY_STRIDE_OES:
-            case GL_POINT_SIZE_ARRAY_TYPE_OES:
-            case GL_POINT_SIZE_ARRAY_BUFFER_BINDING_OES:
-            case GL_SHADE_MODEL:
-            case GL_MODELVIEW_STACK_DEPTH:
-            case GL_PROJECTION_STACK_DEPTH:
-            case GL_TEXTURE_STACK_DEPTH:
-            case GL_LOGIC_OP_MODE:
-            case GL_BLEND_SRC:
-            case GL_BLEND_DST:
-            case GL_PERSPECTIVE_CORRECTION_HINT:
-            case GL_POINT_SMOOTH_HINT:
-            case GL_LINE_SMOOTH_HINT:
-            case GL_FOG_HINT:
-                *type      = GL_INT;
-                *numParams = 1;
-                return true;
-            case GL_ALPHA_TEST_REF:
-            case GL_FOG_DENSITY:
-            case GL_FOG_START:
-            case GL_FOG_END:
-            case GL_FOG_MODE:
-            case GL_POINT_SIZE:
-            case GL_POINT_SIZE_MIN:
-            case GL_POINT_SIZE_MAX:
-            case GL_POINT_FADE_THRESHOLD_SIZE:
-                *type      = GL_FLOAT;
-                *numParams = 1;
-                return true;
-            case GL_SMOOTH_POINT_SIZE_RANGE:
-            case GL_SMOOTH_LINE_WIDTH_RANGE:
-                *type      = GL_FLOAT;
-                *numParams = 2;
-                return true;
-            case GL_CURRENT_COLOR:
-            case GL_CURRENT_TEXTURE_COORDS:
-            case GL_LIGHT_MODEL_AMBIENT:
-            case GL_FOG_COLOR:
-                *type      = GL_FLOAT;
-                *numParams = 4;
-                return true;
-            case GL_CURRENT_NORMAL:
-            case GL_POINT_DISTANCE_ATTENUATION:
-                *type      = GL_FLOAT;
-                *numParams = 3;
-                return true;
-            case GL_MODELVIEW_MATRIX:
-            case GL_PROJECTION_MATRIX:
-            case GL_TEXTURE_MATRIX:
-                *type      = GL_FLOAT;
-                *numParams = 16;
-                return true;
-            case GL_LIGHT_MODEL_TWO_SIDE:
-                *type      = GL_BOOL;
-                *numParams = 1;
-                return true;
-        }
-    }
-
-    if (getClientVersion() < Version(3, 0))
-    {
-        return false;
-    }
-
-    // Check for ES3.0+ parameter names
-    switch (pname)
-    {
-        case GL_MAX_UNIFORM_BUFFER_BINDINGS:
-        case GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT:
-        case GL_UNIFORM_BUFFER_BINDING:
-        case GL_TRANSFORM_FEEDBACK_BINDING:
-        case GL_TRANSFORM_FEEDBACK_BUFFER_BINDING:
-        case GL_COPY_READ_BUFFER_BINDING:
-        case GL_COPY_WRITE_BUFFER_BINDING:
-        case GL_SAMPLER_BINDING:
-        case GL_READ_BUFFER:
-        case GL_TEXTURE_BINDING_3D:
-        case GL_TEXTURE_BINDING_2D_ARRAY:
-        case GL_MAX_ARRAY_TEXTURE_LAYERS:
-        case GL_MAX_VERTEX_UNIFORM_BLOCKS:
-        case GL_MAX_FRAGMENT_UNIFORM_BLOCKS:
-        case GL_MAX_COMBINED_UNIFORM_BLOCKS:
-        case GL_MAX_VERTEX_OUTPUT_COMPONENTS:
-        case GL_MAX_FRAGMENT_INPUT_COMPONENTS:
-        case GL_MAX_VARYING_COMPONENTS:
-        case GL_MAX_VERTEX_UNIFORM_COMPONENTS:
-        case GL_MAX_FRAGMENT_UNIFORM_COMPONENTS:
-        case GL_MIN_PROGRAM_TEXEL_OFFSET:
-        case GL_MAX_PROGRAM_TEXEL_OFFSET:
-        case GL_NUM_EXTENSIONS:
-        case GL_MAJOR_VERSION:
-        case GL_MINOR_VERSION:
-        case GL_MAX_ELEMENTS_INDICES:
-        case GL_MAX_ELEMENTS_VERTICES:
-        case GL_MAX_TRANSFORM_FEEDBACK_INTERLEAVED_COMPONENTS:
-        case GL_MAX_TRANSFORM_FEEDBACK_SEPARATE_ATTRIBS:
-        case GL_MAX_TRANSFORM_FEEDBACK_SEPARATE_COMPONENTS:
-        case GL_UNPACK_IMAGE_HEIGHT:
-        case GL_UNPACK_SKIP_IMAGES:
-        {
-            *type      = GL_INT;
-            *numParams = 1;
-            return true;
-        }
-
-        case GL_MAX_ELEMENT_INDEX:
-        case GL_MAX_UNIFORM_BLOCK_SIZE:
-        case GL_MAX_COMBINED_VERTEX_UNIFORM_COMPONENTS:
-        case GL_MAX_COMBINED_FRAGMENT_UNIFORM_COMPONENTS:
-        case GL_MAX_SERVER_WAIT_TIMEOUT:
-        {
-            *type      = GL_INT_64_ANGLEX;
-            *numParams = 1;
-            return true;
-        }
-
-        case GL_TRANSFORM_FEEDBACK_ACTIVE:
-        case GL_TRANSFORM_FEEDBACK_PAUSED:
-        case GL_PRIMITIVE_RESTART_FIXED_INDEX:
-        case GL_RASTERIZER_DISCARD:
-        {
-            *type      = GL_BOOL;
-            *numParams = 1;
-            return true;
-        }
-
-        case GL_MAX_TEXTURE_LOD_BIAS:
-        {
-            *type      = GL_FLOAT;
-            *numParams = 1;
-            return true;
-        }
-    }
-
-    if (getExtensions().requestExtension)
-    {
-        switch (pname)
-        {
-            case GL_NUM_REQUESTABLE_EXTENSIONS_ANGLE:
-                *type      = GL_INT;
-                *numParams = 1;
-                return true;
-        }
-    }
-
-    if (getExtensions().textureMultisample)
-    {
-        switch (pname)
-        {
-            case GL_MAX_COLOR_TEXTURE_SAMPLES_ANGLE:
-            case GL_MAX_INTEGER_SAMPLES_ANGLE:
-            case GL_MAX_DEPTH_TEXTURE_SAMPLES_ANGLE:
-            case GL_TEXTURE_BINDING_2D_MULTISAMPLE_ANGLE:
-            case GL_MAX_SAMPLE_MASK_WORDS:
-                *type      = GL_INT;
-                *numParams = 1;
-                return true;
-        }
-    }
-
-    if (getClientVersion() < Version(3, 1))
-    {
-        return false;
-    }
-
-    switch (pname)
-    {
-        case GL_ATOMIC_COUNTER_BUFFER_BINDING:
-        case GL_DRAW_INDIRECT_BUFFER_BINDING:
-        case GL_DISPATCH_INDIRECT_BUFFER_BINDING:
-        case GL_MAX_FRAMEBUFFER_WIDTH:
-        case GL_MAX_FRAMEBUFFER_HEIGHT:
-        case GL_MAX_FRAMEBUFFER_SAMPLES:
-        case GL_MAX_SAMPLE_MASK_WORDS:
-        case GL_MAX_COLOR_TEXTURE_SAMPLES:
-        case GL_MAX_DEPTH_TEXTURE_SAMPLES:
-        case GL_MAX_INTEGER_SAMPLES:
-        case GL_MAX_VERTEX_ATTRIB_RELATIVE_OFFSET:
-        case GL_MAX_VERTEX_ATTRIB_BINDINGS:
-        case GL_MAX_VERTEX_ATTRIB_STRIDE:
-        case GL_MAX_VERTEX_ATOMIC_COUNTER_BUFFERS:
-        case GL_MAX_VERTEX_ATOMIC_COUNTERS:
-        case GL_MAX_VERTEX_IMAGE_UNIFORMS:
-        case GL_MAX_VERTEX_SHADER_STORAGE_BLOCKS:
-        case GL_MAX_FRAGMENT_ATOMIC_COUNTER_BUFFERS:
-        case GL_MAX_FRAGMENT_ATOMIC_COUNTERS:
-        case GL_MAX_FRAGMENT_IMAGE_UNIFORMS:
-        case GL_MAX_FRAGMENT_SHADER_STORAGE_BLOCKS:
-        case GL_MIN_PROGRAM_TEXTURE_GATHER_OFFSET:
-        case GL_MAX_PROGRAM_TEXTURE_GATHER_OFFSET:
-        case GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS:
-        case GL_MAX_COMPUTE_UNIFORM_BLOCKS:
-        case GL_MAX_COMPUTE_TEXTURE_IMAGE_UNITS:
-        case GL_MAX_COMPUTE_SHARED_MEMORY_SIZE:
-        case GL_MAX_COMPUTE_UNIFORM_COMPONENTS:
-        case GL_MAX_COMPUTE_ATOMIC_COUNTER_BUFFERS:
-        case GL_MAX_COMPUTE_ATOMIC_COUNTERS:
-        case GL_MAX_COMPUTE_IMAGE_UNIFORMS:
-        case GL_MAX_COMBINED_COMPUTE_UNIFORM_COMPONENTS:
-        case GL_MAX_COMPUTE_SHADER_STORAGE_BLOCKS:
-        case GL_MAX_COMBINED_SHADER_OUTPUT_RESOURCES:
-        case GL_MAX_UNIFORM_LOCATIONS:
-        case GL_MAX_ATOMIC_COUNTER_BUFFER_BINDINGS:
-        case GL_MAX_ATOMIC_COUNTER_BUFFER_SIZE:
-        case GL_MAX_COMBINED_ATOMIC_COUNTER_BUFFERS:
-        case GL_MAX_COMBINED_ATOMIC_COUNTERS:
-        case GL_MAX_IMAGE_UNITS:
-        case GL_MAX_COMBINED_IMAGE_UNIFORMS:
-        case GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS:
-        case GL_MAX_COMBINED_SHADER_STORAGE_BLOCKS:
-        case GL_SHADER_STORAGE_BUFFER_BINDING:
-        case GL_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT:
-        case GL_TEXTURE_BINDING_2D_MULTISAMPLE:
-        case GL_TEXTURE_BINDING_2D_MULTISAMPLE_ARRAY:
-            *type      = GL_INT;
-            *numParams = 1;
-            return true;
-        case GL_MAX_SHADER_STORAGE_BLOCK_SIZE:
-            *type      = GL_INT_64_ANGLEX;
-            *numParams = 1;
-            return true;
-        case GL_SAMPLE_MASK:
-            *type      = GL_BOOL;
-            *numParams = 1;
-            return true;
-    }
-
-    if (getExtensions().geometryShader)
-    {
-        switch (pname)
-        {
-            case GL_MAX_FRAMEBUFFER_LAYERS_EXT:
-            case GL_LAYER_PROVOKING_VERTEX_EXT:
-            case GL_MAX_GEOMETRY_UNIFORM_COMPONENTS_EXT:
-            case GL_MAX_GEOMETRY_UNIFORM_BLOCKS_EXT:
-            case GL_MAX_COMBINED_GEOMETRY_UNIFORM_COMPONENTS_EXT:
-            case GL_MAX_GEOMETRY_INPUT_COMPONENTS_EXT:
-            case GL_MAX_GEOMETRY_OUTPUT_COMPONENTS_EXT:
-            case GL_MAX_GEOMETRY_OUTPUT_VERTICES_EXT:
-            case GL_MAX_GEOMETRY_TOTAL_OUTPUT_COMPONENTS_EXT:
-            case GL_MAX_GEOMETRY_SHADER_INVOCATIONS_EXT:
-            case GL_MAX_GEOMETRY_TEXTURE_IMAGE_UNITS_EXT:
-            case GL_MAX_GEOMETRY_ATOMIC_COUNTER_BUFFERS_EXT:
-            case GL_MAX_GEOMETRY_ATOMIC_COUNTERS_EXT:
-            case GL_MAX_GEOMETRY_IMAGE_UNIFORMS_EXT:
-            case GL_MAX_GEOMETRY_SHADER_STORAGE_BLOCKS_EXT:
-                *type      = GL_INT;
-                *numParams = 1;
-                return true;
-        }
-    }
-
-    return false;
+    return GetQueryParameterInfo(mState, pname, type, numParams);
 }
 
 bool Context::getIndexedQueryParameterInfo(GLenum target,
@@ -9037,6 +8448,26 @@ void Context::onPostSwap() const
 {
     // Dump frame capture if enabled.
     mFrameCapture->onEndFrame(this);
+}
+
+void Context::getTexImage(TextureTarget target,
+                          GLint level,
+                          GLenum format,
+                          GLenum type,
+                          void *pixels)
+{
+    Texture *texture   = getTextureByTarget(target);
+    Buffer *packBuffer = mState.getTargetBuffer(BufferBinding::PixelPack);
+    ANGLE_CONTEXT_TRY(texture->getTexImage(this, mState.getPackState(), packBuffer, target, level,
+                                           format, type, pixels));
+}
+
+void Context::getRenderbufferImage(GLenum target, GLenum format, GLenum type, void *pixels)
+{
+    Renderbuffer *renderbuffer = mState.getCurrentRenderbuffer();
+    Buffer *packBuffer         = mState.getTargetBuffer(BufferBinding::PixelPack);
+    ANGLE_CONTEXT_TRY(renderbuffer->getRenderbufferImage(this, mState.getPackState(), packBuffer,
+                                                         format, type, pixels));
 }
 
 // ErrorSet implementation.

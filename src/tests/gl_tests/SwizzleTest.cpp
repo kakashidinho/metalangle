@@ -116,7 +116,8 @@ void main()
     {
         glGenTextures(1, &mTexture);
         glBindTexture(GL_TEXTURE_2D, mTexture);
-        glCompressedTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, dataSize, data);
+        glCompressedTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, width, height, 0,
+                               dataSize, data);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -392,15 +393,6 @@ TEST_P(SwizzleTest, CompressedDXT_2D)
     runTest2D();
 }
 
-TEST_P(SwizzleTest, CompressedDXT1_RGB_2D)
-{
-    ANGLE_SKIP_TEST_IF(!IsGLExtensionEnabled("GL_EXT_texture_compression_dxt1"));
-
-    init2DCompressedTexture(GL_COMPRESSED_RGB_S3TC_DXT1_EXT, pixel_0_width, pixel_0_height,
-                            pixel_0_size, pixel_0_data);
-    runTest2D();
-}
-
 TEST_P(SwizzleIntegerTest, RGB8UI_2D)
 {
     ANGLE_SKIP_TEST_IF(IsVulkan());  // anglebug.com/3196 - integer textures
@@ -440,17 +432,7 @@ TEST_P(SwizzleTest, SubUpdate)
     EXPECT_PIXEL_COLOR_EQ(0, 0, expectedUpdateData);
 }
 
-ANGLE_INSTANTIATE_TEST(SwizzleTest,
-                       ES3_D3D11(),
-                       ES3_METAL(),
-                       ES3_OPENGL(),
-                       ES3_OPENGLES(),
-                       ES3_VULKAN());
-ANGLE_INSTANTIATE_TEST(SwizzleIntegerTest,
-                       ES3_D3D11(),
-                       ES3_METAL(),
-                       ES3_OPENGL(),
-                       ES3_OPENGLES(),
-                       ES3_VULKAN());
+ANGLE_INSTANTIATE_TEST_ES3(SwizzleTest);
+ANGLE_INSTANTIATE_TEST_ES3(SwizzleIntegerTest);
 
 }  // namespace

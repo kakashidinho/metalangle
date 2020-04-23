@@ -969,17 +969,9 @@ void main()
     }
 }
 
-const angle::PlatformParameters platformsES2[] = {
-    ES2_D3D9(), ES2_D3D11(), ES2_METAL(), ES2_OPENGL(), ES2_OPENGLES(), ES2_VULKAN(),
-};
-const angle::PlatformParameters platformsES3[] = {
-    ES3_OPENGL(), ES3_OPENGLES(), ES3_D3D11(), ES3_VULKAN(), ES3_METAL(),
-};
-const angle::PlatformParameters platformsES31[] = {
-    ES31_OPENGL(),
-    ES31_OPENGLES(),
-    ES31_D3D11(),
-};
+const angle::PlatformParameters platformsES2[]  = {ANGLE_ALL_TEST_PLATFORMS_ES2};
+const angle::PlatformParameters platformsES3[]  = {ANGLE_ALL_TEST_PLATFORMS_ES3};
+const angle::PlatformParameters platformsES31[] = {ANGLE_ALL_TEST_PLATFORMS_ES31};
 
 INSTANTIATE_TEST_SUITE_P(
     ,

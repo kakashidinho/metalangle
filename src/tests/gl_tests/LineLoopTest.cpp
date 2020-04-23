@@ -470,19 +470,6 @@ TEST_P(LineLoopIndirectTest, UShortIndexIndirectBuffer)
 
 // Use this to select which configurations (e.g. which renderer, which GLES major version) these
 // tests should be run against.
-ANGLE_INSTANTIATE_TEST(LineLoopTest,
-                       ES2_D3D9(),
-                       ES2_D3D11(),
-                       ES2_METAL(),
-                       ES2_OPENGL(),
-                       ES2_OPENGLES(),
-                       ES2_VULKAN());
+ANGLE_INSTANTIATE_TEST_ES2(LineLoopTest);
 
-ANGLE_INSTANTIATE_TEST(LineLoopPrimitiveRestartTest,
-                       ES3_METAL(),
-                       ES3_D3D11(),
-                       ES3_OPENGL(),
-                       ES3_OPENGLES(),
-                       ES3_VULKAN());
-
-ANGLE_INSTANTIATE_TEST(LineLoopIndirectTest, ES31_OPENGLES(), ES31_VULKAN());
+ANGLE_INSTANTIATE_TEST_ES31(LineLoopIndirectTest);

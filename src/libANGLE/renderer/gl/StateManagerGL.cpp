@@ -138,6 +138,7 @@ StateManagerGL::StateManagerGL(const FunctionsGL *functions,
       mRasterizerDiscardEnabled(false),
       mLineWidth(1.0f),
       mPrimitiveRestartEnabled(false),
+      mPrimitiveRestartIndex(0),
       mClearColor(0.0f, 0.0f, 0.0f, 0.0f),
       mClearDepth(1.0f),
       mClearStencil(0),
@@ -379,6 +380,9 @@ void StateManagerGL::bindBuffer(gl::BufferBinding target, GLuint buffer)
 
 void StateManagerGL::bindBufferBase(gl::BufferBinding target, size_t index, GLuint buffer)
 {
+    // Transform feedback buffer bindings are tracked in TransformFeedbackGL
+    ASSERT(target != gl::BufferBinding::TransformFeedback);
+
     ASSERT(index < mIndexedBuffers[target].size());
     auto &binding = mIndexedBuffers[target][index];
     if (binding.buffer != buffer || binding.offset != static_cast<size_t>(-1) ||
@@ -398,6 +402,9 @@ void StateManagerGL::bindBufferRange(gl::BufferBinding target,
                                      size_t offset,
                                      size_t size)
 {
+    // Transform feedback buffer bindings are tracked in TransformFeedbackGL
+    ASSERT(target != gl::BufferBinding::TransformFeedback);
+
     auto &binding = mIndexedBuffers[target][index];
     if (binding.buffer != buffer || binding.offset != offset || binding.size != size)
     {
@@ -1433,16 +1440,32 @@ void StateManagerGL::setPrimitiveRestartEnabled(bool enabled)
     {
         mPrimitiveRestartEnabled = enabled;
 
+        GLenum cap = mFeatures.emulatePrimitiveRestartFixedIndex.enabled
+                         ? GL_PRIMITIVE_RESTART
+                         : GL_PRIMITIVE_RESTART_FIXED_INDEX;
+
         if (mPrimitiveRestartEnabled)
         {
-            mFunctions->enable(GL_PRIMITIVE_RESTART_FIXED_INDEX);
+            mFunctions->enable(cap);
         }
         else
         {
-            mFunctions->disable(GL_PRIMITIVE_RESTART_FIXED_INDEX);
+            mFunctions->disable(cap);
         }
 
         mLocalDirtyBits.set(gl::State::DIRTY_BIT_PRIMITIVE_RESTART_ENABLED);
+    }
+}
+
+void StateManagerGL::setPrimitiveRestartIndex(GLuint index)
+{
+    if (mPrimitiveRestartIndex != index)
+    {
+        mPrimitiveRestartIndex = index;
+
+        mFunctions->primitiveRestartIndex(index);
+
+        // No dirty bit for this state, it is not exposed to the frontend.
     }
 }
 
@@ -2189,6 +2212,13 @@ void StateManagerGL::validateState() const
                 continue;
             }
         }
+
+        // Transform feedback buffer bindings are tracked in TransformFeedbackGL
+        if (bindingType == gl::BufferBinding::TransformFeedback)
+        {
+            continue;
+        }
+
         GLenum bindingTypeGL  = nativegl::GetBufferBindingQuery(bindingType);
         std::string localName = "mBuffers[" + ToString(bindingType) + "]";
         ValidateStateHelper(mFunctions, mBuffers[bindingType], bindingTypeGL, localName.c_str(),

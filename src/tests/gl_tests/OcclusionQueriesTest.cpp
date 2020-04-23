@@ -399,6 +399,9 @@ TEST_P(OcclusionQueriesTest, MultiContext)
     ANGLE_SKIP_TEST_IF(platform == ES2_D3D9() || platform == ES2_D3D11() ||
                        platform == ES3_D3D11() || platform == ES2_VULKAN());
 
+    // http://anglebug.com/4092
+    ANGLE_SKIP_TEST_IF(IsVulkan());
+
     glDepthMask(GL_TRUE);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
@@ -546,8 +549,8 @@ TEST_P(OcclusionQueriesTest, MultiContext)
 }
 
 const angle::PlatformParameters platforms[] = {
-    ES2_D3D9(),   ES2_D3D11(),    ES3_D3D11(),    ES2_OPENGL(), ES2_METAL(),
-    ES3_OPENGL(), ES2_OPENGLES(), ES3_OPENGLES(), ES2_VULKAN(),
+    ANGLE_ALL_TEST_PLATFORMS_ES2,
+    ANGLE_ALL_TEST_PLATFORMS_ES3,
 };
 
 // Use this to select which configurations (e.g. which renderer, which GLES major version) these

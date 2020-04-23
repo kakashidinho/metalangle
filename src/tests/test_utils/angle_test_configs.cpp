@@ -684,11 +684,6 @@ PlatformParameters ES2_VULKAN_NULL()
     return PlatformParameters(2, 0, egl_platform::VULKAN_NULL());
 }
 
-PlatformParameters ES2_VULKAN_SWIFTSHADER()
-{
-    return PlatformParameters(2, 0, egl_platform::VULKAN_SWIFTSHADER());
-}
-
 PlatformParameters ES3_VULKAN()
 {
     return PlatformParameters(3, 0, egl_platform::VULKAN());
@@ -714,39 +709,14 @@ PlatformParameters ES1_METAL()
     return PlatformParameters(1, 0, egl_platform::METAL());
 }
 
-PlatformParameters ES1_METAL_NULL()
-{
-    return PlatformParameters(1, 0, egl_platform::METAL_NULL());
-}
-
 PlatformParameters ES2_METAL()
 {
     return PlatformParameters(2, 0, egl_platform::METAL());
 }
 
-PlatformParameters ES2_METAL_NULL()
-{
-    return PlatformParameters(2, 0, egl_platform::METAL_NULL());
-}
-
 PlatformParameters ES3_METAL()
 {
     return PlatformParameters(3, 0, egl_platform::METAL());
-}
-
-PlatformParameters ES3_METAL_NULL()
-{
-    return PlatformParameters(3, 0, egl_platform::METAL_NULL());
-}
-
-PlatformParameters ES31_METAL()
-{
-    return PlatformParameters(3, 1, egl_platform::METAL());
-}
-
-PlatformParameters ES31_METAL_NULL()
-{
-    return PlatformParameters(3, 1, egl_platform::METAL_NULL());
 }
 
 PlatformParameters ES2_WGL()

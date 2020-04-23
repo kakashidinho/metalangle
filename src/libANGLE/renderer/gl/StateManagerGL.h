@@ -122,6 +122,7 @@ class StateManagerGL final : angle::NonCopyable
     void setLineWidth(float width);
 
     void setPrimitiveRestartEnabled(bool enabled);
+    void setPrimitiveRestartIndex(GLuint index);
 
     void setClearColor(const gl::ColorF &clearColor);
     void setClearDepth(float clearDepth);
@@ -330,6 +331,7 @@ class StateManagerGL final : angle::NonCopyable
     float mLineWidth;
 
     bool mPrimitiveRestartEnabled;
+    GLuint mPrimitiveRestartIndex;
 
     gl::ColorF mClearColor;
     float mClearDepth;

@@ -27,7 +27,8 @@ class GPUTestConfigTest : public ANGLETest
         EXPECT_EQ(IsLinux(), config.getConditions()[GPUTestConfig::kConditionLinux]);
         EXPECT_EQ(IsAndroid(), config.getConditions()[GPUTestConfig::kConditionAndroid]);
         EXPECT_EQ(IsNexus5X(), config.getConditions()[GPUTestConfig::kConditionNexus5X]);
-        EXPECT_EQ(IsPixel2(), config.getConditions()[GPUTestConfig::kConditionPixel2]);
+        EXPECT_EQ((IsPixel2() || IsPixel2XL()),
+                  config.getConditions()[GPUTestConfig::kConditionPixel2OrXL]);
         EXPECT_EQ(IsIntel(), config.getConditions()[GPUTestConfig::kConditionIntel]);
         EXPECT_EQ(IsAMD(), config.getConditions()[GPUTestConfig::kConditionAMD]);
         EXPECT_EQ(IsNVIDIA(), config.getConditions()[GPUTestConfig::kConditionNVIDIA]);
@@ -124,15 +125,6 @@ TEST_P(GPUTestConfigTest, GPUTestConfigConditions_Vulkan)
 
 // Use this to select which configurations (e.g. which renderer, which GLES major version) these
 // tests should be run against.
-ANGLE_INSTANTIATE_TEST(GPUTestConfigTest,
-                       ES2_D3D9(),
-                       ES2_D3D11(),
-                       ES3_D3D11(),
-                       ES2_METAL(),
-                       ES2_OPENGL(),
-                       ES3_OPENGL(),
-                       ES2_OPENGLES(),
-                       ES3_OPENGLES(),
-                       ES2_VULKAN());
+ANGLE_INSTANTIATE_TEST_ES2_AND_ES3(GPUTestConfigTest);
 
 }  // namespace angle

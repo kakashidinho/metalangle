@@ -13,7 +13,7 @@
 //  NVIDIA AMD INTEL
 //  DEBUG RELEASE
 //  D3D9 D3D11 OPENGL GLES VULKAN
-//  NEXUS5X PIXEL2
+//  NEXUS5X PIXEL2ORXL
 //  QUADROP400
 //
 //
@@ -68,11 +68,6 @@
 //  Temporary entries: they should be removed once the bugs are fixed.
 //
 ////////////////////////////////////////////////////////////////////////////////
-
-// dEQP bugs
-1028 : dEQP-GLES2.functional.fbo.completeness.renderable.texture.color0.srgb8 = FAIL
-1028 : dEQP-GLES2.functional.fbo.completeness.renderable.texture.stencil.srgb8 = FAIL
-1028 : dEQP-GLES2.functional.fbo.completeness.renderable.texture.depth.srgb8 = FAIL
 
 // Vertex attribute aliasing is not supported on D3D
 3467 D3D9 : dEQP-GLES2.functional.attribute_location.bind_aliasing.cond* = FAIL
@@ -304,6 +299,7 @@
 
 // Android Vulkan backend only failures
 2549 VULKAN ANDROID : dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil* = SKIP
+4109 VULKAN ANDROID : dEQP-GLES2.functional.texture.mipmap.cube.projected.nearest_linear = FAIL
 
 // Adreno line rasterization is not conformant.
 2830 VULKAN ANDROID : dEQP-GLES2.functional.rasterization.primitives.line_loop = FAIL

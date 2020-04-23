@@ -355,11 +355,6 @@ void State::initialize(Context *context)
     mNearZ           = 0.0f;
     mFarZ            = 1.0f;
 
-    mBlend.colorMaskRed   = true;
-    mBlend.colorMaskGreen = true;
-    mBlend.colorMaskBlue  = true;
-    mBlend.colorMaskAlpha = true;
-
     mActiveSampler = 0;
 
     mVertexAttribCurrentValues.resize(caps.maxVertexAttributes);
@@ -2950,6 +2945,10 @@ void State::setImageUnit(const Context *context,
     mImageUnits[unit].format  = format;
     mDirtyBits.set(DIRTY_BIT_IMAGE_BINDINGS);
 
+    if (texture)
+    {
+        texture->onBindImageTexture();
+    }
     onImageStateChange(context, unit);
 }
 

@@ -45,13 +45,14 @@ class SampleApplication
 
     virtual void swap();
 
+    virtual void onKeyUp(const Event::KeyEvent &keyEvent);
+    virtual void onKeyDown(const Event::KeyEvent &keyEvent);
+
     OSWindow *getWindow() const;
     EGLConfig getConfig() const;
     EGLDisplay getDisplay() const;
     EGLSurface getSurface() const;
     EGLContext getContext() const;
-
-    bool popEvent(Event *event);
 
     int run();
     void exit();
@@ -59,6 +60,8 @@ class SampleApplication
   private:
     int prepareToRun();
     int runIteration();
+
+    bool popEvent(Event *event);
 
     std::string mName;
     uint32_t mWidth;

@@ -542,17 +542,24 @@ struct Extensions
     // GL_ANGLE_base_vertex_base_instance
     bool baseVertexBaseInstance = false;
 
+    // GL_ANGLE_get_image
+    bool getImageANGLE = false;
+
     // GL_APPLE_clip_distance
     bool clipDistanceAPPLE = false;
 };
 
+// Pointer to a boolean memeber of the Extensions struct
+using ExtensionBool = bool Extensions::*;
+
 struct ExtensionInfo
 {
-    // If this extension can be enabled with glRequestExtension (GL_ANGLE_request_extension)
+    // If this extension can be enabled or disabled  with glRequestExtension
+    // (GL_ANGLE_request_extension)
     bool Requestable = false;
+    bool Disablable  = false;
 
     // Pointer to a boolean member of the Extensions struct
-    typedef bool(Extensions::*ExtensionBool);
     ExtensionBool ExtensionsMember = nullptr;
 };
 
@@ -881,8 +888,8 @@ struct DisplayExtensions
     // EGL_CHROMIUM_create_context_bind_generates_resource
     bool createContextBindGeneratesResource = false;
 
-    // EGL_CHROMIUM_get_sync_values
-    bool getSyncValues = false;
+    // EGL_CHROMIUM_sync_control
+    bool syncControlCHROMIUM = false;
 
     // EGL_KHR_swap_buffers_with_damage
     bool swapBuffersWithDamage = false;
@@ -944,6 +951,12 @@ struct DisplayExtensions
     // EGL_KHR_no_config_context
     bool noConfigContext = false;
 
+    // EGL_ANGLE_ggp_stream_descriptor
+    bool ggpStreamDescriptor = false;
+
+    // EGL_ANGLE_swap_with_frame_token
+    bool swapWithFrameToken = false;
+
     // EGL_KHR_gl_colorspace
     bool glColorspace = false;
 
@@ -999,6 +1012,9 @@ struct ClientExtensions
 
     // EGL_ANGLE_platform_angle_d3d
     bool platformANGLED3D = false;
+
+    // EGL_ANGLE_platform_angle_d3d11on12
+    bool platformANGLED3D11ON12 = false;
 
     // EGL_ANGLE_platform_angle_opengl
     bool platformANGLEOpenGL = false;
