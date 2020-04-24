@@ -314,8 +314,7 @@ angle::Result VertexArrayMtl::setupDraw(const gl::Context *glContext,
 
         const gl::ProgramState &programState = glContext->getState().getProgram()->getState();
         const gl::AttributesMask &programActiveAttribsMask =
-            glContext->getStateCache().getActiveClientAttribsMask() |
-            glContext->getStateCache().getActiveBufferedAttribsMask();
+            glContext->getState().getProgram()->getExecutable().getActiveAttribLocationsMask();
 
         const std::vector<gl::VertexAttribute> &attribs = mState.getVertexAttributes();
         const std::vector<gl::VertexBinding> &bindings  = mState.getVertexBindings();
