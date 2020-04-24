@@ -30,6 +30,13 @@ class TransformFeedbackTestBase : public ANGLETest
 
     void testSetUp() override
     {
+        // TODO(hqle): Metal doesn't implement XFB yet. http://anglebug.com/4565
+        if (IsMetal())
+        {
+            GTEST_SKIP();
+            return;
+        }
+
         glGenBuffers(1, &mTransformFeedbackBuffer);
         glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, mTransformFeedbackBuffer);
         glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, mTransformFeedbackBufferSize, nullptr,

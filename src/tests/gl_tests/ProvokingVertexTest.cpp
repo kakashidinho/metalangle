@@ -38,6 +38,13 @@ class ProvokingVertexTest : public ANGLETest
 
     void testSetUp() override
     {
+        // TODO(hqle): Metal doesn't implement last proviking vertex yet. http://anglebug.com/4565
+        if (IsMetal())
+        {
+            GTEST_SKIP();
+            return;
+        }
+
         constexpr char kVS[] =
             "#version 300 es\n"
             "in int intAttrib;\n"
