@@ -1415,6 +1415,11 @@ angle::Result TextureMtl::setImageImpl(const gl::Context *context,
         return angle::Result::Continue;
     }
 
+    if (context->isWebGL() && !pixels)
+    {
+        ANGLE_TRY(initializeContents(context, index));
+    }
+
     return setSubImageImpl(context, index, gl::Box(0, 0, 0, size.width, size.height, size.depth),
                            formatInfo, type, unpack, unpackBuffer, pixels);
 }
