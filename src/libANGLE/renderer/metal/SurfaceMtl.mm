@@ -192,6 +192,7 @@ SurfaceMtl::SurfaceMtl(DisplayMtl *display,
         mColorFormat.intendedFormatId = mColorFormat.actualFormatId =
             angle::FormatID::B8G8R8A8_UNORM;
         mColorFormat.metalFormat = MTLPixelFormatBGRA8Unorm;
+        mColorFormat.caps        = &display->getNativeFormatCaps(MTLPixelFormatBGRA8Unorm);
     }
 
     mSamples = state.config->samples;

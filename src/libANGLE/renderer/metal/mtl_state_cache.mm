@@ -752,18 +752,30 @@ void RenderPassDesc::populateRenderPipelineOutputDesc(MTLColorWriteMask colorWri
 void RenderPassDesc::populateRenderPipelineOutputDesc(const BlendDesc &blendState,
                                                       RenderPipelineOutputDesc *outDesc) const
 {
-    auto &outputDescriptor               = *outDesc;
-    outputDescriptor.numColorAttachments = this->numColorAttachments;
-    outputDescriptor.sampleCount         = this->sampleCount;
+    RenderPipelineOutputDesc &outputDescriptor = *outDesc;
+    outputDescriptor.numColorAttachments       = this->numColorAttachments;
+    outputDescriptor.sampleCount               = this->sampleCount;
     for (uint32_t i = 0; i < this->numColorAttachments; ++i)
     {
-        auto &renderPassColorAttachment = this->colorAttachments[i];
-        auto texture                    = renderPassColorAttachment.texture();
+        const RenderPassAttachmentDesc &renderPassColorAttachment = this->colorAttachments[i];
+        const RenderPassAttachmentTextureTargetDesc *rttDesc =
+            renderPassColorAttachment.renderTarget.get();
+
+        TextureRef texture;
+        if (rttDesc)
+        {
+            texture = rttDesc->getTextureRef();
+        }
 
         if (texture)
         {
             // Copy parameters from blend state
             outputDescriptor.colorAttachments[i].update(blendState);
+            if (!rttDesc->blendable)
+            {
+                // Disable blending if the attachment's render target doesn't support blending.
+                outputDescriptor.colorAttachments[i].blendingEnabled = false;
+            }
 
             outputDescriptor.colorAttachments[i].pixelFormat = texture->pixelFormat();
 

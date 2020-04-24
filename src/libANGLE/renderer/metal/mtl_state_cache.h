@@ -285,6 +285,9 @@ struct RenderPassAttachmentTextureTargetDesc
     TextureWeakRef implicitMSTexture;
     uint32_t level        = 0;
     uint32_t sliceOrDepth = 0;
+
+    // This attachment is blendable or not.
+    bool blendable = false;
 };
 
 struct RenderPassAttachmentDesc
@@ -317,6 +320,8 @@ struct RenderPassAttachmentDesc
     {
         return renderTarget ? renderTarget->sliceOrDepth : 0;
     }
+
+    ANGLE_INLINE bool blendable() const { return renderTarget ? renderTarget->blendable : false; }
 
     // This is shared pointer to avoid crashing when texture deleted after bound to a frame buffer.
     std::shared_ptr<RenderPassAttachmentTextureTargetDesc> renderTarget;

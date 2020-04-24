@@ -44,6 +44,7 @@ void RenderTargetMtl::set(const mtl::TextureRef &texture,
     mTextureRenderTargetInfo->implicitMSTexture = implicitMSTexture;
     mTextureRenderTargetInfo->level             = level;
     mTextureRenderTargetInfo->sliceOrDepth      = layer;
+    mTextureRenderTargetInfo->blendable         = format.getCaps().blendable;
     mFormat                                     = &format;
 }
 
@@ -63,6 +64,7 @@ void RenderTargetMtl::reset()
     mTextureRenderTargetInfo->implicitMSTexture.reset();
     mTextureRenderTargetInfo->level        = 0;
     mTextureRenderTargetInfo->sliceOrDepth = 0;
+    mTextureRenderTargetInfo->blendable    = false;
     mFormat                                = nullptr;
 }
 
