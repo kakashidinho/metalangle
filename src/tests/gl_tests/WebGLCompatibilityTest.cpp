@@ -4859,6 +4859,9 @@ TEST_P(WebGL2CompatibilityTest, TransformFeedbackCheckNullDeref)
 // We should forbid two transform feedback outputs going to the same buffer.
 TEST_P(WebGL2CompatibilityTest, TransformFeedbackDoubleBinding)
 {
+    // TODO(hqle): Metal doesn't implement XFB yet. http://anglebug.com/4565
+    ANGLE_SKIP_TEST_IF(IsMetal());
+
     constexpr char kVS[] =
         R"(attribute float a; varying float b; varying float c; void main() { b = a; c = a; })";
     constexpr char kFS[] = R"(void main(){})";

@@ -388,6 +388,9 @@ TEST_P(StateChangeTestES3, DrawPausedXfbThenNonXfbLines)
     // windows.  http://anglebug.com/4265
     ANGLE_SKIP_TEST_IF(IsIntel() && IsOpenGL());
 
+    // TODO(hqle): Metal doesn't implement XFB yet. http://anglebug.com/4565
+    ANGLE_SKIP_TEST_IF(IsMetal());
+
     std::vector<std::string> tfVaryings = {"gl_Position"};
     ANGLE_GL_PROGRAM_TRANSFORM_FEEDBACK(program1, essl1_shaders::vs::Simple(),
                                         essl1_shaders::fs::Blue(), tfVaryings, GL_SEPARATE_ATTRIBS);
@@ -1180,6 +1183,10 @@ TEST_P(StateChangeTestES3, RedefineTransformFeedbackBuffer)
 {
     // http://anglebug.com/4092
     ANGLE_SKIP_TEST_IF(IsVulkan());
+
+    // TODO(hqle): Metal doesn't implement XFB yet. http://anglebug.com/4565
+    ANGLE_SKIP_TEST_IF(IsMetal());
+
     // Create the most simple program possible - simple a passthrough for a float attribute.
     constexpr char kVertexShader[] = R"(#version 300 es
 in float valueIn;
@@ -4063,6 +4070,9 @@ TEST_P(WebGL2ValidationStateChangeTest, TransformFeedbackNegativeAPI)
     // TODO(anglebug.com/4533) This fails after the upgrade to the 26.20.100.7870 driver.
     ANGLE_SKIP_TEST_IF(IsWindows() && IsIntel() && IsVulkan());
 
+    // TODO(hqle): Metal doesn't implement XFB yet. http://anglebug.com/4565
+    ANGLE_SKIP_TEST_IF(IsMetal());
+
     constexpr char kFS[] = R"(#version 300 es
 precision mediump float;
 uniform block { vec4 color; };
@@ -4230,6 +4240,9 @@ void main()
 TEST_P(ValidationStateChangeTest, TransformFeedbackDrawModes)
 {
     ANGLE_SKIP_TEST_IF(IsAMD() && IsOSX());
+
+    // TODO(hqle): Metal doesn't implement XFB yet. http://anglebug.com/4565
+    ANGLE_SKIP_TEST_IF(IsMetal());
 
     std::vector<std::string> tfVaryings = {"gl_Position"};
     ANGLE_GL_PROGRAM_TRANSFORM_FEEDBACK(program, essl3_shaders::vs::Simple(),

@@ -1069,6 +1069,13 @@ class TransformFeedbackLifetimeTest : public TransformFeedbackTest
 
     void testSetUp() override
     {
+        // TODO(hqle): Metal doesn't implement XFB yet. http://anglebug.com/4565
+        if (IsMetal())
+        {
+            GTEST_SKIP();
+            return;
+        }
+
         glGenVertexArrays(1, &mVertexArray);
         glBindVertexArray(mVertexArray);
 
