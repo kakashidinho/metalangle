@@ -269,6 +269,13 @@ angle::Result FramebufferMtl::readPixels(const gl::Context *context,
 
     PackPixelsParams params(flippedArea, angleFormat, outputPitch, packState.reverseRowOrder,
                             glState.getTargetBuffer(gl::BufferBinding::PixelPack), 0);
+
+    if (params.packBuffer)
+    {
+        // If PBO is active, pixels is treated as offset.
+        params.offset = reinterpret_cast<ptrdiff_t>(pixels);
+    }
+
     if (mFlipY)
     {
         params.reverseRowOrder = !params.reverseRowOrder;
