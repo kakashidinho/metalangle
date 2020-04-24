@@ -1125,10 +1125,7 @@ angle::Result SpirvCodeToMsl(Context *context,
         const gl::SamplerBinding &samplerBinding = samplerBindings[textureIndex];
         uint32_t uniformIndex = programState.getUniformIndexFromSamplerIndex(textureIndex);
         const gl::LinkedUniform &samplerUniform = uniforms[uniformIndex];
-        bool isSamplerInStruct = samplerUniform.name.find('.') != std::string::npos;
-        std::string mappedSamplerName =
-            isSamplerInStruct ? GlslangGetMappedSamplerName(samplerUniform.name)
-                              : GlslangGetMappedSamplerName(samplerUniform.mappedName);
+        std::string mappedSamplerName           = GlslangGetMappedSamplerName(samplerUniform.name);
         originalSamplerBindings[mappedSamplerName].push_back(
             {textureIndex, static_cast<uint32_t>(samplerBinding.boundTextureUnits.size())});
     }
