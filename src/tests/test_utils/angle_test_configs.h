@@ -43,6 +43,8 @@ struct PlatformParameters
     PlatformParameters(EGLint majorVersion, EGLint minorVersion, GLESDriverType driver);
 
     EGLint getRenderer() const;
+    EGLint getDeviceType() const;
+    bool isSwiftshader() const;
 
     void initDefaultParameters();
 
@@ -57,6 +59,8 @@ struct PlatformParameters
     EGLint majorVersion;
     EGLint minorVersion;
 };
+
+const char *GetRendererName(EGLint renderer);
 
 bool operator<(const PlatformParameters &a, const PlatformParameters &b);
 bool operator==(const PlatformParameters &a, const PlatformParameters &b);
@@ -106,6 +110,7 @@ EGLPlatformParameters OPENGLES(EGLint major, EGLint minor);
 EGLPlatformParameters OPENGLES_NULL();
 
 EGLPlatformParameters OPENGL_OR_GLES();
+EGLPlatformParameters OPENGL_OR_GLES(EGLint major, EGLint minor);
 EGLPlatformParameters OPENGL_OR_GLES_NULL();
 
 EGLPlatformParameters VULKAN();
@@ -174,12 +179,16 @@ PlatformParameters ES31_NULL();
 
 PlatformParameters ES1_VULKAN();
 PlatformParameters ES1_VULKAN_NULL();
+PlatformParameters ES1_VULKAN_SWIFTSHADER();
 PlatformParameters ES2_VULKAN();
 PlatformParameters ES2_VULKAN_NULL();
+PlatformParameters ES2_VULKAN_SWIFTSHADER();
 PlatformParameters ES3_VULKAN();
 PlatformParameters ES3_VULKAN_NULL();
+PlatformParameters ES3_VULKAN_SWIFTSHADER();
 PlatformParameters ES31_VULKAN();
 PlatformParameters ES31_VULKAN_NULL();
+PlatformParameters ES31_VULKAN_SWIFTSHADER();
 
 PlatformParameters ES1_METAL();
 PlatformParameters ES2_METAL();
@@ -200,6 +209,27 @@ inline PlatformParameters WithNoFixture(const PlatformParameters &params)
     PlatformParameters withNoFixture = params;
     withNoFixture.noFixture          = true;
     return withNoFixture;
+}
+
+inline PlatformParameters WithNoTransformFeedback(const PlatformParameters &params)
+{
+    PlatformParameters withNoTransformFeedback                     = params;
+    withNoTransformFeedback.eglParameters.transformFeedbackFeature = EGL_FALSE;
+    return withNoTransformFeedback;
+}
+
+inline PlatformParameters WithAllocateNonZeroMemory(const PlatformParameters &params)
+{
+    PlatformParameters allocateNonZero                         = params;
+    allocateNonZero.eglParameters.allocateNonZeroMemoryFeature = EGL_TRUE;
+    return allocateNonZero;
+}
+
+inline PlatformParameters WithRobustness(const PlatformParameters &params)
+{
+    PlatformParameters withRobustness       = params;
+    withRobustness.eglParameters.robustness = EGL_TRUE;
+    return withRobustness;
 }
 }  // namespace angle
 

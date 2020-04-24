@@ -28,7 +28,8 @@ enum InterpolationType
 {
     INTERPOLATION_SMOOTH,
     INTERPOLATION_CENTROID,
-    INTERPOLATION_FLAT
+    INTERPOLATION_FLAT,
+    INTERPOLATION_NOPERSPECTIVE
 };
 
 // Validate link & SSO consistency of interpolation qualifiers
@@ -99,6 +100,8 @@ struct ShaderVariable
     // spec section 7.3.1.1 page 77 are fine. For those variables the return value should match the
     // ARRAY_SIZE value that can be queried through the API.
     unsigned int getBasicTypeElementCount() const;
+
+    unsigned int getExternalSize() const;
 
     bool isStruct() const { return !fields.empty(); }
 

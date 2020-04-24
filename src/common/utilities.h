@@ -50,6 +50,7 @@ int MatrixRegisterCount(GLenum type, bool isRowMajorMatrix);
 int MatrixComponentCount(GLenum type, bool isRowMajorMatrix);
 int VariableSortOrder(GLenum type);
 GLenum VariableBoolVectorType(GLenum type);
+std::string GetGLSLTypeString(GLenum type);
 
 int AllocateFirstFreeBits(unsigned int *bits, unsigned int allocationSize, unsigned int bitsSize);
 
@@ -221,6 +222,12 @@ enum class PipelineType
 };
 
 PipelineType GetPipelineType(ShaderType shaderType);
+
+// For use with KHR_debug.
+const char *GetDebugMessageSourceString(GLenum source);
+const char *GetDebugMessageTypeString(GLenum type);
+const char *GetDebugMessageSeverityString(GLenum severity);
+
 }  // namespace gl
 
 namespace egl

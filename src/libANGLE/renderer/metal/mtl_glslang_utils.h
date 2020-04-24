@@ -12,6 +12,7 @@
 #include "libANGLE/Caps.h"
 #include "libANGLE/Context.h"
 #include "libANGLE/renderer/ProgramImpl.h"
+#include "libANGLE/renderer/glslang_wrapper_utils.h"
 #include "libANGLE/renderer/metal/mtl_common.h"
 
 namespace rx
@@ -34,12 +35,14 @@ struct TranslatedShaderInfo
 
 void GlslangGetShaderSource(const gl::ProgramState &programState,
                             const gl::ProgramLinkedResources &resources,
-                            gl::ShaderMap<std::string> *shaderSourcesOut);
+                            gl::ShaderMap<std::string> *shaderSourcesOut,
+                            ShaderMapInterfaceVariableInfoMap *variableInfoMapOut);
 
 angle::Result GlslangGetShaderSpirvCode(ErrorHandler *context,
+                                        const gl::ShaderBitSet &linkedShaderStages,
                                         const gl::Caps &glCaps,
-                                        bool enableLineRasterEmulation,
                                         const gl::ShaderMap<std::string> &shaderSources,
+                                        const ShaderMapInterfaceVariableInfoMap &variableInfoMap,
                                         gl::ShaderMap<std::vector<uint32_t>> *shaderCodeOut);
 
 // Translate from SPIR-V code to Metal shader source code.

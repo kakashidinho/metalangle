@@ -17,8 +17,8 @@ _metal_backend_sources = [
   "ContextMtl.h",
   "ContextMtl.mm",
   "DisplayMtl.h",
-  "DisplayMtl_api.h",
   "DisplayMtl.mm",
+  "DisplayMtl_api.h",
   "FrameBufferMtl.h",
   "FrameBufferMtl.mm",
   "ProgramMtl.h",
@@ -33,10 +33,10 @@ _metal_backend_sources = [
   "SamplerMtl.mm",
   "ShaderMtl.h",
   "ShaderMtl.mm",
-  "SyncMtl.h",
-  "SyncMtl.mm",
   "SurfaceMtl.h",
   "SurfaceMtl.mm",
+  "SyncMtl.h",
+  "SyncMtl.mm",
   "TextureMtl.h",
   "TextureMtl.mm",
   "TransformFeedbackMtl.h",
@@ -64,8 +64,8 @@ _metal_backend_sources = [
   "mtl_state_cache.mm",
   "mtl_utils.h",
   "mtl_utils.mm",
-  "shaders/constants.h",
   "shaders/compiled/mtl_default_shaders.inc",
+  "shaders/constants.h",
 ]
 
 config("angle_metal_backend_config") {
@@ -93,9 +93,7 @@ angle_source_set("angle_metal_backend") {
     "${angle_root}:libANGLE_headers",
   ]
 
-  deps = [
-    "${angle_spirv_cross_dir}/gn:spirv_cross_sources",
-  ]
+  deps = [ "${angle_spirv_cross_dir}/gn:spirv_cross_sources" ]
 
   objc_flags = [
     "-Wno-nullability-completeness",

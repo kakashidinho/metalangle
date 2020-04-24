@@ -128,12 +128,18 @@ ANGLE_EXPORT EGLBoolean EGLAPIENTRY EGL_GetSyncAttribKHR(EGLDisplay dpy,
 // EGL_KHR_wait_sync
 ANGLE_EXPORT EGLBoolean EGLAPIENTRY EGL_WaitSyncKHR(EGLDisplay dpy, EGLSync sync, EGLint flags);
 
-// EGL_CHROMIUM_get_sync_values
+// EGL_CHROMIUM_sync_control
 ANGLE_EXPORT EGLBoolean EGLAPIENTRY EGL_GetSyncValuesCHROMIUM(EGLDisplay dpy,
                                                               EGLSurface surface,
                                                               EGLuint64KHR *ust,
                                                               EGLuint64KHR *msc,
                                                               EGLuint64KHR *sbc);
+
+// EGL_ANGLE_sync_control_rate
+ANGLE_EXPORT EGLBoolean EGLAPIENTRY EGL_GetMscRateANGLE(EGLDisplay dpy,
+                                                        EGLSurface surface,
+                                                        EGLint *numerator,
+                                                        EGLint *denominator);
 
 // EGL_KHR_swap_buffers_with_damage
 ANGLE_EXPORT EGLBoolean EGLAPIENTRY EGL_SwapBuffersWithDamageKHR(EGLDisplay dpy,

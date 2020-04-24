@@ -10,7 +10,7 @@
 #ifndef LIBANGLE_RENDERER_VULKAN_VK_CAPS_UTILS_H_
 #define LIBANGLE_RENDERER_VULKAN_VK_CAPS_UTILS_H_
 
-#include <vulkan/vulkan.h>
+#include "volk.h"
 
 #include "libANGLE/Config.h"
 
@@ -69,6 +69,13 @@ static ANGLE_INLINE EGLenum GetConfigCaveat(GLenum format)
 }
 
 }  // namespace egl_vk
+
+namespace vk
+{
+// Functions that determine support for a feature or extension, used both to advertise support for
+// an extension, and to determine if a context version can be supported.
+bool CanSupportGPUShader5EXT(const VkPhysicalDeviceFeatures &features);
+}  // namespace vk
 
 }  // namespace rx
 

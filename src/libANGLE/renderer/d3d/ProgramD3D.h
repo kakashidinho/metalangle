@@ -96,6 +96,28 @@ struct D3DInterfaceBlock
     gl::ShaderMap<unsigned int> mShaderRegisterIndexes;
 };
 
+struct D3DUniformBlock : D3DInterfaceBlock
+{
+    D3DUniformBlock();
+    D3DUniformBlock(const D3DUniformBlock &other);
+
+    gl::ShaderMap<bool> mUseStructuredBuffers;
+    gl::ShaderMap<unsigned int> mByteWidths;
+    gl::ShaderMap<unsigned int> mStructureByteStrides;
+};
+
+struct D3DUBOCache
+{
+    unsigned int registerIndex;
+    int binding;
+};
+
+struct D3DUBOCacheUseSB : D3DUBOCache
+{
+    unsigned int byteWidth;
+    unsigned int structureByteStride;
+};
+
 struct D3DVarying final
 {
     D3DVarying();
@@ -214,20 +236,16 @@ class ProgramD3D : public ProgramImpl
                                     gl::InfoLog &infoLog) override;
     GLboolean validate(const gl::Caps &caps, gl::InfoLog *infoLog) override;
 
-    void setPathFragmentInputGen(const std::string &inputName,
-                                 GLenum genMode,
-                                 GLint components,
-                                 const GLfloat *coeffs) override;
-
-    void updateUniformBufferCache(const gl::Caps &caps,
-                                  const gl::ShaderMap<unsigned int> &reservedShaderRegisterIndexes);
+    void updateUniformBufferCache(const gl::Caps &caps);
 
     unsigned int getAtomicCounterBufferRegisterIndex(GLuint binding,
                                                      gl::ShaderType shaderType) const;
 
     unsigned int getShaderStorageBufferRegisterIndex(GLuint blockIndex,
                                                      gl::ShaderType shaderType) const;
-    const std::vector<GLint> &getShaderUniformBufferCache(gl::ShaderType shaderType) const;
+    const std::vector<D3DUBOCache> &getShaderUniformBufferCache(gl::ShaderType shaderType) const;
+    const std::vector<D3DUBOCacheUseSB> &getShaderUniformBufferCacheUseSB(
+        gl::ShaderType shaderType) const;
 
     void dirtyAllUniforms();
 
@@ -321,7 +339,7 @@ class ProgramD3D : public ProgramImpl
 
     bool hasShaderStage(gl::ShaderType shaderType) const
     {
-        return mState.getLinkedShaderStages()[shaderType];
+        return mState.getProgramExecutable().getLinkedShaderStages()[shaderType];
     }
 
     void assignImage2DRegisters(unsigned int startImageIndex,
@@ -552,7 +570,8 @@ class ProgramD3D : public ProgramImpl
 
     unsigned int mSerial;
 
-    gl::ShaderMap<std::vector<int>> mShaderUBOCaches;
+    gl::ShaderMap<std::vector<D3DUBOCache>> mShaderUBOCaches;
+    gl::ShaderMap<std::vector<D3DUBOCacheUseSB>> mShaderUBOCachesUseSB;
     VertexExecutable::Signature mCachedVertexSignature;
     gl::InputLayout mCachedInputLayout;
     Optional<size_t> mCachedVertexExecutableIndex;
@@ -561,7 +580,7 @@ class ProgramD3D : public ProgramImpl
     std::vector<D3DUniform *> mD3DUniforms;
     std::map<std::string, int> mImageBindingMap;
     std::map<std::string, int> mAtomicBindingMap;
-    std::vector<D3DInterfaceBlock> mD3DUniformBlocks;
+    std::vector<D3DUniformBlock> mD3DUniformBlocks;
     std::vector<D3DInterfaceBlock> mD3DShaderStorageBlocks;
     std::array<unsigned int, gl::IMPLEMENTATION_MAX_ATOMIC_COUNTER_BUFFERS>
         mComputeAtomicCounterBufferRegisterIndices;

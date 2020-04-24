@@ -17,6 +17,7 @@
 #include "common/Optional.h"
 #include "common/utilities.h"
 #include "libANGLE/renderer/ProgramImpl.h"
+#include "libANGLE/renderer/glslang_wrapper_utils.h"
 #include "libANGLE/renderer/metal/mtl_buffer_pool.h"
 #include "libANGLE/renderer/metal/mtl_command_buffer.h"
 #include "libANGLE/renderer/metal/mtl_glslang_utils.h"
@@ -106,11 +107,6 @@ class ProgramMtl : public ProgramImpl
     void getUniformiv(const gl::Context *context, GLint location, GLint *params) const override;
     void getUniformuiv(const gl::Context *context, GLint location, GLuint *params) const override;
 
-    void setPathFragmentInputGen(const std::string &inputName,
-                                 GLenum genMode,
-                                 GLint components,
-                                 const GLfloat *coeffs) override;
-
     // Calls this before drawing, changedPipelineDesc is passed when vertex attributes desc and/or
     // shader program changed.
     angle::Result setupDraw(const gl::Context *glContext,
@@ -169,7 +165,7 @@ class ProgramMtl : public ProgramImpl
 
     void linkResources(const gl::ProgramLinkedResources &resources);
     angle::Result linkImpl(const gl::Context *glContext,
-                           const gl::ShaderMap<std::string> &shaderSource,
+                           const gl::ProgramLinkedResources &resources,
                            gl::InfoLog &infoLog);
 
     angle::Result linkTranslatedShaders(const gl::Context *glContext,

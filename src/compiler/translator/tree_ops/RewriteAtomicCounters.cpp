@@ -21,8 +21,7 @@ namespace sh
 namespace
 {
 constexpr ImmutableString kAtomicCounterTypeName  = ImmutableString("ANGLE_atomic_uint");
-constexpr ImmutableString kAtomicCounterBlockName = ImmutableString("ANGLEAtomicCounters");
-constexpr ImmutableString kAtomicCounterVarName   = ImmutableString("atomicCounters");
+constexpr ImmutableString kAtomicCountersVarName  = ImmutableString("atomicCounters");
 constexpr ImmutableString kAtomicCounterFieldName = ImmutableString("counters");
 
 // DeclareAtomicCountersBuffer adds a storage buffer array that's used with atomic counters.
@@ -46,9 +45,9 @@ const TVariable *DeclareAtomicCountersBuffers(TIntermBlock *root, TSymbolTable *
     constexpr uint32_t kMaxAtomicCounterBuffers = 8;
 
     // Define a storage block "ANGLEAtomicCounters" with instance name "atomicCounters".
-    return DeclareInterfaceBlock(root, symbolTable, fieldList, EvqBuffer, coherentMemory,
-                                 kMaxAtomicCounterBuffers, kAtomicCounterBlockName,
-                                 kAtomicCounterVarName);
+    return DeclareInterfaceBlock(
+        root, symbolTable, fieldList, EvqBuffer, coherentMemory, kMaxAtomicCounterBuffers,
+        ImmutableString(vk::kAtomicCountersBlockName), kAtomicCountersVarName);
 }
 
 TIntermConstantUnion *CreateUIntConstant(uint32_t value)
@@ -513,18 +512,18 @@ class RewriteAtomicCountersTraverser : public TIntermTraverser
         TIntermSymbol *argumentAsSymbol = symbol->getAsSymbolNode();
         ASSERT(argumentAsSymbol);
 
-        const TVector<unsigned int> *arraySizes = argumentAsSymbol->getType().getArraySizes();
+        const TSpan<const unsigned int> &arraySizes = argumentAsSymbol->getType().getArraySizes();
 
         // Calculate Pi
         TVector<unsigned int> runningArraySizeProducts;
-        if (arraySizes && arraySizes->size() > 0)
+        if (!arraySizes.empty())
         {
-            runningArraySizeProducts.resize(arraySizes->size());
+            runningArraySizeProducts.resize(arraySizes.size());
             uint32_t runningProduct = 1;
-            for (size_t dimension = 0; dimension < arraySizes->size(); ++dimension)
+            for (size_t dimension = 0; dimension < arraySizes.size(); ++dimension)
             {
                 runningArraySizeProducts[dimension] = runningProduct;
-                runningProduct *= (*arraySizes)[dimension];
+                runningProduct *= arraySizes[dimension];
             }
         }
 

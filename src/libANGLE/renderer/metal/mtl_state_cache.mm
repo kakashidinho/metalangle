@@ -490,7 +490,6 @@ bool SamplerDesc::operator==(const SamplerDesc &rhs) const
            ANGLE_PROP_EQ(*this, rhs, maxAnisotropy) &&
 
            ANGLE_PROP_EQ(*this, rhs, compareFunction);
-    ;
 }
 
 size_t SamplerDesc::hash() const

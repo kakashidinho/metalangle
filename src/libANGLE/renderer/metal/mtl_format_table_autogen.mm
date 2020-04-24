@@ -737,6 +737,42 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
+        case angle::FormatID::BC4_RED_SNORM_BLOCK:
+
+            this->metalFormat    = MTLPixelFormatBC4_RSnorm;
+            this->actualFormatId = angle::FormatID::BC4_RED_SNORM_BLOCK;
+            this->initFunction   = nullptr;
+
+            this->swizzled = false;
+            break;
+
+        case angle::FormatID::BC4_RED_UNORM_BLOCK:
+
+            this->metalFormat    = MTLPixelFormatBC4_RUnorm;
+            this->actualFormatId = angle::FormatID::BC4_RED_UNORM_BLOCK;
+            this->initFunction   = nullptr;
+
+            this->swizzled = false;
+            break;
+
+        case angle::FormatID::BC5_RG_SNORM_BLOCK:
+
+            this->metalFormat    = MTLPixelFormatBC5_RGSnorm;
+            this->actualFormatId = angle::FormatID::BC5_RG_SNORM_BLOCK;
+            this->initFunction   = nullptr;
+
+            this->swizzled = false;
+            break;
+
+        case angle::FormatID::BC5_RG_UNORM_BLOCK:
+
+            this->metalFormat    = MTLPixelFormatBC5_RGUnorm;
+            this->actualFormatId = angle::FormatID::BC5_RG_UNORM_BLOCK;
+            this->initFunction   = nullptr;
+
+            this->swizzled = false;
+            break;
+
         case angle::FormatID::D16_UNORM:
 
             this->metalFormat    = MTLPixelFormatDepth16Unorm;

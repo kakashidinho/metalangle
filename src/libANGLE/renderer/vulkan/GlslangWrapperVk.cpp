@@ -8,7 +8,6 @@
 
 #include "libANGLE/renderer/vulkan/GlslangWrapperVk.h"
 
-#include "libANGLE/renderer/glslang_wrapper_utils.h"
 #include "libANGLE/renderer/vulkan/ContextVk.h"
 #include "libANGLE/renderer/vulkan/vk_cache_utils.h"
 
@@ -22,37 +21,78 @@ angle::Result ErrorHandler(vk::Context *context, GlslangError)
     return angle::Result::Stop;
 }
 
-GlslangSourceOptions CreateSourceOptions()
-{
-    GlslangSourceOptions options;
-    options.uniformsAndXfbDescriptorSetIndex = kUniformsAndXfbDescriptorSetIndex;
-    options.textureDescriptorSetIndex        = kTextureDescriptorSetIndex;
-    options.shaderResourceDescriptorSetIndex = kShaderResourceDescriptorSetIndex;
-    options.driverUniformsDescriptorSetIndex = kDriverUniformsDescriptorSetIndex;
-    options.xfbBindingIndexStart             = kXfbBindingIndexStart;
-    return options;
-}
 }  // namespace
 
 // static
-void GlslangWrapperVk::GetShaderSource(bool useOldRewriteStructSamplers,
-                                       const gl::ProgramState &programState,
-                                       const gl::ProgramLinkedResources &resources,
-                                       gl::ShaderMap<std::string> *shaderSourcesOut)
+GlslangSourceOptions GlslangWrapperVk::CreateSourceOptions(const angle::FeaturesVk &features)
 {
-    GlslangGetShaderSource(CreateSourceOptions(), useOldRewriteStructSamplers, programState,
-                           resources, shaderSourcesOut);
+    GlslangSourceOptions options;
+
+    options.useOldRewriteStructSamplers = features.forceOldRewriteStructSamplers.enabled;
+    options.supportsTransformFeedbackExtension =
+        features.supportsTransformFeedbackExtension.enabled;
+    options.emulateTransformFeedback = features.emulateTransformFeedback.enabled;
+    options.emulateBresenhamLines    = features.basicGLLineRasterization.enabled;
+
+    return options;
 }
 
 // static
-angle::Result GlslangWrapperVk::GetShaderCode(vk::Context *context,
-                                              const gl::Caps &glCaps,
-                                              bool enableLineRasterEmulation,
-                                              const gl::ShaderMap<std::string> &shaderSources,
-                                              gl::ShaderMap<std::vector<uint32_t>> *shaderCodeOut)
+void GlslangWrapperVk::ResetGlslangProgramInterfaceInfo(
+    GlslangProgramInterfaceInfo *glslangProgramInterfaceInfo)
+{
+    glslangProgramInterfaceInfo->uniformsAndXfbDescriptorSetIndex =
+        kUniformsAndXfbDescriptorSetIndex;
+    glslangProgramInterfaceInfo->currentUniformBindingIndex = 0;
+    glslangProgramInterfaceInfo->textureDescriptorSetIndex  = kTextureDescriptorSetIndex;
+    glslangProgramInterfaceInfo->currentTextureBindingIndex = 0;
+    glslangProgramInterfaceInfo->shaderResourceDescriptorSetIndex =
+        kShaderResourceDescriptorSetIndex;
+    glslangProgramInterfaceInfo->currentShaderResourceBindingIndex = 0;
+    glslangProgramInterfaceInfo->driverUniformsDescriptorSetIndex =
+        kDriverUniformsDescriptorSetIndex;
+
+    glslangProgramInterfaceInfo->locationsUsedForXfbExtension = 0;
+}
+
+// static
+void GlslangWrapperVk::GetShaderSource(const angle::FeaturesVk &features,
+                                       const gl::ProgramState &programState,
+                                       const gl::ProgramLinkedResources &resources,
+                                       GlslangProgramInterfaceInfo *programInterfaceInfo,
+                                       gl::ShaderMap<std::string> *shaderSourcesOut,
+                                       ShaderMapInterfaceVariableInfoMap *variableInfoMapOut)
+{
+    GlslangSourceOptions options = CreateSourceOptions(features);
+    GlslangGetShaderSource(options, programState, resources, programInterfaceInfo, shaderSourcesOut,
+                           variableInfoMapOut);
+}
+
+// static
+angle::Result GlslangWrapperVk::GetShaderCode(
+    vk::Context *context,
+    const gl::ShaderBitSet &linkedShaderStages,
+    const gl::Caps &glCaps,
+    const gl::ShaderMap<std::string> &shaderSources,
+    const ShaderMapInterfaceVariableInfoMap &variableInfoMap,
+    gl::ShaderMap<std::vector<uint32_t>> *shaderCodeOut)
 {
     return GlslangGetShaderSpirvCode(
-        [context](GlslangError error) { return ErrorHandler(context, error); }, glCaps,
-        enableLineRasterEmulation, shaderSources, shaderCodeOut);
+        [context](GlslangError error) { return ErrorHandler(context, error); }, linkedShaderStages,
+        glCaps, shaderSources, variableInfoMap, shaderCodeOut);
+}
+
+// static
+angle::Result GlslangWrapperVk::TransformSpirV(
+    vk::Context *context,
+    const gl::ShaderType shaderType,
+    bool removeEarlyFragmentTestsOptimization,
+    const ShaderInterfaceVariableInfoMap &variableInfoMap,
+    const SpirvBlob &initialSpirvBlob,
+    SpirvBlob *shaderCodeOut)
+{
+    return GlslangTransformSpirvCode(
+        [context](GlslangError error) { return ErrorHandler(context, error); }, shaderType,
+        removeEarlyFragmentTestsOptimization, variableInfoMap, initialSpirvBlob, shaderCodeOut);
 }
 }  // namespace rx

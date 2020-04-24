@@ -572,6 +572,15 @@ EGLBoolean EGLAPIENTRY eglGetSyncValuesCHROMIUM(EGLDisplay dpy,
     return EGL_GetSyncValuesCHROMIUM(dpy, surface, ust, msc, sbc);
 }
 
+EGLBoolean EGLAPIENTRY eglGetMscRateANGLE(EGLDisplay dpy,
+                                          EGLSurface surface,
+                                          EGLint *numerator,
+                                          EGLint *denominator)
+{
+    EnsureEGLLoaded();
+    return EGL_GetMscRateANGLE(dpy, surface, numerator, denominator);
+}
+
 EGLBoolean EGLAPIENTRY eglSwapBuffersWithDamageKHR(EGLDisplay dpy,
                                                    EGLSurface surface,
                                                    EGLint *rects,

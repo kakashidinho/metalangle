@@ -57,6 +57,10 @@ bool CompressedTextureFormatRequiresExactSize(GLenum internalFormat)
         case GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_LOSSY_DECODE_ETC2_ANGLE:
         case GL_COMPRESSED_RGBA8_LOSSY_DECODE_ETC2_EAC_ANGLE:
         case GL_COMPRESSED_SRGB8_ALPHA8_LOSSY_DECODE_ETC2_EAC_ANGLE:
+        case GL_COMPRESSED_RED_RGTC1_EXT:
+        case GL_COMPRESSED_SIGNED_RED_RGTC1_EXT:
+        case GL_COMPRESSED_RED_GREEN_RGTC2_EXT:
+        case GL_COMPRESSED_SIGNED_RED_GREEN_RGTC2_EXT:
         case GL_COMPRESSED_RGBA_BPTC_UNORM_EXT:
         case GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM_EXT:
         case GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT_EXT:
@@ -84,7 +88,7 @@ bool DifferenceCanOverflow(GLint a, GLint b)
     return !checkedA.IsValid();
 }
 
-bool ValidReadPixelsTypeEnum(Context *context, GLenum type)
+bool ValidReadPixelsTypeEnum(const Context *context, GLenum type)
 {
     switch (type)
     {
@@ -110,7 +114,8 @@ bool ValidReadPixelsTypeEnum(Context *context, GLenum type)
             return context->getClientVersion() >= ES_3_0;
 
         case GL_FLOAT:
-            return context->getClientVersion() >= ES_3_0 || context->getExtensions().textureFloat ||
+            return context->getClientVersion() >= ES_3_0 ||
+                   context->getExtensions().textureFloatOES ||
                    context->getExtensions().colorBufferHalfFloat;
 
         case GL_HALF_FLOAT:
@@ -125,7 +130,7 @@ bool ValidReadPixelsTypeEnum(Context *context, GLenum type)
     }
 }
 
-bool ValidReadPixelsFormatEnum(Context *context, GLenum format)
+bool ValidReadPixelsFormatEnum(const Context *context, GLenum format)
 {
     switch (format)
     {
@@ -156,22 +161,67 @@ bool ValidReadPixelsFormatEnum(Context *context, GLenum format)
     }
 }
 
-bool ValidReadPixelsFormatType(Context *context,
-                               GLenum framebufferComponentType,
+bool ValidReadPixelsUnsignedNormalizedDepthType(const Context *context,
+                                                const gl::InternalFormat *info,
+                                                GLenum type)
+{
+    bool supportsReadDepthNV = (context->getExtensions().readDepthNV && (info->depthBits > 0) &&
+                                (info->componentCount == 1));
+    bool isGLES31            = (context->getClientVersion() >= ES_3_1);
+    switch (type)
+    {
+        case GL_UNSIGNED_SHORT:
+            return supportsReadDepthNV ||
+                   (isGLES31 && (info->sizedInternalFormat == GL_DEPTH_COMPONENT16));
+        case GL_UNSIGNED_INT:
+            return supportsReadDepthNV ||
+                   (isGLES31 && ((info->sizedInternalFormat == GL_DEPTH_COMPONENT16) ||
+                                 (info->internalFormat == GL_DEPTH_COMPONENT24)));
+        case GL_UNSIGNED_INT_24_8:
+            return supportsReadDepthNV ||
+                   (isGLES31 && (info->sizedInternalFormat == GL_DEPTH24_STENCIL8));
+        default:
+            return false;
+    }
+}
+
+bool ValidReadPixelsFloatDepthType(const Context *context,
+                                   const gl::InternalFormat *info,
+                                   GLenum type)
+{
+    return context->getExtensions().readDepthNV && (type == GL_FLOAT) &&
+           context->getExtensions().depthBufferFloat2NV && (info->componentCount == 1);
+}
+
+bool ValidReadPixelsFormatType(const Context *context,
+                               const gl::InternalFormat *info,
                                GLenum format,
                                GLenum type)
 {
-    switch (framebufferComponentType)
+    switch (info->componentType)
     {
         case GL_UNSIGNED_NORMALIZED:
             // TODO(geofflang): Don't accept BGRA here.  Some chrome internals appear to try to use
             // ReadPixels with BGRA even if the extension is not present
-            return (format == GL_RGBA && type == GL_UNSIGNED_BYTE) ||
-                   (context->getExtensions().readFormatBGRA && format == GL_BGRA_EXT &&
-                    type == GL_UNSIGNED_BYTE);
-
+            switch (format)
+            {
+                case GL_RGBA:
+                    return ((type == GL_UNSIGNED_BYTE) && info->pixelBytes >= 1) ||
+                           (context->getExtensions().textureNorm16 && (type == GL_UNSIGNED_SHORT) &&
+                            info->pixelBytes >= 2);
+                case GL_BGRA_EXT:
+                    return context->getExtensions().readFormatBGRA && (type == GL_UNSIGNED_BYTE);
+                case GL_STENCIL_INDEX_OES:
+                    return context->getExtensions().readStencilNV && (type == GL_UNSIGNED_BYTE);
+                case GL_DEPTH_COMPONENT:
+                    return ValidReadPixelsUnsignedNormalizedDepthType(context, info, type);
+                default:
+                    return false;
+            }
         case GL_SIGNED_NORMALIZED:
-            return (format == GL_RGBA && type == GL_UNSIGNED_BYTE);
+            return (format == GL_RGBA && type == GL_BYTE && info->pixelBytes >= 1) ||
+                   (context->getExtensions().textureNorm16 && format == GL_RGBA &&
+                    type == GL_UNSIGNED_SHORT && info->pixelBytes >= 2);
 
         case GL_INT:
             return (format == GL_RGBA_INTEGER && type == GL_INT);
@@ -180,8 +230,15 @@ bool ValidReadPixelsFormatType(Context *context,
             return (format == GL_RGBA_INTEGER && type == GL_UNSIGNED_INT);
 
         case GL_FLOAT:
-            return (format == GL_RGBA && type == GL_FLOAT);
-
+            switch (format)
+            {
+                case GL_RGBA:
+                    return (type == GL_FLOAT);
+                case GL_DEPTH_COMPONENT:
+                    return ValidReadPixelsFloatDepthType(context, info, type);
+                default:
+                    return false;
+            }
         default:
             UNREACHABLE();
             return false;
@@ -189,7 +246,7 @@ bool ValidReadPixelsFormatType(Context *context,
 }
 
 template <typename ParamType>
-bool ValidateTextureWrapModeValue(Context *context,
+bool ValidateTextureWrapModeValue(const Context *context,
                                   const ParamType *params,
                                   bool restrictedWrapModes)
 {
@@ -199,7 +256,7 @@ bool ValidateTextureWrapModeValue(Context *context,
             break;
 
         case GL_CLAMP_TO_BORDER:
-            if (!context->getExtensions().textureBorderClamp)
+            if (!context->getExtensions().textureBorderClampOES)
             {
                 context->validationError(GL_INVALID_ENUM, kExtensionNotEnabled);
                 return false;
@@ -225,7 +282,7 @@ bool ValidateTextureWrapModeValue(Context *context,
 }
 
 template <typename ParamType>
-bool ValidateTextureMinFilterValue(Context *context,
+bool ValidateTextureMinFilterValue(const Context *context,
                                    const ParamType *params,
                                    bool restrictedMinFilter)
 {
@@ -256,7 +313,7 @@ bool ValidateTextureMinFilterValue(Context *context,
 }
 
 template <typename ParamType>
-bool ValidateTextureMagFilterValue(Context *context, const ParamType *params)
+bool ValidateTextureMagFilterValue(const Context *context, const ParamType *params)
 {
     switch (ConvertToGLenum(params[0]))
     {
@@ -273,7 +330,7 @@ bool ValidateTextureMagFilterValue(Context *context, const ParamType *params)
 }
 
 template <typename ParamType>
-bool ValidateTextureCompareModeValue(Context *context, const ParamType *params)
+bool ValidateTextureCompareModeValue(const Context *context, const ParamType *params)
 {
     // Acceptable mode parameters from GLES 3.0.2 spec, table 3.17
     switch (ConvertToGLenum(params[0]))
@@ -291,7 +348,7 @@ bool ValidateTextureCompareModeValue(Context *context, const ParamType *params)
 }
 
 template <typename ParamType>
-bool ValidateTextureCompareFuncValue(Context *context, const ParamType *params)
+bool ValidateTextureCompareFuncValue(const Context *context, const ParamType *params)
 {
     // Acceptable function parameters from GLES 3.0.2 spec, table 3.17
     switch (ConvertToGLenum(params[0]))
@@ -315,7 +372,7 @@ bool ValidateTextureCompareFuncValue(Context *context, const ParamType *params)
 }
 
 template <typename ParamType>
-bool ValidateTextureSRGBDecodeValue(Context *context, const ParamType *params)
+bool ValidateTextureSRGBDecodeValue(const Context *context, const ParamType *params)
 {
     if (!context->getExtensions().textureSRGBDecode)
     {
@@ -337,7 +394,7 @@ bool ValidateTextureSRGBDecodeValue(Context *context, const ParamType *params)
     return true;
 }
 
-bool ValidateTextureMaxAnisotropyExtensionEnabled(Context *context)
+bool ValidateTextureMaxAnisotropyExtensionEnabled(const Context *context)
 {
     if (!context->getExtensions().textureFilterAnisotropic)
     {
@@ -348,7 +405,7 @@ bool ValidateTextureMaxAnisotropyExtensionEnabled(Context *context)
     return true;
 }
 
-bool ValidateTextureMaxAnisotropyValue(Context *context, GLfloat paramValue)
+bool ValidateTextureMaxAnisotropyValue(const Context *context, GLfloat paramValue)
 {
     if (!ValidateTextureMaxAnisotropyExtensionEnabled(context))
     {
@@ -366,9 +423,9 @@ bool ValidateTextureMaxAnisotropyValue(Context *context, GLfloat paramValue)
     return true;
 }
 
-bool ValidateFragmentShaderColorBufferMaskMatch(Context *context)
+bool ValidateFragmentShaderColorBufferMaskMatch(const Context *context)
 {
-    const Program *program         = context->getState().getLinkedProgram(context);
+    const Program *program         = context->getActiveLinkedProgram();
     const Framebuffer *framebuffer = context->getState().getDrawFramebuffer();
 
     auto drawBufferMask     = framebuffer->getDrawBufferMask().to_ulong();
@@ -377,9 +434,9 @@ bool ValidateFragmentShaderColorBufferMaskMatch(Context *context)
     return drawBufferMask == (drawBufferMask & fragmentOutputMask);
 }
 
-bool ValidateFragmentShaderColorBufferTypeMatch(Context *context)
+bool ValidateFragmentShaderColorBufferTypeMatch(const Context *context)
 {
-    const Program *program         = context->getState().getLinkedProgram(context);
+    const Program *program         = context->getActiveLinkedProgram();
     const Framebuffer *framebuffer = context->getState().getDrawFramebuffer();
 
     return ValidateComponentTypeMasks(program->getDrawBufferTypeMask().to_ulong(),
@@ -388,10 +445,10 @@ bool ValidateFragmentShaderColorBufferTypeMatch(Context *context)
                                       framebuffer->getDrawBufferMask().to_ulong());
 }
 
-bool ValidateVertexShaderAttributeTypeMatch(Context *context)
+bool ValidateVertexShaderAttributeTypeMatch(const Context *context)
 {
     const auto &glState    = context->getState();
-    const Program *program = context->getState().getLinkedProgram(context);
+    const Program *program = context->getActiveLinkedProgram();
     const VertexArray *vao = context->getState().getVertexArray();
 
     unsigned long stateCurrentValuesTypeBits = glState.getCurrentValuesTypeMask().to_ulong();
@@ -402,9 +459,9 @@ bool ValidateVertexShaderAttributeTypeMatch(Context *context)
     vaoAttribTypeBits = (vaoAttribEnabledMask & vaoAttribTypeBits);
     vaoAttribTypeBits |= (~vaoAttribEnabledMask & stateCurrentValuesTypeBits);
 
-    return ValidateComponentTypeMasks(program->getAttributesTypeMask().to_ulong(),
-                                      vaoAttribTypeBits, program->getAttributesMask().to_ulong(),
-                                      0xFFFF);
+    return ValidateComponentTypeMasks(
+        program->getExecutable().getAttributesTypeMask().to_ulong(), vaoAttribTypeBits,
+        program->getExecutable().getAttributesMask().to_ulong(), 0xFFFF);
 }
 
 bool IsCompatibleDrawModeWithGeometryShader(PrimitiveMode drawMode,
@@ -460,33 +517,14 @@ unsigned int GetSamplerParameterCount(GLenum pname)
 
 }  // anonymous namespace
 
-void SetRobustLengthParam(GLsizei *length, GLsizei value)
+void SetRobustLengthParam(const GLsizei *length, GLsizei value)
 {
     if (length)
     {
-        *length = value;
-    }
-}
-
-bool IsETC2EACFormat(const GLenum format)
-{
-    // ES 3.1, Table 8.19
-    switch (format)
-    {
-        case GL_COMPRESSED_R11_EAC:
-        case GL_COMPRESSED_SIGNED_R11_EAC:
-        case GL_COMPRESSED_RG11_EAC:
-        case GL_COMPRESSED_SIGNED_RG11_EAC:
-        case GL_COMPRESSED_RGB8_ETC2:
-        case GL_COMPRESSED_SRGB8_ETC2:
-        case GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2:
-        case GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2:
-        case GL_COMPRESSED_RGBA8_ETC2_EAC:
-        case GL_COMPRESSED_SRGB8_ALPHA8_ETC2_EAC:
-            return true;
-
-        default:
-            return false;
+        // Currently we modify robust length parameters in the validation layer. We should be only
+        // doing this in the Context instead.
+        // TODO(http://anglebug.com/4406): Remove when possible.
+        *const_cast<GLsizei *>(length) = value;
     }
 }
 
@@ -512,7 +550,10 @@ bool ValidTextureTarget(const Context *context, TextureType type)
             return (context->getClientVersion() >= Version(3, 1) ||
                     context->getExtensions().textureMultisample);
         case TextureType::_2DMultisampleArray:
-            return context->getExtensions().textureStorageMultisample2DArray;
+            return context->getExtensions().textureStorageMultisample2DArrayOES;
+
+        case TextureType::VideoImage:
+            return context->getExtensions().webglVideoTexture;
 
         default:
             return false;
@@ -553,8 +594,8 @@ bool ValidTexture3DTarget(const Context *context, TextureType target)
 bool ValidTextureExternalTarget(const Context *context, TextureType target)
 {
     return (target == TextureType::External) &&
-           (context->getExtensions().eglImageExternal ||
-            context->getExtensions().eglStreamConsumerExternal);
+           (context->getExtensions().eglImageExternalOES ||
+            context->getExtensions().eglStreamConsumerExternalNV);
 }
 
 bool ValidTextureExternalTarget(const Context *context, TextureTarget target)
@@ -581,6 +622,8 @@ bool ValidTexture2DDestinationTarget(const Context *context, TextureTarget targe
             return true;
         case TextureTarget::Rectangle:
             return context->getExtensions().textureRectangle;
+        case TextureTarget::VideoImage:
+            return context->getExtensions().webglVideoTexture;
         default:
             return false;
     }
@@ -619,7 +662,7 @@ bool ValidateTransformFeedbackPrimitiveMode(const Context *context,
     }
 }
 
-bool ValidateDrawElementsInstancedBase(Context *context,
+bool ValidateDrawElementsInstancedBase(const Context *context,
                                        PrimitiveMode mode,
                                        GLsizei count,
                                        DrawElementsType type,
@@ -652,7 +695,7 @@ bool ValidateDrawElementsInstancedBase(Context *context,
     return ValidateDrawInstancedAttribs(context, primcount);
 }
 
-bool ValidateDrawArraysInstancedBase(Context *context,
+bool ValidateDrawArraysInstancedBase(const Context *context,
                                      PrimitiveMode mode,
                                      GLint first,
                                      GLsizei count,
@@ -684,12 +727,11 @@ bool ValidateDrawArraysInstancedBase(Context *context,
     return ValidateDrawInstancedAttribs(context, primcount);
 }
 
-bool ValidateDrawInstancedANGLE(Context *context)
+bool ValidateDrawInstancedANGLE(const Context *context)
 {
     // Verify there is at least one active attribute with a divisor of zero
-    const State &state = context->getState();
-
-    Program *program = state.getLinkedProgram(context);
+    const State &state                  = context->getState();
+    const ProgramExecutable *executable = state.getProgramExecutable();
 
     const auto &attribs  = state.getVertexArray()->getVertexAttributes();
     const auto &bindings = state.getVertexArray()->getVertexBindings();
@@ -697,7 +739,7 @@ bool ValidateDrawInstancedANGLE(Context *context)
     {
         const VertexAttribute &attrib = attribs[attributeIndex];
         const VertexBinding &binding  = bindings[attrib.bindingIndex];
-        if (program->isAttribLocationActive(attributeIndex) && binding.getDivisor() == 0)
+        if (executable->isAttribLocationActive(attributeIndex) && binding.getDivisor() == 0)
         {
             return true;
         }
@@ -732,7 +774,7 @@ bool ValidTexLevelDestinationTarget(const Context *context, TextureType type)
         case TextureType::Rectangle:
             return context->getExtensions().textureRectangle;
         case TextureType::_2DMultisampleArray:
-            return context->getExtensions().textureStorageMultisample2DArray;
+            return context->getExtensions().textureStorageMultisample2DArrayOES;
         default:
             return false;
     }
@@ -761,8 +803,8 @@ bool ValidFramebufferTarget(const Context *context, GLenum target)
 
 bool ValidMipLevel(const Context *context, TextureType type, GLint level)
 {
-    const auto &caps    = context->getCaps();
-    size_t maxDimension = 0;
+    const auto &caps = context->getCaps();
+    int maxDimension = 0;
     switch (type)
     {
         case TextureType::_2D:
@@ -780,6 +822,7 @@ bool ValidMipLevel(const Context *context, TextureType type, GLint level)
 
         case TextureType::External:
         case TextureType::Rectangle:
+        case TextureType::VideoImage:
             return level == 0;
 
         case TextureType::_3D:
@@ -790,10 +833,10 @@ bool ValidMipLevel(const Context *context, TextureType type, GLint level)
             UNREACHABLE();
     }
 
-    return level <= log2(static_cast<int>(maxDimension)) && level >= 0;
+    return level <= log2(maxDimension) && level >= 0;
 }
 
-bool ValidImageSizeParameters(Context *context,
+bool ValidImageSizeParameters(const Context *context,
                               TextureType target,
                               GLint level,
                               GLsizei width,
@@ -809,7 +852,7 @@ bool ValidImageSizeParameters(Context *context,
     // TexSubImage parameters can be NPOT without textureNPOT extension,
     // as long as the destination texture is POT.
     bool hasNPOTSupport =
-        context->getExtensions().textureNPOT || context->getClientVersion() >= Version(3, 0);
+        context->getExtensions().textureNPOTOES || context->getClientVersion() >= Version(3, 0);
     if (!isSubImage && !hasNPOTSupport &&
         (level != 0 && (!isPow2(width) || !isPow2(height) || !isPow2(depth))))
     {
@@ -926,7 +969,7 @@ bool ValidCompressedSubImageSize(const Context *context,
     return true;
 }
 
-bool ValidImageDataSize(Context *context,
+bool ValidImageDataSize(const Context *context,
                         TextureType texType,
                         GLsizei width,
                         GLsizei height,
@@ -1019,7 +1062,7 @@ bool ValidQueryType(const Context *context, QueryType queryType)
     }
 }
 
-bool ValidateWebGLVertexAttribPointer(Context *context,
+bool ValidateWebGLVertexAttribPointer(const Context *context,
                                       VertexAttribType type,
                                       GLboolean normalized,
                                       GLsizei stride,
@@ -1062,7 +1105,7 @@ bool ValidateWebGLVertexAttribPointer(Context *context,
     return true;
 }
 
-Program *GetValidProgramNoResolve(Context *context, ShaderProgramID id)
+Program *GetValidProgramNoResolve(const Context *context, ShaderProgramID id)
 {
     // ES3 spec (section 2.11.1) -- "Commands that accept shader or program object names will
     // generate the error INVALID_VALUE if the provided name is not the name of either a shader
@@ -1086,7 +1129,7 @@ Program *GetValidProgramNoResolve(Context *context, ShaderProgramID id)
     return validProgram;
 }
 
-Program *GetValidProgram(Context *context, ShaderProgramID id)
+Program *GetValidProgram(const Context *context, ShaderProgramID id)
 {
     Program *program = GetValidProgramNoResolve(context, id);
     if (program)
@@ -1096,7 +1139,7 @@ Program *GetValidProgram(Context *context, ShaderProgramID id)
     return program;
 }
 
-Shader *GetValidShader(Context *context, ShaderProgramID id)
+Shader *GetValidShader(const Context *context, ShaderProgramID id)
 {
     // See ValidProgram for spec details.
 
@@ -1117,7 +1160,7 @@ Shader *GetValidShader(Context *context, ShaderProgramID id)
     return validShader;
 }
 
-bool ValidateAttachmentTarget(Context *context, GLenum attachment)
+bool ValidateAttachmentTarget(const Context *context, GLenum attachment)
 {
     if (attachment >= GL_COLOR_ATTACHMENT1_EXT && attachment <= GL_COLOR_ATTACHMENT15_EXT)
     {
@@ -1128,7 +1171,7 @@ bool ValidateAttachmentTarget(Context *context, GLenum attachment)
         }
 
         // Color attachment 0 is validated below because it is always valid
-        const unsigned int colorAttachment = (attachment - GL_COLOR_ATTACHMENT0_EXT);
+        const int colorAttachment = (attachment - GL_COLOR_ATTACHMENT0_EXT);
         if (colorAttachment >= context->getCaps().maxColorAttachments)
         {
             context->validationError(GL_INVALID_OPERATION, kInvalidAttachment);
@@ -1162,7 +1205,7 @@ bool ValidateAttachmentTarget(Context *context, GLenum attachment)
     return true;
 }
 
-bool ValidateRenderbufferStorageParametersBase(Context *context,
+bool ValidateRenderbufferStorageParametersBase(const Context *context,
                                                GLenum target,
                                                GLsizei samples,
                                                GLenum internalformat,
@@ -1204,7 +1247,7 @@ bool ValidateRenderbufferStorageParametersBase(Context *context,
         return false;
     }
 
-    if (static_cast<GLuint>(std::max(width, height)) > context->getCaps().maxRenderbufferSize)
+    if (std::max(width, height) > context->getCaps().maxRenderbufferSize)
     {
         context->validationError(GL_INVALID_VALUE, kResourceMaxRenderbufferSize);
         return false;
@@ -1220,7 +1263,7 @@ bool ValidateRenderbufferStorageParametersBase(Context *context,
     return true;
 }
 
-bool ValidateFramebufferRenderbufferParameters(Context *context,
+bool ValidateFramebufferRenderbufferParameters(const Context *context,
                                                GLenum target,
                                                GLenum attachment,
                                                GLenum renderbuffertarget,
@@ -1262,7 +1305,7 @@ bool ValidateFramebufferRenderbufferParameters(Context *context,
     return true;
 }
 
-bool ValidateBlitFramebufferParameters(Context *context,
+bool ValidateBlitFramebufferParameters(const Context *context,
                                        GLint srcX0,
                                        GLint srcY0,
                                        GLint srcX1,
@@ -1507,7 +1550,7 @@ bool ValidateBlitFramebufferParameters(Context *context,
     return true;
 }
 
-bool ValidateReadPixelsRobustANGLE(Context *context,
+bool ValidateReadPixelsRobustANGLE(const Context *context,
                                    GLint x,
                                    GLint y,
                                    GLsizei width,
@@ -1515,10 +1558,10 @@ bool ValidateReadPixelsRobustANGLE(Context *context,
                                    GLenum format,
                                    GLenum type,
                                    GLsizei bufSize,
-                                   GLsizei *length,
-                                   GLsizei *columns,
-                                   GLsizei *rows,
-                                   void *pixels)
+                                   const GLsizei *length,
+                                   const GLsizei *columns,
+                                   const GLsizei *rows,
+                                   const void *pixels)
 {
     if (!ValidateRobustEntryPoint(context, bufSize))
     {
@@ -1547,7 +1590,7 @@ bool ValidateReadPixelsRobustANGLE(Context *context,
     return true;
 }
 
-bool ValidateReadnPixelsEXT(Context *context,
+bool ValidateReadnPixelsEXT(const Context *context,
                             GLint x,
                             GLint y,
                             GLsizei width,
@@ -1555,7 +1598,7 @@ bool ValidateReadnPixelsEXT(Context *context,
                             GLenum format,
                             GLenum type,
                             GLsizei bufSize,
-                            void *pixels)
+                            const void *pixels)
 {
     if (bufSize < 0)
     {
@@ -1567,7 +1610,7 @@ bool ValidateReadnPixelsEXT(Context *context,
                                   nullptr, nullptr, pixels);
 }
 
-bool ValidateReadnPixelsRobustANGLE(Context *context,
+bool ValidateReadnPixelsRobustANGLE(const Context *context,
                                     GLint x,
                                     GLint y,
                                     GLsizei width,
@@ -1575,10 +1618,10 @@ bool ValidateReadnPixelsRobustANGLE(Context *context,
                                     GLenum format,
                                     GLenum type,
                                     GLsizei bufSize,
-                                    GLsizei *length,
-                                    GLsizei *columns,
-                                    GLsizei *rows,
-                                    void *data)
+                                    const GLsizei *length,
+                                    const GLsizei *columns,
+                                    const GLsizei *rows,
+                                    const void *data)
 {
     GLsizei writeLength  = 0;
     GLsizei writeColumns = 0;
@@ -1607,7 +1650,7 @@ bool ValidateReadnPixelsRobustANGLE(Context *context,
     return true;
 }
 
-bool ValidateGenQueriesEXT(Context *context, GLsizei n, QueryID *ids)
+bool ValidateGenQueriesEXT(const Context *context, GLsizei n, const QueryID *ids)
 {
     if (!context->getExtensions().occlusionQueryBoolean &&
         !context->getExtensions().disjointTimerQuery)
@@ -1619,7 +1662,7 @@ bool ValidateGenQueriesEXT(Context *context, GLsizei n, QueryID *ids)
     return ValidateGenOrDelete(context, n);
 }
 
-bool ValidateDeleteQueriesEXT(Context *context, GLsizei n, const QueryID *ids)
+bool ValidateDeleteQueriesEXT(const Context *context, GLsizei n, const QueryID *ids)
 {
     if (!context->getExtensions().occlusionQueryBoolean &&
         !context->getExtensions().disjointTimerQuery)
@@ -1631,7 +1674,7 @@ bool ValidateDeleteQueriesEXT(Context *context, GLsizei n, const QueryID *ids)
     return ValidateGenOrDelete(context, n);
 }
 
-bool ValidateIsQueryEXT(Context *context, QueryID id)
+bool ValidateIsQueryEXT(const Context *context, QueryID id)
 {
     if (!context->getExtensions().occlusionQueryBoolean &&
         !context->getExtensions().disjointTimerQuery)
@@ -1643,7 +1686,7 @@ bool ValidateIsQueryEXT(Context *context, QueryID id)
     return true;
 }
 
-bool ValidateBeginQueryBase(Context *context, QueryType target, QueryID id)
+bool ValidateBeginQueryBase(const Context *context, QueryType target, QueryID id)
 {
     if (!ValidQueryType(context, target))
     {
@@ -1679,17 +1722,16 @@ bool ValidateBeginQueryBase(Context *context, QueryType target, QueryID id)
         return false;
     }
 
-    Query *queryObject = context->getQuery(id, true, target);
-
     // check that name was obtained with glGenQueries
-    if (!queryObject)
+    if (!context->isQueryGenerated(id))
     {
         context->validationError(GL_INVALID_OPERATION, kInvalidQueryId);
         return false;
     }
 
-    // check for type mismatch
-    if (queryObject->getType() != target)
+    // Check for type mismatch. If query is not yet started we're good to go.
+    Query *queryObject = context->getQuery(id);
+    if (queryObject && queryObject->getType() != target)
     {
         context->validationError(GL_INVALID_OPERATION, kQueryTargetMismatch);
         return false;
@@ -1698,7 +1740,7 @@ bool ValidateBeginQueryBase(Context *context, QueryType target, QueryID id)
     return true;
 }
 
-bool ValidateBeginQueryEXT(Context *context, QueryType target, QueryID id)
+bool ValidateBeginQueryEXT(const Context *context, QueryType target, QueryID id)
 {
     if (!context->getExtensions().occlusionQueryBoolean &&
         !context->getExtensions().disjointTimerQuery && !context->getExtensions().syncQuery)
@@ -1710,7 +1752,7 @@ bool ValidateBeginQueryEXT(Context *context, QueryType target, QueryID id)
     return ValidateBeginQueryBase(context, target, id);
 }
 
-bool ValidateEndQueryBase(Context *context, QueryType target)
+bool ValidateEndQueryBase(const Context *context, QueryType target)
 {
     if (!ValidQueryType(context, target))
     {
@@ -1729,7 +1771,7 @@ bool ValidateEndQueryBase(Context *context, QueryType target)
     return true;
 }
 
-bool ValidateEndQueryEXT(Context *context, QueryType target)
+bool ValidateEndQueryEXT(const Context *context, QueryType target)
 {
     if (!context->getExtensions().occlusionQueryBoolean &&
         !context->getExtensions().disjointTimerQuery && !context->getExtensions().syncQuery)
@@ -1741,7 +1783,7 @@ bool ValidateEndQueryEXT(Context *context, QueryType target)
     return ValidateEndQueryBase(context, target);
 }
 
-bool ValidateQueryCounterEXT(Context *context, QueryID id, QueryType target)
+bool ValidateQueryCounterEXT(const Context *context, QueryID id, QueryType target)
 {
     if (!context->getExtensions().disjointTimerQuery)
     {
@@ -1755,14 +1797,15 @@ bool ValidateQueryCounterEXT(Context *context, QueryID id, QueryType target)
         return false;
     }
 
-    Query *queryObject = context->getQuery(id, true, target);
-    if (queryObject == nullptr)
+    if (!context->isQueryGenerated(id))
     {
         context->validationError(GL_INVALID_OPERATION, kInvalidQueryId);
         return false;
     }
 
-    if (context->getState().isQueryActive(queryObject))
+    // If query object is not started, that's fine.
+    Query *queryObject = context->getQuery(id);
+    if (queryObject && context->getState().isQueryActive(queryObject))
     {
         context->validationError(GL_INVALID_OPERATION, kQueryActive);
         return false;
@@ -1771,7 +1814,10 @@ bool ValidateQueryCounterEXT(Context *context, QueryID id, QueryType target)
     return true;
 }
 
-bool ValidateGetQueryivBase(Context *context, QueryType target, GLenum pname, GLsizei *numParams)
+bool ValidateGetQueryivBase(const Context *context,
+                            QueryType target,
+                            GLenum pname,
+                            GLsizei *numParams)
 {
     if (numParams)
     {
@@ -1815,7 +1861,10 @@ bool ValidateGetQueryivBase(Context *context, QueryType target, GLenum pname, GL
     return true;
 }
 
-bool ValidateGetQueryivEXT(Context *context, QueryType target, GLenum pname, GLint *params)
+bool ValidateGetQueryivEXT(const Context *context,
+                           QueryType target,
+                           GLenum pname,
+                           const GLint *params)
 {
     if (!context->getExtensions().occlusionQueryBoolean &&
         !context->getExtensions().disjointTimerQuery && !context->getExtensions().syncQuery)
@@ -1827,12 +1876,12 @@ bool ValidateGetQueryivEXT(Context *context, QueryType target, GLenum pname, GLi
     return ValidateGetQueryivBase(context, target, pname, nullptr);
 }
 
-bool ValidateGetQueryivRobustANGLE(Context *context,
+bool ValidateGetQueryivRobustANGLE(const Context *context,
                                    QueryType target,
                                    GLenum pname,
                                    GLsizei bufSize,
-                                   GLsizei *length,
-                                   GLint *params)
+                                   const GLsizei *length,
+                                   const GLint *params)
 {
     if (!ValidateRobustEntryPoint(context, bufSize))
     {
@@ -1856,7 +1905,10 @@ bool ValidateGetQueryivRobustANGLE(Context *context,
     return true;
 }
 
-bool ValidateGetQueryObjectValueBase(Context *context, QueryID id, GLenum pname, GLsizei *numParams)
+bool ValidateGetQueryObjectValueBase(const Context *context,
+                                     QueryID id,
+                                     GLenum pname,
+                                     GLsizei *numParams)
 {
     if (numParams)
     {
@@ -1879,7 +1931,7 @@ bool ValidateGetQueryObjectValueBase(Context *context, QueryID id, GLenum pname,
         }
     }
 
-    Query *queryObject = context->getQuery(id, false, QueryType::InvalidEnum);
+    Query *queryObject = context->getQuery(id);
 
     if (!queryObject)
     {
@@ -1907,7 +1959,10 @@ bool ValidateGetQueryObjectValueBase(Context *context, QueryID id, GLenum pname,
     return true;
 }
 
-bool ValidateGetQueryObjectivEXT(Context *context, QueryID id, GLenum pname, GLint *params)
+bool ValidateGetQueryObjectivEXT(const Context *context,
+                                 QueryID id,
+                                 GLenum pname,
+                                 const GLint *params)
 {
     if (!context->getExtensions().disjointTimerQuery)
     {
@@ -1917,12 +1972,12 @@ bool ValidateGetQueryObjectivEXT(Context *context, QueryID id, GLenum pname, GLi
     return ValidateGetQueryObjectValueBase(context, id, pname, nullptr);
 }
 
-bool ValidateGetQueryObjectivRobustANGLE(Context *context,
+bool ValidateGetQueryObjectivRobustANGLE(const Context *context,
                                          QueryID id,
                                          GLenum pname,
                                          GLsizei bufSize,
-                                         GLsizei *length,
-                                         GLint *params)
+                                         const GLsizei *length,
+                                         const GLint *params)
 {
     if (!context->getExtensions().disjointTimerQuery)
     {
@@ -1952,7 +2007,10 @@ bool ValidateGetQueryObjectivRobustANGLE(Context *context,
     return true;
 }
 
-bool ValidateGetQueryObjectuivEXT(Context *context, QueryID id, GLenum pname, GLuint *params)
+bool ValidateGetQueryObjectuivEXT(const Context *context,
+                                  QueryID id,
+                                  GLenum pname,
+                                  const GLuint *params)
 {
     if (!context->getExtensions().disjointTimerQuery &&
         !context->getExtensions().occlusionQueryBoolean && !context->getExtensions().syncQuery)
@@ -1963,12 +2021,12 @@ bool ValidateGetQueryObjectuivEXT(Context *context, QueryID id, GLenum pname, GL
     return ValidateGetQueryObjectValueBase(context, id, pname, nullptr);
 }
 
-bool ValidateGetQueryObjectuivRobustANGLE(Context *context,
+bool ValidateGetQueryObjectuivRobustANGLE(const Context *context,
                                           QueryID id,
                                           GLenum pname,
                                           GLsizei bufSize,
-                                          GLsizei *length,
-                                          GLuint *params)
+                                          const GLsizei *length,
+                                          const GLuint *params)
 {
     if (!context->getExtensions().disjointTimerQuery &&
         !context->getExtensions().occlusionQueryBoolean && !context->getExtensions().syncQuery)
@@ -1999,7 +2057,10 @@ bool ValidateGetQueryObjectuivRobustANGLE(Context *context,
     return true;
 }
 
-bool ValidateGetQueryObjecti64vEXT(Context *context, QueryID id, GLenum pname, GLint64 *params)
+bool ValidateGetQueryObjecti64vEXT(const Context *context,
+                                   QueryID id,
+                                   GLenum pname,
+                                   GLint64 *params)
 {
     if (!context->getExtensions().disjointTimerQuery)
     {
@@ -2009,11 +2070,11 @@ bool ValidateGetQueryObjecti64vEXT(Context *context, QueryID id, GLenum pname, G
     return ValidateGetQueryObjectValueBase(context, id, pname, nullptr);
 }
 
-bool ValidateGetQueryObjecti64vRobustANGLE(Context *context,
+bool ValidateGetQueryObjecti64vRobustANGLE(const Context *context,
                                            QueryID id,
                                            GLenum pname,
                                            GLsizei bufSize,
-                                           GLsizei *length,
+                                           const GLsizei *length,
                                            GLint64 *params)
 {
     if (!context->getExtensions().disjointTimerQuery)
@@ -2044,7 +2105,10 @@ bool ValidateGetQueryObjecti64vRobustANGLE(Context *context,
     return true;
 }
 
-bool ValidateGetQueryObjectui64vEXT(Context *context, QueryID id, GLenum pname, GLuint64 *params)
+bool ValidateGetQueryObjectui64vEXT(const Context *context,
+                                    QueryID id,
+                                    GLenum pname,
+                                    GLuint64 *params)
 {
     if (!context->getExtensions().disjointTimerQuery)
     {
@@ -2054,11 +2118,11 @@ bool ValidateGetQueryObjectui64vEXT(Context *context, QueryID id, GLenum pname, 
     return ValidateGetQueryObjectValueBase(context, id, pname, nullptr);
 }
 
-bool ValidateGetQueryObjectui64vRobustANGLE(Context *context,
+bool ValidateGetQueryObjectui64vRobustANGLE(const Context *context,
                                             QueryID id,
                                             GLenum pname,
                                             GLsizei bufSize,
-                                            GLsizei *length,
+                                            const GLsizei *length,
                                             GLuint64 *params)
 {
     if (!context->getExtensions().disjointTimerQuery)
@@ -2089,9 +2153,9 @@ bool ValidateGetQueryObjectui64vRobustANGLE(Context *context,
     return true;
 }
 
-bool ValidateUniformCommonBase(Context *context,
-                               Program *program,
-                               GLint location,
+bool ValidateUniformCommonBase(const Context *context,
+                               const Program *program,
+                               UniformLocation location,
                                GLsizei count,
                                const LinkedUniform **uniformOut)
 {
@@ -2114,14 +2178,14 @@ bool ValidateUniformCommonBase(Context *context,
         return false;
     }
 
-    if (location == -1)
+    if (location.value == -1)
     {
         // Silently ignore the uniform command
         return false;
     }
 
     const auto &uniformLocations = program->getUniformLocations();
-    size_t castedLocation        = static_cast<size_t>(location);
+    size_t castedLocation        = static_cast<size_t>(location.value);
     if (castedLocation >= uniformLocations.size())
     {
         context->validationError(GL_INVALID_OPERATION, kInvalidUniformLocation);
@@ -2154,7 +2218,7 @@ bool ValidateUniformCommonBase(Context *context,
     return true;
 }
 
-bool ValidateUniform1ivValue(Context *context,
+bool ValidateUniform1ivValue(const Context *context,
                              GLenum uniformType,
                              GLsizei count,
                              const GLint *value)
@@ -2186,7 +2250,7 @@ bool ValidateUniform1ivValue(Context *context,
     return false;
 }
 
-bool ValidateUniformMatrixValue(Context *context, GLenum valueType, GLenum uniformType)
+bool ValidateUniformMatrixValue(const Context *context, GLenum valueType, GLenum uniformType)
 {
     // Check that the value type is compatible with uniform type.
     if (valueType == uniformType)
@@ -2198,25 +2262,31 @@ bool ValidateUniformMatrixValue(Context *context, GLenum valueType, GLenum unifo
     return false;
 }
 
-bool ValidateUniform(Context *context, GLenum valueType, GLint location, GLsizei count)
+bool ValidateUniform(const Context *context,
+                     GLenum valueType,
+                     UniformLocation location,
+                     GLsizei count)
 {
     const LinkedUniform *uniform = nullptr;
-    Program *programObject       = context->getState().getLinkedProgram(context);
+    Program *programObject       = context->getActiveLinkedProgram();
     return ValidateUniformCommonBase(context, programObject, location, count, &uniform) &&
            ValidateUniformValue(context, valueType, uniform->type);
 }
 
-bool ValidateUniform1iv(Context *context, GLint location, GLsizei count, const GLint *value)
+bool ValidateUniform1iv(const Context *context,
+                        UniformLocation location,
+                        GLsizei count,
+                        const GLint *value)
 {
     const LinkedUniform *uniform = nullptr;
-    Program *programObject       = context->getState().getLinkedProgram(context);
+    Program *programObject       = context->getActiveLinkedProgram();
     return ValidateUniformCommonBase(context, programObject, location, count, &uniform) &&
            ValidateUniform1ivValue(context, uniform->type, count, value);
 }
 
-bool ValidateUniformMatrix(Context *context,
+bool ValidateUniformMatrix(const Context *context,
                            GLenum valueType,
-                           GLint location,
+                           UniformLocation location,
                            GLsizei count,
                            GLboolean transpose)
 {
@@ -2227,12 +2297,15 @@ bool ValidateUniformMatrix(Context *context,
     }
 
     const LinkedUniform *uniform = nullptr;
-    Program *programObject       = context->getState().getLinkedProgram(context);
+    Program *programObject       = context->getActiveLinkedProgram();
     return ValidateUniformCommonBase(context, programObject, location, count, &uniform) &&
            ValidateUniformMatrixValue(context, valueType, uniform->type);
 }
 
-bool ValidateStateQuery(Context *context, GLenum pname, GLenum *nativeType, unsigned int *numParams)
+bool ValidateStateQuery(const Context *context,
+                        GLenum pname,
+                        GLenum *nativeType,
+                        unsigned int *numParams)
 {
     if (!context->getQueryParameterInfo(pname, nativeType, numParams))
     {
@@ -2244,7 +2317,7 @@ bool ValidateStateQuery(Context *context, GLenum pname, GLenum *nativeType, unsi
 
     if (pname >= GL_DRAW_BUFFER0 && pname <= GL_DRAW_BUFFER15)
     {
-        unsigned int colorAttachment = (pname - GL_DRAW_BUFFER0);
+        int colorAttachment = (pname - GL_DRAW_BUFFER0);
 
         if (colorAttachment >= caps.maxDrawBuffers)
         {
@@ -2262,7 +2335,7 @@ bool ValidateStateQuery(Context *context, GLenum pname, GLenum *nativeType, unsi
         case GL_TEXTURE_BINDING_2D_MULTISAMPLE:
             break;
         case GL_TEXTURE_BINDING_2D_MULTISAMPLE_ARRAY:
-            if (!context->getExtensions().textureStorageMultisample2DArray)
+            if (!context->getExtensions().textureStorageMultisample2DArrayOES)
             {
                 context->validationError(GL_INVALID_ENUM, kMultisampleArrayExtensionRequired);
                 return false;
@@ -2276,8 +2349,8 @@ bool ValidateStateQuery(Context *context, GLenum pname, GLenum *nativeType, unsi
             }
             break;
         case GL_TEXTURE_BINDING_EXTERNAL_OES:
-            if (!context->getExtensions().eglStreamConsumerExternal &&
-                !context->getExtensions().eglImageExternal)
+            if (!context->getExtensions().eglStreamConsumerExternalNV &&
+                !context->getExtensions().eglImageExternalOES)
             {
                 context->validationError(GL_INVALID_ENUM, kEnumNotSupported);
                 return false;
@@ -2323,11 +2396,11 @@ bool ValidateStateQuery(Context *context, GLenum pname, GLenum *nativeType, unsi
     return true;
 }
 
-bool ValidateGetBooleanvRobustANGLE(Context *context,
+bool ValidateGetBooleanvRobustANGLE(const Context *context,
                                     GLenum pname,
                                     GLsizei bufSize,
-                                    GLsizei *length,
-                                    GLboolean *params)
+                                    const GLsizei *length,
+                                    const GLboolean *params)
 {
     GLenum nativeType;
     unsigned int numParams = 0;
@@ -2342,11 +2415,11 @@ bool ValidateGetBooleanvRobustANGLE(Context *context,
     return true;
 }
 
-bool ValidateGetFloatvRobustANGLE(Context *context,
+bool ValidateGetFloatvRobustANGLE(const Context *context,
                                   GLenum pname,
                                   GLsizei bufSize,
-                                  GLsizei *length,
-                                  GLfloat *params)
+                                  const GLsizei *length,
+                                  const GLfloat *params)
 {
     GLenum nativeType;
     unsigned int numParams = 0;
@@ -2361,11 +2434,11 @@ bool ValidateGetFloatvRobustANGLE(Context *context,
     return true;
 }
 
-bool ValidateGetIntegervRobustANGLE(Context *context,
+bool ValidateGetIntegervRobustANGLE(const Context *context,
                                     GLenum pname,
                                     GLsizei bufSize,
-                                    GLsizei *length,
-                                    GLint *data)
+                                    const GLsizei *length,
+                                    const GLint *data)
 {
     GLenum nativeType;
     unsigned int numParams = 0;
@@ -2380,10 +2453,10 @@ bool ValidateGetIntegervRobustANGLE(Context *context,
     return true;
 }
 
-bool ValidateGetInteger64vRobustANGLE(Context *context,
+bool ValidateGetInteger64vRobustANGLE(const Context *context,
                                       GLenum pname,
                                       GLsizei bufSize,
-                                      GLsizei *length,
+                                      const GLsizei *length,
                                       GLint64 *data)
 {
     GLenum nativeType;
@@ -2404,7 +2477,7 @@ bool ValidateGetInteger64vRobustANGLE(Context *context,
     return true;
 }
 
-bool ValidateRobustStateQuery(Context *context,
+bool ValidateRobustStateQuery(const Context *context,
                               GLenum pname,
                               GLsizei bufSize,
                               GLenum *nativeType,
@@ -2428,7 +2501,7 @@ bool ValidateRobustStateQuery(Context *context,
     return true;
 }
 
-bool ValidateCopyTexImageParametersBase(Context *context,
+bool ValidateCopyTexImageParametersBase(const Context *context,
                                         TextureTarget target,
                                         GLint level,
                                         GLenum internalformat,
@@ -2521,7 +2594,7 @@ bool ValidateCopyTexImageParametersBase(Context *context,
 
     const Caps &caps = context->getCaps();
 
-    GLuint maxDimension = 0;
+    GLint maxDimension = 0;
     switch (texType)
     {
         case TextureType::_2D:
@@ -2623,9 +2696,114 @@ bool ValidateCopyTexImageParametersBase(Context *context,
     return true;
 }
 
+const char *ValidateProgramDrawStates(const State &state,
+                                      const Extensions &extensions,
+                                      Program *program)
+{
+    if (extensions.multiview || extensions.multiview2)
+    {
+        const int programNumViews     = program->usesMultiview() ? program->getNumViews() : 1;
+        Framebuffer *framebuffer      = state.getDrawFramebuffer();
+        const int framebufferNumViews = framebuffer->getNumViews();
+
+        if (framebufferNumViews != programNumViews)
+        {
+            return gl::err::kMultiviewMismatch;
+        }
+
+        if (state.isTransformFeedbackActiveUnpaused() && framebufferNumViews > 1)
+        {
+            return gl::err::kMultiviewTransformFeedback;
+        }
+
+        if (extensions.disjointTimerQuery && framebufferNumViews > 1 &&
+            state.isQueryActive(QueryType::TimeElapsed))
+        {
+            return gl::err::kMultiviewTimerQuery;
+        }
+    }
+
+    // Uniform buffer validation
+    for (unsigned int uniformBlockIndex = 0;
+         uniformBlockIndex < program->getActiveUniformBlockCount(); uniformBlockIndex++)
+    {
+        const InterfaceBlock &uniformBlock = program->getUniformBlockByIndex(uniformBlockIndex);
+        GLuint blockBinding                = program->getUniformBlockBinding(uniformBlockIndex);
+        const OffsetBindingPointer<Buffer> &uniformBuffer =
+            state.getIndexedUniformBuffer(blockBinding);
+
+        if (uniformBuffer.get() == nullptr)
+        {
+            // undefined behaviour
+            return gl::err::kUniformBufferUnbound;
+        }
+
+        size_t uniformBufferSize = GetBoundBufferAvailableSize(uniformBuffer);
+        if (uniformBufferSize < uniformBlock.dataSize)
+        {
+            // undefined behaviour
+            return gl::err::kUniformBufferTooSmall;
+        }
+
+        if (extensions.webglCompatibility &&
+            uniformBuffer->isBoundForTransformFeedbackAndOtherUse())
+        {
+            return gl::err::kUniformBufferBoundForTransformFeedback;
+        }
+    }
+
+    return nullptr;
+}
+
+const char *ValidateProgramPipelineDrawStates(const State &state,
+                                              const Extensions &extensions,
+                                              ProgramPipeline *programPipeline)
+{
+    for (const ShaderType shaderType : gl::AllShaderTypes())
+    {
+        Program *program = programPipeline->getShaderProgram(shaderType);
+        if (program)
+        {
+            const char *errorMsg = ValidateProgramDrawStates(state, extensions, program);
+            if (errorMsg)
+            {
+                return errorMsg;
+            }
+        }
+    }
+
+    return nullptr;
+}
+
+const char *ValidateProgramPipelineAttachedPrograms(ProgramPipeline *programPipeline)
+{
+    // An INVALID_OPERATION error is generated by any command that transfers vertices to the
+    // GL or launches compute work if the current set of active
+    // program objects cannot be executed, for reasons including:
+    // - A program object is active for at least one, but not all of the shader
+    // stages that were present when the program was linked.
+    for (const ShaderType shaderType : gl::AllShaderTypes())
+    {
+        Program *shaderProgram = programPipeline->getShaderProgram(shaderType);
+        if (shaderProgram)
+        {
+            ProgramExecutable &executable = shaderProgram->getExecutable();
+            for (const ShaderType programShaderType : executable.getLinkedShaderStages())
+            {
+                if (shaderProgram != programPipeline->getShaderProgram(programShaderType))
+                {
+                    return gl::err::kNotAllStagesOfSeparableProgramUsed;
+                }
+            }
+        }
+    }
+
+    return nullptr;
+}
+
 // Note all errors returned from this function are INVALID_OPERATION except for the draw framebuffer
 // completeness check.
-const char *ValidateDrawStates(Context *context)
+const char *ValidateDrawStates(const Context *context)
 {
     const Extensions &extensions = context->getExtensions();
     const State &state           = context->getState();
@@ -2679,10 +2857,30 @@ const char *ValidateDrawStates(Context *context)
         }
     }
 
-    if (!extensions.floatBlend && context->getState().isBlendEnabled() &&
-        framebuffer->hasActiveFloat32ColorAttachment())
+    if (!extensions.floatBlend)
     {
-        return kUnsupportedFloatBlending;
+        const DrawBufferMask blendEnabledActiveFloat32ColorAttachmentDrawBufferMask =
+            state.getBlendEnabledDrawBufferMask() &
+            framebuffer->getActiveFloat32ColorAttachmentDrawBufferMask();
+        if (blendEnabledActiveFloat32ColorAttachmentDrawBufferMask.any())
+        {
+            return kUnsupportedFloatBlending;
+        }
+    }
+
+    if (context->getLimitations().noSimultaneousConstantColorAndAlphaBlendFunc ||
+        extensions.webglCompatibility)
+    {
+        if (state.hasSimultaneousConstantColorAndAlphaBlendFunc())
+        {
+            if (extensions.webglCompatibility)
+            {
+                return kInvalidConstantColor;
+            }
+
+            WARN() << kConstantColorAlphaLimitation;
+            return kConstantColorAlphaLimitation;
+        }
     }
 
     if (!framebuffer->isComplete(context))
@@ -2693,7 +2891,7 @@ const char *ValidateDrawStates(Context *context)
 
     if (context->getStateCache().hasAnyEnabledClientAttrib())
     {
-        if (context->getExtensions().webglCompatibility || !state.areClientArraysEnabled())
+        if (extensions.webglCompatibility || !state.areClientArraysEnabled())
         {
             // [WebGL 1.0] Section 6.5 Enabled Vertex Attributes and Range Checking
             // If a vertex attribute is enabled as an array via enableVertexAttribArray but no
@@ -2713,78 +2911,67 @@ const char *ValidateDrawStates(Context *context)
     // If we are running GLES1, there is no current program.
     if (context->getClientVersion() >= Version(2, 0))
     {
-        Program *program = state.getLinkedProgram(context);
-        if (!program)
+        Program *program                 = state.getLinkedProgram(context);
+        ProgramPipeline *programPipeline = state.getProgramPipeline();
+
+        if (program)
+        {
+            // In OpenGL ES spec for UseProgram at section 7.3, trying to render without
+            // vertex shader stage or fragment shader stage is a undefined behaviour.
+            // But ANGLE should clearly generate an INVALID_OPERATION error instead of
+            // produce undefined result.
+            if (!program->getExecutable().hasLinkedShaderStage(ShaderType::Vertex) ||
+                !program->getExecutable().hasLinkedShaderStage(ShaderType::Fragment))
+            {
+                return kNoActiveGraphicsShaderStage;
+            }
+
+            if (!program->validateSamplers(nullptr, context->getCaps()))
+            {
+                return kTextureTypeConflict;
+            }
+
+            const char *errorMsg = ValidateProgramDrawStates(state, extensions, program);
+            if (errorMsg)
+            {
+                return errorMsg;
+            }
+        }
+        else if (programPipeline)
+        {
+            // In OpenGL ES spec for UseProgram at section 7.3, trying to render without
+            // vertex shader stage or fragment shader stage is a undefined behaviour.
+            // But ANGLE should clearly generate an INVALID_OPERATION error instead of
+            // produce undefined result.
+            if (!programPipeline->getExecutable().hasLinkedShaderStage(ShaderType::Vertex) ||
+                !programPipeline->getExecutable().hasLinkedShaderStage(ShaderType::Fragment))
+            {
+                return kNoActiveGraphicsShaderStage;
+            }
+
+            const char *errorMsg = ValidateProgramPipelineAttachedPrograms(programPipeline);
+            if (errorMsg)
+            {
+                return errorMsg;
+            }
+
+            if (!programPipeline->validateSamplers(nullptr, context->getCaps()))
+            {
+                return kTextureTypeConflict;
+            }
+
+            errorMsg = ValidateProgramPipelineDrawStates(state, extensions, programPipeline);
+            if (errorMsg)
+            {
+                return errorMsg;
+            }
+        }
+        else
         {
             return kProgramNotBound;
         }
 
-        // In OpenGL ES spec for UseProgram at section 7.3, trying to render without
-        // vertex shader stage or fragment shader stage is a undefined behaviour.
-        // But ANGLE should clearly generate an INVALID_OPERATION error instead of
-        // produce undefined result.
-        if (!program->hasLinkedShaderStage(ShaderType::Vertex) ||
-            !program->hasLinkedShaderStage(ShaderType::Fragment))
-        {
-            return kNoActiveGraphicsShaderStage;
-        }
-
-        if (!program->validateSamplers(nullptr, context->getCaps()))
-        {
-            return kTextureTypeConflict;
-        }
-
-        if (extensions.multiview || extensions.multiview2)
-        {
-            const int programNumViews     = program->usesMultiview() ? program->getNumViews() : 1;
-            const int framebufferNumViews = framebuffer->getNumViews();
-            if (framebufferNumViews != programNumViews)
-            {
-                return kMultiviewMismatch;
-            }
-
-            if (state.isTransformFeedbackActiveUnpaused() && framebufferNumViews > 1)
-            {
-                return kMultiviewTransformFeedback;
-            }
-
-            if (extensions.disjointTimerQuery && framebufferNumViews > 1 &&
-                state.isQueryActive(QueryType::TimeElapsed))
-            {
-                return kMultiviewTimerQuery;
-            }
-        }
-
-        // Uniform buffer validation
-        for (unsigned int uniformBlockIndex = 0;
-             uniformBlockIndex < program->getActiveUniformBlockCount(); uniformBlockIndex++)
-        {
-            const InterfaceBlock &uniformBlock = program->getUniformBlockByIndex(uniformBlockIndex);
-            GLuint blockBinding                = program->getUniformBlockBinding(uniformBlockIndex);
-            const OffsetBindingPointer<Buffer> &uniformBuffer =
-                state.getIndexedUniformBuffer(blockBinding);
-
-            if (uniformBuffer.get() == nullptr)
-            {
-                // undefined behaviour
-                return kUniformBufferUnbound;
-            }
-
-            size_t uniformBufferSize = GetBoundBufferAvailableSize(uniformBuffer);
-            if (uniformBufferSize < uniformBlock.dataSize)
-            {
-                // undefined behaviour
-                return kUniformBufferTooSmall;
-            }
-
-            if (extensions.webglCompatibility &&
-                uniformBuffer->isBoundForTransformFeedbackAndOtherUse())
-            {
-                return kUniformBufferBoundForTransformFeedback;
-            }
-        }
-
-        // Do some additonal WebGL-specific validation
+        // Do some additional WebGL-specific validation
         if (extensions.webglCompatibility)
         {
             if (!state.validateSamplerFormats())
@@ -2800,7 +2987,7 @@ const char *ValidateDrawStates(Context *context)
             }
 
             // Detect rendering feedback loops for WebGL.
-            if (framebuffer->formsRenderingFeedbackLoopWith(context))
+            if (framebuffer->hasRenderingFeedbackLoop())
             {
                 return kFeedbackLoop;
             }
@@ -2812,7 +2999,7 @@ const char *ValidateDrawStates(Context *context)
             }
 
             if (!context->getState().getRasterizerState().rasterizerDiscard &&
-                !context->getState().getBlendState().allChannelsMasked())
+                !context->getState().allActiveDrawBufferChannelsMasked())
             {
                 // Detect that if there's active color buffer without fragment shader output
                 if (!ValidateFragmentShaderColorBufferMaskMatch(context))
@@ -2838,7 +3025,7 @@ const char *ValidateDrawStates(Context *context)
     return nullptr;
 }
 
-void RecordDrawModeError(Context *context, PrimitiveMode mode)
+void RecordDrawModeError(const Context *context, PrimitiveMode mode)
 {
     const State &state                      = context->getState();
     TransformFeedback *curTransformFeedback = state.getCurrentTransformFeedback();
@@ -2883,11 +3070,11 @@ void RecordDrawModeError(Context *context, PrimitiveMode mode)
     // If we are running GLES1, there is no current program.
     if (context->getClientVersion() >= Version(2, 0))
     {
-        Program *program = state.getLinkedProgram(context);
+        Program *program = context->getActiveLinkedProgram();
         ASSERT(program);
 
         // Do geometry shader specific validations
-        if (program->hasLinkedShaderStage(ShaderType::Geometry))
+        if (program->getExecutable().hasLinkedShaderStage(ShaderType::Geometry))
         {
             if (!IsCompatibleDrawModeWithGeometryShader(
                     mode, program->getGeometryShaderInputPrimitiveType()))
@@ -2903,7 +3090,7 @@ void RecordDrawModeError(Context *context, PrimitiveMode mode)
     UNREACHABLE();
 }
 
-bool ValidateDrawArraysInstancedANGLE(Context *context,
+bool ValidateDrawArraysInstancedANGLE(const Context *context,
                                       PrimitiveMode mode,
                                       GLint first,
                                       GLsizei count,
@@ -2923,7 +3110,7 @@ bool ValidateDrawArraysInstancedANGLE(Context *context,
     return ValidateDrawInstancedANGLE(context);
 }
 
-bool ValidateDrawArraysInstancedEXT(Context *context,
+bool ValidateDrawArraysInstancedEXT(const Context *context,
                                     PrimitiveMode mode,
                                     GLint first,
                                     GLsizei count,
@@ -2943,7 +3130,7 @@ bool ValidateDrawArraysInstancedEXT(Context *context,
     return true;
 }
 
-const char *ValidateDrawElementsStates(Context *context)
+const char *ValidateDrawElementsStates(const Context *context)
 {
     const State &state = context->getState();
 
@@ -2995,7 +3182,7 @@ const char *ValidateDrawElementsStates(Context *context)
     return nullptr;
 }
 
-bool ValidateDrawElementsInstancedANGLE(Context *context,
+bool ValidateDrawElementsInstancedANGLE(const Context *context,
                                         PrimitiveMode mode,
                                         GLsizei count,
                                         DrawElementsType type,
@@ -3016,7 +3203,7 @@ bool ValidateDrawElementsInstancedANGLE(Context *context,
     return ValidateDrawInstancedANGLE(context);
 }
 
-bool ValidateDrawElementsInstancedEXT(Context *context,
+bool ValidateDrawElementsInstancedEXT(const Context *context,
                                       PrimitiveMode mode,
                                       GLsizei count,
                                       DrawElementsType type,
@@ -3037,7 +3224,7 @@ bool ValidateDrawElementsInstancedEXT(Context *context,
     return true;
 }
 
-bool ValidateFramebufferTextureBase(Context *context,
+bool ValidateFramebufferTextureBase(const Context *context,
                                     GLenum target,
                                     GLenum attachment,
                                     TextureID texture,
@@ -3083,7 +3270,9 @@ bool ValidateFramebufferTextureBase(Context *context,
     return true;
 }
 
-bool ValidateGetUniformBase(Context *context, ShaderProgramID program, GLint location)
+bool ValidateGetUniformBase(const Context *context,
+                            ShaderProgramID program,
+                            UniformLocation location)
 {
     if (program.value == 0)
     {
@@ -3112,9 +3301,9 @@ bool ValidateGetUniformBase(Context *context, ShaderProgramID program, GLint loc
     return true;
 }
 
-static bool ValidateSizedGetUniform(Context *context,
+static bool ValidateSizedGetUniform(const Context *context,
                                     ShaderProgramID program,
-                                    GLint location,
+                                    UniformLocation location,
                                     GLsizei bufSize,
                                     GLsizei *length)
 {
@@ -3150,67 +3339,66 @@ static bool ValidateSizedGetUniform(Context *context,
     {
         *length = VariableComponentCount(uniform.type);
     }
-
     return true;
 }
 
-bool ValidateGetnUniformfvEXT(Context *context,
+bool ValidateGetnUniformfvEXT(const Context *context,
                               ShaderProgramID program,
-                              GLint location,
+                              UniformLocation location,
                               GLsizei bufSize,
-                              GLfloat *params)
+                              const GLfloat *params)
 {
     return ValidateSizedGetUniform(context, program, location, bufSize, nullptr);
 }
 
-bool ValidateGetnUniformfvRobustANGLE(Context *context,
+bool ValidateGetnUniformfvRobustANGLE(const Context *context,
                                       ShaderProgramID program,
-                                      GLint location,
+                                      UniformLocation location,
                                       GLsizei bufSize,
-                                      GLsizei *length,
-                                      GLfloat *params)
+                                      const GLsizei *length,
+                                      const GLfloat *params)
 {
     UNIMPLEMENTED();
     return false;
 }
 
-bool ValidateGetnUniformivEXT(Context *context,
+bool ValidateGetnUniformivEXT(const Context *context,
                               ShaderProgramID program,
-                              GLint location,
+                              UniformLocation location,
                               GLsizei bufSize,
-                              GLint *params)
+                              const GLint *params)
 {
     return ValidateSizedGetUniform(context, program, location, bufSize, nullptr);
 }
 
-bool ValidateGetnUniformivRobustANGLE(Context *context,
+bool ValidateGetnUniformivRobustANGLE(const Context *context,
                                       ShaderProgramID program,
-                                      GLint location,
+                                      UniformLocation location,
                                       GLsizei bufSize,
-                                      GLsizei *length,
-                                      GLint *params)
+                                      const GLsizei *length,
+                                      const GLint *params)
 {
     UNIMPLEMENTED();
     return false;
 }
 
-bool ValidateGetnUniformuivRobustANGLE(Context *context,
+bool ValidateGetnUniformuivRobustANGLE(const Context *context,
                                        ShaderProgramID program,
-                                       GLint location,
+                                       UniformLocation location,
                                        GLsizei bufSize,
-                                       GLsizei *length,
-                                       GLuint *params)
+                                       const GLsizei *length,
+                                       const GLuint *params)
 {
     UNIMPLEMENTED();
     return false;
 }
 
-bool ValidateGetUniformfvRobustANGLE(Context *context,
+bool ValidateGetUniformfvRobustANGLE(const Context *context,
                                      ShaderProgramID program,
-                                     GLint location,
+                                     UniformLocation location,
                                      GLsizei bufSize,
-                                     GLsizei *length,
-                                     GLfloat *params)
+                                     const GLsizei *length,
+                                     const GLfloat *params)
 {
     if (!ValidateRobustEntryPoint(context, bufSize))
     {
@@ -3230,12 +3418,12 @@ bool ValidateGetUniformfvRobustANGLE(Context *context,
     return true;
 }
 
-bool ValidateGetUniformivRobustANGLE(Context *context,
+bool ValidateGetUniformivRobustANGLE(const Context *context,
                                      ShaderProgramID program,
-                                     GLint location,
+                                     UniformLocation location,
                                      GLsizei bufSize,
-                                     GLsizei *length,
-                                     GLint *params)
+                                     const GLsizei *length,
+                                     const GLint *params)
 {
     if (!ValidateRobustEntryPoint(context, bufSize))
     {
@@ -3255,12 +3443,12 @@ bool ValidateGetUniformivRobustANGLE(Context *context,
     return true;
 }
 
-bool ValidateGetUniformuivRobustANGLE(Context *context,
+bool ValidateGetUniformuivRobustANGLE(const Context *context,
                                       ShaderProgramID program,
-                                      GLint location,
+                                      UniformLocation location,
                                       GLsizei bufSize,
-                                      GLsizei *length,
-                                      GLuint *params)
+                                      const GLsizei *length,
+                                      const GLuint *params)
 {
     if (!ValidateRobustEntryPoint(context, bufSize))
     {
@@ -3286,7 +3474,7 @@ bool ValidateGetUniformuivRobustANGLE(Context *context,
     return true;
 }
 
-bool ValidateDiscardFramebufferBase(Context *context,
+bool ValidateDiscardFramebufferBase(const Context *context,
                                     GLenum target,
                                     GLsizei numAttachments,
                                     const GLenum *attachments,
@@ -3308,7 +3496,8 @@ bool ValidateDiscardFramebufferBase(Context *context,
                 return false;
             }
 
-            if (attachments[i] >= GL_COLOR_ATTACHMENT0 + context->getCaps().maxColorAttachments)
+            if (attachments[i] >=
+                GL_COLOR_ATTACHMENT0 + static_cast<GLuint>(context->getCaps().maxColorAttachments))
             {
                 context->validationError(GL_INVALID_OPERATION, kExceedsMaxColorAttachments);
                 return false;
@@ -3348,7 +3537,7 @@ bool ValidateDiscardFramebufferBase(Context *context,
     return true;
 }
 
-bool ValidateInsertEventMarkerEXT(Context *context, GLsizei length, const char *marker)
+bool ValidateInsertEventMarkerEXT(const Context *context, GLsizei length, const char *marker)
 {
     if (!context->getExtensions().debugMarker)
     {
@@ -3372,7 +3561,7 @@ bool ValidateInsertEventMarkerEXT(Context *context, GLsizei length, const char *
     return true;
 }
 
-bool ValidatePushGroupMarkerEXT(Context *context, GLsizei length, const char *marker)
+bool ValidatePushGroupMarkerEXT(const Context *context, GLsizei length, const char *marker)
 {
     if (!context->getExtensions().debugMarker)
     {
@@ -3396,9 +3585,11 @@ bool ValidatePushGroupMarkerEXT(Context *context, GLsizei length, const char *ma
     return true;
 }
 
-bool ValidateEGLImageTargetTexture2DOES(Context *context, TextureType type, GLeglImageOES image)
+bool ValidateEGLImageTargetTexture2DOES(const Context *context,
+                                        TextureType type,
+                                        GLeglImageOES image)
 {
-    if (!context->getExtensions().eglImage && !context->getExtensions().eglImageExternal)
+    if (!context->getExtensions().eglImageOES && !context->getExtensions().eglImageExternalOES)
     {
         context->validationError(GL_INVALID_OPERATION, kExtensionNotEnabled);
         return false;
@@ -3407,14 +3598,14 @@ bool ValidateEGLImageTargetTexture2DOES(Context *context, TextureType type, GLeg
     switch (type)
     {
         case TextureType::_2D:
-            if (!context->getExtensions().eglImage)
+            if (!context->getExtensions().eglImageOES)
             {
                 context->validationError(GL_INVALID_ENUM, kEnumNotSupported);
             }
             break;
 
         case TextureType::External:
-            if (!context->getExtensions().eglImageExternal)
+            if (!context->getExtensions().eglImageExternalOES)
             {
                 context->validationError(GL_INVALID_ENUM, kEnumNotSupported);
             }
@@ -3449,11 +3640,11 @@ bool ValidateEGLImageTargetTexture2DOES(Context *context, TextureType type, GLeg
     return true;
 }
 
-bool ValidateEGLImageTargetRenderbufferStorageOES(Context *context,
+bool ValidateEGLImageTargetRenderbufferStorageOES(const Context *context,
                                                   GLenum target,
                                                   GLeglImageOES image)
 {
-    if (!context->getExtensions().eglImage)
+    if (!context->getExtensions().eglImageOES)
     {
         context->validationError(GL_INVALID_OPERATION, kExtensionNotEnabled);
         return false;
@@ -3487,7 +3678,7 @@ bool ValidateEGLImageTargetRenderbufferStorageOES(Context *context,
     return true;
 }
 
-bool ValidateBindVertexArrayBase(Context *context, VertexArrayID array)
+bool ValidateBindVertexArrayBase(const Context *context, VertexArrayID array)
 {
     if (!context->isVertexArrayGenerated(array))
     {
@@ -3500,7 +3691,7 @@ bool ValidateBindVertexArrayBase(Context *context, VertexArrayID array)
     return true;
 }
 
-bool ValidateProgramBinaryBase(Context *context,
+bool ValidateProgramBinaryBase(const Context *context,
                                ShaderProgramID program,
                                GLenum binaryFormat,
                                const void *binary,
@@ -3530,12 +3721,12 @@ bool ValidateProgramBinaryBase(Context *context,
     return true;
 }
 
-bool ValidateGetProgramBinaryBase(Context *context,
+bool ValidateGetProgramBinaryBase(const Context *context,
                                   ShaderProgramID program,
                                   GLsizei bufSize,
-                                  GLsizei *length,
-                                  GLenum *binaryFormat,
-                                  void *binary)
+                                  const GLsizei *length,
+                                  const GLenum *binaryFormat,
+                                  const void *binary)
 {
     Program *programObject = GetValidProgram(context, program);
     if (programObject == nullptr)
@@ -3558,7 +3749,7 @@ bool ValidateGetProgramBinaryBase(Context *context,
     return true;
 }
 
-bool ValidateDrawBuffersBase(Context *context, GLsizei n, const GLenum *bufs)
+bool ValidateDrawBuffersBase(const Context *context, GLsizei n, const GLenum *bufs)
 {
     // INVALID_VALUE is generated if n is negative or greater than value of MAX_DRAW_BUFFERS
     if (n < 0)
@@ -3566,7 +3757,7 @@ bool ValidateDrawBuffersBase(Context *context, GLsizei n, const GLenum *bufs)
         context->validationError(GL_INVALID_VALUE, kNegativeCount);
         return false;
     }
-    if (static_cast<GLuint>(n) > context->getCaps().maxDrawBuffers)
+    if (n > context->getCaps().maxDrawBuffers)
     {
         context->validationError(GL_INVALID_VALUE, kIndexExceedsMaxDrawBuffer);
         return false;
@@ -3630,11 +3821,11 @@ bool ValidateDrawBuffersBase(Context *context, GLsizei n, const GLenum *bufs)
     return true;
 }
 
-bool ValidateGetBufferPointervBase(Context *context,
+bool ValidateGetBufferPointervBase(const Context *context,
                                    BufferBinding target,
                                    GLenum pname,
                                    GLsizei *length,
-                                   void **params)
+                                   void *const *params)
 {
     if (length)
     {
@@ -3674,7 +3865,7 @@ bool ValidateGetBufferPointervBase(Context *context,
     return true;
 }
 
-bool ValidateUnmapBufferBase(Context *context, BufferBinding target)
+bool ValidateUnmapBufferBase(const Context *context, BufferBinding target)
 {
     if (!context->isValidBufferBinding(target))
     {
@@ -3693,7 +3884,7 @@ bool ValidateUnmapBufferBase(Context *context, BufferBinding target)
     return true;
 }
 
-bool ValidateMapBufferRangeBase(Context *context,
+bool ValidateMapBufferRangeBase(const Context *context,
                                 BufferBinding target,
                                 GLintptr offset,
                                 GLsizeiptr length,
@@ -3783,7 +3974,7 @@ bool ValidateMapBufferRangeBase(Context *context,
     return ValidateMapBufferBase(context, target);
 }
 
-bool ValidateFlushMappedBufferRangeBase(Context *context,
+bool ValidateFlushMappedBufferRangeBase(const Context *context,
                                         BufferBinding target,
                                         GLintptr offset,
                                         GLsizeiptr length)
@@ -3834,7 +4025,7 @@ bool ValidateFlushMappedBufferRangeBase(Context *context,
     return true;
 }
 
-bool ValidateGenOrDelete(Context *context, GLint n)
+bool ValidateGenOrDelete(const Context *context, GLint n)
 {
     if (n < 0)
     {
@@ -3844,7 +4035,7 @@ bool ValidateGenOrDelete(Context *context, GLint n)
     return true;
 }
 
-bool ValidateRobustEntryPoint(Context *context, GLsizei bufSize)
+bool ValidateRobustEntryPoint(const Context *context, GLsizei bufSize)
 {
     if (!context->getExtensions().robustClientMemory)
     {
@@ -3861,7 +4052,7 @@ bool ValidateRobustEntryPoint(Context *context, GLsizei bufSize)
     return true;
 }
 
-bool ValidateRobustBufferSize(Context *context, GLsizei bufSize, GLsizei numParams)
+bool ValidateRobustBufferSize(const Context *context, GLsizei bufSize, GLsizei numParams)
 {
     if (bufSize < numParams)
     {
@@ -3872,7 +4063,7 @@ bool ValidateRobustBufferSize(Context *context, GLsizei bufSize, GLsizei numPara
     return true;
 }
 
-bool ValidateGetFramebufferAttachmentParameterivBase(Context *context,
+bool ValidateGetFramebufferAttachmentParameterivBase(const Context *context,
                                                      GLenum target,
                                                      GLenum attachment,
                                                      GLenum pname,
@@ -3977,7 +4168,8 @@ bool ValidateGetFramebufferAttachmentParameterivBase(Context *context,
         default:
             if ((clientVersion < 3 && !context->getExtensions().drawBuffers) ||
                 attachment < GL_COLOR_ATTACHMENT0_EXT ||
-                (attachment - GL_COLOR_ATTACHMENT0_EXT) >= context->getCaps().maxColorAttachments)
+                (attachment - GL_COLOR_ATTACHMENT0_EXT) >=
+                    static_cast<GLuint>(context->getCaps().maxColorAttachments))
             {
                 context->validationError(GL_INVALID_ENUM, kInvalidAttachment);
                 return false;
@@ -4138,13 +4330,13 @@ bool ValidateGetFramebufferAttachmentParameterivBase(Context *context,
     return true;
 }
 
-bool ValidateGetFramebufferAttachmentParameterivRobustANGLE(Context *context,
+bool ValidateGetFramebufferAttachmentParameterivRobustANGLE(const Context *context,
                                                             GLenum target,
                                                             GLenum attachment,
                                                             GLenum pname,
                                                             GLsizei bufSize,
-                                                            GLsizei *length,
-                                                            GLint *params)
+                                                            const GLsizei *length,
+                                                            const GLint *params)
 {
     if (!ValidateRobustEntryPoint(context, bufSize))
     {
@@ -4168,12 +4360,12 @@ bool ValidateGetFramebufferAttachmentParameterivRobustANGLE(Context *context,
     return true;
 }
 
-bool ValidateGetBufferParameterivRobustANGLE(Context *context,
+bool ValidateGetBufferParameterivRobustANGLE(const Context *context,
                                              BufferBinding target,
                                              GLenum pname,
                                              GLsizei bufSize,
-                                             GLsizei *length,
-                                             GLint *params)
+                                             const GLsizei *length,
+                                             const GLint *params)
 {
     if (!ValidateRobustEntryPoint(context, bufSize))
     {
@@ -4196,12 +4388,12 @@ bool ValidateGetBufferParameterivRobustANGLE(Context *context,
     return true;
 }
 
-bool ValidateGetBufferParameteri64vRobustANGLE(Context *context,
+bool ValidateGetBufferParameteri64vRobustANGLE(const Context *context,
                                                BufferBinding target,
                                                GLenum pname,
                                                GLsizei bufSize,
-                                               GLsizei *length,
-                                               GLint64 *params)
+                                               const GLsizei *length,
+                                               const GLint64 *params)
 {
     GLsizei numParams = 0;
 
@@ -4225,7 +4417,7 @@ bool ValidateGetBufferParameteri64vRobustANGLE(Context *context,
     return true;
 }
 
-bool ValidateGetProgramivBase(Context *context,
+bool ValidateGetProgramivBase(const Context *context,
                               ShaderProgramID program,
                               GLenum pname,
                               GLsizei *numParams)
@@ -4275,7 +4467,8 @@ bool ValidateGetProgramivBase(Context *context,
             break;
 
         case GL_PROGRAM_BINARY_LENGTH:
-            if (context->getClientMajorVersion() < 3 && !context->getExtensions().getProgramBinary)
+            if (context->getClientMajorVersion() < 3 &&
+                !context->getExtensions().getProgramBinaryOES)
             {
                 context->validationError(GL_INVALID_ENUM, kEnumNotSupported);
                 return false;
@@ -4320,7 +4513,7 @@ bool ValidateGetProgramivBase(Context *context,
                 context->validationError(GL_INVALID_OPERATION, kProgramNotLinked);
                 return false;
             }
-            if (!programObject->hasLinkedShaderStage(ShaderType::Compute))
+            if (!programObject->getExecutable().hasLinkedShaderStage(ShaderType::Compute))
             {
                 context->validationError(GL_INVALID_OPERATION, kNoActiveComputeShaderStage);
                 return false;
@@ -4347,7 +4540,7 @@ bool ValidateGetProgramivBase(Context *context,
                 context->validationError(GL_INVALID_OPERATION, kProgramNotLinked);
                 return false;
             }
-            if (!programObject->hasLinkedShaderStage(ShaderType::Geometry))
+            if (!programObject->getExecutable().hasLinkedShaderStage(ShaderType::Geometry))
             {
                 context->validationError(GL_INVALID_OPERATION, kNoActiveGeometryShaderStage);
                 return false;
@@ -4370,12 +4563,12 @@ bool ValidateGetProgramivBase(Context *context,
     return true;
 }
 
-bool ValidateGetProgramivRobustANGLE(Context *context,
+bool ValidateGetProgramivRobustANGLE(const Context *context,
                                      ShaderProgramID program,
                                      GLenum pname,
                                      GLsizei bufSize,
-                                     GLsizei *length,
-                                     GLint *params)
+                                     const GLsizei *length,
+                                     const GLint *params)
 {
     if (!ValidateRobustEntryPoint(context, bufSize))
     {
@@ -4399,12 +4592,12 @@ bool ValidateGetProgramivRobustANGLE(Context *context,
     return true;
 }
 
-bool ValidateGetRenderbufferParameterivRobustANGLE(Context *context,
+bool ValidateGetRenderbufferParameterivRobustANGLE(const Context *context,
                                                    GLenum target,
                                                    GLenum pname,
                                                    GLsizei bufSize,
-                                                   GLsizei *length,
-                                                   GLint *params)
+                                                   const GLsizei *length,
+                                                   const GLint *params)
 {
     if (!ValidateRobustEntryPoint(context, bufSize))
     {
@@ -4428,12 +4621,12 @@ bool ValidateGetRenderbufferParameterivRobustANGLE(Context *context,
     return true;
 }
 
-bool ValidateGetShaderivRobustANGLE(Context *context,
+bool ValidateGetShaderivRobustANGLE(const Context *context,
                                     ShaderProgramID shader,
                                     GLenum pname,
                                     GLsizei bufSize,
-                                    GLsizei *length,
-                                    GLint *params)
+                                    const GLsizei *length,
+                                    const GLint *params)
 {
     if (!ValidateRobustEntryPoint(context, bufSize))
     {
@@ -4457,12 +4650,12 @@ bool ValidateGetShaderivRobustANGLE(Context *context,
     return true;
 }
 
-bool ValidateGetTexParameterfvRobustANGLE(Context *context,
+bool ValidateGetTexParameterfvRobustANGLE(const Context *context,
                                           TextureType target,
                                           GLenum pname,
                                           GLsizei bufSize,
-                                          GLsizei *length,
-                                          GLfloat *params)
+                                          const GLsizei *length,
+                                          const GLfloat *params)
 {
     if (!ValidateRobustEntryPoint(context, bufSize))
     {
@@ -4486,12 +4679,12 @@ bool ValidateGetTexParameterfvRobustANGLE(Context *context,
     return true;
 }
 
-bool ValidateGetTexParameterivRobustANGLE(Context *context,
+bool ValidateGetTexParameterivRobustANGLE(const Context *context,
                                           TextureType target,
                                           GLenum pname,
                                           GLsizei bufSize,
-                                          GLsizei *length,
-                                          GLint *params)
+                                          const GLsizei *length,
+                                          const GLint *params)
 {
 
     if (!ValidateRobustEntryPoint(context, bufSize))
@@ -4513,29 +4706,29 @@ bool ValidateGetTexParameterivRobustANGLE(Context *context,
     return true;
 }
 
-bool ValidateGetTexParameterIivRobustANGLE(Context *context,
+bool ValidateGetTexParameterIivRobustANGLE(const Context *context,
                                            TextureType target,
                                            GLenum pname,
                                            GLsizei bufSize,
-                                           GLsizei *length,
-                                           GLint *params)
+                                           const GLsizei *length,
+                                           const GLint *params)
 {
     UNIMPLEMENTED();
     return false;
 }
 
-bool ValidateGetTexParameterIuivRobustANGLE(Context *context,
+bool ValidateGetTexParameterIuivRobustANGLE(const Context *context,
                                             TextureType target,
                                             GLenum pname,
                                             GLsizei bufSize,
-                                            GLsizei *length,
-                                            GLuint *params)
+                                            const GLsizei *length,
+                                            const GLuint *params)
 {
     UNIMPLEMENTED();
     return false;
 }
 
-bool ValidateTexParameterfvRobustANGLE(Context *context,
+bool ValidateTexParameterfvRobustANGLE(const Context *context,
                                        TextureType target,
                                        GLenum pname,
                                        GLsizei bufSize,
@@ -4549,7 +4742,7 @@ bool ValidateTexParameterfvRobustANGLE(Context *context,
     return ValidateTexParameterBase(context, target, pname, bufSize, true, params);
 }
 
-bool ValidateTexParameterivRobustANGLE(Context *context,
+bool ValidateTexParameterivRobustANGLE(const Context *context,
                                        TextureType target,
                                        GLenum pname,
                                        GLsizei bufSize,
@@ -4563,7 +4756,7 @@ bool ValidateTexParameterivRobustANGLE(Context *context,
     return ValidateTexParameterBase(context, target, pname, bufSize, true, params);
 }
 
-bool ValidateTexParameterIivRobustANGLE(Context *context,
+bool ValidateTexParameterIivRobustANGLE(const Context *context,
                                         TextureType target,
                                         GLenum pname,
                                         GLsizei bufSize,
@@ -4573,7 +4766,7 @@ bool ValidateTexParameterIivRobustANGLE(Context *context,
     return false;
 }
 
-bool ValidateTexParameterIuivRobustANGLE(Context *context,
+bool ValidateTexParameterIuivRobustANGLE(const Context *context,
                                          TextureType target,
                                          GLenum pname,
                                          GLsizei bufSize,
@@ -4583,12 +4776,12 @@ bool ValidateTexParameterIuivRobustANGLE(Context *context,
     return false;
 }
 
-bool ValidateGetSamplerParameterfvRobustANGLE(Context *context,
+bool ValidateGetSamplerParameterfvRobustANGLE(const Context *context,
                                               SamplerID sampler,
                                               GLenum pname,
                                               GLsizei bufSize,
-                                              GLsizei *length,
-                                              GLfloat *params)
+                                              const GLsizei *length,
+                                              const GLfloat *params)
 {
     if (!ValidateRobustEntryPoint(context, bufSize))
     {
@@ -4611,12 +4804,12 @@ bool ValidateGetSamplerParameterfvRobustANGLE(Context *context,
     return true;
 }
 
-bool ValidateGetSamplerParameterivRobustANGLE(Context *context,
+bool ValidateGetSamplerParameterivRobustANGLE(const Context *context,
                                               SamplerID sampler,
                                               GLenum pname,
                                               GLsizei bufSize,
-                                              GLsizei *length,
-                                              GLint *params)
+                                              const GLsizei *length,
+                                              const GLint *params)
 {
     if (!ValidateRobustEntryPoint(context, bufSize))
     {
@@ -4639,29 +4832,29 @@ bool ValidateGetSamplerParameterivRobustANGLE(Context *context,
     return true;
 }
 
-bool ValidateGetSamplerParameterIivRobustANGLE(Context *context,
+bool ValidateGetSamplerParameterIivRobustANGLE(const Context *context,
                                                SamplerID sampler,
                                                GLenum pname,
                                                GLsizei bufSize,
-                                               GLsizei *length,
-                                               GLint *params)
+                                               const GLsizei *length,
+                                               const GLint *params)
 {
     UNIMPLEMENTED();
     return false;
 }
 
-bool ValidateGetSamplerParameterIuivRobustANGLE(Context *context,
+bool ValidateGetSamplerParameterIuivRobustANGLE(const Context *context,
                                                 SamplerID sampler,
                                                 GLenum pname,
                                                 GLsizei bufSize,
-                                                GLsizei *length,
-                                                GLuint *params)
+                                                const GLsizei *length,
+                                                const GLuint *params)
 {
     UNIMPLEMENTED();
     return false;
 }
 
-bool ValidateSamplerParameterfvRobustANGLE(Context *context,
+bool ValidateSamplerParameterfvRobustANGLE(const Context *context,
                                            SamplerID sampler,
                                            GLenum pname,
                                            GLsizei bufSize,
@@ -4675,7 +4868,7 @@ bool ValidateSamplerParameterfvRobustANGLE(Context *context,
     return ValidateSamplerParameterBase(context, sampler, pname, bufSize, true, params);
 }
 
-bool ValidateSamplerParameterivRobustANGLE(Context *context,
+bool ValidateSamplerParameterivRobustANGLE(const Context *context,
                                            SamplerID sampler,
                                            GLenum pname,
                                            GLsizei bufSize,
@@ -4689,7 +4882,7 @@ bool ValidateSamplerParameterivRobustANGLE(Context *context,
     return ValidateSamplerParameterBase(context, sampler, pname, bufSize, true, params);
 }
 
-bool ValidateSamplerParameterIivRobustANGLE(Context *context,
+bool ValidateSamplerParameterIivRobustANGLE(const Context *context,
                                             SamplerID sampler,
                                             GLenum pname,
                                             GLsizei bufSize,
@@ -4699,7 +4892,7 @@ bool ValidateSamplerParameterIivRobustANGLE(Context *context,
     return false;
 }
 
-bool ValidateSamplerParameterIuivRobustANGLE(Context *context,
+bool ValidateSamplerParameterIuivRobustANGLE(const Context *context,
                                              SamplerID sampler,
                                              GLenum pname,
                                              GLsizei bufSize,
@@ -4709,12 +4902,12 @@ bool ValidateSamplerParameterIuivRobustANGLE(Context *context,
     return false;
 }
 
-bool ValidateGetVertexAttribfvRobustANGLE(Context *context,
+bool ValidateGetVertexAttribfvRobustANGLE(const Context *context,
                                           GLuint index,
                                           GLenum pname,
                                           GLsizei bufSize,
-                                          GLsizei *length,
-                                          GLfloat *params)
+                                          const GLsizei *length,
+                                          const GLfloat *params)
 {
     if (!ValidateRobustEntryPoint(context, bufSize))
     {
@@ -4737,12 +4930,12 @@ bool ValidateGetVertexAttribfvRobustANGLE(Context *context,
     return true;
 }
 
-bool ValidateGetVertexAttribivRobustANGLE(Context *context,
+bool ValidateGetVertexAttribivRobustANGLE(const Context *context,
                                           GLuint index,
                                           GLenum pname,
                                           GLsizei bufSize,
-                                          GLsizei *length,
-                                          GLint *params)
+                                          const GLsizei *length,
+                                          const GLint *params)
 {
     if (!ValidateRobustEntryPoint(context, bufSize))
     {
@@ -4766,12 +4959,12 @@ bool ValidateGetVertexAttribivRobustANGLE(Context *context,
     return true;
 }
 
-bool ValidateGetVertexAttribPointervRobustANGLE(Context *context,
+bool ValidateGetVertexAttribPointervRobustANGLE(const Context *context,
                                                 GLuint index,
                                                 GLenum pname,
                                                 GLsizei bufSize,
-                                                GLsizei *length,
-                                                void **pointer)
+                                                const GLsizei *length,
+                                                void *const *pointer)
 {
     if (!ValidateRobustEntryPoint(context, bufSize))
     {
@@ -4795,12 +4988,12 @@ bool ValidateGetVertexAttribPointervRobustANGLE(Context *context,
     return true;
 }
 
-bool ValidateGetVertexAttribIivRobustANGLE(Context *context,
+bool ValidateGetVertexAttribIivRobustANGLE(const Context *context,
                                            GLuint index,
                                            GLenum pname,
                                            GLsizei bufSize,
-                                           GLsizei *length,
-                                           GLint *params)
+                                           const GLsizei *length,
+                                           const GLint *params)
 {
     if (!ValidateRobustEntryPoint(context, bufSize))
     {
@@ -4824,12 +5017,12 @@ bool ValidateGetVertexAttribIivRobustANGLE(Context *context,
     return true;
 }
 
-bool ValidateGetVertexAttribIuivRobustANGLE(Context *context,
+bool ValidateGetVertexAttribIuivRobustANGLE(const Context *context,
                                             GLuint index,
                                             GLenum pname,
                                             GLsizei bufSize,
-                                            GLsizei *length,
-                                            GLuint *params)
+                                            const GLsizei *length,
+                                            const GLuint *params)
 {
     if (!ValidateRobustEntryPoint(context, bufSize))
     {
@@ -4853,13 +5046,13 @@ bool ValidateGetVertexAttribIuivRobustANGLE(Context *context,
     return true;
 }
 
-bool ValidateGetActiveUniformBlockivRobustANGLE(Context *context,
+bool ValidateGetActiveUniformBlockivRobustANGLE(const Context *context,
                                                 ShaderProgramID program,
                                                 GLuint uniformBlockIndex,
                                                 GLenum pname,
                                                 GLsizei bufSize,
-                                                GLsizei *length,
-                                                GLint *params)
+                                                const GLsizei *length,
+                                                const GLint *params)
 {
     if (!ValidateRobustEntryPoint(context, bufSize))
     {
@@ -4884,13 +5077,13 @@ bool ValidateGetActiveUniformBlockivRobustANGLE(Context *context,
     return true;
 }
 
-bool ValidateGetInternalformativRobustANGLE(Context *context,
+bool ValidateGetInternalformativRobustANGLE(const Context *context,
                                             GLenum target,
                                             GLenum internalformat,
                                             GLenum pname,
                                             GLsizei bufSize,
-                                            GLsizei *length,
-                                            GLint *params)
+                                            const GLsizei *length,
+                                            const GLint *params)
 {
     if (!ValidateRobustEntryPoint(context, bufSize))
     {
@@ -4919,7 +5112,7 @@ bool ValidateGetInternalformativRobustANGLE(Context *context,
 // In the WebGL 2 API, trying to perform a clear when there is a mismatch between the type of the
 // specified clear value and the type of a buffer that is being cleared generates an
 // INVALID_OPERATION error instead of producing undefined results
-bool ValidateWebGLFramebufferAttachmentClearType(Context *context,
+bool ValidateWebGLFramebufferAttachmentClearType(const Context *context,
                                                  GLint drawbuffer,
                                                  const GLenum *validComponentTypes,
                                                  size_t validComponentTypeCount)
@@ -4940,7 +5133,9 @@ bool ValidateWebGLFramebufferAttachmentClearType(Context *context,
     return true;
 }
 
-bool ValidateRobustCompressedTexImageBase(Context *context, GLsizei imageSize, GLsizei dataSize)
+bool ValidateRobustCompressedTexImageBase(const Context *context,
+                                          GLsizei imageSize,
+                                          GLsizei dataSize)
 {
     if (!ValidateRobustEntryPoint(context, dataSize))
     {
@@ -4958,7 +5153,7 @@ bool ValidateRobustCompressedTexImageBase(Context *context, GLsizei imageSize, G
     return true;
 }
 
-bool ValidateGetBufferParameterBase(Context *context,
+bool ValidateGetBufferParameterBase(const Context *context,
                                     BufferBinding target,
                                     GLenum pname,
                                     bool pointerVersion,
@@ -4992,7 +5187,7 @@ bool ValidateGetBufferParameterBase(Context *context,
             break;
 
         case GL_BUFFER_ACCESS_OES:
-            if (!extensions.mapBuffer)
+            if (!extensions.mapBufferOES)
             {
                 context->validationError(GL_INVALID_ENUM, kEnumNotSupported);
                 return false;
@@ -5001,7 +5196,7 @@ bool ValidateGetBufferParameterBase(Context *context,
 
         case GL_BUFFER_MAPPED:
             static_assert(GL_BUFFER_MAPPED == GL_BUFFER_MAPPED_OES, "GL enums should be equal.");
-            if (context->getClientMajorVersion() < 3 && !extensions.mapBuffer &&
+            if (context->getClientMajorVersion() < 3 && !extensions.mapBufferOES &&
                 !extensions.mapBufferRange)
             {
                 context->validationError(GL_INVALID_ENUM, kEnumNotSupported);
@@ -5049,7 +5244,7 @@ bool ValidateGetBufferParameterBase(Context *context,
     return true;
 }
 
-bool ValidateGetRenderbufferParameterivBase(Context *context,
+bool ValidateGetRenderbufferParameterivBase(const Context *context,
                                             GLenum target,
                                             GLenum pname,
                                             GLsizei *length)
@@ -5122,7 +5317,7 @@ bool ValidateGetRenderbufferParameterivBase(Context *context,
     return true;
 }
 
-bool ValidateGetShaderivBase(Context *context,
+bool ValidateGetShaderivBase(const Context *context,
                              ShaderProgramID shader,
                              GLenum pname,
                              GLsizei *length)
@@ -5190,7 +5385,7 @@ bool ValidateGetShaderivBase(Context *context,
     return true;
 }
 
-bool ValidateGetTexParameterBase(Context *context,
+bool ValidateGetTexParameterBase(const Context *context,
                                  TextureType target,
                                  GLenum pname,
                                  GLsizei *length)
@@ -5278,6 +5473,7 @@ bool ValidateGetTexParameterBase(Context *context,
             break;
 
         case GL_DEPTH_STENCIL_TEXTURE_MODE:
+        case GL_IMAGE_FORMAT_COMPATIBILITY_TYPE:
             if (context->getClientVersion() < Version(3, 1))
             {
                 context->validationError(GL_INVALID_ENUM, kEnumRequiresGLES31);
@@ -5305,7 +5501,7 @@ bool ValidateGetTexParameterBase(Context *context,
             break;
 
         case GL_TEXTURE_BORDER_COLOR:
-            if (!context->getExtensions().textureBorderClamp)
+            if (!context->getExtensions().textureBorderClampOES)
             {
                 context->validationError(GL_INVALID_ENUM, kExtensionNotEnabled);
                 return false;
@@ -5341,7 +5537,7 @@ bool ValidateGetTexParameterBase(Context *context,
     return true;
 }
 
-bool ValidateGetVertexAttribBase(Context *context,
+bool ValidateGetVertexAttribBase(const Context *context,
                                  GLuint index,
                                  GLenum pname,
                                  GLsizei *length,
@@ -5359,7 +5555,7 @@ bool ValidateGetVertexAttribBase(Context *context,
         return false;
     }
 
-    if (index >= context->getCaps().maxVertexAttributes)
+    if (index >= static_cast<GLuint>(context->getCaps().maxVertexAttributes))
     {
         context->validationError(GL_INVALID_VALUE, kIndexExceedsMaxVertexAttribute);
         return false;
@@ -5436,7 +5632,7 @@ bool ValidateGetVertexAttribBase(Context *context,
     return true;
 }
 
-bool ValidatePixelPack(Context *context,
+bool ValidatePixelPack(const Context *context,
                        GLenum format,
                        GLenum type,
                        GLint x,
@@ -5445,7 +5641,7 @@ bool ValidatePixelPack(Context *context,
                        GLsizei height,
                        GLsizei bufSize,
                        GLsizei *length,
-                       void *pixels)
+                       const void *pixels)
 {
     // Check for pixel pack buffer related API errors
     Buffer *pixelPackBuffer = context->getState().getTargetBuffer(BufferBinding::PixelPack);
@@ -5512,7 +5708,7 @@ bool ValidatePixelPack(Context *context,
     return true;
 }
 
-bool ValidateReadPixelsBase(Context *context,
+bool ValidateReadPixelsBase(const Context *context,
                             GLint x,
                             GLint y,
                             GLsizei width,
@@ -5523,7 +5719,7 @@ bool ValidateReadPixelsBase(Context *context,
                             GLsizei *length,
                             GLsizei *columns,
                             GLsizei *rows,
-                            void *pixels)
+                            const void *pixels)
 {
     if (length != nullptr)
     {
@@ -5566,7 +5762,20 @@ bool ValidateReadPixelsBase(Context *context,
         return false;
     }
 
-    const FramebufferAttachment *readBuffer = readFramebuffer->getReadColorAttachment();
+    const FramebufferAttachment *readBuffer = nullptr;
+    switch (format)
+    {
+        case GL_DEPTH_COMPONENT:
+            readBuffer = readFramebuffer->getDepthAttachment();
+            break;
+        case GL_STENCIL_INDEX_OES:
+            readBuffer = readFramebuffer->getStencilOrDepthStencilAttachment();
+            break;
+        default:
+            readBuffer = readFramebuffer->getReadColorAttachment();
+            break;
+    }
+
     // WebGL 1.0 [Section 6.26] Reading From a Missing Attachment
     // In OpenGL ES it is undefined what happens when an operation tries to read from a missing
     // attachment and WebGL defines it to be an error. We do the check unconditionnaly as the
@@ -5609,16 +5818,22 @@ bool ValidateReadPixelsBase(Context *context,
     }
 
     GLenum currentFormat = GL_NONE;
-    ANGLE_VALIDATION_TRY(
-        readFramebuffer->getImplementationColorReadFormat(context, &currentFormat));
+    GLenum currentType   = GL_NONE;
 
-    GLenum currentType = GL_NONE;
-    ANGLE_VALIDATION_TRY(readFramebuffer->getImplementationColorReadType(context, &currentType));
-
-    GLenum currentComponentType = readBuffer->getFormat().info->componentType;
+    switch (format)
+    {
+        case GL_DEPTH_COMPONENT:
+        case GL_STENCIL_INDEX_OES:
+            // Only rely on ValidReadPixelsFormatType for depth/stencil formats
+            break;
+        default:
+            currentFormat = readFramebuffer->getImplementationColorReadFormat(context);
+            currentType   = readFramebuffer->getImplementationColorReadType(context);
+            break;
+    }
 
     bool validFormatTypeCombination =
-        ValidReadPixelsFormatType(context, currentComponentType, format, type);
+        ValidReadPixelsFormatType(context, readBuffer->getFormat().info, format, type);
 
     if (!(currentFormat == format && currentType == type) && !validFormatTypeCombination)
     {
@@ -5689,7 +5904,7 @@ bool ValidateReadPixelsBase(Context *context,
 }
 
 template <typename ParamType>
-bool ValidateTexParameterBase(Context *context,
+bool ValidateTexParameterBase(const Context *context,
                               TextureType target,
                               GLenum pname,
                               GLsizei bufSize,
@@ -5741,10 +5956,15 @@ bool ValidateTexParameterBase(Context *context,
                 context->validationError(GL_INVALID_ENUM, kES3Required);
                 return false;
             }
-            if (target == TextureType::External && !context->getExtensions().eglImageExternalEssl3)
+            if (target == TextureType::External &&
+                !context->getExtensions().eglImageExternalEssl3OES)
             {
                 context->validationError(GL_INVALID_ENUM, kEnumNotSupported);
                 return false;
+            }
+            if (target == TextureType::VideoImage && !context->getExtensions().webglVideoTexture)
+            {
+                context->validationError(GL_INVALID_ENUM, kEnumNotSupported);
             }
             break;
 
@@ -5786,8 +6006,9 @@ bool ValidateTexParameterBase(Context *context,
         case GL_TEXTURE_WRAP_T:
         case GL_TEXTURE_WRAP_R:
         {
-            bool restrictedWrapModes =
-                target == TextureType::External || target == TextureType::Rectangle;
+            bool restrictedWrapModes = ((target == TextureType::External &&
+                                         !context->getExtensions().eglImageExternalWrapModesEXT) ||
+                                        target == TextureType::Rectangle);
             if (!ValidateTextureWrapModeValue(context, params, restrictedWrapModes))
             {
                 return false;
@@ -5962,7 +6183,7 @@ bool ValidateTexParameterBase(Context *context,
             break;
 
         case GL_TEXTURE_BORDER_COLOR:
-            if (!context->getExtensions().textureBorderClamp)
+            if (!context->getExtensions().textureBorderClampOES)
             {
                 context->validationError(GL_INVALID_ENUM, kExtensionNotEnabled);
                 return false;
@@ -5982,26 +6203,26 @@ bool ValidateTexParameterBase(Context *context,
     return true;
 }
 
-template bool ValidateTexParameterBase(Context *,
+template bool ValidateTexParameterBase(const Context *,
                                        TextureType,
                                        GLenum,
                                        GLsizei,
                                        bool,
                                        const GLfloat *);
-template bool ValidateTexParameterBase(Context *,
+template bool ValidateTexParameterBase(const Context *,
                                        TextureType,
                                        GLenum,
                                        GLsizei,
                                        bool,
                                        const GLint *);
-template bool ValidateTexParameterBase(Context *,
+template bool ValidateTexParameterBase(const Context *,
                                        TextureType,
                                        GLenum,
                                        GLsizei,
                                        bool,
                                        const GLuint *);
 
-bool ValidateVertexAttribIndex(Context *context, GLuint index)
+bool ValidateVertexAttribIndex(const Context *context, GLuint index)
 {
     if (index >= MAX_VERTEX_ATTRIBS)
     {
@@ -6012,7 +6233,7 @@ bool ValidateVertexAttribIndex(Context *context, GLuint index)
     return true;
 }
 
-bool ValidateGetActiveUniformBlockivBase(Context *context,
+bool ValidateGetActiveUniformBlockivBase(const Context *context,
                                          ShaderProgramID program,
                                          GLuint uniformBlockIndex,
                                          GLenum pname,
@@ -6075,7 +6296,7 @@ bool ValidateGetActiveUniformBlockivBase(Context *context,
 }
 
 template <typename ParamType>
-bool ValidateSamplerParameterBase(Context *context,
+bool ValidateSamplerParameterBase(const Context *context,
                                   SamplerID sampler,
                                   GLenum pname,
                                   GLsizei bufSize,
@@ -6163,7 +6384,7 @@ bool ValidateSamplerParameterBase(Context *context,
         break;
 
         case GL_TEXTURE_BORDER_COLOR:
-            if (!context->getExtensions().textureBorderClamp)
+            if (!context->getExtensions().textureBorderClampOES)
             {
                 context->validationError(GL_INVALID_ENUM, kExtensionNotEnabled);
                 return false;
@@ -6183,26 +6404,26 @@ bool ValidateSamplerParameterBase(Context *context,
     return true;
 }
 
-template bool ValidateSamplerParameterBase(Context *,
+template bool ValidateSamplerParameterBase(const Context *,
                                            SamplerID,
                                            GLenum,
                                            GLsizei,
                                            bool,
                                            const GLfloat *);
-template bool ValidateSamplerParameterBase(Context *,
+template bool ValidateSamplerParameterBase(const Context *,
                                            SamplerID,
                                            GLenum,
                                            GLsizei,
                                            bool,
                                            const GLint *);
-template bool ValidateSamplerParameterBase(Context *,
+template bool ValidateSamplerParameterBase(const Context *,
                                            SamplerID,
                                            GLenum,
                                            GLsizei,
                                            bool,
                                            const GLuint *);
 
-bool ValidateGetSamplerParameterBase(Context *context,
+bool ValidateGetSamplerParameterBase(const Context *context,
                                      SamplerID sampler,
                                      GLenum pname,
                                      GLsizei *length)
@@ -6253,7 +6474,7 @@ bool ValidateGetSamplerParameterBase(Context *context,
             break;
 
         case GL_TEXTURE_BORDER_COLOR:
-            if (!context->getExtensions().textureBorderClamp)
+            if (!context->getExtensions().textureBorderClampOES)
             {
                 context->validationError(GL_INVALID_ENUM, kExtensionNotEnabled);
                 return false;
@@ -6272,7 +6493,7 @@ bool ValidateGetSamplerParameterBase(Context *context,
     return true;
 }
 
-bool ValidateGetInternalFormativBase(Context *context,
+bool ValidateGetInternalFormativBase(const Context *context,
                                      GLenum target,
                                      GLenum internalformat,
                                      GLenum pname,
@@ -6312,7 +6533,7 @@ bool ValidateGetInternalFormativBase(Context *context,
             }
             break;
         case GL_TEXTURE_2D_MULTISAMPLE_ARRAY_OES:
-            if (!context->getExtensions().textureStorageMultisample2DArray)
+            if (!context->getExtensions().textureStorageMultisample2DArrayOES)
             {
                 context->validationError(GL_INVALID_ENUM, kMultisampleArrayExtensionRequired);
                 return false;
@@ -6354,8 +6575,8 @@ bool ValidateGetInternalFormativBase(Context *context,
     return true;
 }
 
-bool ValidateFramebufferNotMultisampled(Context *context,
-                                        Framebuffer *framebuffer,
+bool ValidateFramebufferNotMultisampled(const Context *context,
+                                        const Framebuffer *framebuffer,
                                         bool needResourceSamples)
 {
     int samples = needResourceSamples ? framebuffer->getResourceSamples(context)
@@ -6368,7 +6589,7 @@ bool ValidateFramebufferNotMultisampled(Context *context,
     return true;
 }
 
-bool ValidateMultitextureUnit(Context *context, GLenum texture)
+bool ValidateMultitextureUnit(const Context *context, GLenum texture)
 {
     if (texture < GL_TEXTURE0 || texture >= GL_TEXTURE0 + context->getCaps().maxMultitextureUnits)
     {
@@ -6378,7 +6599,7 @@ bool ValidateMultitextureUnit(Context *context, GLenum texture)
     return true;
 }
 
-bool ValidateTexStorageMultisample(Context *context,
+bool ValidateTexStorageMultisample(const Context *context,
                                    TextureType target,
                                    GLsizei samples,
                                    GLint internalFormat,
@@ -6386,8 +6607,7 @@ bool ValidateTexStorageMultisample(Context *context,
                                    GLsizei height)
 {
     const Caps &caps = context->getCaps();
-    if (static_cast<GLuint>(width) > caps.max2DTextureSize ||
-        static_cast<GLuint>(height) > caps.max2DTextureSize)
+    if (width > caps.max2DTextureSize || height > caps.max2DTextureSize)
     {
         context->validationError(GL_INVALID_VALUE, kTextureWidthOrHeightOutOfRange);
         return false;
@@ -6436,7 +6656,7 @@ bool ValidateTexStorageMultisample(Context *context,
     return true;
 }
 
-bool ValidateTexStorage2DMultisampleBase(Context *context,
+bool ValidateTexStorage2DMultisampleBase(const Context *context,
                                          TextureType target,
                                          GLsizei samples,
                                          GLint internalFormat,
@@ -6458,7 +6678,7 @@ bool ValidateTexStorage2DMultisampleBase(Context *context,
     return ValidateTexStorageMultisample(context, target, samples, internalFormat, width, height);
 }
 
-bool ValidateGetTexLevelParameterBase(Context *context,
+bool ValidateGetTexLevelParameterBase(const Context *context,
                                       TextureTarget target,
                                       GLint level,
                                       GLenum pname,
@@ -6528,7 +6748,10 @@ bool ValidateGetTexLevelParameterBase(Context *context,
     return true;
 }
 
-bool ValidateGetMultisamplefvBase(Context *context, GLenum pname, GLuint index, GLfloat *val)
+bool ValidateGetMultisamplefvBase(const Context *context,
+                                  GLenum pname,
+                                  GLuint index,
+                                  const GLfloat *val)
 {
     if (pname != GL_SAMPLE_POSITION)
     {
@@ -6548,9 +6771,9 @@ bool ValidateGetMultisamplefvBase(Context *context, GLenum pname, GLuint index, 
     return true;
 }
 
-bool ValidateSampleMaskiBase(Context *context, GLuint maskNumber, GLbitfield mask)
+bool ValidateSampleMaskiBase(const Context *context, GLuint maskNumber, GLbitfield mask)
 {
-    if (maskNumber >= context->getCaps().maxSampleMaskWords)
+    if (maskNumber >= static_cast<GLuint>(context->getCaps().maxSampleMaskWords))
     {
         context->validationError(GL_INVALID_VALUE, kInvalidSampleMaskNumber);
         return false;
@@ -6559,7 +6782,7 @@ bool ValidateSampleMaskiBase(Context *context, GLuint maskNumber, GLbitfield mas
     return true;
 }
 
-void RecordDrawAttribsError(Context *context)
+void RecordDrawAttribsError(const Context *context)
 {
     // An overflow can happen when adding the offset. Check against a special constant.
     if (context->getStateCache().getNonInstancedVertexElementLimit() ==
@@ -6577,7 +6800,7 @@ void RecordDrawAttribsError(Context *context)
     }
 }
 
-bool ValidateLoseContextCHROMIUM(Context *context,
+bool ValidateLoseContextCHROMIUM(const Context *context,
                                  GraphicsResetStatus current,
                                  GraphicsResetStatus other)
 {
@@ -6613,7 +6836,7 @@ bool ValidateLoseContextCHROMIUM(Context *context,
 }
 
 // GL_ANGLE_texture_storage_external
-bool ValidateTexImage2DExternalANGLE(Context *context,
+bool ValidateTexImage2DExternalANGLE(const Context *context,
                                      TextureTarget target,
                                      GLint level,
                                      GLint internalformat,
@@ -6658,7 +6881,7 @@ bool ValidateTexImage2DExternalANGLE(Context *context,
     return true;
 }
 
-bool ValidateInvalidateTextureANGLE(Context *context, TextureType target)
+bool ValidateInvalidateTextureANGLE(const Context *context, TextureType target)
 {
     if (!context->getExtensions().textureExternalUpdateANGLE)
     {

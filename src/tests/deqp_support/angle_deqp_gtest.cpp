@@ -99,8 +99,8 @@ constexpr APIInfo kEGLDisplayAPIs[] = {
     {"angle-gl", GPUTestConfig::kAPIGLDesktop},
     {"angle-gles", GPUTestConfig::kAPIGLES},
     {"angle-null", GPUTestConfig::kAPIUnknown},
-    {"angle-vulkan", GPUTestConfig::kAPIVulkan},
     {"angle-swiftshader", GPUTestConfig::kAPISwiftShader},
+    {"angle-vulkan", GPUTestConfig::kAPIVulkan},
 };
 
 constexpr char kdEQPEGLString[]  = "--deqp-egl-display-type=";
@@ -516,6 +516,12 @@ void dEQPTest<TestModuleIndex>::SetUpTestCase()
     const char *targetConfigName = gEGLConfigName;
     std::string configArgString  = std::string(gdEQPEGLConfigNameString) + targetConfigName;
     argv.push_back(configArgString.c_str());
+
+    // Hide SwiftShader window to prevent a race with Xvfb causing hangs on test bots
+    if (gInitAPI && gInitAPI->second == GPUTestConfig::kAPISwiftShader)
+    {
+        argv.push_back("--deqp-visibility=hidden");
+    }
 
     // Init the platform.
     if (!deqp_libtester_init_platform(static_cast<int>(argv.size()), argv.data(),

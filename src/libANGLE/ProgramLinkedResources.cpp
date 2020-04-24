@@ -123,13 +123,13 @@ GLuint GetMaximumShaderUniformVectors(ShaderType shaderType, const Caps &caps)
     switch (shaderType)
     {
         case ShaderType::Vertex:
-            return caps.maxVertexUniformVectors;
+            return static_cast<GLuint>(caps.maxVertexUniformVectors);
         case ShaderType::Fragment:
-            return caps.maxFragmentUniformVectors;
+            return static_cast<GLuint>(caps.maxFragmentUniformVectors);
 
         case ShaderType::Compute:
         case ShaderType::Geometry:
-            return caps.maxShaderUniformComponents[shaderType] / 4;
+            return static_cast<GLuint>(caps.maxShaderUniformComponents[shaderType]) / 4;
 
         default:
             UNREACHABLE();
@@ -469,9 +469,9 @@ class FlattenUniformVisitor : public sh::VariableNameVisitor
             LinkedUniform linkedUniform(variable.type, variable.precision, fullNameWithArrayIndex,
                                         variable.arraySizes, getBinding(), getOffset(), mLocation,
                                         -1, sh::kDefaultBlockMemberInfo);
-            linkedUniform.mappedName = fullMappedNameWithArrayIndex;
-            linkedUniform.active     = mMarkActive;
-            linkedUniform.staticUse  = mMarkStaticUse;
+            linkedUniform.mappedName      = fullMappedNameWithArrayIndex;
+            linkedUniform.active          = mMarkActive;
+            linkedUniform.staticUse       = mMarkStaticUse;
             linkedUniform.outerArraySizes = arraySizes;
             if (variable.hasParentArrayIndex())
             {
@@ -483,7 +483,9 @@ class FlattenUniformVisitor : public sh::VariableNameVisitor
             }
             else
             {
-                mUnusedUniforms->emplace_back(linkedUniform.name, linkedUniform.isSampler());
+                mUnusedUniforms->emplace_back(linkedUniform.name, linkedUniform.isSampler(),
+                                              linkedUniform.isImage(),
+                                              linkedUniform.isAtomicCounter());
             }
 
             uniformList->push_back(linkedUniform);
@@ -912,7 +914,8 @@ void UniformLinker::pruneUnusedUniforms()
         }
         else
         {
-            mUnusedUniforms.emplace_back(uniformIter->name, uniformIter->isSampler());
+            mUnusedUniforms.emplace_back(uniformIter->name, uniformIter->isSampler(),
+                                         uniformIter->isImage(), uniformIter->isAtomicCounter());
             uniformIter = mUniforms.erase(uniformIter);
         }
     }
@@ -940,7 +943,9 @@ bool UniformLinker::flattenUniformsAndCheckCapsForShader(
         }
         else
         {
-            unusedUniforms.emplace_back(uniform.name, IsSamplerType(uniform.type));
+            unusedUniforms.emplace_back(uniform.name, IsSamplerType(uniform.type),
+                                        IsImageType(uniform.type),
+                                        IsAtomicCounterType(uniform.type));
         }
     }
 
@@ -966,21 +971,24 @@ bool UniformLinker::flattenUniformsAndCheckCapsForShader(
         return false;
     }
 
-    if (shaderUniformCount.samplerCount > caps.maxShaderTextureImageUnits[shaderType])
+    if (shaderUniformCount.samplerCount >
+        static_cast<GLuint>(caps.maxShaderTextureImageUnits[shaderType]))
     {
         LogUniformsExceedLimit(shaderType, UniformType::Sampler,
                                caps.maxShaderTextureImageUnits[shaderType], infoLog);
         return false;
     }
 
-    if (shaderUniformCount.imageCount > caps.maxShaderImageUniforms[shaderType])
+    if (shaderUniformCount.imageCount >
+        static_cast<GLuint>(caps.maxShaderImageUniforms[shaderType]))
     {
         LogUniformsExceedLimit(shaderType, UniformType::Image,
                                caps.maxShaderImageUniforms[shaderType], infoLog);
         return false;
     }
 
-    if (shaderUniformCount.atomicCounterCount > caps.maxShaderAtomicCounters[shaderType])
+    if (shaderUniformCount.atomicCounterCount >
+        static_cast<GLuint>(caps.maxShaderAtomicCounters[shaderType]))
     {
         LogUniformsExceedLimit(shaderType, UniformType::AtomicCounter,
                                caps.maxShaderAtomicCounters[shaderType], infoLog);
@@ -1027,7 +1035,7 @@ bool UniformLinker::checkMaxCombinedAtomicCounters(const Caps &caps, InfoLog &in
         if (IsAtomicCounterType(uniform.type) && uniform.active)
         {
             atomicCounterCount += uniform.getBasicTypeElementCount();
-            if (atomicCounterCount > caps.maxCombinedAtomicCounters)
+            if (atomicCounterCount > static_cast<GLuint>(caps.maxCombinedAtomicCounters))
             {
                 infoLog << "atomic counter count exceeds MAX_COMBINED_ATOMIC_COUNTERS"
                         << caps.maxCombinedAtomicCounters << ").";
@@ -1130,6 +1138,8 @@ void InterfaceBlockLinker::defineInterfaceBlock(const GetBlockSizeFunc &getBlock
         blockIndexes.push_back(static_cast<unsigned int>(blockMemberIndex));
     }
 
+    unsigned int firstFieldArraySize = interfaceBlock.fields[0].getArraySizeProduct();
+
     for (unsigned int arrayElement = 0; arrayElement < interfaceBlock.elementCount();
          ++arrayElement)
     {
@@ -1153,7 +1163,8 @@ void InterfaceBlockLinker::defineInterfaceBlock(const GetBlockSizeFunc &getBlock
         int blockBinding =
             (interfaceBlock.binding == -1 ? 0 : interfaceBlock.binding + arrayElement);
         InterfaceBlock block(interfaceBlock.name, interfaceBlock.mappedName,
-                             interfaceBlock.isArray(), arrayElement, blockBinding);
+                             interfaceBlock.isArray(), arrayElement, firstFieldArraySize,
+                             blockBinding);
         block.memberIndexes = blockIndexes;
         block.setActive(shaderType, interfaceBlock.active);
 

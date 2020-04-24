@@ -61,8 +61,8 @@ enum class AttachmentSampleType
 class FramebufferState final : angle::NonCopyable
 {
   public:
-    FramebufferState();
-    explicit FramebufferState(const Caps &caps, FramebufferID id);
+    explicit FramebufferState(ContextID owningContextID);
+    FramebufferState(const Caps &caps, FramebufferID id, ContextID owningContextID);
     ~FramebufferState();
 
     const std::string &getLabel();
@@ -78,6 +78,7 @@ class FramebufferState final : angle::NonCopyable
     const FramebufferAttachment *getDepthAttachment() const;
     const FramebufferAttachment *getStencilAttachment() const;
     const FramebufferAttachment *getDepthStencilAttachment() const;
+    const FramebufferAttachment *getReadPixelsAttachment(GLenum readFormat) const;
 
     const std::vector<GLenum> &getDrawBufferStates() const { return mDrawBufferStates; }
     DrawBufferMask getEnabledDrawBuffers() const { return mEnabledDrawBuffers; }
@@ -123,14 +124,24 @@ class FramebufferState final : angle::NonCopyable
 
     bool isDefault() const;
 
+    bool hasDepthStencilFeedbackLoop() const
+    {
+        return mDepthBufferFeedbackLoop || mStencilBufferFeedbackLoop;
+    }
+
   private:
     const FramebufferAttachment *getWebGLDepthStencilAttachment() const;
     const FramebufferAttachment *getWebGLDepthAttachment() const;
     const FramebufferAttachment *getWebGLStencilAttachment() const;
 
+    // Returns true if there was a change in this attachments feedback-loop-ness.
+    bool updateAttachmentFeedbackLoopAndReturnIfChanged(size_t dirtyBit);
+    void updateHasRenderingFeedbackLoop();
+
     friend class Framebuffer;
 
     FramebufferID mId;
+    ContextID mOwningContextID;
     std::string mLabel;
 
     std::vector<FramebufferAttachment> mColorAttachments;
@@ -155,6 +166,12 @@ class FramebufferState final : angle::NonCopyable
     FramebufferAttachment mWebGLStencilAttachment;
     bool mWebGLDepthStencilConsistent;
 
+    // Tracks rendering feedback loops.
+    DrawBufferMask mDrawBufferFeedbackLoops;
+    bool mDepthBufferFeedbackLoop;
+    bool mStencilBufferFeedbackLoop;
+    bool mHasRenderingFeedbackLoop;
+
     // Tracks if we need to initialize the resources for each attachment.
     angle::BitSet<IMPLEMENTATION_MAX_FRAMEBUFFER_ATTACHMENTS + 2> mResourceNeedsInit;
 
@@ -168,7 +185,10 @@ class Framebuffer final : public angle::ObserverInterface,
 {
   public:
     // Constructor to build application-defined framebuffers
-    Framebuffer(const Caps &caps, rx::GLImplFactory *factory, FramebufferID id);
+    Framebuffer(const Caps &caps,
+                rx::GLImplFactory *factory,
+                FramebufferID id,
+                ContextID owningContextID);
     // Constructor to build default framebuffers for a surface and context pair
     Framebuffer(const Context *context, egl::Surface *surface, egl::Surface *readSurface);
     // Constructor to build a fake default framebuffer when surfaceless
@@ -251,8 +271,8 @@ class Framebuffer final : public angle::ObserverInterface,
     bool usingExtendedDrawBuffers() const;
 
     // This method calls checkStatus.
-    int getSamples(const Context *context);
-    int getResourceSamples(const Context *context);
+    int getSamples(const Context *context) const;
+    int getResourceSamples(const Context *context) const;
 
     angle::Result getSamplePosition(const Context *context, size_t index, GLfloat *xy) const;
 
@@ -270,7 +290,7 @@ class Framebuffer final : public angle::ObserverInterface,
     void invalidateCompletenessCache();
     ANGLE_INLINE bool cachedStatusValid() { return mCachedStatus.valid(); }
 
-    ANGLE_INLINE GLenum checkStatus(const Context *context)
+    ANGLE_INLINE GLenum checkStatus(const Context *context) const
     {
         // The default framebuffer is always complete except when it is surfaceless in which
         // case it is always unsupported.
@@ -287,7 +307,7 @@ class Framebuffer final : public angle::ObserverInterface,
     int getCachedSamples(const Context *context, AttachmentSampleType sampleType) const;
 
     // Helper for checkStatus == GL_FRAMEBUFFER_COMPLETE.
-    ANGLE_INLINE bool isComplete(const Context *context)
+    ANGLE_INLINE bool isComplete(const Context *context) const
     {
         return (checkStatus(context) == GL_FRAMEBUFFER_COMPLETE);
     }
@@ -320,9 +340,8 @@ class Framebuffer final : public angle::ObserverInterface,
                                 GLfloat depth,
                                 GLint stencil);
 
-    // These two methods call syncState() internally.
-    angle::Result getImplementationColorReadFormat(const Context *context, GLenum *formatOut);
-    angle::Result getImplementationColorReadType(const Context *context, GLenum *typeOut);
+    GLenum getImplementationColorReadFormat(const Context *context);
+    GLenum getImplementationColorReadType(const Context *context);
 
     angle::Result readPixels(const Context *context,
                              const Rectangle &area,
@@ -363,19 +382,19 @@ class Framebuffer final : public angle::ObserverInterface,
     using DirtyBits = angle::BitSet<DIRTY_BIT_MAX>;
     bool hasAnyDirtyBit() const { return mDirtyBits.any(); }
 
-    bool hasActiveFloat32ColorAttachment() const
+    DrawBufferMask getActiveFloat32ColorAttachmentDrawBufferMask() const
     {
-        return (mFloat32ColorAttachmentBits & getDrawBufferMask()).any();
+        return mFloat32ColorAttachmentBits & getDrawBufferMask();
     }
 
     bool hasResourceThatNeedsInit() const { return mState.mResourceNeedsInit.any(); }
 
-    angle::Result syncState(const Context *context);
+    angle::Result syncState(const Context *context, GLenum framebufferBinding) const;
 
     // Observer implementation
     void onSubjectStateChange(angle::SubjectIndex index, angle::SubjectMessage message) override;
 
-    bool formsRenderingFeedbackLoopWith(const Context *context) const;
+    bool hasRenderingFeedbackLoop() const { return mState.mHasRenderingFeedbackLoop; }
     bool formsCopyingFeedbackLoopWith(TextureID copyTextureID,
                                       GLint copyTextureLevel,
                                       GLint copyTextureLayer) const;
@@ -392,14 +411,16 @@ class Framebuffer final : public angle::ObserverInterface,
 
     static const FramebufferID kDefaultDrawFramebufferHandle;
 
+    rx::Serial serial() const { return mSerial; }
+
   private:
     bool detachResourceById(const Context *context, GLenum resourceType, GLuint resourceId);
     bool detachMatchingAttachment(const Context *context,
                                   FramebufferAttachment *attachment,
                                   GLenum matchType,
                                   GLuint matchId);
-    GLenum checkStatusWithGLFrontEnd(const Context *context);
-    GLenum checkStatusImpl(const Context *context);
+    GLenum checkStatusWithGLFrontEnd(const Context *context) const;
+    GLenum checkStatusImpl(const Context *context) const;
     void setAttachment(const Context *context,
                        GLenum type,
                        GLenum binding,
@@ -457,21 +478,21 @@ class Framebuffer final : public angle::ObserverInterface,
         mFloat32ColorAttachmentBits.set(index, format->type == GL_FLOAT);
     }
 
+    rx::Serial mSerial;
     FramebufferState mState;
     rx::FramebufferImpl *mImpl;
 
-    Optional<GLenum> mCachedStatus;
+    mutable Optional<GLenum> mCachedStatus;
     std::vector<angle::ObserverBinding> mDirtyColorAttachmentBindings;
     angle::ObserverBinding mDirtyDepthAttachmentBinding;
     angle::ObserverBinding mDirtyStencilAttachmentBinding;
 
-    DirtyBits mDirtyBits;
+    mutable DirtyBits mDirtyBits;
     DrawBufferMask mFloat32ColorAttachmentBits;
-    DrawBufferMask mColorAttachmentBits;
 
     // The dirty bits guard is checked when we get a dependent state change message. We verify that
     // we don't set a dirty bit that isn't already set, when inside the dirty bits syncState.
-    Optional<DirtyBits> mDirtyBitsGuard;
+    mutable Optional<DirtyBits> mDirtyBitsGuard;
 };
 
 }  // namespace gl

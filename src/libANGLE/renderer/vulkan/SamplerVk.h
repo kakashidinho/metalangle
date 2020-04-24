@@ -34,13 +34,8 @@ class SamplerVk : public SamplerImpl
 
     Serial getSerial() const { return mSerial; }
 
-    void onSamplerGraphAccess(vk::CommandGraph *commandGraph)
-    {
-        mSampler.onGraphAccess(commandGraph);
-    }
-
   private:
-    vk::SamplerHelper mSampler;
+    vk::BindingPointer<vk::Sampler> mSampler;
     // The serial is used for cache indexing.
     Serial mSerial;
 };

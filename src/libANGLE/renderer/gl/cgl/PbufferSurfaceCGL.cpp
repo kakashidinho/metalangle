@@ -9,9 +9,7 @@
 
 #include "libANGLE/renderer/gl/cgl/PbufferSurfaceCGL.h"
 
-#include "common/platform.h"
-
-#ifdef ANGLE_PLATFORM_MACOS
+#if defined(ANGLE_PLATFORM_MACOS) || defined(ANGLE_PLATFORM_MACCATALYST)
 
 #    include "common/debug.h"
 #    include "libANGLE/renderer/gl/FramebufferGL.h"
@@ -143,4 +141,4 @@ FramebufferImpl *PbufferSurfaceCGL::createDefaultFramebuffer(const gl::Context *
 
 }  // namespace rx
 
-#endif  // ANGLE_PLATFORM_MACOS
+#endif  // defined(ANGLE_PLATFORM_MACOS) || defined(ANGLE_PLATFORM_MACCATALYST)

@@ -33,6 +33,7 @@ bool IsInterpolationIn(TQualifier qualifier)
     {
         case EvqSmoothIn:
         case EvqFlatIn:
+        case EvqNoPerspectiveIn:
         case EvqCentroidIn:
             return true;
         default:
@@ -433,6 +434,8 @@ GLenum GLVariableType(const TType &type)
             return GL_UNSIGNED_INT_IMAGE_CUBE;
         case EbtAtomicCounter:
             return GL_UNSIGNED_INT_ATOMIC_COUNTER;
+        case EbtSamplerVideoWEBGL:
+            return GL_SAMPLER_VIDEO_IMAGE_WEBGL;
         default:
             UNREACHABLE();
     }
@@ -486,7 +489,7 @@ ImmutableString ArrayString(const TType &type)
     if (!type.isArray())
         return ImmutableString("");
 
-    const TVector<unsigned int> &arraySizes         = *type.getArraySizes();
+    const TSpan<const unsigned int> &arraySizes     = type.getArraySizes();
     constexpr const size_t kMaxDecimalDigitsPerSize = 10u;
     ImmutableStringBuilder arrayString(arraySizes.size() * (kMaxDecimalDigitsPerSize + 2u));
     for (auto arraySizeIter = arraySizes.rbegin(); arraySizeIter != arraySizes.rend();
@@ -517,6 +520,7 @@ bool IsVaryingOut(TQualifier qualifier)
         case EvqVaryingOut:
         case EvqSmoothOut:
         case EvqFlatOut:
+        case EvqNoPerspectiveOut:
         case EvqCentroidOut:
         case EvqVertexOut:
         case EvqGeometryOut:
@@ -536,6 +540,7 @@ bool IsVaryingIn(TQualifier qualifier)
         case EvqVaryingIn:
         case EvqSmoothIn:
         case EvqFlatIn:
+        case EvqNoPerspectiveIn:
         case EvqCentroidIn:
         case EvqFragmentIn:
         case EvqGeometryIn:
@@ -566,6 +571,10 @@ InterpolationType GetInterpolationType(TQualifier qualifier)
         case EvqFlatIn:
         case EvqFlatOut:
             return INTERPOLATION_FLAT;
+
+        case EvqNoPerspectiveIn:
+        case EvqNoPerspectiveOut:
+            return INTERPOLATION_NOPERSPECTIVE;
 
         case EvqSmoothIn:
         case EvqSmoothOut:

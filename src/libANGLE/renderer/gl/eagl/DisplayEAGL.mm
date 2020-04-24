@@ -1,27 +1,8 @@
-/*
- * Copyright (C) 2019 Apple Inc. All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY APPLE INC. ``AS IS'' AND ANY
- * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL APPLE INC. OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
- * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+//
+// Copyright 2020 The ANGLE Project Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+//
 
 // DisplayEAGL.cpp: EAGL implementation of egl::Display
 
@@ -40,7 +21,6 @@
 #    import "libANGLE/renderer/gl/eagl/PbufferSurfaceEAGL.h"
 #    import "libANGLE/renderer/gl/eagl/RendererEAGL.h"
 #    import "libANGLE/renderer/gl/eagl/WindowSurfaceEAGL.h"
-#    import "libANGLE/renderer/gl/null_functions.h"
 
 #    import <Foundation/Foundation.h>
 #    import <OpenGLES/EAGL.h>
@@ -55,6 +35,7 @@ namespace
 constexpr EAGLRenderingAPI kGLESAPI = kEAGLRenderingAPIOpenGLES3;
 const char *kOpenGLESDylibNames[]   = {"/System/Library/Frameworks/OpenGLES.framework/OpenGLES",
                                      "OpenGLES.framework/OpenGLES"};
+
 }
 
 namespace rx
@@ -64,7 +45,8 @@ class FunctionsGLEAGL : public FunctionsGL
 {
   public:
     FunctionsGLEAGL(void *dylibHandle) : mDylibHandle(dylibHandle) {}
-    ~FunctionsGLEAGL() override {}
+
+    ~FunctionsGLEAGL() override { dlclose(mDylibHandle); }
 
   private:
     void *loadProcAddress(const std::string &function) const override
@@ -85,6 +67,12 @@ egl::Error DisplayEAGL::initialize(egl::Display *display)
 {
     mEGLDisplay = display;
 
+    angle::SystemInfo info;
+    if (!angle::GetSystemInfo(&info))
+    {
+        return egl::EglNotInitialized() << "Unable to query ANGLE's SystemInfo.";
+    }
+
     mContext = [[EAGLContext alloc] initWithAPI:kGLESAPI];
     if (mContext == nullptr)
     {
@@ -103,6 +91,7 @@ egl::Error DisplayEAGL::initialize(egl::Display *display)
             break;
         }
     }
+
     if (!handle)
     {
         return egl::EglNotInitialized() << "Could not open the OpenGLES Framework.";
@@ -114,10 +103,9 @@ egl::Error DisplayEAGL::initialize(egl::Display *display)
     mRenderer.reset(new RendererEAGL(std::move(functionsGL), display->getAttributeMap(), this));
 
     const gl::Version &maxVersion = mRenderer->getMaxSupportedESVersion();
-    if (maxVersion < gl::Version(kGLESAPI, 0))
+    if (maxVersion < gl::Version(2, 0))
     {
-        return egl::EglNotInitialized()
-               << "OpenGL ES " << static_cast<int>(kGLESAPI) << ".0 is not supportable.";
+        return egl::EglNotInitialized() << "OpenGL ES 2.0 is not supportable.";
     }
 
     return DisplayGL::initialize(display);
@@ -131,7 +119,6 @@ void DisplayEAGL::terminate()
     if (mContext != nullptr)
     {
         [EAGLContext setCurrentContext:nil];
-        [mContext release];
         mContext = nullptr;
     }
 }
@@ -229,6 +216,12 @@ egl::ConfigSet DisplayEAGL::generateConfigs()
     config.bindToTextureRGB  = EGL_FALSE;
     config.bindToTextureRGBA = EGL_FALSE;
 
+#    if !ANGLE_PLATFORM_MACCATALYST
+    config.bindToTextureTarget = EGL_TEXTURE_2D;
+#    else
+    config.bindToTextureTarget = EGL_TEXTURE_RECTANGLE_ANGLE;
+#    endif
+
     config.surfaceType = EGL_WINDOW_BIT | EGL_PBUFFER_BIT;
 
     config.minSwapInterval = 1;
@@ -262,7 +255,7 @@ egl::Error DisplayEAGL::restoreLostDevice(const egl::Display *display)
 
 bool DisplayEAGL::isValidNativeWindow(EGLNativeWindowType window) const
 {
-    NSObject *layer = reinterpret_cast<NSObject *>(window);
+    NSObject *layer = (__bridge NSObject *)window;
     return [layer isKindOfClass:[CALayer class]];
 }
 
@@ -353,6 +346,7 @@ WorkerContextEAGL::WorkerContextEAGL(EAGLContextObj context) : mContext(context)
 
 WorkerContextEAGL::~WorkerContextEAGL()
 {
+    [EAGLContext setCurrentContext:nil];
     [mContext release];
     mContext = nullptr;
 }
@@ -374,19 +368,15 @@ void WorkerContextEAGL::unmakeCurrent()
 
 WorkerContext *DisplayEAGL::createWorkerContext(std::string *infoLog)
 {
-    @autoreleasepool
+    EAGLContextObj context = nullptr;
+    context = [[EAGLContext alloc] initWithAPI:kGLESAPI sharegroup:mContext.sharegroup];
+    if (!context)
     {
-        ASSERT(mContext);
-        EAGLContextObj context = nullptr;
-        context = [[EAGLContext alloc] initWithAPI:kGLESAPI sharegroup:mContext.sharegroup];
-        if (!context)
-        {
-            *infoLog += "Could not create the EAGL context.";
-            return nullptr;
-        }
-
-        return new WorkerContextEAGL(context);
+        *infoLog += "Could not create the EAGL context.";
+        return nullptr;
     }
+
+    return new WorkerContextEAGL(context);
 }
 
 void DisplayEAGL::initializeFrontendFeatures(angle::FrontendFeatures *features) const

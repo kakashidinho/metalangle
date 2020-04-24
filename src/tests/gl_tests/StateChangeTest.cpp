@@ -10,6 +10,7 @@
 
 #include "test_utils/ANGLETest.h"
 #include "test_utils/gl_raii.h"
+#include "util/random_utils.h"
 
 using namespace angle;
 
@@ -250,11 +251,8 @@ TEST_P(StateChangeTest, FramebufferIncompleteStencilAttachment)
 }
 
 // Test that Framebuffer completeness caching works when depth-stencil attachments change.
-TEST_P(StateChangeTest, FramebufferIncompleteDepthStencilAttachment)
+TEST_P(StateChangeTestES3, FramebufferIncompleteDepthStencilAttachment)
 {
-    ANGLE_SKIP_TEST_IF(getClientMajorVersion() < 3 &&
-                       !IsGLExtensionEnabled("GL_OES_packed_depth_stencil"));
-
     glBindFramebuffer(GL_FRAMEBUFFER, mFramebuffer);
     glBindTexture(GL_TEXTURE_2D, mTextures[0]);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 16, 16, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
@@ -380,6 +378,39 @@ void main (void)
     EXPECT_PIXEL_COLOR_NEAR(w - 1, 0, GLColor::green, kPixelTolerance);
     EXPECT_PIXEL_COLOR_NEAR(0, h - 1, GLColor::blue, kPixelTolerance);
     EXPECT_PIXEL_COLOR_NEAR(w - 1, h - 1, GLColor::black, kPixelTolerance);
+}
+
+// Tests that drawing with transform feedback paused, then lines without transform feedback works
+// without Vulkan validation errors.
+TEST_P(StateChangeTestES3, DrawPausedXfbThenNonXfbLines)
+{
+    // glTransformFeedbackVaryings for program2 returns GL_INVALID_OPERATION on both Linux and
+    // windows.  http://anglebug.com/4265
+    ANGLE_SKIP_TEST_IF(IsIntel() && IsOpenGL());
+
+    std::vector<std::string> tfVaryings = {"gl_Position"};
+    ANGLE_GL_PROGRAM_TRANSFORM_FEEDBACK(program1, essl1_shaders::vs::Simple(),
+                                        essl1_shaders::fs::Blue(), tfVaryings, GL_SEPARATE_ATTRIBS);
+
+    GLBuffer xfbBuffer;
+    glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, xfbBuffer);
+    glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, 6 * sizeof(float[4]), nullptr, GL_STATIC_DRAW);
+
+    GLTransformFeedback xfb;
+    glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, xfb);
+    glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, xfbBuffer);
+
+    glUseProgram(program1);
+    glBeginTransformFeedback(GL_TRIANGLES);
+    glPauseTransformFeedback();
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    ANGLE_GL_PROGRAM(program2, essl1_shaders::vs::Simple(), essl1_shaders::fs::Blue());
+    glUseProgram(program2);
+    glDrawArrays(GL_LINES, 0, 6);
+    glEndTransformFeedback();
+
+    ASSERT_GL_NO_ERROR();
 }
 
 // Tests that vertex attribute value is preserved across context switches.
@@ -699,29 +730,26 @@ TEST_P(StateChangeRenderTest, RecreateRenderbuffer)
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, mRenderbuffer);
 
     // Explictly check FBO status sync in some versions of ANGLE no_error skips FBO checks.
-    ASSERT_GLENUM_EQ(GL_FRAMEBUFFER_COMPLETE, glCheckFramebufferStatus(GL_FRAMEBUFFER));
+    ASSERT_GL_FRAMEBUFFER_COMPLETE(GL_FRAMEBUFFER);
 
     // Draw with red to the FBO.
-    GLColor red(255, 0, 0, 255);
-    setUniformColor(red);
+    setUniformColor(GLColor::red);
     drawQuad(mProgram, "position", 0.5f);
-    EXPECT_PIXEL_COLOR_EQ(0, 0, red);
+    EXPECT_PIXEL_COLOR_EQ(0, 0, GLColor::red);
 
     // Recreate the renderbuffer and clear to green.
     glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, 32, 32);
     glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
-    GLColor green(0, 255, 0, 255);
-    EXPECT_PIXEL_COLOR_EQ(0, 0, green);
+    EXPECT_PIXEL_COLOR_EQ(0, 0, GLColor::green);
 
     // Explictly check FBO status sync in some versions of ANGLE no_error skips FBO checks.
-    ASSERT_GLENUM_EQ(GL_FRAMEBUFFER_COMPLETE, glCheckFramebufferStatus(GL_FRAMEBUFFER));
+    ASSERT_GL_FRAMEBUFFER_COMPLETE(GL_FRAMEBUFFER);
 
     // Verify drawing blue gives blue. This covers the FBO sync with D3D dirty bits.
-    GLColor blue(0, 0, 255, 255);
-    setUniformColor(blue);
+    setUniformColor(GLColor::blue);
     drawQuad(mProgram, "position", 0.5f);
-    EXPECT_PIXEL_COLOR_EQ(0, 0, blue);
+    EXPECT_PIXEL_COLOR_EQ(0, 0, GLColor::blue);
 
     EXPECT_GL_NO_ERROR();
 }
@@ -1446,6 +1474,9 @@ class SimpleStateChangeTestES3 : public SimpleStateChangeTest
 {};
 
 class SimpleStateChangeTestES31 : public SimpleStateChangeTest
+{};
+
+class SimpleStateChangeTestComputeES31 : public SimpleStateChangeTest
 {
   protected:
     void testSetUp() override
@@ -1549,6 +1580,8 @@ TEST_P(SimpleStateChangeTest, DrawArraysThenDrawElements)
 {
     // http://anglebug.com/4121
     ANGLE_SKIP_TEST_IF(IsIntel() && IsLinux() && IsOpenGLES());
+    // http://anglebug.com/4177
+    ANGLE_SKIP_TEST_IF(IsOSX() && IsMetal());
     ANGLE_GL_PROGRAM(program, essl1_shaders::vs::Simple(), essl1_shaders::fs::Blue());
     glUseProgram(program);
 
@@ -1880,6 +1913,9 @@ TEST_P(SimpleStateChangeTest, DrawElementsUBYTEX2ThenDrawElementsUSHORT)
 // verify all the rendering results are the same.
 TEST_P(SimpleStateChangeTest, DrawRepeatUnalignedVboChange)
 {
+    // http://anglebug.com/4470
+    ANGLE_SKIP_TEST_IF(isSwiftshader() && (IsWindows() || IsLinux()));
+
     const int kRepeat = 2;
 
     // set up VBO, colorVBO is unaligned
@@ -2638,6 +2674,82 @@ TEST_P(SimpleStateChangeTest, RedefineFramebufferTexture)
     EXPECT_PIXEL_COLOR_EQ(0, 0, GLColor::green) << "second draw should be green";
 }
 
+// Trips a bug in the Vulkan back-end where a Texture wouldn't transition correctly.
+TEST_P(SimpleStateChangeTest, DrawAndClearTextureRepeatedly)
+{
+    // Fails on 431.02 driver. http://anglebug.com/3748
+    ANGLE_SKIP_TEST_IF(IsWindows() && IsNVIDIA() && IsVulkan());
+
+    // Fails on AMD OpenGL Windows. This configuration isn't maintained.
+    ANGLE_SKIP_TEST_IF(IsWindows() && IsAMD() && IsOpenGL());
+
+    ANGLE_GL_PROGRAM(program, essl1_shaders::vs::Texture2D(), essl1_shaders::fs::Texture2D());
+
+    GLTexture tex;
+    glBindTexture(GL_TEXTURE_2D, tex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, &GLColor::red);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    ASSERT_GL_NO_ERROR();
+
+    GLFramebuffer fbo;
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
+    ASSERT_GL_NO_ERROR();
+    ASSERT_GL_FRAMEBUFFER_COMPLETE(GL_FRAMEBUFFER);
+
+    glUseProgram(program);
+
+    GLint uniLoc = glGetUniformLocation(program, essl1_shaders::Texture2DUniform());
+    ASSERT_NE(-1, uniLoc);
+    glUniform1i(uniLoc, 0);
+
+    const int numRowsCols = 2;
+    const int cellSize    = getWindowWidth() / 2;
+
+    for (int cellY = 0; cellY < numRowsCols; cellY++)
+    {
+        for (int cellX = 0; cellX < numRowsCols; cellX++)
+        {
+            int seed            = cellX + cellY * numRowsCols;
+            const Vector4 color = RandomVec4(seed, 0.0f, 1.0f);
+
+            // Set the texture to a constant color using glClear and a user FBO.
+            glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+            glClearColor(color[0], color[1], color[2], color[3]);
+            glClear(GL_COLOR_BUFFER_BIT);
+
+            // Draw a small colored quad to the default FBO using the viewport.
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glViewport(cellX * cellSize, cellY * cellSize, cellSize, cellSize);
+            drawQuad(program, essl1_shaders::PositionAttrib(), 0.5f);
+        }
+    }
+
+    // Verify the colored quads were drawn correctly despite no flushing.
+    std::vector<GLColor> pixelData(getWindowWidth() * getWindowHeight());
+    glReadPixels(0, 0, getWindowWidth(), getWindowHeight(), GL_RGBA, GL_UNSIGNED_BYTE,
+                 pixelData.data());
+
+    ASSERT_GL_NO_ERROR();
+
+    for (int cellY = 0; cellY < numRowsCols; cellY++)
+    {
+        for (int cellX = 0; cellX < numRowsCols; cellX++)
+        {
+            int seed            = cellX + cellY * numRowsCols;
+            const Vector4 color = RandomVec4(seed, 0.0f, 1.0f);
+
+            GLColor expectedColor(color);
+
+            int testN =
+                cellX * cellSize + cellY * getWindowWidth() * cellSize + getWindowWidth() + 1;
+            GLColor actualColor = pixelData[testN];
+            EXPECT_COLOR_NEAR(expectedColor, actualColor, 1);
+        }
+    }
+}
+
 // Validates disabling cull face really disables it.
 TEST_P(SimpleStateChangeTest, EnableAndDisableCullFace)
 {
@@ -3147,8 +3259,97 @@ void main()
     EXPECT_EQ(s0LinearColors, s1LinearColors);
 }
 
+// Tests that rendering works as expected with multiple VAOs.
+TEST_P(SimpleStateChangeTestES31, MultipleVertexArrayObjectRendering)
+{
+    constexpr char kVertexShader[] = R"(attribute vec4 a_position;
+attribute vec4 a_color;
+varying vec4 v_color;
+void main()
+{
+    gl_Position = a_position;
+    v_color = a_color;
+})";
+
+    constexpr char kFragmentShader[] = R"(precision mediump float;
+varying vec4 v_color;
+void main()
+{
+    gl_FragColor = v_color;
+})";
+
+    ANGLE_GL_PROGRAM(mProgram, kVertexShader, kFragmentShader);
+    GLint positionLoc = glGetAttribLocation(mProgram, "a_position");
+    ASSERT_NE(-1, positionLoc);
+    GLint colorLoc = glGetAttribLocation(mProgram, "a_color");
+    ASSERT_NE(-1, colorLoc);
+
+    GLVertexArray VAOS[2];
+    GLBuffer positionBuffer;
+    GLBuffer colorBuffer;
+    const auto quadVertices = GetQuadVertices();
+
+    glBindVertexArray(VAOS[0]);
+    glBindBuffer(GL_ARRAY_BUFFER, positionBuffer);
+    glBufferData(GL_ARRAY_BUFFER, quadVertices.size() * sizeof(Vector3), quadVertices.data(),
+                 GL_STATIC_DRAW);
+    glEnableVertexAttribArray(positionLoc);
+    glVertexAttribPointer(positionLoc, 3, GL_BYTE, GL_FALSE, 0, 0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
+    std::vector<GLColor32F> blueColor(6, kFloatBlue);
+    glBufferData(GL_ARRAY_BUFFER, blueColor.size() * sizeof(GLColor32F), blueColor.data(),
+                 GL_STATIC_DRAW);
+    glEnableVertexAttribArray(colorLoc);
+    glVertexAttribPointer(colorLoc, 4, GL_BYTE, GL_FALSE, 0, 0);
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glBindVertexArray(VAOS[1]);
+    glBindBuffer(GL_ARRAY_BUFFER, positionBuffer);
+    glBufferData(GL_ARRAY_BUFFER, quadVertices.size() * sizeof(Vector3), quadVertices.data(),
+                 GL_STATIC_DRAW);
+    glEnableVertexAttribArray(positionLoc);
+    glVertexAttribPointer(positionLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
+    std::vector<GLColor32F> greenColor(6, kFloatGreen);
+    glBufferData(GL_ARRAY_BUFFER, greenColor.size() * sizeof(GLColor32F), greenColor.data(),
+                 GL_STATIC_DRAW);
+    glEnableVertexAttribArray(colorLoc);
+    glVertexAttribPointer(colorLoc, 4, GL_FLOAT, GL_FALSE, 0, 0);
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glUseProgram(mProgram);
+    ASSERT_GL_NO_ERROR();
+
+    glBindVertexArray(VAOS[1]);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    // This drawing should not affect the next drawing.
+    glBindVertexArray(VAOS[0]);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    glBindVertexArray(VAOS[1]);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    EXPECT_GL_NO_ERROR();
+    EXPECT_PIXEL_COLOR_EQ(0, getWindowHeight() / 2, GLColor::green);
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 2, getWindowHeight() / 2, GLColor::green);
+    EXPECT_PIXEL_COLOR_EQ(0, 0, GLColor::green);
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 2, 0, GLColor::green);
+
+    ASSERT_GL_NO_ERROR();
+}
+
 // Tests that deleting an in-flight image texture does not immediately delete the resource.
-TEST_P(SimpleStateChangeTestES31, DeleteImageTextureInUse)
+TEST_P(SimpleStateChangeTestComputeES31, DeleteImageTextureInUse)
 {
     std::array<GLColor, 4> colors = {
         {GLColor::red, GLColor::green, GLColor::blue, GLColor::yellow}};
@@ -3175,7 +3376,7 @@ TEST_P(SimpleStateChangeTestES31, DeleteImageTextureInUse)
 }
 
 // Tests that bind the same image texture all the time between different dispatch calls.
-TEST_P(SimpleStateChangeTestES31, RebindImageTextureDispatchAgain)
+TEST_P(SimpleStateChangeTestComputeES31, RebindImageTextureDispatchAgain)
 {
     std::array<GLColor, 4> colors = {{GLColor::cyan, GLColor::cyan, GLColor::cyan, GLColor::cyan}};
     GLTexture texRead;
@@ -3198,7 +3399,7 @@ TEST_P(SimpleStateChangeTestES31, RebindImageTextureDispatchAgain)
 
 // Tests that we can dispatch with an image texture, modify the image texture with a texSubImage,
 // and then dispatch again correctly.
-TEST_P(SimpleStateChangeTestES31, DispatchWithImageTextureTexSubImageThenDispatchAgain)
+TEST_P(SimpleStateChangeTestComputeES31, DispatchWithImageTextureTexSubImageThenDispatchAgain)
 {
     std::array<GLColor, 4> colors    = {{GLColor::red, GLColor::red, GLColor::red, GLColor::red}};
     std::array<GLColor, 4> subColors = {
@@ -3235,7 +3436,7 @@ TEST_P(SimpleStateChangeTestES31, DispatchWithImageTextureTexSubImageThenDispatc
 }
 
 // Test updating an image texture's contents while in use by GL works as expected.
-TEST_P(SimpleStateChangeTestES31, UpdateImageTextureInUse)
+TEST_P(SimpleStateChangeTestComputeES31, UpdateImageTextureInUse)
 {
     std::array<GLColor, 4> rgby = {{GLColor::red, GLColor::green, GLColor::blue, GLColor::yellow}};
 
@@ -3271,7 +3472,7 @@ TEST_P(SimpleStateChangeTestES31, UpdateImageTextureInUse)
 }
 
 // Test that we can alternate between image textures between different dispatchs.
-TEST_P(SimpleStateChangeTestES31, DispatchImageTextureAThenTextureBThenTextureA)
+TEST_P(SimpleStateChangeTestComputeES31, DispatchImageTextureAThenTextureBThenTextureA)
 {
     std::array<GLColor, 4> colorsTexA = {
         {GLColor::cyan, GLColor::cyan, GLColor::cyan, GLColor::cyan}};
@@ -3858,6 +4059,9 @@ void main()
 TEST_P(WebGL2ValidationStateChangeTest, TransformFeedbackNegativeAPI)
 {
     ANGLE_SKIP_TEST_IF(IsAMD() && IsOSX());
+
+    // TODO(anglebug.com/4533) This fails after the upgrade to the 26.20.100.7870 driver.
+    ANGLE_SKIP_TEST_IF(IsWindows() && IsIntel() && IsVulkan());
 
     constexpr char kFS[] = R"(#version 300 es
 precision mediump float;
@@ -4506,6 +4710,67 @@ void main()
     EXPECT_PIXEL_COLOR_EQ(0, 0, GLColor::red);
 }
 
+// Test that switching between programs that only contain default uniforms is correct.
+TEST_P(SimpleStateChangeTest, TwoProgramsWithOnlyDefaultUniforms)
+{
+    constexpr char kVS[] = R"(attribute vec4 a_position;
+varying float v_attrib;
+uniform float u_value;
+void main()
+{
+    v_attrib = u_value;
+    gl_Position = a_position;
+})";
+
+    constexpr char kFS[] = R"(precision mediump float;
+varying float v_attrib;
+void main()
+{
+    gl_FragColor = vec4(v_attrib, 0, 0, 1);
+})";
+
+    ANGLE_GL_PROGRAM(program1, kVS, kFS);
+    ANGLE_GL_PROGRAM(program2, kVS, kFS);
+
+    // Don't use drawQuad so there's no state changes between the draw calls other than the program
+    // binding.
+
+    constexpr size_t kProgramCount = 2;
+    GLuint programs[kProgramCount] = {program1, program2};
+    for (size_t i = 0; i < kProgramCount; ++i)
+    {
+        glUseProgram(programs[i]);
+        GLint uniformLoc = glGetUniformLocation(programs[i], "u_value");
+        ASSERT_NE(uniformLoc, -1);
+
+        glUniform1f(uniformLoc, static_cast<float>(i + 1) / static_cast<float>(kProgramCount));
+
+        // Ensure position is at location 0 in both programs.
+        GLint positionLocation = glGetAttribLocation(programs[i], "a_position");
+        ASSERT_EQ(positionLocation, 0);
+    }
+    ASSERT_GL_NO_ERROR();
+
+    std::array<Vector3, 6> quadVertices = GetQuadVertices();
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, quadVertices.data());
+    glEnableVertexAttribArray(0);
+
+    // Draw once with each so their uniforms are updated.
+    // The first draw will clear the screen to 255, 0, 0, 255
+    glUseProgram(program2);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    // The second draw will clear the screen to 127, 0, 0, 255
+    glUseProgram(program1);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    // Draw with the previous program again, to make sure its default uniforms are bound again.
+    glUseProgram(program2);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    // Verify red was drawn
+    EXPECT_PIXEL_COLOR_EQ(0, 0, GLColor::red);
+}
+
 // Validates GL_RASTERIZER_DISCARD state is tracked correctly
 TEST_P(SimpleStateChangeTestES3, RasterizerDiscardState)
 {
@@ -4547,6 +4812,7 @@ ANGLE_INSTANTIATE_TEST_ES3(StateChangeTestES3);
 ANGLE_INSTANTIATE_TEST_ES2(SimpleStateChangeTest);
 ANGLE_INSTANTIATE_TEST_ES3(SimpleStateChangeTestES3);
 ANGLE_INSTANTIATE_TEST_ES31(SimpleStateChangeTestES31);
+ANGLE_INSTANTIATE_TEST_ES31(SimpleStateChangeTestComputeES31);
 ANGLE_INSTANTIATE_TEST_ES3(ValidationStateChangeTest);
 ANGLE_INSTANTIATE_TEST_ES3(WebGL2ValidationStateChangeTest);
 ANGLE_INSTANTIATE_TEST_ES31(ValidationStateChangeTestES31);

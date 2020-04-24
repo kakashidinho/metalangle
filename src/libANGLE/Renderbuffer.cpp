@@ -22,6 +22,11 @@
 
 namespace gl
 {
+namespace
+{
+angle::SubjectIndex kRenderbufferImplSubjectIndex = 0;
+}  // namespace
+
 // RenderbufferState implementation.
 RenderbufferState::RenderbufferState()
     : mWidth(0), mHeight(0), mFormat(GL_RGBA4), mSamples(0), mInitState(InitState::MayNeedInit)
@@ -64,11 +69,14 @@ void RenderbufferState::update(GLsizei width,
 
 // Renderbuffer implementation.
 Renderbuffer::Renderbuffer(rx::GLImplFactory *implFactory, RenderbufferID id)
-    : RefCountObject(id),
+    : RefCountObject(implFactory->generateSerial(), id),
       mState(),
       mImplementation(implFactory->createRenderbuffer(mState)),
-      mLabel()
-{}
+      mLabel(),
+      mImplObserverBinding(this, kRenderbufferImplSubjectIndex)
+{
+    mImplObserverBinding.bind(mImplementation.get());
+}
 
 void Renderbuffer::onDestroy(const Context *context)
 {
@@ -114,6 +122,11 @@ angle::Result Renderbuffer::setStorageMultisample(const Context *context,
                                                   size_t height)
 {
     ANGLE_TRY(orphanImages(context));
+
+    // Potentially adjust "samples" to a supported value
+    const TextureCaps &formatCaps = context->getTextureCaps().get(internalformat);
+    samples                       = formatCaps.getNearestSamples(static_cast<GLuint>(samples));
+
     ANGLE_TRY(
         mImplementation->setStorageMultisample(context, samples, internalformat, width, height));
 
@@ -299,5 +312,11 @@ angle::Result Renderbuffer::getRenderbufferImage(const Context *context,
 {
     return mImplementation->getRenderbufferImage(context, packState, packBuffer, format, type,
                                                  pixels);
+}
+
+void Renderbuffer::onSubjectStateChange(angle::SubjectIndex index, angle::SubjectMessage message)
+{
+    ASSERT(message == angle::SubjectMessage::SubjectChanged);
+    onStateChange(angle::SubjectMessage::ContentsChanged);
 }
 }  // namespace gl

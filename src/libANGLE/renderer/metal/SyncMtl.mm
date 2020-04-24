@@ -126,6 +126,11 @@ FenceNVMtl::FenceNVMtl() : FenceNVImpl() {}
 
 FenceNVMtl::~FenceNVMtl() {}
 
+void FenceNVMtl::onDestroy(const gl::Context *context)
+{
+    mSync.onDestroy();
+}
+
 angle::Result FenceNVMtl::set(const gl::Context *context, GLenum condition)
 {
     ASSERT(condition == GL_ALL_COMPLETED_NV);

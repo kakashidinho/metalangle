@@ -29,6 +29,9 @@
 // fails on Nexus5X with GLES backend (hangs)
 //  91531 NEXUS5X GLES : conformance_more_* = SKIP
 
+// Globally disable Metal testing for now
+4235 METAL : dEQP-EGL.* = SKIP
+
 // Only Vulkan supports multithreading
 3916 OPENGL : dEQP-EGL.functional.sharing.gles2.multithread.* = SKIP
 3916 OPENGL : dEQP-EGL.functional.multithread.* = SKIP
@@ -247,3 +250,6 @@
 2546 NEXUS5X : dEQP-EGL.functional.query_context.get_current_display.* = SKIP
 2546 NEXUS5X : dEQP-EGL.functional.query_context.get_current_surface.r* = FAIL
 2546 NEXUS5X : dEQP-EGL.functional.query_context.query_context.* = SKIP
+
+// SwANGLE bots
+4495 WIN SWIFTSHADER : dEQP-EGL.functional.sharing.gles2.multithread.random_egl_server_sync.shaders.compile.9 = SKIP

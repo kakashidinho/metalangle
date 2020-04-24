@@ -24,7 +24,7 @@ static_library("libpng") {
     "src/pngwtran.c",
     "src/pngwutil.c",
   ]
-  if (target_cpu == "arm") {
+  if (target_cpu == "arm" || target_cpu == "arm64") {
     sources += [
       "src/arm/arm_init.c",
       "src/arm/filter_neon.S",
@@ -36,7 +36,5 @@ static_library("libpng") {
   }
   configs -= [ "//build/config/compiler:chromium_code" ]
   public_configs = [ ":libpng_config" ]
-  deps = [
-    "//third_party/zlib:zlib",
-  ]
+  deps = [ "//third_party/zlib:zlib" ]
 }

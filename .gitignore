@@ -1,4 +1,5 @@
 .vs
+.vscode
 *.Makefile
 *.ncb
 *.nvuser
@@ -21,9 +22,11 @@
 *.vsp
 *~
 .*.sw*
+.sw*
 .cipd
 .gclient
 .gclient_entries
+.git_cl_description_backup
 /src/tests/third_party/gles_conformance_tests
 /testing
 /third_party/android_ndk
@@ -46,6 +49,7 @@
 /third_party/spirv-headers/src
 /third_party/spirv-tools/src
 /third_party/SwiftShader
+/third_party/VulkanMemoryAllocator
 /third_party/VK-GL-CTS/src
 /third_party/vulkan-headers/src
 /third_party/vulkan-loader/src
@@ -54,6 +58,12 @@
 /third_party/yasm
 /third_party/zlib
 /tools/clang
+/tools/flex-bison/linux/bison
+/tools/flex-bison/linux/flex
+/tools/flex-bison/windows/bison.exe
+/tools/flex-bison/windows/flex.exe
+/tools/flex-bison/windows/m4.exe
+/tools/flex-bison/windows/msys*.dll
 /tools/glslang/glslang_validator
 /tools/glslang/glslang_validator.exe
 /tools/md_browser

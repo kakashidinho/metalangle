@@ -44,21 +44,26 @@ angle::Result HandleError(ErrorHandler *context, GlslangError)
     return angle::Result::Stop;
 }
 
-GlslangSourceOptions CreateSourceOptions()
+void ResetGlslangProgramInterfaceInfo(GlslangProgramInterfaceInfo *programInterfaceInfo)
 {
-    GlslangSourceOptions options;
     // These are binding options passed to glslang. The actual binding might be changed later
     // by spirv-cross.
-    options.uniformsAndXfbDescriptorSetIndex = kGlslangDefaultUniformDescSet;
-    options.textureDescriptorSetIndex        = kGlslangTextureDescSet;
-    options.driverUniformsDescriptorSetIndex = kGlslangDriverUniformsDescSet;
-    options.shaderResourceDescriptorSetIndex = kGlslangShaderResourceDescSet;
-    // NOTE(hqle): Unused for now, until we support XFB
-    options.xfbBindingIndexStart = 1;
+    programInterfaceInfo->uniformsAndXfbDescriptorSetIndex  = kGlslangDefaultUniformDescSet;
+    programInterfaceInfo->currentUniformBindingIndex        = 0;
+    programInterfaceInfo->textureDescriptorSetIndex         = kGlslangTextureDescSet;
+    programInterfaceInfo->currentTextureBindingIndex        = 0;
+    programInterfaceInfo->driverUniformsDescriptorSetIndex  = kGlslangDriverUniformsDescSet;
+    programInterfaceInfo->shaderResourceDescriptorSetIndex  = kGlslangShaderResourceDescSet;
+    programInterfaceInfo->currentShaderResourceBindingIndex = 0;
+    programInterfaceInfo->locationsUsedForXfbExtension      = 0;
 
     static_assert(kDefaultUniformsBindingIndex != 0, "kDefaultUniformsBindingIndex must not be 0");
     static_assert(kDriverUniformsBindingIndex != 0, "kDriverUniformsBindingIndex must not be 0");
+}
 
+GlslangSourceOptions CreateSourceOptions()
+{
+    GlslangSourceOptions options;
     return options;
 }
 
@@ -1070,21 +1075,27 @@ class SpirvToMslCompiler : public spirv_cross::CompilerMSL
 
 void GlslangGetShaderSource(const gl::ProgramState &programState,
                             const gl::ProgramLinkedResources &resources,
-                            gl::ShaderMap<std::string> *shaderSourcesOut)
+                            gl::ShaderMap<std::string> *shaderSourcesOut,
+                            ShaderMapInterfaceVariableInfoMap *variableInfoMapOut)
 {
-    rx::GlslangGetShaderSource(CreateSourceOptions(), false, programState, resources,
-                               shaderSourcesOut);
+    GlslangSourceOptions options = CreateSourceOptions();
+    GlslangProgramInterfaceInfo programInterfaceInfo;
+    ResetGlslangProgramInterfaceInfo(&programInterfaceInfo);
+
+    rx::GlslangGetShaderSource(options, programState, resources, &programInterfaceInfo,
+                               shaderSourcesOut, variableInfoMapOut);
 }
 
 angle::Result GlslangGetShaderSpirvCode(ErrorHandler *context,
+                                        const gl::ShaderBitSet &linkedShaderStages,
                                         const gl::Caps &glCaps,
-                                        bool enableLineRasterEmulation,
                                         const gl::ShaderMap<std::string> &shaderSources,
+                                        const ShaderMapInterfaceVariableInfoMap &variableInfoMap,
                                         gl::ShaderMap<std::vector<uint32_t>> *shaderCodeOut)
 {
     return rx::GlslangGetShaderSpirvCode(
-        [context](GlslangError error) { return HandleError(context, error); }, glCaps,
-        enableLineRasterEmulation, shaderSources, shaderCodeOut);
+        [context](GlslangError error) { return HandleError(context, error); }, linkedShaderStages,
+        glCaps, shaderSources, variableInfoMap, shaderCodeOut);
 }
 
 angle::Result SpirvCodeToMsl(Context *context,

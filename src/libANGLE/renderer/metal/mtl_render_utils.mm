@@ -846,21 +846,21 @@ ANGLE_INLINE void SetPipelineState(ComputeCommandEncoder *encoder,
 }  // namespace
 
 // StencilBlitViaBufferParams implementation
-StencilBlitViaBufferParams::StencilBlitViaBufferParams(const DepthStencilBlitParams &src)
+StencilBlitViaBufferParams::StencilBlitViaBufferParams(const DepthStencilBlitParams &srcIn)
 {
-    dstTextureSize = src.dstTextureSize;
-    dstRect        = src.dstRect;
-    dstScissorRect = src.dstScissorRect;
-    dstFlipY       = src.dstFlipY;
-    dstFlipX       = src.dstFlipX;
-    srcRect        = src.srcRect;
-    srcYFlipped    = src.srcYFlipped;
-    unpackFlipX    = src.unpackFlipX;
-    unpackFlipY    = src.unpackFlipY;
+    dstTextureSize = srcIn.dstTextureSize;
+    dstRect        = srcIn.dstRect;
+    dstScissorRect = srcIn.dstScissorRect;
+    dstFlipY       = srcIn.dstFlipY;
+    dstFlipX       = srcIn.dstFlipX;
+    srcRect        = srcIn.srcRect;
+    srcYFlipped    = srcIn.srcYFlipped;
+    unpackFlipX    = srcIn.unpackFlipX;
+    unpackFlipY    = srcIn.unpackFlipY;
 
-    srcStencil      = src.srcStencil;
-    srcStencilLevel = src.srcStencilLevel;
-    srcStencilLayer = src.srcStencilLayer;
+    srcStencil      = srcIn.srcStencil;
+    srcStencilLevel = srcIn.srcStencilLevel;
+    srcStencilLayer = srcIn.srcStencilLayer;
 }
 
 // RenderUtils implementation

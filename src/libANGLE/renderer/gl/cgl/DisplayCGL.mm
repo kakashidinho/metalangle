@@ -8,7 +8,7 @@
 
 #include "common/platform.h"
 
-#ifdef ANGLE_PLATFORM_MACOS
+#if defined(ANGLE_PLATFORM_MACOS) || defined(ANGLE_PLATFORM_MACCATALYST)
 
 #    include "libANGLE/renderer/gl/cgl/DisplayCGL.h"
 
@@ -82,10 +82,7 @@ egl::Error DisplayCGL::initialize(egl::Display *display)
         std::vector<CGLPixelFormatAttribute> attribs;
         attribs.push_back(kCGLPFAOpenGLProfile);
         attribs.push_back(static_cast<CGLPixelFormatAttribute>(kCGLOGLPVersion_3_2_Core));
-        if (mSupportsGPUSwitching)
-        {
-            attribs.push_back(kCGLPFAAllowOfflineRenderers);
-        }
+        attribs.push_back(kCGLPFAAllowOfflineRenderers);
         attribs.push_back(static_cast<CGLPixelFormatAttribute>(0));
         GLint nVirtualScreens = 0;
         CGLChoosePixelFormat(attribs.data(), &mPixelFormat, &nVirtualScreens);
@@ -262,6 +259,8 @@ egl::ConfigSet DisplayCGL::generateConfigs()
     config.bindToTextureRGB  = EGL_FALSE;
     config.bindToTextureRGBA = EGL_FALSE;
 
+    config.bindToTextureTarget = EGL_TEXTURE_RECTANGLE_ANGLE;
+
     config.surfaceType = EGL_WINDOW_BIT | EGL_PBUFFER_BIT;
 
     config.minSwapInterval = 1;
@@ -295,7 +294,7 @@ egl::Error DisplayCGL::restoreLostDevice(const egl::Display *display)
 
 bool DisplayCGL::isValidNativeWindow(EGLNativeWindowType window) const
 {
-    NSObject *layer = reinterpret_cast<NSObject *>(window);
+    NSObject *layer = (__bridge NSObject *)window;
     return [layer isKindOfClass:[CALayer class]];
 }
 
@@ -451,4 +450,4 @@ void DisplayCGL::populateFeatureList(angle::FeatureList *features)
 }
 }
 
-#endif  // ANGLE_PLATFORM_MACOS
+#endif  // defined(ANGLE_PLATFORM_MACOS) || defined(ANGLE_PLATFORM_MACCATALYST)

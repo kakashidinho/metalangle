@@ -29,7 +29,7 @@ TType *GetStructSamplerParameterType(TSymbolTable *symbolTable, const TVariable 
 
     if (param.getType().isArray())
     {
-        structType->makeArrays(*param.getType().getArraySizes());
+        structType->makeArrays(param.getType().getArraySizes());
     }
 
     ASSERT(!structType->isStructureContainingSamplers());
@@ -210,7 +210,7 @@ TFunction *GenerateFunctionFromArguments(const TFunction *function,
         if (type.isArray() && type.isSampler())
         {
             ASSERT(type.getNumArraySizes() == 1);
-            instantiation.push_back((*type.getArraySizes())[0]);
+            instantiation.push_back(type.getArraySizes()[0]);
         }
     }
 
@@ -267,8 +267,8 @@ class ArrayTraverser
     {
         if (!arrayType.isArray())
             return;
-        size_t currentArraySize = mCumulativeArraySizeStack.back();
-        const auto &arraySizes  = *arrayType.getArraySizes();
+        size_t currentArraySize                     = mCumulativeArraySizeStack.back();
+        const TSpan<const unsigned int> &arraySizes = arrayType.getArraySizes();
         for (auto it = arraySizes.rbegin(); it != arraySizes.rend(); ++it)
         {
             unsigned int arraySize = *it;
@@ -553,7 +553,7 @@ class Traverser final : public TIntermTraverser, public ArrayTraverser
                     newType                       = new TType(fieldStruct, true);
                     if (fieldType.isArray())
                     {
-                        newType->makeArrays(*fieldType.getArraySizes());
+                        newType->makeArrays(fieldType.getArraySizes());
                     }
                 }
                 else
@@ -629,7 +629,7 @@ class Traverser final : public TIntermTraverser, public ArrayTraverser
             else
             {
                 // Replace the type of the declared variables.
-                // NOTE(hqle): Remove this once merged with upstream. Since updated code from
+                // TODO(hqle): Remove this once merged with upstream. Since updated code from
                 // upstream already deals with this.
                 const TStructure *replacementStruct = ite->second;
                 TIntermDeclaration *varDecl         = new TIntermDeclaration;

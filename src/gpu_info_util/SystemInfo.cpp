@@ -25,22 +25,28 @@ std::string VendorName(VendorID vendor)
     {
         case kVendorID_AMD:
             return "AMD";
-        case kVendorID_Intel:
-            return "Intel";
+        case kVendorID_ARM:
+            return "ARM";
+        case kVendorID_Broadcom:
+            return "Broadcom";
+        case kVendorID_GOOGLE:
+            return "Google";
         case kVendorID_ImgTec:
             return "ImgTec";
+        case kVendorID_Intel:
+            return "Intel";
+        case kVendorID_Kazan:
+            return "Kazan";
         case kVendorID_NVIDIA:
             return "NVIDIA";
         case kVendorID_Qualcomm:
             return "Qualcomm";
-        case kVendorID_Vivante:
-            return "Vivante";
         case kVendorID_VeriSilicon:
             return "VeriSilicon";
+        case kVendorID_Vivante:
+            return "Vivante";
         case kVendorID_VMWare:
             return "VMWare";
-        case kVendorID_Kazan:
-            return "Kazan";
         default:
             return "Unknown (" + std::to_string(vendor) + ")";
     }
@@ -104,6 +110,11 @@ bool IsARM(VendorID vendorId)
     return vendorId == kVendorID_ARM;
 }
 
+bool IsBroadcom(VendorID vendorId)
+{
+    return vendorId == kVendorID_Broadcom;
+}
+
 bool IsImgTec(VendorID vendorId)
 {
     return vendorId == kVendorID_ImgTec;
@@ -127,6 +138,11 @@ bool IsNVIDIA(VendorID vendorId)
 bool IsQualcomm(VendorID vendorId)
 {
     return vendorId == kVendorID_Qualcomm;
+}
+
+bool IsGoogle(VendorID vendorId)
+{
+    return vendorId == kVendorID_GOOGLE;
 }
 
 bool IsVeriSilicon(VendorID vendorId)
@@ -308,5 +324,15 @@ void PrintSystemInfo(const SystemInfo &info)
         std::cout << "Machine Model Version: " << info.machineModelVersion << "\n";
     }
     std::cout << std::endl;
+}
+
+VersionInfo ParseNvidiaDriverVersion(uint32_t version)
+{
+    return {
+        version >> 22,         // major
+        version >> 14 & 0xff,  // minor
+        version >> 6 & 0xff,   // subMinor
+        version & 0x3f         // patch
+    };
 }
 }  // namespace angle

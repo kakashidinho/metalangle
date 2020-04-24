@@ -301,6 +301,15 @@ EGLBoolean EGLAPIENTRY EGL_QueryDeviceAttribEXT(EGLDeviceEXT device,
             }
             error = dev->getAttribute(attribute, value);
             break;
+        case EGL_EAGL_CONTEXT_ANGLE:
+            if (!dev->getExtensions().deviceEAGL)
+            {
+                thread->setError(EglBadAttribute(), GetDebug(), "eglQueryDeviceAttribEXT",
+                                 GetDeviceIfValid(dev));
+                return EGL_FALSE;
+            }
+            error = dev->getAttribute(attribute, value);
+            break;
         case EGL_CGL_CONTEXT_ANGLE:
         case EGL_CGL_PIXEL_FORMAT_ANGLE:
             if (!dev->getExtensions().deviceCGL)
@@ -1006,6 +1015,42 @@ ANGLE_EXPORT EGLBoolean EGLAPIENTRY EGL_WaitSyncKHR(EGLDisplay dpy, EGLSync sync
     gl::Context *currentContext = thread->getContext();
     ANGLE_EGL_TRY_RETURN(thread, syncObject->serverWait(display, currentContext, flags),
                          "eglWaitSync", GetSyncIfValid(display, syncObject), EGL_FALSE);
+
+    thread->setSuccess();
+    return EGL_TRUE;
+}
+
+EGLBoolean EGLAPIENTRY EGL_GetMscRateANGLE(EGLDisplay dpy,
+                                           EGLSurface surface,
+                                           EGLint *numerator,
+                                           EGLint *denominator)
+{
+    ANGLE_SCOPED_GLOBAL_LOCK();
+    FUNC_EVENT("EGLDisplay dpy = 0x%016" PRIxPTR ", EGLSurface surface = 0x%016" PRIxPTR
+               ", EGLint* numerator = 0x%016" PRIxPTR
+               ", "
+               "EGLint* denomintor = 0x%016" PRIxPTR "",
+               (uintptr_t)dpy, (uintptr_t)surface, (uintptr_t)numerator, (uintptr_t)denominator);
+    Thread *thread = egl::GetCurrentThread();
+
+    egl::Display *display = static_cast<egl::Display *>(dpy);
+    Surface *eglSurface   = static_cast<Surface *>(surface);
+
+    Error error = ValidateGetMscRateANGLE(display, eglSurface, numerator, denominator);
+    if (error.isError())
+    {
+        thread->setError(error, GetDebug(), "eglGetMscRateANGLE",
+                         GetSurfaceIfValid(display, eglSurface));
+        return EGL_FALSE;
+    }
+
+    error = eglSurface->getMscRate(numerator, denominator);
+    if (error.isError())
+    {
+        thread->setError(error, GetDebug(), "eglGetMscRateANGLE",
+                         GetSurfaceIfValid(display, eglSurface));
+        return EGL_FALSE;
+    }
 
     thread->setSuccess();
     return EGL_TRUE;

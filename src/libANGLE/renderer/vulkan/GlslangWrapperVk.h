@@ -10,7 +10,13 @@
 #define LIBANGLE_RENDERER_VULKAN_GLSLANG_WRAPPER_H_
 
 #include "libANGLE/renderer/ProgramImpl.h"
+#include "libANGLE/renderer/glslang_wrapper_utils.h"
 #include "libANGLE/renderer/vulkan/vk_utils.h"
+
+namespace angle
+{
+struct FeaturesVk;
+}  // namespace angle
 
 namespace rx
 {
@@ -19,16 +25,31 @@ namespace rx
 class GlslangWrapperVk
 {
   public:
-    static void GetShaderSource(bool useOldRewriteStructSamplers,
+    static GlslangSourceOptions CreateSourceOptions(const angle::FeaturesVk &features);
+
+    static void ResetGlslangProgramInterfaceInfo(
+        GlslangProgramInterfaceInfo *glslangProgramInterfaceInfo);
+
+    static void GetShaderSource(const angle::FeaturesVk &features,
                                 const gl::ProgramState &programState,
                                 const gl::ProgramLinkedResources &resources,
-                                gl::ShaderMap<std::string> *shaderSourcesOut);
+                                GlslangProgramInterfaceInfo *programInterfaceInfo,
+                                gl::ShaderMap<std::string> *shaderSourcesOut,
+                                ShaderMapInterfaceVariableInfoMap *variableInfoMapOut);
 
     static angle::Result GetShaderCode(vk::Context *context,
+                                       const gl::ShaderBitSet &linkedShaderStages,
                                        const gl::Caps &glCaps,
-                                       bool enableLineRasterEmulation,
                                        const gl::ShaderMap<std::string> &shaderSources,
+                                       const ShaderMapInterfaceVariableInfoMap &variableInfoMap,
                                        gl::ShaderMap<std::vector<uint32_t>> *shaderCodesOut);
+
+    static angle::Result TransformSpirV(vk::Context *context,
+                                        const gl::ShaderType shaderType,
+                                        bool removeEarlyFragmentTestsOptimization,
+                                        const ShaderInterfaceVariableInfoMap &variableInfoMap,
+                                        const SpirvBlob &initialSpirvBlob,
+                                        SpirvBlob *shaderCodeOut);
 };
 }  // namespace rx
 

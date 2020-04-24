@@ -39,14 +39,20 @@ EGLint PlatformParameters::getRenderer() const
     return eglParameters.renderer;
 }
 
+EGLint PlatformParameters::getDeviceType() const
+{
+    return eglParameters.deviceType;
+}
+
+bool PlatformParameters::isSwiftshader() const
+{
+    return eglParameters.deviceType == EGL_PLATFORM_ANGLE_DEVICE_TYPE_SWIFTSHADER_ANGLE;
+}
+
 void PlatformParameters::initDefaultParameters()
 {
-#if defined(ANGLE_ENABLE_VULKAN_VALIDATION_LAYERS_BY_DEFAULT)
     // Default debug layers to enabled in tests.
     eglParameters.debugLayersEnabled = EGL_TRUE;
-#else
-    eglParameters.debugLayersEnabled = EGL_FALSE;
-#endif  // defined(ANGLE_ENABLE_VULKAN_VALIDATION_LAYERS_BY_DEFAULT)
 }
 
 bool operator<(const PlatformParameters &a, const PlatformParameters &b)
@@ -64,6 +70,31 @@ bool operator!=(const PlatformParameters &a, const PlatformParameters &b)
     return a.tie() != b.tie();
 }
 
+const char *GetRendererName(EGLint renderer)
+{
+    switch (renderer)
+    {
+        case EGL_PLATFORM_ANGLE_TYPE_DEFAULT_ANGLE:
+            return "Default";
+        case EGL_PLATFORM_ANGLE_TYPE_D3D9_ANGLE:
+            return "D3D9";
+        case EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE:
+            return "D3D11";
+        case EGL_PLATFORM_ANGLE_TYPE_METAL_ANGLE:
+            return "Metal";
+        case EGL_PLATFORM_ANGLE_TYPE_NULL_ANGLE:
+            return "Null";
+        case EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE:
+            return "OpenGL";
+        case EGL_PLATFORM_ANGLE_TYPE_OPENGLES_ANGLE:
+            return "OpenGLES";
+        case EGL_PLATFORM_ANGLE_TYPE_VULKAN_ANGLE:
+            return "Vulkan";
+        default:
+            return "Undefined";
+    }
+}
+
 std::ostream &operator<<(std::ostream &stream, const PlatformParameters &pp)
 {
     stream << "ES" << pp.majorVersion << "_";
@@ -75,39 +106,8 @@ std::ostream &operator<<(std::ostream &stream, const PlatformParameters &pp)
     switch (pp.driver)
     {
         case GLESDriverType::AngleEGL:
-        {
-            switch (pp.eglParameters.renderer)
-            {
-                case EGL_PLATFORM_ANGLE_TYPE_DEFAULT_ANGLE:
-                    stream << "Default";
-                    break;
-                case EGL_PLATFORM_ANGLE_TYPE_D3D9_ANGLE:
-                    stream << "D3D9";
-                    break;
-                case EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE:
-                    stream << "D3D11";
-                    break;
-                case EGL_PLATFORM_ANGLE_TYPE_METAL_ANGLE:
-                    stream << "Metal";
-                    break;
-                case EGL_PLATFORM_ANGLE_TYPE_NULL_ANGLE:
-                    stream << "Null";
-                    break;
-                case EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE:
-                    stream << "OpenGL";
-                    break;
-                case EGL_PLATFORM_ANGLE_TYPE_OPENGLES_ANGLE:
-                    stream << "OpenGLES";
-                    break;
-                case EGL_PLATFORM_ANGLE_TYPE_VULKAN_ANGLE:
-                    stream << "Vulkan";
-                    break;
-                default:
-                    stream << "Undefined";
-                    break;
-            }
+            stream << GetRendererName(pp.eglParameters.renderer);
             break;
-        }
         case GLESDriverType::SystemWGL:
             stream << "WGL";
             break;
@@ -184,6 +184,24 @@ std::ostream &operator<<(std::ostream &stream, const PlatformParameters &pp)
     if (pp.eglParameters.contextVirtualization == EGL_FALSE)
     {
         stream << "_NoVirtual";
+    }
+
+    if (pp.eglParameters.transformFeedbackFeature == EGL_FALSE)
+    {
+        stream << "_NoTransformFeedback";
+    }
+    else if (pp.eglParameters.transformFeedbackFeature == EGL_TRUE)
+    {
+        stream << "_TransformFeedback";
+    }
+
+    if (pp.eglParameters.allocateNonZeroMemoryFeature == EGL_FALSE)
+    {
+        stream << "_NoAllocateNonZeroMemory";
+    }
+    else if (pp.eglParameters.allocateNonZeroMemoryFeature == EGL_TRUE)
+    {
+        stream << "_AllocateNonZeroMemory";
     }
 
     return stream;
@@ -382,6 +400,15 @@ EGLPlatformParameters OPENGL_OR_GLES()
     return OPENGLES();
 #else
     return OPENGL();
+#endif
+}
+
+EGLPlatformParameters OPENGL_OR_GLES(EGLint major, EGLint minor)
+{
+#if defined(ANGLE_PLATFORM_ANDROID)
+    return OPENGLES(major, minor);
+#else
+    return OPENGL(major, minor);
 #endif
 }
 
@@ -674,6 +701,11 @@ PlatformParameters ES1_VULKAN_NULL()
     return PlatformParameters(1, 0, egl_platform::VULKAN_NULL());
 }
 
+PlatformParameters ES1_VULKAN_SWIFTSHADER()
+{
+    return PlatformParameters(1, 0, egl_platform::VULKAN_SWIFTSHADER());
+}
+
 PlatformParameters ES2_VULKAN()
 {
     return PlatformParameters(2, 0, egl_platform::VULKAN());
@@ -682,6 +714,11 @@ PlatformParameters ES2_VULKAN()
 PlatformParameters ES2_VULKAN_NULL()
 {
     return PlatformParameters(2, 0, egl_platform::VULKAN_NULL());
+}
+
+PlatformParameters ES2_VULKAN_SWIFTSHADER()
+{
+    return PlatformParameters(2, 0, egl_platform::VULKAN_SWIFTSHADER());
 }
 
 PlatformParameters ES3_VULKAN()
@@ -694,6 +731,11 @@ PlatformParameters ES3_VULKAN_NULL()
     return PlatformParameters(3, 0, egl_platform::VULKAN_NULL());
 }
 
+PlatformParameters ES3_VULKAN_SWIFTSHADER()
+{
+    return PlatformParameters(3, 0, egl_platform::VULKAN_SWIFTSHADER());
+}
+
 PlatformParameters ES31_VULKAN()
 {
     return PlatformParameters(3, 1, egl_platform::VULKAN());
@@ -702,6 +744,11 @@ PlatformParameters ES31_VULKAN()
 PlatformParameters ES31_VULKAN_NULL()
 {
     return PlatformParameters(3, 1, egl_platform::VULKAN_NULL());
+}
+
+PlatformParameters ES31_VULKAN_SWIFTSHADER()
+{
+    return PlatformParameters(3, 1, egl_platform::VULKAN_SWIFTSHADER());
 }
 
 PlatformParameters ES1_METAL()

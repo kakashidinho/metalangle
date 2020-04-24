@@ -194,8 +194,6 @@ std::string DynamicHLSL::generateVertexShaderForInputLayout(
             }
             else
             {
-                GLenum componentType = mRenderer->getVertexComponentType(vertexFormatID);
-
                 if (shaderAttribute.name == "gl_InstanceID" ||
                     shaderAttribute.name == "gl_VertexID")
                 {
@@ -205,6 +203,8 @@ std::string DynamicHLSL::generateVertexShaderForInputLayout(
                 }
                 else
                 {
+                    GLenum componentType = mRenderer->getVertexComponentType(vertexFormatID);
+
                     structStream << "    ";
                     HLSLComponentTypeString(structStream, componentType,
                                             VariableComponentCount(shaderAttribute.type));
@@ -414,7 +414,7 @@ void DynamicHLSL::generateVaryingLinkHLSL(const VaryingPacking &varyingPacking,
     for (GLuint registerIndex = 0u; registerIndex < registerInfos.size(); ++registerIndex)
     {
         const PackedVaryingRegister &registerInfo = registerInfos[registerIndex];
-        const auto &varying                       = *registerInfo.packedVarying->varying;
+        const auto &varying                       = registerInfo.packedVarying->varying();
         ASSERT(!varying.isStruct());
 
         // TODO: Add checks to ensure D3D interpolation modifiers don't result in too many
@@ -599,14 +599,15 @@ void DynamicHLSL::generateShaderLinkHLSL(const gl::Caps &caps,
     {
         const PackedVaryingRegister &registerInfo = registerInfos[registerIndex];
         const auto &packedVarying                 = *registerInfo.packedVarying;
-        const auto &varying                       = *packedVarying.varying;
+        const auto &varying                       = *packedVarying.frontVarying.varying;
         ASSERT(!varying.isStruct());
 
         vertexGenerateOutput << "    output.v" << registerIndex << " = ";
 
         if (packedVarying.isStructField())
         {
-            vertexGenerateOutput << DecorateVariable(packedVarying.parentStructName) << ".";
+            vertexGenerateOutput << DecorateVariable(packedVarying.frontVarying.parentStructName)
+                                 << ".";
         }
 
         vertexGenerateOutput << DecorateVariable(varying.name);
@@ -798,19 +799,28 @@ void DynamicHLSL::generateShaderLinkHLSL(const gl::Caps &caps,
     {
         const PackedVaryingRegister &registerInfo = registerInfos[registerIndex];
         const auto &packedVarying                 = *registerInfo.packedVarying;
-        const auto &varying                       = *packedVarying.varying;
+
+        // Don't reference VS-only transform feedback varyings in the PS.
+        if (packedVarying.vertexOnly())
+        {
+            continue;
+        }
+
+        const auto &varying = *packedVarying.backVarying.varying;
         ASSERT(!varying.isBuiltIn() && !varying.isStruct());
 
-        // Don't reference VS-only transform feedback varyings in the PS. Note that we're relying on
-        // that the active flag is set according to usage in the fragment shader.
-        if (packedVarying.vertexOnly || !varying.active)
+        // Note that we're relying on that the active flag is set according to usage in the fragment
+        // shader.
+        if (!varying.active)
+        {
             continue;
+        }
 
         pixelPrologue << "    ";
 
         if (packedVarying.isStructField())
         {
-            pixelPrologue << DecorateVariable(packedVarying.parentStructName) << ".";
+            pixelPrologue << DecorateVariable(packedVarying.backVarying.parentStructName) << ".";
         }
 
         pixelPrologue << DecorateVariable(varying.name);
@@ -1209,7 +1219,9 @@ void DynamicHLSL::getPixelShaderOutputKey(const gl::State &data,
     // - with a 2.0 context, the output color is broadcast to all channels
     bool broadcast = metadata.usesBroadcast(data);
     const unsigned int numRenderTargets =
-        (broadcast || metadata.usesMultipleFragmentOuts() ? data.getCaps().maxDrawBuffers : 1);
+        (broadcast || metadata.usesMultipleFragmentOuts()
+             ? static_cast<unsigned int>(data.getCaps().maxDrawBuffers)
+             : 1);
 
     if (!metadata.usesCustomOutVars())
     {

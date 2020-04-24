@@ -174,6 +174,7 @@ class StateCache final : angle::NonCopyable
     // 13. onUniformBufferStateChange.
     // 14. onColorMaskChange.
     // 15. onBufferBindingChange.
+    // 16. onBlendFuncIndexedChange.
     bool hasBasicDrawStatesError(Context *context) const
     {
         if (mCachedBasicDrawStatesError == 0)
@@ -187,7 +188,7 @@ class StateCache final : angle::NonCopyable
         return getBasicDrawStatesErrorImpl(context) != 0;
     }
 
-    intptr_t getBasicDrawStatesError(Context *context) const
+    intptr_t getBasicDrawStatesError(const Context *context) const
     {
         if (mCachedBasicDrawStatesError != kInvalidPointer)
         {
@@ -201,7 +202,7 @@ class StateCache final : angle::NonCopyable
     // 1. onActiveTransformFeedbackChange.
     // 2. onVertexArrayBufferStateChange.
     // 3. onBufferBindingChange.
-    intptr_t getBasicDrawElementsError(Context *context) const
+    intptr_t getBasicDrawElementsError(const Context *context) const
     {
         if (mCachedBasicDrawElementsError != kInvalidPointer)
         {
@@ -274,6 +275,7 @@ class StateCache final : angle::NonCopyable
     void onUniformBufferStateChange(Context *context);
     void onColorMaskChange(Context *context);
     void onBufferBindingChange(Context *context);
+    void onBlendFuncIndexedChange(Context *context);
 
   private:
     // Cache update functions.
@@ -291,8 +293,8 @@ class StateCache final : angle::NonCopyable
 
     void setValidDrawModes(bool pointsOK, bool linesOK, bool trisOK, bool lineAdjOK, bool triAdjOK);
 
-    intptr_t getBasicDrawStatesErrorImpl(Context *context) const;
-    intptr_t getBasicDrawElementsErrorImpl(Context *context) const;
+    intptr_t getBasicDrawStatesErrorImpl(const Context *context) const;
+    intptr_t getBasicDrawElementsErrorImpl(const Context *context) const;
 
     static constexpr intptr_t kInvalidPointer = 1;
 
@@ -324,6 +326,10 @@ class StateCache final : angle::NonCopyable
         mCachedIntegerVertexAttribTypesValidation;
 };
 
+using VertexArrayMap       = ResourceMap<VertexArray, VertexArrayID>;
+using QueryMap             = ResourceMap<Query, QueryID>;
+using TransformFeedbackMap = ResourceMap<TransformFeedback, TransformFeedbackID>;
+
 class Context final : public egl::LabeledObject, angle::NonCopyable, public angle::ObserverInterface
 {
   public:
@@ -338,7 +344,7 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
             const egl::ClientExtensions &clientExtensions);
 
     // Use for debugging.
-    int id() const { return mState.mID; }
+    ContextID id() const { return mState.getContextID(); }
 
     egl::Error onDestroy(const egl::Display *display);
     ~Context() override;
@@ -367,14 +373,11 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     void deleteMemoryObject(MemoryObjectID memoryObject);
     void deleteSemaphore(SemaphoreID semaphore);
 
-    // CHROMIUM_path_rendering
-    bool isPathGenerated(PathID path) const;
-
     void bindReadFramebuffer(FramebufferID framebufferHandle);
     void bindDrawFramebuffer(FramebufferID framebufferHandle);
 
     Buffer *getBuffer(BufferID handle) const;
-    FenceNV *getFenceNV(FenceNVID handle);
+    FenceNV *getFenceNV(FenceNVID handle) const;
     Sync *getSync(GLsync handle) const;
     ANGLE_INLINE Texture *getTexture(TextureID handle) const
     {
@@ -385,7 +388,7 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     Renderbuffer *getRenderbuffer(RenderbufferID handle) const;
     VertexArray *getVertexArray(VertexArrayID handle) const;
     Sampler *getSampler(SamplerID handle) const;
-    Query *getQuery(QueryID handle, bool create, QueryType type);
+    Query *getOrCreateQuery(QueryID handle, QueryType type);
     Query *getQuery(QueryID handle) const;
     TransformFeedback *getTransformFeedback(TransformFeedbackID handle) const;
     ProgramPipeline *getProgramPipeline(ProgramPipelineID handle) const;
@@ -398,13 +401,15 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
 
     Compiler *getCompiler() const;
 
-    bool isVertexArrayGenerated(VertexArrayID vertexArray);
-    bool isTransformFeedbackGenerated(TransformFeedbackID transformFeedback);
+    bool isVertexArrayGenerated(VertexArrayID vertexArray) const;
+    bool isTransformFeedbackGenerated(TransformFeedbackID transformFeedback) const;
 
-    void getBooleanvImpl(GLenum pname, GLboolean *params);
-    void getFloatvImpl(GLenum pname, GLfloat *params);
-    void getIntegervImpl(GLenum pname, GLint *params);
-    void getInteger64vImpl(GLenum pname, GLint64 *params);
+    void getBooleanvImpl(GLenum pname, GLboolean *params) const;
+    void getFloatvImpl(GLenum pname, GLfloat *params) const;
+    void getIntegervImpl(GLenum pname, GLint *params) const;
+    void getInteger64vImpl(GLenum pname, GLint64 *params) const;
+    void getIntegerVertexAttribImpl(GLenum pname, GLenum attribpname, GLint *params) const;
+    void getVertexAttribivImpl(GLuint index, GLenum pname, GLint *params) const;
 
     // Framebuffers are owned by the Context, so these methods do not pass through
     FramebufferID createFramebuffer();
@@ -448,11 +453,12 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
                      const char *function,
                      unsigned int line);
 
-    void validationError(GLenum errorCode, const char *message);
+    void validationError(GLenum errorCode, const char *message) const;
 
     void markContextLost(GraphicsResetStatus status);
 
     bool isContextLost() const { return mContextLost; }
+    void setContextLost();
 
     GLenum getGraphicsResetStrategy() const { return mResetStrategy; }
     bool isResetNotificationEnabled();
@@ -460,14 +466,15 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     const egl::Config *getConfig() const;
     EGLenum getClientType() const;
     EGLenum getRenderBuffer() const;
+    EGLenum getContextPriority() const;
 
     const GLubyte *getString(GLenum name) const;
     const GLubyte *getStringi(GLenum name, GLuint index) const;
 
     size_t getExtensionStringCount() const;
 
-    bool isExtensionRequestable(const char *name);
-    bool isExtensionDisablable(const char *name);
+    bool isExtensionRequestable(const char *name) const;
+    bool isExtensionDisablable(const char *name) const;
     size_t getRequestableExtensionStringCount() const;
     void setExtensionEnabled(const char *name, bool enabled);
     void reinitializeAfterExtensionsChanged();
@@ -478,7 +485,7 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
                                            angle::MemoryBuffer **scratchBufferOut) const;
     ANGLE_NO_DISCARD bool getZeroFilledBuffer(size_t requstedSizeBytes,
                                               angle::MemoryBuffer **zeroBufferOut) const;
-    angle::ScratchBuffer *getScratchBuffer() const { return &mScratchBuffer; }
+    angle::ScratchBuffer *getScratchBuffer() const;
 
     angle::Result prepareForCopyImage();
     angle::Result prepareForDispatch();
@@ -511,8 +518,15 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     const TextureCapsMap &getTextureCaps() const { return mState.getTextureCaps(); }
     const Extensions &getExtensions() const { return mState.getExtensions(); }
     const Limitations &getLimitations() const { return mState.getLimitations(); }
-    bool skipValidation() const { return mSkipValidation; }
     bool isGLES1() const;
+
+    bool skipValidation() const
+    {
+        // Ensure we don't skip validation when context becomes lost, since implementations
+        // generally assume a non-lost context, non-null objects, etc.
+        ASSERT(!isContextLost() || !mSkipValidation);
+        return mSkipValidation;
+    }
 
     // Specific methods needed for validation.
     bool getQueryParameterInfo(GLenum pname, GLenum *type, unsigned int *numParams) const;
@@ -544,6 +558,7 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     bool isRenderbufferGenerated(RenderbufferID renderbuffer) const;
     bool isFramebufferGenerated(FramebufferID framebuffer) const;
     bool isProgramPipelineGenerated(ProgramPipelineID pipeline) const;
+    bool isQueryGenerated(QueryID query) const;
 
     bool usingDisplayTextureShareGroup() const;
 
@@ -575,7 +590,16 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
 
     angle::FrameCapture *getFrameCapture() { return mFrameCapture.get(); }
 
+    const VertexArrayMap &getVertexArraysForCapture() const { return mVertexArrayMap; }
+    const QueryMap &getQueriesForCapture() const { return mQueryMap; }
+    const TransformFeedbackMap &getTransformFeedbacksForCapture() const
+    {
+        return mTransformFeedbackMap;
+    }
+
     void onPostSwap() const;
+
+    Program *getActiveLinkedProgram() const;
 
   private:
     void initialize();
@@ -593,7 +617,6 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     angle::Result syncStateForReadPixels();
     angle::Result syncStateForTexImage();
     angle::Result syncStateForBlit();
-    angle::Result syncStateForPathOperation();
 
     VertexArray *checkVertexArrayAllocation(VertexArrayID vertexArrayHandle);
     TransformFeedback *checkTransformFeedbackAllocation(TransformFeedbackID transformFeedback);
@@ -609,9 +632,6 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     void detachSampler(SamplerID sampler);
     void detachProgramPipeline(ProgramPipelineID pipeline);
 
-    // A small helper method to facilitate using the ANGLE_CONTEXT_TRY macro.
-    void tryGenPaths(GLsizei range, PathID *createdOut);
-
     egl::Error setDefaultFramebuffer(egl::Surface *drawSurface, egl::Surface *readSurface);
     egl::Error unsetDefaultFramebuffer();
 
@@ -626,7 +646,12 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     gl::LabeledObject *getLabeledObject(GLenum identifier, GLuint name) const;
     gl::LabeledObject *getLabeledObjectFromPtr(const void *ptr) const;
 
-    void setUniform1iImpl(Program *program, GLint location, GLsizei count, const GLint *v);
+    void setUniform1iImpl(Program *program,
+                          UniformLocation location,
+                          GLsizei count,
+                          const GLint *v);
+
+    void convertPpoToComputeOrDraw(bool isCompute);
 
     State mState;
     bool mShared;
@@ -657,13 +682,13 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     ResourceMap<FenceNV, FenceNVID> mFenceNVMap;
     HandleAllocator mFenceNVHandleAllocator;
 
-    ResourceMap<Query, QueryID> mQueryMap;
+    QueryMap mQueryMap;
     HandleAllocator mQueryHandleAllocator;
 
-    ResourceMap<VertexArray, VertexArrayID> mVertexArrayMap;
+    VertexArrayMap mVertexArrayMap;
     HandleAllocator mVertexArrayHandleAllocator;
 
-    ResourceMap<TransformFeedback, TransformFeedbackID> mTransformFeedbackMap;
+    TransformFeedbackMap mTransformFeedbackMap;
     HandleAllocator mTransformFeedbackHandleAllocator;
 
     const char *mVersionString;
@@ -679,7 +704,7 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
 
     // Current/lost context flags
     bool mHasBeenCurrent;
-    bool mContextLost;
+    bool mContextLost;  // Set with setContextLost so that we also set mSkipValidation=false.
     GraphicsResetStatus mResetStatus;
     bool mContextLostForced;
     GLenum mResetStrategy;
@@ -695,7 +720,6 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     MemoryProgramCache *mMemoryProgramCache;
 
     State::DirtyObjects mDrawDirtyObjects;
-    State::DirtyObjects mPathOperationDirtyObjects;
 
     StateCache mStateCache;
 
@@ -722,8 +746,8 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     std::vector<angle::ObserverBinding> mImageObserverBindings;
 
     // Not really a property of context state. The size and contexts change per-api-call.
-    mutable angle::ScratchBuffer mScratchBuffer;
-    mutable angle::ScratchBuffer mZeroFilledBuffer;
+    mutable Optional<angle::ScratchBuffer> mScratchBuffer;
+    mutable Optional<angle::ScratchBuffer> mZeroFilledBuffer;
 
     std::shared_ptr<angle::WorkerThreadPool> mThreadPool;
 

@@ -10,7 +10,7 @@
 #ifndef LIBANGLE_RENDERER_VULKAN_SURFACEVK_H_
 #define LIBANGLE_RENDERER_VULKAN_SURFACEVK_H_
 
-#include <vulkan/vulkan.h>
+#include "volk.h"
 
 #include "libANGLE/renderer/SurfaceImpl.h"
 #include "libANGLE/renderer/vulkan/RenderTargetVk.h"
@@ -20,7 +20,7 @@ namespace rx
 {
 class RendererVk;
 
-class SurfaceVk : public SurfaceImpl
+class SurfaceVk : public SurfaceImpl, public angle::ObserverInterface
 {
   public:
     angle::Result getAttachmentRenderTarget(const gl::Context *context,
@@ -32,6 +32,9 @@ class SurfaceVk : public SurfaceImpl
   protected:
     SurfaceVk(const egl::SurfaceState &surfaceState);
     ~SurfaceVk() override;
+
+    // We monitor the staging buffer for changes. This handles staged data from outside this class.
+    void onSubjectStateChange(angle::SubjectIndex index, angle::SubjectMessage message) override;
 
     RenderTargetVk mColorRenderTarget;
     RenderTargetVk mDepthStencilRenderTarget;
@@ -60,6 +63,7 @@ class OffscreenSurfaceVk : public SurfaceVk
                             EGLint buffer) override;
     egl::Error releaseTexImage(const gl::Context *context, EGLint buffer) override;
     egl::Error getSyncValues(EGLuint64KHR *ust, EGLuint64KHR *msc, EGLuint64KHR *sbc) override;
+    egl::Error getMscRate(EGLint *numerator, EGLint *denominator) override;
     void setSwapInterval(EGLint interval) override;
 
     // width and height can change with client window resizing
@@ -74,10 +78,10 @@ class OffscreenSurfaceVk : public SurfaceVk
 
     vk::ImageHelper *getColorAttachmentImage();
 
-  private:
+  protected:
     struct AttachmentImage final : angle::NonCopyable
     {
-        AttachmentImage();
+        AttachmentImage(SurfaceVk *surfaceVk);
         ~AttachmentImage();
 
         angle::Result initialize(DisplayVk *displayVk,
@@ -85,13 +89,22 @@ class OffscreenSurfaceVk : public SurfaceVk
                                  EGLint height,
                                  const vk::Format &vkFormat,
                                  GLint samples);
+
+        angle::Result initializeWithExternalMemory(DisplayVk *displayVk,
+                                                   EGLint width,
+                                                   EGLint height,
+                                                   const vk::Format &vkFormat,
+                                                   GLint samples,
+                                                   void *buffer);
+
         void destroy(const egl::Display *display);
 
         vk::ImageHelper image;
         vk::ImageViewHelper imageViews;
+        angle::ObserverBinding imageObserverBinding;
     };
 
-    angle::Result initializeImpl(DisplayVk *displayVk);
+    virtual angle::Result initializeImpl(DisplayVk *displayVk);
 
     EGLint mWidth;
     EGLint mHeight;
@@ -196,6 +209,7 @@ class WindowSurfaceVk : public SurfaceVk
                             EGLint buffer) override;
     egl::Error releaseTexImage(const gl::Context *context, EGLint buffer) override;
     egl::Error getSyncValues(EGLuint64KHR *ust, EGLuint64KHR *msc, EGLuint64KHR *sbc) override;
+    egl::Error getMscRate(EGLint *numerator, EGLint *denominator) override;
     void setSwapInterval(EGLint interval) override;
 
     // width and height can change with client window resizing
@@ -213,6 +227,8 @@ class WindowSurfaceVk : public SurfaceVk
                                         vk::Framebuffer **framebufferOut);
 
     vk::Semaphore getAcquireImageSemaphore();
+
+    VkSurfaceTransformFlagBitsKHR getPreTransform() { return mPreTransform; }
 
   protected:
     angle::Result swapImpl(const gl::Context *context,
@@ -248,7 +264,9 @@ class WindowSurfaceVk : public SurfaceVk
                           const void *pNextChain,
                           bool *presentOutOfDate);
 
-    angle::Result updateAndDrawOverlay(ContextVk *contextVk, impl::SwapchainImage *image) const;
+    void updateOverlay(ContextVk *contextVk) const;
+    bool overlayHasEnabledWidget(ContextVk *contextVk) const;
+    angle::Result drawOverlay(ContextVk *contextVk, impl::SwapchainImage *image) const;
 
     angle::Result newPresentSemaphore(vk::Context *context, vk::Semaphore *semaphoreOut);
 
@@ -279,6 +297,7 @@ class WindowSurfaceVk : public SurfaceVk
     std::vector<impl::SwapchainCleanupData> mOldSwapchains;
 
     std::vector<impl::SwapchainImage> mSwapchainImages;
+    std::vector<angle::ObserverBinding> mSwapchainImageBindings;
     vk::Semaphore mAcquireImageSemaphore;
     uint32_t mCurrentSwapchainImageIndex;
 
@@ -287,10 +306,12 @@ class WindowSurfaceVk : public SurfaceVk
     // Depth/stencil image.  Possibly multisampled.
     vk::ImageHelper mDepthStencilImage;
     vk::ImageViewHelper mDepthStencilImageViews;
+    angle::ObserverBinding mDepthStencilImageBinding;
 
     // Multisample color image, view and framebuffer, if multisampling enabled.
     vk::ImageHelper mColorImageMS;
     vk::ImageViewHelper mColorImageMSViews;
+    angle::ObserverBinding mColorImageMSBinding;
     vk::Framebuffer mFramebufferMS;
 };
 

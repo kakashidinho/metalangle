@@ -13,7 +13,7 @@
 #include "libANGLE/renderer/FramebufferImpl.h"
 #include "libANGLE/renderer/RenderTargetCache.h"
 #include "libANGLE/renderer/vulkan/BufferVk.h"
-#include "libANGLE/renderer/vulkan/CommandGraph.h"
+#include "libANGLE/renderer/vulkan/ResourceVk.h"
 #include "libANGLE/renderer/vulkan/UtilsVk.h"
 #include "libANGLE/renderer/vulkan/vk_cache_utils.h"
 
@@ -69,8 +69,8 @@ class FramebufferVk : public FramebufferImpl
                                 GLfloat depth,
                                 GLint stencil) override;
 
-    GLenum getImplementationColorReadFormat(const gl::Context *context) const override;
-    GLenum getImplementationColorReadType(const gl::Context *context) const override;
+    const gl::InternalFormat &getImplementationColorReadFormat(
+        const gl::Context *context) const override;
     angle::Result readPixels(const gl::Context *context,
                              const gl::Rectangle &area,
                              GLenum format,
@@ -86,6 +86,7 @@ class FramebufferVk : public FramebufferImpl
     bool checkStatus(const gl::Context *context) const override;
 
     angle::Result syncState(const gl::Context *context,
+                            GLenum binding,
                             const gl::Framebuffer::DirtyBits &dirtyBits) override;
 
     angle::Result getSamplePosition(const gl::Context *context,
@@ -105,21 +106,9 @@ class FramebufferVk : public FramebufferImpl
     gl::Rectangle getCompleteRenderArea() const;
     gl::Rectangle getScissoredRenderArea(ContextVk *contextVk) const;
 
-    void onScissorChange(ContextVk *contextVk);
-
     const gl::DrawBufferMask &getEmulatedAlphaAttachmentMask() const;
     RenderTargetVk *getColorDrawRenderTarget(size_t colorIndex) const;
     RenderTargetVk *getColorReadRenderTarget() const;
-
-    // This will clear the current write operation if it is complete.
-    bool appendToStartedRenderPass(vk::CommandGraph *graph,
-                                   const gl::Rectangle &renderArea,
-                                   vk::CommandBuffer **commandBufferOut)
-    {
-        return mFramebuffer.appendToStartedRenderPass(graph, renderArea, commandBufferOut);
-    }
-
-    vk::FramebufferHelper *getFramebuffer() { return &mFramebuffer; }
 
     angle::Result startNewRenderPass(ContextVk *context,
                                      const gl::Rectangle &renderArea,
@@ -129,6 +118,13 @@ class FramebufferVk : public FramebufferImpl
     GLint getSamples() const;
 
     const vk::RenderPassDesc &getRenderPassDesc() const { return mRenderPassDesc; }
+    const vk::FramebufferDesc &getFramebufferDesc() const { return mCurrentFramebufferDesc; }
+    // We only support depth/stencil packed format and depthstencil attachment always follow all
+    // color attachments
+    size_t getDepthStencilAttachmentIndexVk() const
+    {
+        return getState().getEnabledDrawBuffers().count();
+    }
 
   private:
     FramebufferVk(RendererVk *renderer,
@@ -161,13 +157,6 @@ class FramebufferVk : public FramebufferImpl
                             bool clearStencil,
                             const VkClearColorValue &clearColorValue,
                             const VkClearDepthStencilValue &clearDepthStencilValue);
-    angle::Result clearWithRenderPassOp(ContextVk *contextVk,
-                                        const gl::Rectangle &clearArea,
-                                        gl::DrawBufferMask clearColorBuffers,
-                                        bool clearDepth,
-                                        bool clearStencil,
-                                        const VkClearColorValue &clearColorValue,
-                                        const VkClearDepthStencilValue &clearDepthStencilValue);
     angle::Result clearWithDraw(ContextVk *contextVk,
                                 const gl::Rectangle &clearArea,
                                 gl::DrawBufferMask clearColorBuffers,
@@ -179,12 +168,18 @@ class FramebufferVk : public FramebufferImpl
     void updateActiveColorMasks(size_t colorIndex, bool r, bool g, bool b, bool a);
     void updateRenderPassDesc();
     angle::Result updateColorAttachment(const gl::Context *context, size_t colorIndex);
-    void invalidateImpl(ContextVk *contextVk, size_t count, const GLenum *attachments);
+    angle::Result invalidateImpl(ContextVk *contextVk, size_t count, const GLenum *attachments);
+    // Release all FramebufferVk objects in the cache and clear cache
+    void clearCache(ContextVk *contextVk);
+    void updateDepthStencilAttachmentSerial(ContextVk *contextVk);
+
+    RenderTargetVk *getReadPixelsRenderTarget(GLenum format) const;
+    VkImageAspectFlagBits getReadPixelsAspectFlags(GLenum format) const;
 
     WindowSurfaceVk *mBackbuffer;
 
     vk::RenderPassDesc mRenderPassDesc;
-    vk::FramebufferHelper mFramebuffer;
+    vk::FramebufferHelper *mFramebuffer;
     RenderTargetCache<RenderTargetVk> mRenderTargetCache;
 
     // These two variables are used to quickly compute if we need to do a masked clear. If a color
@@ -198,6 +193,10 @@ class FramebufferVk : public FramebufferImpl
     // the framebuffer does not, we need to mask out the alpha channel. This DrawBufferMask will
     // contain the mask to apply to the alpha channel when drawing.
     gl::DrawBufferMask mEmulatedAlphaAttachmentMask;
+
+    vk::FramebufferDesc mCurrentFramebufferDesc;
+    std::unordered_map<vk::FramebufferDesc, vk::FramebufferHelper> mFramebufferCache;
+    bool mSupportDepthStencilFeedbackLoops;
 };
 }  // namespace rx
 

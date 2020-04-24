@@ -12,12 +12,17 @@
 #include "common/Optional.h"
 #include "common/angleutils.h"
 
+#include <string>
+
 namespace angle
 {
 std::string GetExecutablePath();
 std::string GetExecutableDirectory();
 std::string GetResourceDirectory();
+std::string GetHelperExecutableDir();
 const char *GetSharedLibraryExtension();
+const char *GetExecutableExtension();
+char GetPathSeparator();
 Optional<std::string> GetCWD();
 bool SetCWD(const char *dirName);
 bool SetEnvironmentVar(const char *variableName, const char *value);

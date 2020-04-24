@@ -92,6 +92,10 @@ enum class FormatID
     BC2_RGBA_UNORM_SRGB_BLOCK,
     BC3_RGBA_UNORM_BLOCK,
     BC3_RGBA_UNORM_SRGB_BLOCK,
+    BC4_RED_SNORM_BLOCK,
+    BC4_RED_UNORM_BLOCK,
+    BC5_RG_SNORM_BLOCK,
+    BC5_RG_UNORM_BLOCK,
     BPTC_RGBA_UNORM_BLOCK,
     BPTC_RGB_SIGNED_FLOAT_BLOCK,
     BPTC_RGB_UNSIGNED_FLOAT_BLOCK,
@@ -226,6 +230,7 @@ enum class FormatID
     R8_SSCALED,
     R8_UINT,
     R8_UNORM,
+    R8_UNORM_SRGB,
     R8_USCALED,
     R9G9B9E5_SHAREDEXP,
     S8_UINT,
@@ -237,7 +242,7 @@ enum class FormatID
     X2R10G10B10_USCALED_VERTEX
 };
 
-constexpr uint32_t kNumANGLEFormats = 218;
+constexpr uint32_t kNumANGLEFormats = 223;
 
 }  // namespace angle
 

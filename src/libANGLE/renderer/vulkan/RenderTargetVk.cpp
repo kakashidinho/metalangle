@@ -9,17 +9,19 @@
 
 #include "libANGLE/renderer/vulkan/RenderTargetVk.h"
 
-#include "libANGLE/renderer/vulkan/CommandGraph.h"
 #include "libANGLE/renderer/vulkan/ContextVk.h"
+#include "libANGLE/renderer/vulkan/ResourceVk.h"
 #include "libANGLE/renderer/vulkan/TextureVk.h"
 #include "libANGLE/renderer/vulkan/vk_format_utils.h"
 #include "libANGLE/renderer/vulkan/vk_helpers.h"
 
 namespace rx
 {
+
 RenderTargetVk::RenderTargetVk()
-    : mImage(nullptr), mImageViews(nullptr), mLevelIndex(0), mLayerIndex(0)
-{}
+{
+    reset();
+}
 
 RenderTargetVk::~RenderTargetVk() {}
 
@@ -27,12 +29,10 @@ RenderTargetVk::RenderTargetVk(RenderTargetVk &&other)
     : mImage(other.mImage),
       mImageViews(other.mImageViews),
       mLevelIndex(other.mLevelIndex),
-      mLayerIndex(other.mLayerIndex)
+      mLayerIndex(other.mLayerIndex),
+      mContentDefined(other.mContentDefined)
 {
-    other.mImage      = nullptr;
-    other.mImageViews = nullptr;
-    other.mLevelIndex = 0;
-    other.mLayerIndex = 0;
+    other.reset();
 }
 
 void RenderTargetVk::init(vk::ImageHelper *image,
@@ -44,52 +44,56 @@ void RenderTargetVk::init(vk::ImageHelper *image,
     mImageViews = imageViews;
     mLevelIndex = levelIndex;
     mLayerIndex = layerIndex;
+    // We are being conservative here since our targeted optimization is to skip surfaceVK's depth
+    // buffer load after swap call.
+    mContentDefined = true;
 }
 
 void RenderTargetVk::reset()
 {
-    mImage      = nullptr;
-    mImageViews = nullptr;
-    mLevelIndex = 0;
-    mLayerIndex = 0;
+    mImage          = nullptr;
+    mImageViews     = nullptr;
+    mLevelIndex     = 0;
+    mLayerIndex     = 0;
+    mContentDefined = false;
 }
 
-angle::Result RenderTargetVk::onColorDraw(ContextVk *contextVk,
-                                          vk::FramebufferHelper *framebufferVk,
-                                          vk::CommandBuffer *commandBuffer)
+vk::AttachmentSerial RenderTargetVk::getAssignSerial(ContextVk *contextVk)
 {
-    ASSERT(commandBuffer->valid());
+    ASSERT(mImage && mImage->valid());
+    vk::AttachmentSerial attachmentSerial;
+    ASSERT(mLayerIndex < std::numeric_limits<uint16_t>::max());
+    ASSERT(mLevelIndex < std::numeric_limits<uint16_t>::max());
+    Serial imageSerial = mImage->getAssignSerial(contextVk);
+    ASSERT(imageSerial.getValue() < std::numeric_limits<uint32_t>::max());
+    SetBitField(attachmentSerial.layer, mLayerIndex);
+    SetBitField(attachmentSerial.level, mLevelIndex);
+    SetBitField(attachmentSerial.imageSerial, imageSerial.getValue());
+    return attachmentSerial;
+}
+
+angle::Result RenderTargetVk::onColorDraw(ContextVk *contextVk)
+{
     ASSERT(!mImage->getFormat().actualImageFormat().hasDepthOrStencilBits());
 
-    // TODO(jmadill): Use automatic layout transition. http://anglebug.com/2361
-    mImage->changeLayout(VK_IMAGE_ASPECT_COLOR_BIT, vk::ImageLayout::ColorAttachment,
-                         commandBuffer);
-
-    // Set up dependencies between the RT resource and the Framebuffer.
-    mImage->addWriteDependency(contextVk, framebufferVk);
-
-    onImageViewGraphAccess(contextVk);
+    contextVk->onRenderPassImageWrite(VK_IMAGE_ASPECT_COLOR_BIT, vk::ImageLayout::ColorAttachment,
+                                      mImage);
+    mContentDefined = true;
+    retainImageViews(contextVk);
 
     return angle::Result::Continue;
 }
 
-angle::Result RenderTargetVk::onDepthStencilDraw(ContextVk *contextVk,
-                                                 vk::FramebufferHelper *framebufferVk,
-                                                 vk::CommandBuffer *commandBuffer)
+angle::Result RenderTargetVk::onDepthStencilDraw(ContextVk *contextVk)
 {
-    ASSERT(commandBuffer->valid());
     ASSERT(mImage->getFormat().actualImageFormat().hasDepthOrStencilBits());
 
-    // TODO(jmadill): Use automatic layout transition. http://anglebug.com/2361
     const angle::Format &format    = mImage->getFormat().actualImageFormat();
     VkImageAspectFlags aspectFlags = vk::GetDepthStencilAspectFlags(format);
 
-    mImage->changeLayout(aspectFlags, vk::ImageLayout::DepthStencilAttachment, commandBuffer);
-
-    // Set up dependencies between the RT resource and the Framebuffer.
-    mImage->addWriteDependency(contextVk, framebufferVk);
-
-    onImageViewGraphAccess(contextVk);
+    contextVk->onRenderPassImageWrite(aspectFlags, vk::ImageLayout::DepthStencilAttachment, mImage);
+    mContentDefined = true;
+    retainImageViews(contextVk);
 
     return angle::Result::Continue;
 }
@@ -133,40 +137,10 @@ void RenderTargetVk::updateSwapchainImage(vk::ImageHelper *image, vk::ImageViewH
     mImageViews = imageViews;
 }
 
-vk::ImageHelper *RenderTargetVk::getImageForRead(ContextVk *contextVk,
-                                                 vk::CommandGraphResource *readingResource,
-                                                 vk::ImageLayout layout,
-                                                 vk::CommandBuffer *commandBuffer)
+vk::ImageHelper *RenderTargetVk::getImageForWrite(ContextVk *contextVk) const
 {
     ASSERT(mImage && mImage->valid());
-
-    // TODO(jmadill): Better simultaneous resource access. http://anglebug.com/2679
-    //
-    // A better alternative would be:
-    //
-    // if (mImage->isLayoutChangeNecessary(layout)
-    // {
-    //     vk::CommandBuffer *srcLayoutChange;
-    //     ANGLE_TRY(mImage->recordCommands(contextVk, &srcLayoutChange));
-    //     mImage->changeLayout(mImage->getAspectFlags(), layout, srcLayoutChange);
-    // }
-    // mImage->addReadDependency(readingResource);
-    //
-    // I.e. the transition should happen on a node generated from mImage itself.
-    // However, this needs context to be available here, or all call sites changed
-    // to perform the layout transition and set the dependency.
-    mImage->addWriteDependency(contextVk, readingResource);
-    mImage->changeLayout(mImage->getAspectFlags(), layout, commandBuffer);
-    onImageViewGraphAccess(contextVk);
-    return mImage;
-}
-
-vk::ImageHelper *RenderTargetVk::getImageForWrite(ContextVk *contextVk,
-                                                  vk::CommandGraphResource *writingResource) const
-{
-    ASSERT(mImage && mImage->valid());
-    mImage->addWriteDependency(contextVk, writingResource);
-    onImageViewGraphAccess(contextVk);
+    retainImageViews(contextVk);
     return mImage;
 }
 
@@ -177,13 +151,13 @@ angle::Result RenderTargetVk::flushStagedUpdates(ContextVk *contextVk)
         return angle::Result::Continue;
 
     vk::CommandBuffer *commandBuffer;
-    ANGLE_TRY(mImage->recordCommands(contextVk, &commandBuffer));
+    ANGLE_TRY(contextVk->endRenderPassAndGetCommandBuffer(&commandBuffer));
     return mImage->flushStagedUpdates(contextVk, mLevelIndex, mLevelIndex + 1, mLayerIndex,
                                       mLayerIndex + 1, commandBuffer);
 }
 
-void RenderTargetVk::onImageViewGraphAccess(ContextVk *contextVk) const
+void RenderTargetVk::retainImageViews(ContextVk *contextVk) const
 {
-    mImageViews->onGraphAccess(contextVk->getCommandGraph());
+    mImageViews->retain(&contextVk->getResourceUseList());
 }
 }  // namespace rx

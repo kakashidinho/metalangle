@@ -11,7 +11,7 @@
 #include "compiler/translator/ExtensionGLSL.h"
 #include "compiler/translator/OutputGLSL.h"
 #include "compiler/translator/VersionGLSL.h"
-#include "compiler/translator/tree_ops/EmulatePrecision.h"
+#include "compiler/translator/tree_ops/RewriteRowMajorMatrices.h"
 #include "compiler/translator/tree_ops/RewriteTexelFetchOffset.h"
 #include "compiler/translator/tree_ops/RewriteUnaryMinusOperatorFloat.h"
 
@@ -109,19 +109,17 @@ bool TranslatorGLSL::translate(TIntermBlock *root,
         }
     }
 
-    bool precisionEmulation =
-        getResources().WEBGL_debug_shader_precision && getPragma().debugShaderPrecision;
-
-    if (precisionEmulation)
+    if ((compileOptions & SH_REWRITE_ROW_MAJOR_MATRICES) != 0 && getShaderVersion() >= 300)
     {
-        EmulatePrecision emulatePrecision(&getSymbolTable());
-        root->traverse(&emulatePrecision);
-        if (!emulatePrecision.updateTree(this, root))
+        if (!RewriteRowMajorMatrices(this, root, &getSymbolTable()))
         {
             return false;
         }
-        emulatePrecision.writeEmulationHelpers(sink, getShaderVersion(), getOutputType());
     }
+
+    bool precisionEmulation = false;
+    if (!emulatePrecisionIfNeeded(root, sink, &precisionEmulation, getOutputType()))
+        return false;
 
     // Write emulated built-in functions if needed.
     if (!getBuiltInFunctionEmulator().isOutputEmpty())
@@ -201,6 +199,8 @@ bool TranslatorGLSL::translate(TIntermBlock *root,
             sink << "out vec4 angle_SecondaryFragData[" << getResources().MaxDualSourceDrawBuffers
                  << "];\n";
         }
+
+        EmitEarlyFragmentTestsGLSL(*this, sink);
     }
 
     if (getShaderType() == GL_COMPUTE_SHADER)
@@ -290,7 +290,12 @@ void TranslatorGLSL::writeExtensionBehavior(TIntermNode *root, ShCompileOptions 
             (iter.first == TExtension::OVR_multiview) || (iter.first == TExtension::OVR_multiview2);
         if (isMultiview)
         {
-            EmitMultiviewGLSL(*this, compileOptions, iter.second, sink);
+            // Only either OVR_multiview or OVR_multiview2 should be emitted.
+            if ((iter.first != TExtension::OVR_multiview) ||
+                !IsExtensionEnabled(extBehavior, TExtension::OVR_multiview2))
+            {
+                EmitMultiviewGLSL(*this, compileOptions, iter.first, iter.second, sink);
+            }
         }
 
         // Support ANGLE_texture_multisample extension on GLSL300

@@ -21,42 +21,67 @@ namespace BuiltInGroup
 bool isTextureOffsetNoBias(const TFunction *func)
 {
     int id = func->uniqueId().get();
-    return id >= 3019 && id <= 3088;
+    return id >= 3060 && id <= 3129;
 }
 bool isTextureOffsetBias(const TFunction *func)
 {
     int id = func->uniqueId().get();
-    return id >= 3089 && id <= 3108;
+    return id >= 3130 && id <= 3149;
+}
+bool isTextureGatherOffsetsComp(const TFunction *func)
+{
+    int id = func->uniqueId().get();
+    return id >= 3187 && id <= 3199;
+}
+bool isTextureGatherOffsetsNoComp(const TFunction *func)
+{
+    int id = func->uniqueId().get();
+    return id >= 3200 && id <= 3215;
+}
+bool isTextureGatherOffsets(const TFunction *func)
+{
+    int id = func->uniqueId().get();
+    return id >= 3187 && id <= 3215;
+}
+bool isTextureGatherOffsetComp(const TFunction *func)
+{
+    int id = func->uniqueId().get();
+    return id >= 3216 && id <= 3221;
+}
+bool isTextureGatherOffsetNoComp(const TFunction *func)
+{
+    int id = func->uniqueId().get();
+    return id >= 3222 && id <= 3229;
 }
 bool isTextureGatherOffset(const TFunction *func)
 {
     int id = func->uniqueId().get();
-    return id >= 3146 && id <= 3159;
+    return id >= 3216 && id <= 3229;
 }
 bool isTextureGather(const TFunction *func)
 {
     int id = func->uniqueId().get();
-    return id >= 3122 && id <= 3159;
+    return id >= 3163 && id <= 3229;
 }
 bool isAtomicMemory(const TFunction *func)
 {
     int id = func->uniqueId().get();
-    return id >= 3176 && id <= 3193;
+    return id >= 3246 && id <= 3263;
 }
 bool isImageLoad(const TFunction *func)
 {
     int id = func->uniqueId().get();
-    return id >= 3218 && id <= 3229;
+    return id >= 3288 && id <= 3299;
 }
 bool isImageStore(const TFunction *func)
 {
     int id = func->uniqueId().get();
-    return id >= 3230 && id <= 3241;
+    return id >= 3300 && id <= 3311;
 }
 bool isImage(const TFunction *func)
 {
     int id = func->uniqueId().get();
-    return id >= 3194 && id <= 3241;
+    return id >= 3264 && id <= 3311;
 }
 
 }  // namespace BuiltInGroup

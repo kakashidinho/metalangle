@@ -160,6 +160,8 @@ TextureImpl *Context11::createTexture(const gl::TextureState &state)
     switch (state.getType())
     {
         case gl::TextureType::_2D:
+        // GL_TEXTURE_VIDEO_IMAGE_WEBGL maps to native 2D texture on Windows platform
+        case gl::TextureType::VideoImage:
             return new TextureD3D_2D(state, mRenderer);
         case gl::TextureType::CubeMap:
             return new TextureD3D_Cube(state, mRenderer);
@@ -225,11 +227,6 @@ SamplerImpl *Context11::createSampler(const gl::SamplerState &state)
 ProgramPipelineImpl *Context11::createProgramPipeline(const gl::ProgramPipelineState &data)
 {
     return new ProgramPipeline11(data);
-}
-
-std::vector<PathImpl *> Context11::createPaths(GLsizei)
-{
-    return std::vector<PathImpl *>();
 }
 
 MemoryObjectImpl *Context11::createMemoryObject()
@@ -337,6 +334,16 @@ angle::Result Context11::drawElements(const gl::Context *context,
     return drawElementsImpl(context, mode, count, type, indices, 0, 0, 0);
 }
 
+angle::Result Context11::drawElementsBaseVertex(const gl::Context *context,
+                                                gl::PrimitiveMode mode,
+                                                GLsizei count,
+                                                gl::DrawElementsType type,
+                                                const void *indices,
+                                                GLint baseVertex)
+{
+    return drawElementsImpl(context, mode, count, type, indices, 0, baseVertex, 0);
+}
+
 angle::Result Context11::drawElementsInstanced(const gl::Context *context,
                                                gl::PrimitiveMode mode,
                                                GLsizei count,
@@ -345,6 +352,17 @@ angle::Result Context11::drawElementsInstanced(const gl::Context *context,
                                                GLsizei instances)
 {
     return drawElementsImpl(context, mode, count, type, indices, instances, 0, 0);
+}
+
+angle::Result Context11::drawElementsInstancedBaseVertex(const gl::Context *context,
+                                                         gl::PrimitiveMode mode,
+                                                         GLsizei count,
+                                                         gl::DrawElementsType type,
+                                                         const void *indices,
+                                                         GLsizei instances,
+                                                         GLint baseVertex)
+{
+    return drawElementsImpl(context, mode, count, type, indices, instances, baseVertex, 0);
 }
 
 angle::Result Context11::drawElementsInstancedBaseVertexBaseInstance(const gl::Context *context,
@@ -369,6 +387,18 @@ angle::Result Context11::drawRangeElements(const gl::Context *context,
                                            const void *indices)
 {
     return drawElementsImpl(context, mode, count, type, indices, 0, 0, 0);
+}
+
+angle::Result Context11::drawRangeElementsBaseVertex(const gl::Context *context,
+                                                     gl::PrimitiveMode mode,
+                                                     GLuint start,
+                                                     GLuint end,
+                                                     GLsizei count,
+                                                     gl::DrawElementsType type,
+                                                     const void *indices,
+                                                     GLint baseVertex)
+{
+    return drawElementsImpl(context, mode, count, type, indices, 0, baseVertex, 0);
 }
 
 angle::Result Context11::drawArraysIndirect(const gl::Context *context,
@@ -449,18 +479,20 @@ std::string Context11::getRendererDescription() const
     return mRenderer->getRendererDescription();
 }
 
-void Context11::insertEventMarker(GLsizei length, const char *marker)
+angle::Result Context11::insertEventMarker(GLsizei length, const char *marker)
 {
     mRenderer->getAnnotator()->setMarker(marker);
+    return angle::Result::Continue;
 }
 
-void Context11::pushGroupMarker(GLsizei length, const char *marker)
+angle::Result Context11::pushGroupMarker(GLsizei length, const char *marker)
 {
     mRenderer->getAnnotator()->beginEvent(marker, marker);
     mMarkerStack.push(std::string(marker));
+    return angle::Result::Continue;
 }
 
-void Context11::popGroupMarker()
+angle::Result Context11::popGroupMarker()
 {
     const char *marker = nullptr;
     if (!mMarkerStack.empty())
@@ -469,18 +501,22 @@ void Context11::popGroupMarker()
         mMarkerStack.pop();
         mRenderer->getAnnotator()->endEvent(marker);
     }
+    return angle::Result::Continue;
 }
 
-void Context11::pushDebugGroup(GLenum source, GLuint id, const std::string &message)
+angle::Result Context11::pushDebugGroup(const gl::Context *context,
+                                        GLenum source,
+                                        GLuint id,
+                                        const std::string &message)
 {
     // Fall through to the EXT_debug_marker functions
-    pushGroupMarker(static_cast<GLsizei>(message.size()), message.c_str());
+    return pushGroupMarker(static_cast<GLsizei>(message.size()), message.c_str());
 }
 
-void Context11::popDebugGroup()
+angle::Result Context11::popDebugGroup(const gl::Context *context)
 {
     // Fall through to the EXT_debug_marker functions
-    popGroupMarker();
+    return popGroupMarker();
 }
 
 angle::Result Context11::syncState(const gl::Context *context,
@@ -626,7 +662,7 @@ angle::Result Context11::triggerDrawCallProgramRecompilation(const gl::Context *
     // Refresh the program cache entry.
     if (mMemoryProgramCache)
     {
-        mMemoryProgramCache->updateProgram(context, program);
+        ANGLE_TRY(mMemoryProgramCache->updateProgram(context, program));
     }
 
     return angle::Result::Continue;
@@ -664,7 +700,7 @@ angle::Result Context11::triggerDispatchCallProgramRecompilation(const gl::Conte
     // Refresh the program cache entry.
     if (mMemoryProgramCache)
     {
-        mMemoryProgramCache->updateProgram(context, program);
+        ANGLE_TRY(mMemoryProgramCache->updateProgram(context, program));
     }
 
     return angle::Result::Continue;

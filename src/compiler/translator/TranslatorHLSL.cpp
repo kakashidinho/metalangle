@@ -10,7 +10,6 @@
 #include "compiler/translator/tree_ops/AddDefaultReturnStatements.h"
 #include "compiler/translator/tree_ops/ArrayReturnValueToOutParameter.h"
 #include "compiler/translator/tree_ops/BreakVariableAliasingInInnerLoops.h"
-#include "compiler/translator/tree_ops/EmulatePrecision.h"
 #include "compiler/translator/tree_ops/ExpandIntegerPowExpressions.h"
 #include "compiler/translator/tree_ops/PruneEmptyCases.h"
 #include "compiler/translator/tree_ops/RemoveDynamicIndexing.h"
@@ -140,20 +139,9 @@ bool TranslatorHLSL::translate(TIntermBlock *root,
         return false;
     }
 
-    bool precisionEmulation =
-        getResources().WEBGL_debug_shader_precision && getPragma().debugShaderPrecision;
-
-    if (precisionEmulation)
-    {
-        EmulatePrecision emulatePrecision(&getSymbolTable());
-        root->traverse(&emulatePrecision);
-        if (!emulatePrecision.updateTree(this, root))
-        {
-            return false;
-        }
-        emulatePrecision.writeEmulationHelpers(getInfoSink().obj, getShaderVersion(),
-                                               getOutputType());
-    }
+    bool precisionEmulation = false;
+    if (!emulatePrecisionIfNeeded(root, getInfoSink().obj, &precisionEmulation, getOutputType()))
+        return false;
 
     if ((compileOptions & SH_EXPAND_SELECT_HLSL_INTEGER_POW_EXPRESSIONS) != 0)
     {
@@ -203,12 +191,13 @@ bool TranslatorHLSL::translate(TIntermBlock *root,
 
     outputHLSL.output(root, getInfoSink().obj);
 
-    mShaderStorageBlockRegisterMap = outputHLSL.getShaderStorageBlockRegisterMap();
-    mUniformBlockRegisterMap       = outputHLSL.getUniformBlockRegisterMap();
-    mUniformRegisterMap            = outputHLSL.getUniformRegisterMap();
-    mReadonlyImage2DRegisterIndex  = outputHLSL.getReadonlyImage2DRegisterIndex();
-    mImage2DRegisterIndex          = outputHLSL.getImage2DRegisterIndex();
-    mUsedImage2DFunctionNames      = outputHLSL.getUsedImage2DFunctionNames();
+    mShaderStorageBlockRegisterMap      = outputHLSL.getShaderStorageBlockRegisterMap();
+    mUniformBlockRegisterMap            = outputHLSL.getUniformBlockRegisterMap();
+    mUniformBlockUseStructuredBufferMap = outputHLSL.getUniformBlockUseStructuredBufferMap();
+    mUniformRegisterMap                 = outputHLSL.getUniformRegisterMap();
+    mReadonlyImage2DRegisterIndex       = outputHLSL.getReadonlyImage2DRegisterIndex();
+    mImage2DRegisterIndex               = outputHLSL.getImage2DRegisterIndex();
+    mUsedImage2DFunctionNames           = outputHLSL.getUsedImage2DFunctionNames();
 
     return true;
 }
@@ -260,6 +249,14 @@ unsigned int TranslatorHLSL::getImage2DRegisterIndex() const
 const std::set<std::string> *TranslatorHLSL::getUsedImage2DFunctionNames() const
 {
     return &mUsedImage2DFunctionNames;
+}
+
+bool TranslatorHLSL::shouldUniformBlockUseStructuredBuffer(
+    const std::string &uniformBlockName) const
+{
+    auto uniformBlockIter = mUniformBlockUseStructuredBufferMap.find(uniformBlockName);
+    return uniformBlockIter != mUniformBlockUseStructuredBufferMap.end() &&
+           uniformBlockIter->second;
 }
 
 }  // namespace sh

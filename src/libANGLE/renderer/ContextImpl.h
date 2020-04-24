@@ -64,12 +64,25 @@ class ContextImpl : public GLImplFactory
                                        GLsizei count,
                                        gl::DrawElementsType type,
                                        const void *indices)                                = 0;
+    virtual angle::Result drawElementsBaseVertex(const gl::Context *context,
+                                                 gl::PrimitiveMode mode,
+                                                 GLsizei count,
+                                                 gl::DrawElementsType type,
+                                                 const void *indices,
+                                                 GLint baseVertex)                         = 0;
     virtual angle::Result drawElementsInstanced(const gl::Context *context,
                                                 gl::PrimitiveMode mode,
                                                 GLsizei count,
                                                 gl::DrawElementsType type,
                                                 const void *indices,
                                                 GLsizei instances)                         = 0;
+    virtual angle::Result drawElementsInstancedBaseVertex(const gl::Context *context,
+                                                          gl::PrimitiveMode mode,
+                                                          GLsizei count,
+                                                          gl::DrawElementsType type,
+                                                          const void *indices,
+                                                          GLsizei instances,
+                                                          GLint baseVertex)                = 0;
     virtual angle::Result drawElementsInstancedBaseVertexBaseInstance(const gl::Context *context,
                                                                       gl::PrimitiveMode mode,
                                                                       GLsizei count,
@@ -85,6 +98,14 @@ class ContextImpl : public GLImplFactory
                                             GLsizei count,
                                             gl::DrawElementsType type,
                                             const void *indices)                           = 0;
+    virtual angle::Result drawRangeElementsBaseVertex(const gl::Context *context,
+                                                      gl::PrimitiveMode mode,
+                                                      GLuint start,
+                                                      GLuint end,
+                                                      GLsizei count,
+                                                      gl::DrawElementsType type,
+                                                      const void *indices,
+                                                      GLint baseVertex)                    = 0;
 
     virtual angle::Result drawArraysIndirect(const gl::Context *context,
                                              gl::PrimitiveMode mode,
@@ -94,52 +115,6 @@ class ContextImpl : public GLImplFactory
                                                gl::DrawElementsType type,
                                                const void *indirect) = 0;
 
-    // CHROMIUM_path_rendering path drawing methods.
-    virtual void stencilFillPath(const gl::Path *path, GLenum fillMode, GLuint mask);
-    virtual void stencilStrokePath(const gl::Path *path, GLint reference, GLuint mask);
-    virtual void coverFillPath(const gl::Path *path, GLenum coverMode);
-    virtual void coverStrokePath(const gl::Path *path, GLenum coverMode);
-    virtual void stencilThenCoverFillPath(const gl::Path *path,
-                                          GLenum fillMode,
-                                          GLuint mask,
-                                          GLenum coverMode);
-
-    virtual void stencilThenCoverStrokePath(const gl::Path *path,
-                                            GLint reference,
-                                            GLuint mask,
-                                            GLenum coverMode);
-
-    virtual void coverFillPathInstanced(const std::vector<gl::Path *> &paths,
-                                        GLenum coverMode,
-                                        GLenum transformType,
-                                        const GLfloat *transformValues);
-    virtual void coverStrokePathInstanced(const std::vector<gl::Path *> &paths,
-                                          GLenum coverMode,
-                                          GLenum transformType,
-                                          const GLfloat *transformValues);
-    virtual void stencilFillPathInstanced(const std::vector<gl::Path *> &paths,
-                                          GLenum fillMode,
-                                          GLuint mask,
-                                          GLenum transformType,
-                                          const GLfloat *transformValues);
-    virtual void stencilStrokePathInstanced(const std::vector<gl::Path *> &paths,
-                                            GLint reference,
-                                            GLuint mask,
-                                            GLenum transformType,
-                                            const GLfloat *transformValues);
-    virtual void stencilThenCoverFillPathInstanced(const std::vector<gl::Path *> &paths,
-                                                   GLenum coverMode,
-                                                   GLenum fillMode,
-                                                   GLuint mask,
-                                                   GLenum transformType,
-                                                   const GLfloat *transformValues);
-    virtual void stencilThenCoverStrokePathInstanced(const std::vector<gl::Path *> &paths,
-                                                     GLenum coverMode,
-                                                     GLint reference,
-                                                     GLuint mask,
-                                                     GLenum transformType,
-                                                     const GLfloat *transformValues);
-
     // Device loss
     virtual gl::GraphicsResetStatus getResetStatus() = 0;
 
@@ -148,13 +123,16 @@ class ContextImpl : public GLImplFactory
     virtual std::string getRendererDescription() const = 0;
 
     // EXT_debug_marker
-    virtual void insertEventMarker(GLsizei length, const char *marker) = 0;
-    virtual void pushGroupMarker(GLsizei length, const char *marker)   = 0;
-    virtual void popGroupMarker()                                      = 0;
+    virtual angle::Result insertEventMarker(GLsizei length, const char *marker) = 0;
+    virtual angle::Result pushGroupMarker(GLsizei length, const char *marker)   = 0;
+    virtual angle::Result popGroupMarker()                                      = 0;
 
     // KHR_debug
-    virtual void pushDebugGroup(GLenum source, GLuint id, const std::string &message) = 0;
-    virtual void popDebugGroup()                                                      = 0;
+    virtual angle::Result pushDebugGroup(const gl::Context *context,
+                                         GLenum source,
+                                         GLuint id,
+                                         const std::string &message) = 0;
+    virtual angle::Result popDebugGroup(const gl::Context *context)  = 0;
 
     // KHR_parallel_shader_compile
     virtual void setMaxShaderCompilerThreads(GLuint count) {}
@@ -210,6 +188,8 @@ class ContextImpl : public GLImplFactory
                      const char *file,
                      const char *function,
                      unsigned int line);
+
+    virtual egl::ContextPriority getContextPriority() const;
 
   protected:
     const gl::State &mState;

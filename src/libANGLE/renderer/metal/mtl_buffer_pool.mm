@@ -167,8 +167,7 @@ angle::Result BufferPool::allocate(ContextMtl *contextMtl,
     if (!mBuffer || !checkedNextWriteOffset.IsValid() ||
         checkedNextWriteOffset.ValueOrDie() >= mSize ||
         // If the current buffer has been modified by GPU, do not reuse it:
-        mBuffer->isCPUReadMemNeedSync() ||
-        mAlwaysAllocateNewBuffer)
+        mBuffer->isCPUReadMemNeedSync() || mAlwaysAllocateNewBuffer)
     {
         if (mBuffer)
         {

@@ -33,9 +33,9 @@ git_pull()
     echo
 }
 
-glslang_revision="4b97a1108114107a8082a55e9e0721a40f9536d3"
+glslang_revision="7d65f09b83112c1ec9e29313cb9913ed2b850aa0"
 spirv_cross_revision="e58e8d5dbe03ea2cc755dbaf43ffefa1b8d77bef"
-jsoncpp_revision="48246a099549ab325c01f69f24a34fc72e5c42e4"
+jsoncpp_revision="493c9385c91023c3819b51ee0de552d52229a1e5"
 jsoncpp_src_revision="645250b6690785be60ab6780ce4b58698d884d11"
 
 git_pull third_party/glslang/src ${glslang_revision} https://chromium.googlesource.com/external/github.com/KhronosGroup/glslang

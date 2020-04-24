@@ -597,31 +597,18 @@ void main()
 
     glDrawArraysInstancedANGLE(GL_LINE_LOOP, 0, ArraySize(vertices) / 2, instances);
 
-    for (int y = 0; y < getWindowHeight(); ++y)
-    {
-        for (int x = 0; x < getWindowWidth(); ++x)
-        {
-            int idx               = y * getWindowWidth() + x;
-            GLColor expectedColor = expectedPixels[idx];
-
-            EXPECT_PIXEL_COLOR_EQ(x, y, expectedColor) << std::endl;
-        }
-    }
+    std::vector<GLColor> actualPixels(getWindowWidth() * getWindowHeight());
+    glReadPixels(0, 0, getWindowWidth(), getWindowHeight(), GL_RGBA, GL_UNSIGNED_BYTE,
+                 actualPixels.data());
+    EXPECT_EQ(expectedPixels, actualPixels);
 
     glClear(GL_COLOR_BUFFER_BIT);
     glDrawElementsInstancedANGLE(GL_LINE_LOOP, ArraySize(lineloopAsStripIndices) - 1,
                                  GL_UNSIGNED_SHORT, 0, instances);
 
-    for (int y = 0; y < getWindowHeight(); ++y)
-    {
-        for (int x = 0; x < getWindowWidth(); ++x)
-        {
-            int idx               = y * getWindowWidth() + x;
-            GLColor expectedColor = expectedPixels[idx];
-
-            EXPECT_PIXEL_COLOR_EQ(x, y, expectedColor) << std::endl;
-        }
-    }
+    glReadPixels(0, 0, getWindowWidth(), getWindowHeight(), GL_RGBA, GL_UNSIGNED_BYTE,
+                 actualPixels.data());
+    EXPECT_EQ(expectedPixels, actualPixels);
 }
 
 class InstancingTestES3 : public InstancingTest
@@ -720,6 +707,8 @@ TEST_P(InstancingTestES31, UpdateAttribBindingByVertexAttribDivisor)
 // Verify that a large divisor that also changes doesn't cause issues and renders correctly.
 TEST_P(InstancingTestES3, LargeDivisor)
 {
+    // http://anglebug.com/4092
+    ANGLE_SKIP_TEST_IF(isSwiftshader());
     constexpr char kVS[] = R"(#version 300 es
 layout(location = 0) in vec4 a_position;
 layout(location = 1) in vec4 a_color;
@@ -819,6 +808,8 @@ void main()
 // incorrectly clamped down to the maximum signed integer.
 TEST_P(InstancingTestES3, LargestDivisor)
 {
+    // http://anglebug.com/4092
+    ANGLE_SKIP_TEST_IF(isSwiftshader());
     constexpr GLuint kLargeDivisor = std::numeric_limits<GLuint>::max();
     glVertexAttribDivisor(0, kLargeDivisor);
 

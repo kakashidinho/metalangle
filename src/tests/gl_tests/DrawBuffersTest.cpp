@@ -55,7 +55,7 @@ class DrawBuffersTest : public ANGLETest
         }
 
         // This test seems to fail on an nVidia machine when the window is hidden
-        setWindowVisible(true);
+        setWindowVisible(getOSWindow(), true);
 
         glGenFramebuffers(1, &mFBO);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mFBO);
@@ -786,8 +786,10 @@ TEST_P(DrawBuffersTestES3, 2DArrayTextures)
 
 // Use this to select which configurations (e.g. which renderer, which GLES major version) these
 // tests should be run against.
-ANGLE_INSTANTIATE_TEST_ES2_AND_ES3(DrawBuffersTest);
-
+ANGLE_INSTANTIATE_TEST(DrawBuffersTest,
+                       ANGLE_ALL_TEST_PLATFORMS_ES2,
+                       ANGLE_ALL_TEST_PLATFORMS_ES3,
+                       WithNoTransformFeedback(ES2_VULKAN()));
 ANGLE_INSTANTIATE_TEST_ES3(DrawBuffersWebGL2Test);
 
 ANGLE_INSTANTIATE_TEST_ES3(DrawBuffersTestES3);

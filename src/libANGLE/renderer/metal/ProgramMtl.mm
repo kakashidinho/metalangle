@@ -75,7 +75,7 @@ void InitDefaultUniformBlock(const std::vector<sh::Uniform> &uniforms,
     }
 
     sh::Std140BlockEncoder blockEncoder;
-    sh::GetUniformBlockInfo(uniforms, "", &blockEncoder, blockLayoutMapOut);
+    sh::GetActiveUniformBlockInfo(uniforms, "", &blockEncoder, blockLayoutMapOut);
 
     size_t blockSize = blockEncoder.getCurrentOffset();
 
@@ -305,15 +305,12 @@ std::unique_ptr<LinkEvent> ProgramMtl::link(const gl::Context *context,
     // assignment done in that function.
     linkResources(resources);
 
-    gl::ShaderMap<std::string> shaderSource;
-    mtl::GlslangGetShaderSource(mState, resources, &shaderSource);
-
     // NOTE(hqle): Parallelize linking.
-    return std::make_unique<LinkEventDone>(linkImpl(context, shaderSource, infoLog));
+    return std::make_unique<LinkEventDone>(linkImpl(context, resources, infoLog));
 }
 
 angle::Result ProgramMtl::linkImpl(const gl::Context *glContext,
-                                   const gl::ShaderMap<std::string> &shaderSource,
+                                   const gl::ProgramLinkedResources &resources,
                                    gl::InfoLog &infoLog)
 {
     ContextMtl *contextMtl = mtl::GetImpl(glContext);
@@ -323,10 +320,16 @@ angle::Result ProgramMtl::linkImpl(const gl::Context *glContext,
 
     ANGLE_TRY(initDefaultUniformBlocks(glContext));
 
+    // Gather variable info and transform sources.
+    gl::ShaderMap<std::string> shaderSources;
+    ShaderMapInterfaceVariableInfoMap variableInfoMap;
+    mtl::GlslangGetShaderSource(mState, resources, &shaderSources, &variableInfoMap);
+
     // Convert GLSL to spirv code
     gl::ShaderMap<std::vector<uint32_t>> shaderCodes;
-    ANGLE_TRY(mtl::GlslangGetShaderSpirvCode(contextMtl, contextMtl->getCaps(), false, shaderSource,
-                                             &shaderCodes));
+    ANGLE_TRY(mtl::GlslangGetShaderSpirvCode(
+        contextMtl, mState.getProgramExecutable().getLinkedShaderStages(), contextMtl->getCaps(),
+        shaderSources, variableInfoMap, &shaderCodes));
 
     // Convert spirv code to MSL
     ANGLE_TRY(mtl::SpirvCodeToMsl(contextMtl, mState, &shaderCodes, &mMslShaderTranslateInfo,
@@ -904,14 +907,6 @@ void ProgramMtl::setUniformMatrix4x3fv(GLint location,
     setUniformMatrixfv<4, 3>(location, count, transpose, value);
 }
 
-void ProgramMtl::setPathFragmentInputGen(const std::string &inputName,
-                                         GLenum genMode,
-                                         GLint components,
-                                         const GLfloat *coeffs)
-{
-    UNIMPLEMENTED();
-}
-
 void ProgramMtl::getUniformfv(const gl::Context *context, GLint location, GLfloat *params) const
 {
     getUniformImpl(location, params, GL_FLOAT);
@@ -992,10 +987,8 @@ angle::Result ProgramMtl::updateTextures(const gl::Context *glContext,
 {
     ContextMtl *contextMtl     = mtl::GetImpl(glContext);
     const auto &glState        = glContext->getState();
-    const gl::Program *program = glState.getProgram();
 
-    const gl::ActiveTexturePointerArray &completeTextures = glState.getActiveTexturesCache();
-    const gl::ActiveTextureTypeArray &textureTypes        = program->getActiveSamplerTypes();
+    const gl::ActiveTexturesCache &completeTextures = glState.getActiveTexturesCache();
 
     for (gl::ShaderType shaderType : gl::AllGLES2ShaderTypes())
     {
@@ -1021,13 +1014,14 @@ angle::Result ProgramMtl::updateTextures(const gl::Context *glContext,
                 continue;
             }
 
+            gl::TextureType textureType = samplerBinding.textureType;
+
             for (uint32_t arrayElement = 0; arrayElement < samplerBinding.boundTextureUnits.size();
                  ++arrayElement)
             {
                 GLuint textureUnit          = samplerBinding.boundTextureUnits[arrayElement];
                 gl::Texture *texture        = completeTextures[textureUnit];
                 gl::Sampler *sampler        = contextMtl->getState().getSampler(textureUnit);
-                gl::TextureType textureType = textureTypes[textureUnit];
                 uint32_t textureSlot        = mslBinding.textureBinding + arrayElement;
                 uint32_t samplerSlot        = mslBinding.samplerBinding + arrayElement;
                 if (!texture)

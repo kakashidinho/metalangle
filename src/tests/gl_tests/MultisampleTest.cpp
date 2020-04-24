@@ -85,7 +85,7 @@ class MultisampleTest : public ANGLETestWithParam<MultisampleTestParams>
         // Create a window, context and surface if multisampling is possible.
         mOSWindow = OSWindow::New();
         mOSWindow->initialize("MultisampleTest", kWindowSize, kWindowSize);
-        mOSWindow->setVisible(true);
+        setWindowVisible(mOSWindow, true);
 
         EGLint contextAttributes[] = {
             EGL_CONTEXT_MAJOR_VERSION_KHR,
@@ -216,6 +216,7 @@ void main()
 TEST_P(MultisampleTest, Line)
 {
     ANGLE_SKIP_TEST_IF(!mMultisampledConfigExists);
+    ANGLE_SKIP_TEST_IF(IsARM64() && IsWindows() && IsD3D());
 
     ANGLE_GL_PROGRAM(program, essl1_shaders::vs::Simple(), essl1_shaders::fs::Red());
     glUseProgram(program);

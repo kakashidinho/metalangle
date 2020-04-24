@@ -217,7 +217,7 @@ void VertexArrayMtl::reset(ContextMtl *context)
 
     for (angle::MemoryBuffer &convertedClientArray : mConvertedClientSmallArrays)
     {
-        convertedClientArray.resize(0);
+        convertedClientArray.clear();
     }
 
     for (const uint8_t *&clientPointer : mCurrentArrayInlineDataPointers)
@@ -314,7 +314,8 @@ angle::Result VertexArrayMtl::setupDraw(const gl::Context *glContext,
 
         const gl::ProgramState &programState = glContext->getState().getProgram()->getState();
         const gl::AttributesMask &programActiveAttribsMask =
-            programState.getActiveAttribLocationsMask();
+            glContext->getStateCache().getActiveClientAttribsMask() |
+            glContext->getStateCache().getActiveBufferedAttribsMask();
 
         const std::vector<gl::VertexAttribute> &attribs = mState.getVertexAttributes();
         const std::vector<gl::VertexBinding> &bindings  = mState.getVertexBindings();

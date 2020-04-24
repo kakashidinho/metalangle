@@ -50,14 +50,19 @@
 #if defined(ANGLE_ENABLE_OPENGL)
 #    if defined(ANGLE_PLATFORM_WINDOWS)
 #        include "libANGLE/renderer/gl/wgl/DisplayWGL.h"
-#    elif defined(ANGLE_USE_X11)
-#        include "libANGLE/renderer/gl/glx/DisplayGLX.h"
-#    elif defined(ANGLE_PLATFORM_MACOS)
+#    elif defined(ANGLE_PLATFORM_MACOS) || defined(ANGLE_PLATFORM_MACCATALYST)
 #        include "libANGLE/renderer/gl/cgl/DisplayCGL.h"
 #    elif defined(ANGLE_PLATFORM_IOS)
 #        include "libANGLE/renderer/gl/eagl/DisplayEAGL.h"
-#    elif defined(ANGLE_USE_OZONE)
-#        include "libANGLE/renderer/gl/egl/ozone/DisplayOzone.h"
+#    elif defined(ANGLE_PLATFORM_LINUX)
+#        if defined(ANGLE_USE_OZONE)
+#            include "libANGLE/renderer/gl/egl/ozone/DisplayOzone.h"
+#        else
+#            include "libANGLE/renderer/gl/egl/DisplayEGL.h"
+#            if defined(ANGLE_USE_X11)
+#                include "libANGLE/renderer/gl/glx/DisplayGLX.h"
+#            endif
+#        endif
 #    elif defined(ANGLE_PLATFORM_ANDROID)
 #        include "libANGLE/renderer/gl/egl/android/DisplayAndroid.h"
 #    else
@@ -70,19 +75,7 @@
 #endif  // defined(ANGLE_ENABLE_NULL)
 
 #if defined(ANGLE_ENABLE_VULKAN)
-#    if defined(ANGLE_PLATFORM_WINDOWS)
-#        include "libANGLE/renderer/vulkan/win32/DisplayVkWin32.h"
-#    elif defined(ANGLE_PLATFORM_LINUX)
-#        include "libANGLE/renderer/vulkan/xcb/DisplayVkXcb.h"
-#    elif defined(ANGLE_PLATFORM_ANDROID)
-#        include "libANGLE/renderer/vulkan/android/DisplayVkAndroid.h"
-#    elif defined(ANGLE_PLATFORM_FUCHSIA)
-#        include "libANGLE/renderer/vulkan/fuchsia/DisplayVkFuchsia.h"
-#    elif defined(ANGLE_PLATFORM_GGP)
-#        include "libANGLE/renderer/vulkan/ggp/DisplayVkGGP.h"
-#    else
-#        error Unsupported Vulkan platform.
-#    endif
+#    include "libANGLE/renderer/vulkan/DisplayVk_api.h"
 #endif  // defined(ANGLE_ENABLE_VULKAN)
 
 #if defined(ANGLE_ENABLE_METAL)
@@ -159,7 +152,8 @@ EGLAttrib GetDisplayTypeFromEnvironment()
     angle::ToLower(&angleDefaultEnv);
 
 #if defined(ANGLE_ENABLE_VULKAN)
-    if (angleDefaultEnv == "vulkan")
+    if ((angleDefaultEnv == "vulkan") || (angleDefaultEnv == "vulkan-null") ||
+        (angleDefaultEnv == "swiftshader"))
     {
         return EGL_PLATFORM_ANGLE_TYPE_VULKAN_ANGLE;
     }
@@ -201,7 +195,7 @@ EGLAttrib GetDisplayTypeFromEnvironment()
 #elif defined(ANGLE_ENABLE_VULKAN) && defined(ANGLE_PLATFORM_ANDROID)
     return EGL_PLATFORM_ANGLE_TYPE_VULKAN_ANGLE;
 #elif defined(ANGLE_ENABLE_OPENGL)
-#    if defined(ANGLE_PLATFORM_ANDROID) || defined(ANGLE_USE_OZONE) || defined(ANGLE_PLATFORM_IOS)
+#    if defined(ANGLE_PLATFORM_ANDROID) || defined(ANGLE_USE_OZONE)
     return EGL_PLATFORM_ANGLE_TYPE_OPENGLES_ANGLE;
 #    else
     return EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE;
@@ -221,11 +215,30 @@ EGLAttrib GetDisplayTypeFromEnvironment()
 #endif
 }
 
-rx::DisplayImpl *CreateDisplayFromAttribs(const AttributeMap &attribMap, const DisplayState &state)
+EGLAttrib GetDeviceTypeFromEnvironment()
 {
+    std::string angleDefaultEnv = angle::GetEnvironmentVar("ANGLE_DEFAULT_PLATFORM");
+    angle::ToLower(&angleDefaultEnv);
+
+#if defined(ANGLE_ENABLE_VULKAN)
+    if (angleDefaultEnv == "vulkan-null")
+    {
+        return EGL_PLATFORM_ANGLE_DEVICE_TYPE_NULL_ANGLE;
+    }
+    else if (angleDefaultEnv == "swiftshader")
+    {
+        return EGL_PLATFORM_ANGLE_DEVICE_TYPE_SWIFTSHADER_ANGLE;
+    }
+#endif
+    return EGL_PLATFORM_ANGLE_DEVICE_TYPE_HARDWARE_ANGLE;
+}
+
+rx::DisplayImpl *CreateDisplayFromAttribs(EGLAttrib displayType,
+                                          EGLAttrib deviceType,
+                                          const DisplayState &state)
+{
+    ASSERT(displayType != EGL_PLATFORM_ANGLE_TYPE_DEFAULT_ANGLE);
     rx::DisplayImpl *impl = nullptr;
-    EGLAttrib displayType =
-        attribMap.get(EGL_PLATFORM_ANGLE_TYPE_ANGLE, EGL_PLATFORM_ANGLE_TYPE_DEFAULT_ANGLE);
 
 #if defined(ANGLE_ENABLE_METAL)
     if (displayType == EGL_PLATFORM_ANGLE_TYPE_METAL_ANGLE && !rx::IsMetalDisplayAvailable())
@@ -262,14 +275,27 @@ rx::DisplayImpl *CreateDisplayFromAttribs(const AttributeMap &attribMap, const D
 #if defined(ANGLE_ENABLE_OPENGL)
 #    if defined(ANGLE_PLATFORM_WINDOWS)
             impl = new rx::DisplayWGL(state);
-#    elif defined(ANGLE_USE_X11)
-            impl = new rx::DisplayGLX(state);
-#    elif defined(ANGLE_PLATFORM_MACOS)
+#    elif defined(ANGLE_PLATFORM_MACOS) || defined(ANGLE_PLATFORM_MACCATALYST)
             impl = new rx::DisplayCGL(state);
-#    elif defined(ANGLE_USE_OZONE)
+#    elif defined(ANGLE_PLATFORM_IOS)
+            impl = new rx::DisplayEAGL(state);
+#    elif defined(ANGLE_PLATFORM_LINUX)
+#        if defined(ANGLE_USE_OZONE)
             // This might work but has never been tried, so disallow for now.
             impl = nullptr;
-#    elif defined(ANGLE_PLATFORM_ANDROID) || defined(ANGLE_PLATFORM_IOS)
+#        else
+            if (deviceType == EGL_PLATFORM_ANGLE_DEVICE_TYPE_EGL_ANGLE)
+            {
+                impl = new rx::DisplayEGL(state);
+            }
+#            if defined(ANGLE_USE_X11)
+            else
+            {
+                impl = new rx::DisplayGLX(state);
+            }
+#            endif
+#        endif
+#    elif defined(ANGLE_PLATFORM_ANDROID)
             // No GL support on this platform, fail display creation.
             impl = nullptr;
 #    else
@@ -285,14 +311,23 @@ rx::DisplayImpl *CreateDisplayFromAttribs(const AttributeMap &attribMap, const D
 #if defined(ANGLE_ENABLE_OPENGL)
 #    if defined(ANGLE_PLATFORM_WINDOWS)
             impl = new rx::DisplayWGL(state);
-#    elif defined(ANGLE_USE_X11)
-            impl = new rx::DisplayGLX(state);
-#    elif defined(ANGLE_USE_OZONE)
+#    elif defined(ANGLE_PLATFORM_LINUX)
+#        if defined(ANGLE_USE_OZONE)
             impl = new rx::DisplayOzone(state);
+#        else
+            if (deviceType == EGL_PLATFORM_ANGLE_DEVICE_TYPE_EGL_ANGLE)
+            {
+                impl = new rx::DisplayEGL(state);
+            }
+#            if defined(ANGLE_USE_X11)
+            else
+            {
+                impl = new rx::DisplayGLX(state);
+            }
+#            endif
+#        endif
 #    elif defined(ANGLE_PLATFORM_ANDROID)
             impl = new rx::DisplayAndroid(state);
-#    elif defined(ANGLE_PLATFORM_IOS) && !defined(ANGLE_PLATFORM_MACCATALYST)
-            impl = new rx::DisplayEAGL(state);
 #    else
             // No GLES support on this platform, fail display creation.
             impl = nullptr;
@@ -303,15 +338,35 @@ rx::DisplayImpl *CreateDisplayFromAttribs(const AttributeMap &attribMap, const D
         case EGL_PLATFORM_ANGLE_TYPE_VULKAN_ANGLE:
 #if defined(ANGLE_ENABLE_VULKAN)
 #    if defined(ANGLE_PLATFORM_WINDOWS)
-            impl = new rx::DisplayVkWin32(state);
+            if (rx::IsVulkanWin32DisplayAvailable())
+            {
+                impl = rx::CreateVulkanWin32Display(state);
+            }
 #    elif defined(ANGLE_PLATFORM_LINUX)
-            impl = new rx::DisplayVkXcb(state);
+            if (rx::IsVulkanXcbDisplayAvailable())
+            {
+                impl = rx::CreateVulkanXcbDisplay(state);
+            }
 #    elif defined(ANGLE_PLATFORM_ANDROID)
-            impl = new rx::DisplayVkAndroid(state);
+            if (rx::IsVulkanAndroidDisplayAvailable())
+            {
+                impl = rx::CreateVulkanAndroidDisplay(state);
+            }
 #    elif defined(ANGLE_PLATFORM_FUCHSIA)
-            impl = new rx::DisplayVkFuchsia(state);
+            if (rx::IsVulkanFuchsiaDisplayAvailable())
+            {
+                impl = rx::CreateVulkanFuchsiaDisplay(state);
+            }
 #    elif defined(ANGLE_PLATFORM_GGP)
-            impl = new rx::DisplayVkGGP(state);
+            if (rx::IsVulkanGGPDisplayAvailable())
+            {
+                impl = rx::CreateVulkanGGPDisplay(state);
+            }
+#    elif defined(ANGLE_PLATFORM_APPLE)
+            if (rx::IsVulkanMacDisplayAvailable())
+            {
+                impl = rx::CreateVulkanMacDisplay(state);
+            }
 #    else
 #        error Unsupported Vulkan platform.
 #    endif
@@ -389,9 +444,13 @@ void ANGLESetDefaultDisplayPlatform(angle::EGLDisplayType display)
     platformMethods->logInfo    = Display_logInfo;
 }
 
+static constexpr uint32_t kScratchBufferLifetime = 64u;
+
 }  // anonymous namespace
 
-DisplayState::DisplayState() : label(nullptr) {}
+DisplayState::DisplayState(EGLNativeDisplayType nativeDisplayId)
+    : label(nullptr), featuresAllDisabled(false), displayId(nativeDisplayId)
+{}
 
 DisplayState::~DisplayState() {}
 
@@ -423,14 +482,21 @@ Display *Display::GetDisplayFromNativeDisplay(EGLNativeDisplayType nativeDisplay
     // Apply new attributes if the display is not initialized yet.
     if (!display->isInitialized())
     {
-        rx::DisplayImpl *impl = CreateDisplayFromAttribs(attribMap, display->getState());
+        display->setAttributes(attribMap);
+
+        display->updateAttribsFromEnvironment(attribMap);
+
+        EGLAttrib displayType = display->mAttributeMap.get(EGL_PLATFORM_ANGLE_TYPE_ANGLE);
+        EGLAttrib deviceType  = display->mAttributeMap.get(EGL_PLATFORM_ANGLE_DEVICE_TYPE_ANGLE);
+        rx::DisplayImpl *impl =
+            CreateDisplayFromAttribs(displayType, deviceType, display->getState());
         if (impl == nullptr)
         {
             // No valid display implementation for these attributes
             return nullptr;
         }
 
-        display->setAttributes(impl, attribMap);
+        display->setupDisplayPlatform(impl);
     }
 
     return display;
@@ -491,16 +557,17 @@ Display *Display::GetDisplayFromDevice(Device *device, const AttributeMap &attri
     // Apply new attributes if the display is not initialized yet.
     if (!display->isInitialized())
     {
+        display->setAttributes(attribMap);
         rx::DisplayImpl *impl = CreateDisplayFromDevice(device, display->getState());
-        display->setAttributes(impl, attribMap);
+        display->setupDisplayPlatform(impl);
     }
 
     return display;
 }
 
 Display::Display(EGLenum platform, EGLNativeDisplayType displayId, Device *eglDevice)
-    : mImplementation(nullptr),
-      mDisplayId(displayId),
+    : mState(displayId),
+      mImplementation(nullptr),
       mAttributeMap(),
       mConfigSet(),
       mContextSet(),
@@ -528,7 +595,7 @@ Display::~Display()
     if (mPlatform == EGL_PLATFORM_ANGLE_ANGLE)
     {
         ANGLEPlatformDisplayMap *displays      = GetANGLEPlatformDisplayMap();
-        ANGLEPlatformDisplayMap::iterator iter = displays->find(mDisplayId);
+        ANGLEPlatformDisplayMap::iterator iter = displays->find(mState.displayId);
         if (iter != displays->end())
         {
             displays->erase(iter);
@@ -562,15 +629,13 @@ EGLLabelKHR Display::getLabel() const
     return mState.label;
 }
 
-void Display::setAttributes(rx::DisplayImpl *impl, const AttributeMap &attribMap)
+void Display::setupDisplayPlatform(rx::DisplayImpl *impl)
 {
     ASSERT(!mInitialized);
 
     ASSERT(impl != nullptr);
     SafeDelete(mImplementation);
     mImplementation = impl;
-
-    mAttributeMap = attribMap;
 
     // TODO(jmadill): Store Platform in Display and init here.
     const angle::PlatformMethods *platformMethods =
@@ -591,12 +656,39 @@ void Display::setAttributes(rx::DisplayImpl *impl, const AttributeMap &attribMap
         reinterpret_cast<const char **>(mAttributeMap.get(EGL_FEATURE_OVERRIDES_DISABLED_ANGLE, 0));
     mState.featureOverridesEnabled  = EGLStringArrayToStringVector(featuresForceEnabled);
     mState.featureOverridesDisabled = EGLStringArrayToStringVector(featuresForceDisabled);
+    mState.featuresAllDisabled =
+        static_cast<bool>(mAttributeMap.get(EGL_FEATURE_ALL_DISABLED_ANGLE, 0));
+}
+
+void Display::updateAttribsFromEnvironment(const AttributeMap &attribMap)
+{
+    EGLAttrib displayType =
+        attribMap.get(EGL_PLATFORM_ANGLE_TYPE_ANGLE, EGL_PLATFORM_ANGLE_TYPE_DEFAULT_ANGLE);
+    if (displayType == EGL_PLATFORM_ANGLE_TYPE_DEFAULT_ANGLE)
+    {
+        displayType = GetDisplayTypeFromEnvironment();
+        mAttributeMap.insert(EGL_PLATFORM_ANGLE_TYPE_ANGLE, displayType);
+    }
+    EGLAttrib deviceType = attribMap.get(EGL_PLATFORM_ANGLE_DEVICE_TYPE_ANGLE, 0);
+    if (deviceType == 0)
+    {
+        deviceType = GetDeviceTypeFromEnvironment();
+        mAttributeMap.insert(EGL_PLATFORM_ANGLE_DEVICE_TYPE_ANGLE, deviceType);
+    }
 }
 
 Error Display::initialize()
 {
     ASSERT(mImplementation != nullptr);
     mImplementation->setBlobCache(&mBlobCache);
+
+    // Enable shader caching if debug layers are turned on. This allows us to test that shaders are
+    // properly saved & restored on all platforms. The cache won't allocate space until it's used
+    // and will be ignored entirely if the application / system sets it's own cache functions.
+    if (rx::ShouldUseDebugLayers(mAttributeMap))
+    {
+        mBlobCache.resize(1024 * 1024);
+    }
 
     gl::InitializeDebugAnnotations(&mAnnotator);
 
@@ -636,7 +728,10 @@ Error Display::initialize()
         config.second.renderableType |= EGL_OPENGL_ES_BIT;
     }
 
-    initializeFrontendFeatures();
+    if (!mState.featuresAllDisabled)
+    {
+        initializeFrontendFeatures();
+    }
 
     mFeatures.clear();
     mFrontendFeatures.populateFeatureList(&mFeatures);
@@ -1046,6 +1141,21 @@ Error Display::makeCurrent(const Thread *thread,
         ANGLE_TRY(context->makeCurrent(this, drawSurface, readSurface));
     }
 
+    // Tick all the scratch buffers to make sure they get cleaned up eventually if they stop being
+    // used.
+    {
+        std::lock_guard<std::mutex> lock(mScratchBufferMutex);
+
+        for (angle::ScratchBuffer &scatchBuffer : mScratchBuffers)
+        {
+            scatchBuffer.tick();
+        }
+        for (angle::ScratchBuffer &zeroFilledBuffer : mZeroFilledBuffers)
+        {
+            zeroFilledBuffer.tick();
+        }
+    }
+
     return NoError();
 }
 
@@ -1297,7 +1407,10 @@ static ClientExtensions GenerateClientExtensions()
 #endif
 
 #if defined(ANGLE_ENABLE_VULKAN)
-    extensions.platformANGLEVulkan                = true;
+    extensions.platformANGLEVulkan = true;
+#endif
+
+#if defined(ANGLE_ENABLE_SWIFTSHADER)
     extensions.platformANGLEDeviceTypeSwiftShader = true;
 #endif
 
@@ -1307,6 +1420,10 @@ static ClientExtensions GenerateClientExtensions()
 
 #if defined(ANGLE_USE_X11)
     extensions.x11Visual = true;
+#endif
+
+#if defined(ANGLE_PLATFORM_LINUX) && !defined(ANGLE_USE_OZONE)
+    extensions.platformANGLEDeviceTypeEGLANGLE = true;
 #endif
 
     extensions.clientGetAllProcAddresses = true;
@@ -1454,7 +1571,7 @@ void Display::initializeFrontendFeatures()
 
     mImplementation->initializeFrontendFeatures(&mFrontendFeatures);
 
-    rx::OverrideFeaturesWithDisplayState(&mFrontendFeatures, mState);
+    rx::ApplyFeatureOverrides(&mFrontendFeatures, mState);
 }
 
 const DisplayExtensions &Display::getExtensions() const
@@ -1558,8 +1675,12 @@ Error Display::programCachePopulate(const void *key,
     BlobCache::Key programHash;
     memcpy(programHash.data(), key, BlobCache::kKeyLength);
 
-    mMemoryProgramCache.putBinary(programHash, reinterpret_cast<const uint8_t *>(binary),
-                                  static_cast<size_t>(binarysize));
+    if (!mMemoryProgramCache.putBinary(programHash, reinterpret_cast<const uint8_t *>(binary),
+                                       static_cast<size_t>(binarysize)))
+    {
+        return EglBadAccess() << "Failed to copy program binary into the cache.";
+    }
+
     return NoError();
 }
 
@@ -1631,4 +1752,46 @@ EGLAttrib Display::queryAttrib(const EGLint attribute)
     }
     return value;
 }
+
+angle::ScratchBuffer Display::requestScratchBuffer()
+{
+    return requestScratchBufferImpl(&mScratchBuffers);
+}
+
+void Display::returnScratchBuffer(angle::ScratchBuffer scratchBuffer)
+{
+    returnScratchBufferImpl(std::move(scratchBuffer), &mScratchBuffers);
+}
+
+angle::ScratchBuffer Display::requestZeroFilledBuffer()
+{
+    return requestScratchBufferImpl(&mZeroFilledBuffers);
+}
+
+void Display::returnZeroFilledBuffer(angle::ScratchBuffer zeroFilledBuffer)
+{
+    returnScratchBufferImpl(std::move(zeroFilledBuffer), &mZeroFilledBuffers);
+}
+
+angle::ScratchBuffer Display::requestScratchBufferImpl(
+    std::vector<angle::ScratchBuffer> *bufferVector)
+{
+    std::lock_guard<std::mutex> lock(mScratchBufferMutex);
+    if (!bufferVector->empty())
+    {
+        angle::ScratchBuffer buffer = std::move(bufferVector->back());
+        bufferVector->pop_back();
+        return buffer;
+    }
+
+    return angle::ScratchBuffer(kScratchBufferLifetime);
+}
+
+void Display::returnScratchBufferImpl(angle::ScratchBuffer scratchBuffer,
+                                      std::vector<angle::ScratchBuffer> *bufferVector)
+{
+    std::lock_guard<std::mutex> lock(mScratchBufferMutex);
+    bufferVector->push_back(std::move(scratchBuffer));
+}
+
 }  // namespace egl

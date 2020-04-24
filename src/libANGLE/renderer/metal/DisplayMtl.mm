@@ -44,7 +44,7 @@ DisplayImpl *CreateMetalDisplay(const egl::DisplayState &state)
 }
 
 DisplayMtl::DisplayMtl(const egl::DisplayState &state)
-    : DisplayImpl(state), mStateCache(mFeatures), mUtils(this)
+    : DisplayImpl(state), mStateCache(mFeatures), mUtils(this), mGlslangInitialized(false)
 {}
 
 DisplayMtl::~DisplayMtl() {}
@@ -75,8 +75,16 @@ angle::Result DisplayMtl::initializeImpl(egl::Display *display)
 
         mCapsInitialized = false;
 
-        GlslangInitialize();
-        initializeFeatures();
+        if (!mGlslangInitialized)
+        {
+            GlslangInitialize();
+            mGlslangInitialized = true;
+        }
+
+        if (!mState.featuresAllDisabled)
+        {
+            initializeFeatures();
+        }
 
         ANGLE_TRY(mFormatTable.initialize(this));
         ANGLE_TRY(initializeShaderLibrary());
@@ -96,7 +104,11 @@ void DisplayMtl::terminate()
 #endif
     mCapsInitialized = false;
 
-    GlslangRelease();
+    if (mGlslangInitialized)
+    {
+        GlslangRelease();
+        mGlslangInitialized = false;
+    }
 }
 
 bool DisplayMtl::testDeviceLost()
@@ -425,11 +437,11 @@ void DisplayMtl::ensureCapsInitialized() const
     // on Intel and 64 on AMD for now.
     if ([mMetalDevice.get().name rangeOfString:@"Intel"].location != NSNotFound)
     {
-        mNativeCaps.maxAliasedPointSize   = 255;
+        mNativeCaps.maxAliasedPointSize = 255;
     }
     else
     {
-        mNativeCaps.maxAliasedPointSize   = 64;
+        mNativeCaps.maxAliasedPointSize = 64;
     }
 
     mNativeCaps.minAliasedLineWidth = 1.0f;
@@ -542,7 +554,7 @@ void DisplayMtl::initializeExtensions() const
     mNativeExtensions = gl::Extensions();
 
     // Enable this for simple buffer readback testing, but some functionality is missing.
-    mNativeExtensions.mapBuffer              = true;
+    mNativeExtensions.mapBufferOES           = true;
     mNativeExtensions.mapBufferRange         = true;
     mNativeExtensions.textureStorage         = true;
     mNativeExtensions.drawBuffers            = true;
@@ -553,7 +565,7 @@ void DisplayMtl::initializeExtensions() const
     mNativeExtensions.copyCompressedTexture  = false;
     mNativeExtensions.debugMarker            = true;
     mNativeExtensions.robustness             = true;
-    mNativeExtensions.textureBorderClamp     = false;  // not implemented yet
+    mNativeExtensions.textureBorderClampOES  = false;  // not implemented yet
     mNativeExtensions.translatedShaderSource = true;
     mNativeExtensions.discardFramebuffer     = true;
 
@@ -567,10 +579,10 @@ void DisplayMtl::initializeExtensions() const
     // Enable EXT_blend_minmax
     mNativeExtensions.blendMinMax = true;
 
-    mNativeExtensions.eglImage         = false;
-    mNativeExtensions.eglImageExternal = false;
+    mNativeExtensions.eglImageOES         = false;
+    mNativeExtensions.eglImageExternalOES = false;
     // NOTE(hqle): Support GL_OES_EGL_image_external_essl3.
-    mNativeExtensions.eglImageExternalEssl3 = false;
+    mNativeExtensions.eglImageExternalEssl3OES = false;
 
     mNativeExtensions.memoryObject   = false;
     mNativeExtensions.memoryObjectFd = false;
@@ -583,7 +595,7 @@ void DisplayMtl::initializeExtensions() const
 
     mNativeExtensions.robustBufferAccessBehavior = false;
 
-    mNativeExtensions.eglSync = false;
+    mNativeExtensions.eglSyncOES = false;
 
     mNativeExtensions.occlusionQueryBoolean = true;
 
@@ -594,28 +606,28 @@ void DisplayMtl::initializeExtensions() const
     mNativeExtensions.textureFilterAnisotropic = true;
     mNativeExtensions.maxTextureAnisotropy     = 16;
 
-    mNativeExtensions.textureNPOT = true;
+    mNativeExtensions.textureNPOTOES = true;
 
     mNativeExtensions.texture3DOES = true;
 
-    mNativeExtensions.standardDerivatives = true;
+    mNativeExtensions.standardDerivativesOES = true;
 
-    mNativeExtensions.elementIndexUint = true;
+    mNativeExtensions.elementIndexUintOES = true;
 
     // GL_OES_get_program_binary
-    mNativeExtensions.getProgramBinary = true;
+    mNativeExtensions.getProgramBinaryOES = true;
 
     // GL_APPLE_clip_distance
     mNativeExtensions.clipDistanceAPPLE = true;
 
     // GL_NV_pixel_buffer_object
-    mNativeExtensions.pixelBufferObject = true;
+    mNativeExtensions.pixelBufferObjectNV = true;
 
     // GL_NV_fence
-    mNativeExtensions.fence = true;
+    mNativeExtensions.fenceNV = true;
 
     // GL_OES_EGL_sync
-    mNativeExtensions.eglSync = true;
+    mNativeExtensions.eglSyncOES = true;
 }
 
 void DisplayMtl::initializeTextureCaps() const
@@ -627,6 +639,11 @@ void DisplayMtl::initializeTextureCaps() const
 
     // Re-verify texture extensions.
     mNativeExtensions.setTextureExtensionSupport(mNativeTextureCaps);
+
+    // Disable all depth buffer and stencil buffer readback extensions until we need them
+    mNativeExtensions.readDepthNV         = false;
+    mNativeExtensions.readStencilNV       = false;
+    mNativeExtensions.depthBufferFloat2NV = false;
 }
 
 void DisplayMtl::initializeFeatures()

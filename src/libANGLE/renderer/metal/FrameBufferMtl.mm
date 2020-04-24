@@ -23,29 +23,6 @@
 
 namespace rx
 {
-
-namespace
-{
-
-const gl::InternalFormat &GetReadAttachmentInfo(const gl::Context *context,
-                                                RenderTargetMtl *renderTarget)
-{
-    GLenum implFormat;
-
-    if (renderTarget && renderTarget->getFormat())
-    {
-        implFormat = renderTarget->getFormat()->actualAngleFormat().fboImplementationInternalFormat;
-    }
-    else
-    {
-        implFormat = GL_NONE;
-    }
-
-    return gl::GetSizedInternalFormatInfo(implFormat);
-}
-
-}
-
 // FramebufferMtl implementation
 FramebufferMtl::FramebufferMtl(const gl::FramebufferState &state,
                                bool flipY,
@@ -213,21 +190,15 @@ angle::Result FramebufferMtl::clearBufferfi(const gl::Context *context,
     return clearImpl(context, gl::DrawBufferMask(), &clearOpts);
 }
 
-GLenum FramebufferMtl::getImplementationColorReadFormat(const gl::Context *context) const
+const gl::InternalFormat &FramebufferMtl::getImplementationColorReadFormat(
+    const gl::Context *context) const
 {
-    return GetReadAttachmentInfo(context, getColorReadRenderTarget(context)).format;
-}
-
-GLenum FramebufferMtl::getImplementationColorReadType(const gl::Context *context) const
-{
-    GLenum readType = GetReadAttachmentInfo(context, getColorReadRenderTarget(context)).type;
-    if (context->getClientMajorVersion() < 3 && readType == GL_HALF_FLOAT)
-    {
-        // GL_HALF_FLOAT was not introduced until GLES 3.0, and has a different value from
-        // GL_HALF_FLOAT_OES
-        readType = GL_HALF_FLOAT_OES;
-    }
-    return readType;
+    ContextMtl *contextMtl   = mtl::GetImpl(context);
+    GLenum sizedFormat       = mState.getReadAttachment()->getFormat().info->sizedInternalFormat;
+    angle::FormatID formatID = angle::Format::InternalFormatToID(sizedFormat);
+    const mtl::Format &mtlFormat = contextMtl->getDisplay()->getPixelFormat(formatID);
+    GLenum implFormat            = mtlFormat.actualAngleFormat().fboImplementationInternalFormat;
+    return gl::GetSizedInternalFormatInfo(implFormat);
 }
 
 angle::Result FramebufferMtl::readPixels(const gl::Context *context,
@@ -532,6 +503,7 @@ bool FramebufferMtl::checkStatus(const gl::Context *context) const
 }
 
 angle::Result FramebufferMtl::syncState(const gl::Context *context,
+                                        GLenum binding,
                                         const gl::Framebuffer::DirtyBits &dirtyBits)
 {
     ContextMtl *contextMtl = mtl::GetImpl(context);

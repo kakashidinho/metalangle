@@ -11,6 +11,7 @@
 #ifndef LIBANGLE_DISPLAY_H_
 #define LIBANGLE_DISPLAY_H_
 
+#include <mutex>
 #include <set>
 #include <vector>
 
@@ -50,13 +51,15 @@ using SurfaceSet = std::set<Surface *>;
 
 struct DisplayState final : private angle::NonCopyable
 {
-    DisplayState();
+    DisplayState(EGLNativeDisplayType nativeDisplayId);
     ~DisplayState();
 
     EGLLabelKHR label;
     SurfaceSet surfaceSet;
     std::vector<std::string> featureOverridesEnabled;
     std::vector<std::string> featureOverridesDisabled;
+    bool featuresAllDisabled;
+    EGLNativeDisplayType displayId;
 };
 
 // Constant coded here as a sanity limit.
@@ -185,7 +188,7 @@ class Display final : public LabeledObject, angle::NonCopyable
     EGLint programCacheResize(EGLint limit, EGLenum mode);
 
     const AttributeMap &getAttributeMap() const { return mAttributeMap; }
-    EGLNativeDisplayType getNativeDisplayId() const { return mDisplayId; }
+    EGLNativeDisplayType getNativeDisplayId() const { return mState.displayId; }
 
     rx::DisplayImpl *getImplementation() const { return mImplementation; }
     Device *getDevice() const;
@@ -207,10 +210,20 @@ class Display final : public LabeledObject, angle::NonCopyable
 
     EGLAttrib queryAttrib(const EGLint attribute);
 
+    angle::ScratchBuffer requestScratchBuffer();
+    void returnScratchBuffer(angle::ScratchBuffer scratchBuffer);
+
+    angle::ScratchBuffer requestZeroFilledBuffer();
+    void returnZeroFilledBuffer(angle::ScratchBuffer zeroFilledBuffer);
+
   private:
     Display(EGLenum platform, EGLNativeDisplayType displayId, Device *eglDevice);
 
-    void setAttributes(rx::DisplayImpl *impl, const AttributeMap &attribMap);
+    void setAttributes(const AttributeMap &attribMap) { mAttributeMap = attribMap; }
+
+    void setupDisplayPlatform(rx::DisplayImpl *impl);
+
+    void updateAttribsFromEnvironment(const AttributeMap &attribMap);
 
     Error restoreLostDevice();
 
@@ -218,10 +231,13 @@ class Display final : public LabeledObject, angle::NonCopyable
     void initVendorString();
     void initializeFrontendFeatures();
 
+    angle::ScratchBuffer requestScratchBufferImpl(std::vector<angle::ScratchBuffer> *bufferVector);
+    void returnScratchBufferImpl(angle::ScratchBuffer scratchBuffer,
+                                 std::vector<angle::ScratchBuffer> *bufferVector);
+
     DisplayState mState;
     rx::DisplayImpl *mImplementation;
 
-    EGLNativeDisplayType mDisplayId;
     AttributeMap mAttributeMap;
 
     ConfigSet mConfigSet;
@@ -260,6 +276,10 @@ class Display final : public LabeledObject, angle::NonCopyable
     angle::FrontendFeatures mFrontendFeatures;
 
     angle::FeatureList mFeatures;
+
+    std::mutex mScratchBufferMutex;
+    std::vector<angle::ScratchBuffer> mScratchBuffers;
+    std::vector<angle::ScratchBuffer> mZeroFilledBuffers;
 };
 
 }  // namespace egl

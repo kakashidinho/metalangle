@@ -41,6 +41,7 @@ class TextureMtl : public TextureImpl
                            GLenum format,
                            GLenum type,
                            const gl::PixelUnpackState &unpack,
+                           gl::Buffer *unpackBuffer,
                            const uint8_t *pixels) override;
     angle::Result setSubImage(const gl::Context *context,
                               const gl::ImageIndex &index,
@@ -206,6 +207,7 @@ class TextureMtl : public TextureImpl
                                const gl::Extents &size,
                                GLenum type,
                                const gl::PixelUnpackState &unpack,
+                               gl::Buffer *unpackBuffer,
                                const uint8_t *pixels);
     angle::Result setSubImageImpl(const gl::Context *context,
                                   const gl::ImageIndex &index,

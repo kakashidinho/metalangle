@@ -413,6 +413,8 @@ void main()
 // Tests reading and writing to a shader storage buffer bound at an offset.
 TEST_P(ShaderStorageBufferTest31, ShaderStorageBufferReadWriteOffset)
 {
+    // http://anglebug.com/4092
+    ANGLE_SKIP_TEST_IF(isSwiftshader());
     constexpr char kCS[] = R"(#version 310 es
 layout(local_size_x=1, local_size_y=1, local_size_z=1) in;
 
@@ -442,7 +444,9 @@ void main()
     glGetIntegerv(GL_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT, &bufferAlignOffset);
 
     constexpr int kBufferSize = kElementCount * kArrayStride;
-    const int kBufferOffset   = kBufferSize + (kBufferSize % bufferAlignOffset);
+    const int unalignedBytes  = kBufferSize % bufferAlignOffset;
+    const int alignCorrection = unalignedBytes == 0 ? 0 : bufferAlignOffset - unalignedBytes;
+    const int kBufferOffset   = kBufferSize + alignCorrection;
 
     glBufferData(GL_SHADER_STORAGE_BUFFER, kBufferOffset + kBufferSize, nullptr, GL_STATIC_DRAW);
 
@@ -2220,6 +2224,138 @@ void main()
 
     ANGLE_GL_COMPUTE_PROGRAM(program, kComputeShaderSource);
     EXPECT_GL_NO_ERROR();
+}
+
+// Test that inactive but statically used SSBOs with unsized array are handled correctly.
+//
+// Glslang wrapper used to replace the layout/qualifier of an inactive SSBO with |struct|,
+// effectively turning the interface block declaration into a struct definition.  This generally
+// worked except for SSBOs with an unsized array.  This test makes sure this special case is
+// now properly handled.
+TEST_P(ShaderStorageBufferTest31, InactiveButStaticallyUsedWithUnsizedArray)
+{
+    constexpr char kComputeShaderSource[] =
+        R"(#version 310 es
+layout (local_size_x=1) in;
+layout(binding=0, std140) buffer Storage
+{
+    uint data[];
+} sb;
+void main()
+{
+    if (false)
+    {
+        sb.data[0] = 1u;
+    }
+}
+)";
+
+    ANGLE_GL_COMPUTE_PROGRAM(program, kComputeShaderSource);
+    EXPECT_GL_NO_ERROR();
+
+    glUseProgram(program);
+    glDispatchCompute(1, 1, 1);
+    EXPECT_GL_NO_ERROR();
+}
+
+// Verify the size of the buffer with unsized struct array is calculated correctly
+TEST_P(ShaderStorageBufferTest31, BigStructUnsizedStructArraySize)
+{
+    // TODO(http://anglebug.com/3596)
+    ANGLE_SKIP_TEST_IF(IsAMD() && IsWindows() && IsOpenGL());
+
+    constexpr char kComputeShaderSource[] =
+        R"(#version 310 es
+layout (local_size_x=1) in;
+
+struct S
+{
+    mat4 m;     // 4 vec4 = 16 floats
+    vec4 a[10]; // 10 vec4 = 40 floats
+};
+
+layout(binding=0) buffer B
+{
+    vec4 precedingMember;               // 4 floats
+    S precedingMemberUnsizedArray[];    // 56 floats
+} b;
+
+void main()
+{
+    if (false)
+    {
+        b.precedingMember = vec4(1.0, 1.0, 1.0, 1.0);
+    }
+}
+)";
+
+    ANGLE_GL_COMPUTE_PROGRAM(program, kComputeShaderSource);
+    EXPECT_GL_NO_ERROR();
+
+    glUseProgram(program);
+    glDispatchCompute(1, 1, 1);
+    EXPECT_GL_NO_ERROR();
+
+    GLuint resourceIndex = glGetProgramResourceIndex(program, GL_SHADER_STORAGE_BLOCK, "B");
+    EXPECT_GL_NO_ERROR();
+    EXPECT_NE(resourceIndex, 0xFFFFFFFF);
+
+    GLenum property = GL_BUFFER_DATA_SIZE;
+    GLint queryData = -1;
+    glGetProgramResourceiv(program, GL_SHADER_STORAGE_BLOCK, resourceIndex, 1, &property, 1,
+                           nullptr, &queryData);
+    EXPECT_GL_NO_ERROR();
+
+    // 60 * sizeof(float) = 240
+    // Vulkan rounds up to the required buffer alignment, so >= 240
+    EXPECT_GE(queryData, 240);
+}
+
+// Verify the size of the buffer with unsized float array is calculated correctly
+TEST_P(ShaderStorageBufferTest31, BigStructUnsizedFloatArraySize)
+{
+    // TODO(http://anglebug.com/3596)
+    ANGLE_SKIP_TEST_IF(IsAMD() && IsWindows() && IsOpenGL());
+
+    constexpr char kComputeShaderSource[] =
+        R"(#version 310 es
+layout (local_size_x=1) in;
+
+layout(binding=0) buffer B
+{
+    vec4 precedingMember;                   // 4 floats
+    float precedingMemberUnsizedArray[];    // "1" float
+} b;
+
+void main()
+{
+    if (false)
+    {
+        b.precedingMember = vec4(1.0, 1.0, 1.0, 1.0);
+    }
+}
+)";
+
+    ANGLE_GL_COMPUTE_PROGRAM(program, kComputeShaderSource);
+    EXPECT_GL_NO_ERROR();
+
+    glUseProgram(program);
+    glDispatchCompute(1, 1, 1);
+    EXPECT_GL_NO_ERROR();
+
+    GLuint resourceIndex = glGetProgramResourceIndex(program, GL_SHADER_STORAGE_BLOCK, "B");
+    EXPECT_GL_NO_ERROR();
+    EXPECT_NE(resourceIndex, 0xFFFFFFFF);
+
+    GLenum property = GL_BUFFER_DATA_SIZE;
+    GLint queryData = -1;
+    glGetProgramResourceiv(program, GL_SHADER_STORAGE_BLOCK, resourceIndex, 1, &property, 1,
+                           nullptr, &queryData);
+    EXPECT_GL_NO_ERROR();
+
+    // 5 * sizeof(float) = 20
+    // Vulkan rounds up to the required buffer alignment, so >= 20
+    EXPECT_GE(queryData, 20);
 }
 
 ANGLE_INSTANTIATE_TEST_ES31(ShaderStorageBufferTest31);

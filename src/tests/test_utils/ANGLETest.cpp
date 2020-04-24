@@ -58,9 +58,7 @@ void TestPlatform_logError(PlatformMethods *platform, const char *errorMessage)
 
     GTEST_NONFATAL_FAILURE_(errorMessage);
 
-    // Print the stack and stop any crash handling to prevent duplicate reports.
     PrintStackBacktrace();
-    TerminateCrashHandler();
 }
 
 void TestPlatform_logWarning(PlatformMethods *platform, const char *warningMessage)
@@ -282,6 +280,18 @@ GLColor32F ReadColor32F(GLint x, GLint y)
     EXPECT_GL_NO_ERROR();
     return actual;
 }
+
+void LoadEntryPointsWithUtilLoader()
+{
+#if defined(ANGLE_USE_UTIL_LOADER)
+    PFNEGLGETPROCADDRESSPROC getProcAddress;
+    ANGLETestEnvironment::GetEGLLibrary()->getAs("eglGetProcAddress", &getProcAddress);
+    ASSERT_NE(nullptr, getProcAddress);
+
+    LoadEGL(getProcAddress);
+    LoadGLES(getProcAddress);
+#endif  // defined(ANGLE_USE_UTIL_LOADER)
+}
 }  // namespace angle
 
 using namespace angle;
@@ -383,6 +393,12 @@ ANGLETestBase::ANGLETestBase(const PlatformParameters &params)
     PlatformParameters withMethods            = params;
     withMethods.eglParameters.platformMethods = &gDefaultPlatformMethods;
 
+    // We don't build vulkan debug layers on Mac (http://anglebug.com/4376)
+    if (IsOSX() && withMethods.getRenderer() == EGL_PLATFORM_ANGLE_TYPE_VULKAN_ANGLE)
+    {
+        withMethods.eglParameters.debugLayersEnabled = false;
+    }
+
     auto iter = gFixtures.find(withMethods);
     if (iter != gFixtures.end())
     {
@@ -413,8 +429,9 @@ void ANGLETestBase::initOSWindow()
     windowNameStream << "ANGLE Tests - " << *mCurrentParams;
     std::string windowName = windowNameStream.str();
 
-    if (mAlwaysForceNewDisplay)
+    if (IsAndroid())
     {
+        // Only one window per test application on Android, shared among all fixtures
         mFixture->osWindow = mOSWindowSingleton;
     }
 
@@ -426,11 +443,15 @@ void ANGLETestBase::initOSWindow()
             std::cerr << "Failed to initialize OS Window.";
         }
 
-        mOSWindowSingleton = mFixture->osWindow;
+        if (IsAndroid())
+        {
+            // Initialize the single window on Andoird only once
+            mOSWindowSingleton = mFixture->osWindow;
+        }
     }
 
     // On Linux we must keep the test windows visible. On Windows it doesn't seem to need it.
-    mFixture->osWindow->setVisible(!IsWindows());
+    setWindowVisible(getOSWindow(), !IsWindows());
 
     switch (mCurrentParams->driver)
     {
@@ -490,8 +511,6 @@ void ANGLETestBase::ANGLETestSetUp()
 {
     mSetUpCalled = true;
 
-    InitCrashHandler(nullptr);
-
     gDefaultPlatformMethods.overrideWorkaroundsD3D = TestPlatform_overrideWorkaroundsD3D;
     gDefaultPlatformMethods.overrideFeaturesVk     = TestPlatform_overrideFeaturesVk;
     gDefaultPlatformMethods.overrideFeaturesMtl    = TestPlatform_overrideFeaturesMetal;
@@ -520,14 +539,7 @@ void ANGLETestBase::ANGLETestSetUp()
 
     if (mCurrentParams->noFixture)
     {
-#if defined(ANGLE_USE_UTIL_LOADER)
-        PFNEGLGETPROCADDRESSPROC getProcAddress;
-        ANGLETestEnvironment::GetEGLLibrary()->getAs("eglGetProcAddress", &getProcAddress);
-        ASSERT_NE(nullptr, getProcAddress);
-
-        LoadEGL(getProcAddress);
-        LoadGLES(getProcAddress);
-#endif  // defined(ANGLE_USE_UTIL_LOADER)
+        LoadEntryPointsWithUtilLoader();
         return;
     }
 
@@ -625,8 +637,6 @@ void ANGLETestBase::ANGLETestTearDown()
         mFixture->eglWindow->destroyContext();
         mFixture->eglWindow->destroySurface();
     }
-
-    TerminateCrashHandler();
 
     // Check for quit message
     Event myEvent;
@@ -1001,6 +1011,11 @@ void ANGLETestBase::draw3DTexturedQuad(GLfloat positionAttribZ,
     }
 }
 
+bool ANGLETestBase::platformSupportsMultithreading() const
+{
+    return (IsOpenGLES() && IsAndroid()) || IsVulkan();
+}
+
 void ANGLETestBase::checkD3D11SDKLayersMessages()
 {
 #if defined(ANGLE_PLATFORM_WINDOWS)
@@ -1226,95 +1241,15 @@ bool ANGLETestBase::isMultisampleEnabled() const
     return mFixture->eglWindow->isMultisample();
 }
 
-void ANGLETestBase::setWindowVisible(bool isVisible)
+void ANGLETestBase::setWindowVisible(OSWindow *osWindow, bool isVisible)
 {
-    mFixture->osWindow->setVisible(isVisible);
-}
-
-bool IsAdreno()
-{
-    std::string rendererString(reinterpret_cast<const char *>(glGetString(GL_RENDERER)));
-    return (rendererString.find("Adreno") != std::string::npos);
-}
-
-bool IsIntelRenderer()
-{
-    std::string rendererString(reinterpret_cast<const char *>(glGetString(GL_RENDERER)));
-    return (rendererString.find("Intel") != std::string::npos);
-}
-
-bool IsD3D11()
-{
-    std::string rendererString(reinterpret_cast<const char *>(glGetString(GL_RENDERER)));
-    return (rendererString.find("Direct3D11 vs_5_0") != std::string::npos);
-}
-
-bool IsD3D11_FL93()
-{
-    std::string rendererString(reinterpret_cast<const char *>(glGetString(GL_RENDERER)));
-    return (rendererString.find("Direct3D11 vs_4_0_") != std::string::npos);
-}
-
-bool IsD3D9()
-{
-    std::string rendererString(reinterpret_cast<const char *>(glGetString(GL_RENDERER)));
-    return (rendererString.find("Direct3D9") != std::string::npos);
-}
-
-bool IsD3DSM3()
-{
-    return IsD3D9() || IsD3D11_FL93();
-}
-
-bool IsDesktopOpenGL()
-{
-    return IsOpenGL() && !IsOpenGLES();
-}
-
-bool IsOpenGLES()
-{
-    std::string rendererString(reinterpret_cast<const char *>(glGetString(GL_RENDERER)));
-    return (rendererString.find("OpenGL ES") != std::string::npos);
-}
-
-bool IsOpenGL()
-{
-    std::string rendererString(reinterpret_cast<const char *>(glGetString(GL_RENDERER)));
-    return (rendererString.find("OpenGL") != std::string::npos);
-}
-
-bool IsNULL()
-{
-    std::string rendererString(reinterpret_cast<const char *>(glGetString(GL_RENDERER)));
-    return (rendererString.find("NULL") != std::string::npos);
-}
-
-bool IsVulkan()
-{
-    const char *renderer = reinterpret_cast<const char *>(glGetString(GL_RENDERER));
-    std::string rendererString(renderer);
-    return (rendererString.find("Vulkan") != std::string::npos);
-}
-
-bool IsMetal()
-{
-    const char *renderer = reinterpret_cast<const char *>(glGetString(GL_RENDERER));
-    std::string rendererString(renderer);
-    return (rendererString.find("Metal") != std::string::npos);
-}
-
-bool IsDebug()
-{
-#if !defined(NDEBUG)
-    return true;
-#else
-    return false;
-#endif
-}
-
-bool IsRelease()
-{
-    return !IsDebug();
+    // SwiftShader windows are not required to be visible for test correctness,
+    // moreover, making a SwiftShader window visible flaky hangs on Xvfb, so we keep them hidden.
+    if (isSwiftshader())
+    {
+        return;
+    }
+    osWindow->setVisible(isVisible);
 }
 
 ANGLETestBase::TestFixture::TestFixture()  = default;
@@ -1395,7 +1330,7 @@ void ANGLEProcessTestArgs(int *argc, char *argv[])
     {
         if (strncmp(argv[argIndex], kUseConfig, strlen(kUseConfig)) == 0)
         {
-            gSelectedConfig = std::string(argv[argIndex] + strlen(kUseConfig));
+            SetSelectedConfig(argv[argIndex] + strlen(kUseConfig));
         }
         if (strncmp(argv[argIndex], kSeparateProcessPerConfig, strlen(kSeparateProcessPerConfig)) ==
             0)
@@ -1406,7 +1341,7 @@ void ANGLEProcessTestArgs(int *argc, char *argv[])
 
     if (gSeparateProcessPerConfig)
     {
-        if (!gSelectedConfig.empty())
+        if (IsConfigSelected())
         {
             std::cout << "Cannot use both a single test config and separate processes.\n";
             exit(1);
@@ -1422,41 +1357,4 @@ void ANGLEProcessTestArgs(int *argc, char *argv[])
             exit(1);
         }
     }
-}
-
-bool EnsureGLExtensionEnabled(const std::string &extName)
-{
-    if (IsGLExtensionEnabled("GL_ANGLE_request_extension") && IsGLExtensionRequestable(extName))
-    {
-        glRequestExtensionANGLE(extName.c_str());
-    }
-
-    return IsGLExtensionEnabled(extName);
-}
-
-bool IsEGLClientExtensionEnabled(const std::string &extName)
-{
-    return CheckExtensionExists(eglQueryString(EGL_NO_DISPLAY, EGL_EXTENSIONS), extName);
-}
-
-bool IsEGLDeviceExtensionEnabled(EGLDeviceEXT device, const std::string &extName)
-{
-    return CheckExtensionExists(eglQueryDeviceStringEXT(device, EGL_EXTENSIONS), extName);
-}
-
-bool IsEGLDisplayExtensionEnabled(EGLDisplay display, const std::string &extName)
-{
-    return CheckExtensionExists(eglQueryString(display, EGL_EXTENSIONS), extName);
-}
-
-bool IsGLExtensionEnabled(const std::string &extName)
-{
-    return CheckExtensionExists(reinterpret_cast<const char *>(glGetString(GL_EXTENSIONS)),
-                                extName);
-}
-
-bool IsGLExtensionRequestable(const std::string &extName)
-{
-    return CheckExtensionExists(
-        reinterpret_cast<const char *>(glGetString(GL_REQUESTABLE_EXTENSIONS_ANGLE)), extName);
 }

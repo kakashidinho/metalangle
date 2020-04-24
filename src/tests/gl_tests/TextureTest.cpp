@@ -17,6 +17,9 @@ namespace
 constexpr GLuint kPixelTolerance     = 1u;
 constexpr GLfloat kPixelTolerance32F = 0.01f;
 
+// Single compressed ETC2 block of source pixels all set red
+constexpr uint8_t kCompressedImageETC2[] = {0x7E, 0x80, 0x04, 0x7F, 0x00, 0x07, 0xE0, 0x00};
+
 // Take a pixel, and reset the components not covered by the format to default
 // values. In particular, the default value for the alpha component is 255
 // (1.0 as unsigned normalized fixed point value).
@@ -43,6 +46,30 @@ GLColor SliceFormatColor(GLenum format, GLColor full)
         default:
             EXPECT_TRUE(false);
             return GLColor::white;
+    }
+}
+
+GLColor16UI SliceFormatColor16UI(GLenum format, GLColor16UI full)
+{
+    switch (format)
+    {
+        case GL_RED:
+            return GLColor16UI(full.R, 0, 0, 0xFFFF);
+        case GL_RG:
+            return GLColor16UI(full.R, full.G, 0, 0xFFFF);
+        case GL_RGB:
+            return GLColor16UI(full.R, full.G, full.B, 0xFFFF);
+        case GL_RGBA:
+            return full;
+        case GL_LUMINANCE:
+            return GLColor16UI(full.R, full.R, full.R, 0xFFFF);
+        case GL_ALPHA:
+            return GLColor16UI(0, 0, 0, full.R);
+        case GL_LUMINANCE_ALPHA:
+            return GLColor16UI(full.R, full.R, full.R, full.G);
+        default:
+            EXPECT_TRUE(false);
+            return GLColor16UI(0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF);
     }
 }
 
@@ -1532,6 +1559,50 @@ class Texture3DIntegerTestES3 : public Texture3DTestES3
     }
 };
 
+class PBOCompressedTextureTest : public Texture2DTest
+{
+  protected:
+    PBOCompressedTextureTest() : Texture2DTest() {}
+
+    void testSetUp() override
+    {
+        TexCoordDrawTest::testSetUp();
+        glGenTextures(1, &mTexture2D);
+        glBindTexture(GL_TEXTURE_2D, mTexture2D);
+        EXPECT_GL_NO_ERROR();
+
+        setUpProgram();
+
+        glGenBuffers(1, &mPBO);
+    }
+
+    void testTearDown() override
+    {
+        glDeleteBuffers(1, &mPBO);
+        Texture2DTest::testTearDown();
+    }
+
+    GLuint mPBO;
+};
+
+class ETC1CompressedTextureTest : public Texture2DTest
+{
+  protected:
+    ETC1CompressedTextureTest() : Texture2DTest() {}
+
+    void testSetUp() override
+    {
+        TexCoordDrawTest::testSetUp();
+        glGenTextures(1, &mTexture2D);
+        glBindTexture(GL_TEXTURE_2D, mTexture2D);
+        EXPECT_GL_NO_ERROR();
+
+        setUpProgram();
+    }
+
+    void testTearDown() override { Texture2DTest::testTearDown(); }
+};
+
 TEST_P(Texture2DTest, NegativeAPISubImage)
 {
     glBindTexture(GL_TEXTURE_2D, mTexture2D);
@@ -1876,6 +1947,182 @@ TEST_P(Texture2DTest, TexStorage)
 // initialized the image with a default color.
 TEST_P(Texture2DTest, TexStorageWithPBO)
 {
+    // http://anglebug.com/4126
+    ANGLE_SKIP_TEST_IF(IsOSX() && IsOpenGL());
+
+    if (getClientMajorVersion() < 3)
+    {
+        ANGLE_SKIP_TEST_IF(!IsGLExtensionEnabled("GL_EXT_texture_storage"));
+        ANGLE_SKIP_TEST_IF(!IsGLExtensionEnabled("GL_NV_pixel_buffer_object"));
+    }
+
+    const int width          = getWindowWidth();
+    const int height         = getWindowHeight();
+    const size_t pixelCount  = width * height;
+    const int componentCount = 3;
+
+    GLuint tex2D;
+    glGenTextures(1, &tex2D);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, tex2D);
+
+    // Fill with red
+    std::vector<GLubyte> pixels(componentCount * pixelCount);
+    for (size_t pixelId = 0; pixelId < pixelCount; ++pixelId)
+    {
+        pixels[pixelId * componentCount + 0] = 255;
+        pixels[pixelId * componentCount + 1] = 0;
+        pixels[pixelId * componentCount + 2] = 0;
+    }
+
+    // Read 16x16 region from red backbuffer to PBO
+    GLuint pbo;
+    glGenBuffers(1, &pbo);
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
+    glBufferData(GL_PIXEL_UNPACK_BUFFER, componentCount * pixelCount, pixels.data(),
+                 GL_STATIC_DRAW);
+
+    // ANGLE internally uses RGBA as the DirectX format for RGB images
+    // therefore glTexStorage2DEXT initializes the image to a default color to get a consistent
+    // alpha color. The data is kept in a CPU-side image and the image is marked as dirty.
+    glTexStorage2DEXT(GL_TEXTURE_2D, 1, GL_RGB8, width, height);
+
+    // Initializes the color of the upper-left quadrant of pixels, leaves the other pixels
+    // untouched. glTexSubImage2D should take into account that the image is dirty.
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width / 2, height / 2, GL_RGB, GL_UNSIGNED_BYTE,
+                    nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    setUpProgram();
+
+    glUseProgram(mProgram);
+    glUniform1i(mTexture2DUniformLocation, 0);
+    drawQuad(mProgram, "position", 0.5f);
+    glDeleteTextures(1, &tex2D);
+    glDeleteBuffers(1, &pbo);
+    EXPECT_GL_NO_ERROR();
+    EXPECT_PIXEL_EQ(3 * width / 4, 3 * height / 4, 0, 0, 0, 255);
+    EXPECT_PIXEL_EQ(width / 4, height / 4, 255, 0, 0, 255);
+}
+
+// Test that glTexSubImage2D combined with a PBO works properly after deleting the PBO
+// and drawing with the texture
+// Pseudo code for the follow test:
+// 1. Upload PBO to mTexture2D
+// 2. Delete PBO
+// 3. Draw with otherTexture (x5)
+// 4. Draw with mTexture2D
+// 5. Validate color output
+TEST_P(Texture2DTest, PBOWithMultipleDraws)
+{
+    if (getClientMajorVersion() < 3)
+    {
+        ANGLE_SKIP_TEST_IF(!IsGLExtensionEnabled("GL_EXT_texture_storage"));
+        ANGLE_SKIP_TEST_IF(!IsGLExtensionEnabled("GL_NV_pixel_buffer_object"));
+    }
+
+    const GLuint width            = getWindowWidth();
+    const GLuint height           = getWindowHeight();
+    const GLuint windowPixelCount = width * height;
+    std::vector<GLColor> pixelsRed(windowPixelCount, GLColor::red);
+    std::vector<GLColor> pixelsGreen(windowPixelCount, GLColor::green);
+
+    // Create secondary draw that does not use mTexture
+    const char *vertexShaderSource   = getVertexShaderSource();
+    const char *fragmentShaderSource = getFragmentShaderSource();
+    ANGLE_GL_PROGRAM(otherProgram, vertexShaderSource, fragmentShaderSource);
+
+    GLint uniformLoc = glGetUniformLocation(otherProgram, getTextureUniformName());
+    ASSERT_NE(-1, uniformLoc);
+    glUseProgram(0);
+
+    // Create secondary Texture to draw with
+    GLTexture otherTexture;
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, otherTexture);
+    glTexStorage2DEXT(GL_TEXTURE_2D, 1, GL_RGBA8, width, height);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE,
+                    pixelsRed.data());
+    ASSERT_GL_NO_ERROR();
+
+    // Setup primary Texture
+    glBindTexture(GL_TEXTURE_2D, mTexture2D);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexStorage2DEXT(GL_TEXTURE_2D, 1, GL_RGBA8, width, height);
+    ASSERT_GL_NO_ERROR();
+
+    // Setup PBO
+    GLuint pbo = 0;
+    glGenBuffers(1, &pbo);
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
+    glBufferData(GL_PIXEL_UNPACK_BUFFER, pixelsGreen.size() * 4u, pixelsGreen.data(),
+                 GL_STATIC_DRAW);
+    ASSERT_GL_NO_ERROR();
+
+    // Write PBO to mTexture
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+    ASSERT_GL_NO_ERROR();
+    // Delete PBO as ANGLE should be properly handling refcount of this buffer
+    glDeleteBuffers(1, &pbo);
+    pixelsGreen.clear();
+
+    // Do 5 draws not involving primary texture that the PBO updated
+    glUseProgram(otherProgram);
+    glUniform1i(uniformLoc, 0);
+    glBindTexture(GL_TEXTURE_2D, otherTexture);
+    drawQuad(otherProgram, "position", 0.5f);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glUseProgram(0);
+
+    glUseProgram(otherProgram);
+    glUniform1i(uniformLoc, 0);
+    glBindTexture(GL_TEXTURE_2D, otherTexture);
+    drawQuad(otherProgram, "position", 0.5f);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glUseProgram(0);
+
+    glUseProgram(otherProgram);
+    glUniform1i(uniformLoc, 0);
+    glBindTexture(GL_TEXTURE_2D, otherTexture);
+    drawQuad(otherProgram, "position", 0.5f);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glUseProgram(0);
+
+    glUseProgram(otherProgram);
+    glUniform1i(uniformLoc, 0);
+    glBindTexture(GL_TEXTURE_2D, otherTexture);
+    drawQuad(otherProgram, "position", 0.5f);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glUseProgram(0);
+    ASSERT_GL_NO_ERROR();
+
+    std::vector<GLColor> output(windowPixelCount, GLColor::black);
+    glReadPixels(0, 0, getWindowWidth(), getWindowHeight(), GL_RGBA, GL_UNSIGNED_BYTE,
+                 output.data());
+    EXPECT_EQ(pixelsRed, output);
+
+    setUpProgram();
+    // Draw using PBO updated texture
+    glUseProgram(mProgram);
+    glUniform1i(mTexture2DUniformLocation, 0);
+    glBindTexture(GL_TEXTURE_2D, mTexture2D);
+    drawQuad(mProgram, "position", 0.5f);
+    ASSERT_GL_NO_ERROR();
+
+    std::vector<GLColor> actual(windowPixelCount, GLColor::black);
+    glReadPixels(0, 0, getWindowWidth(), getWindowHeight(), GL_RGBA, GL_UNSIGNED_BYTE,
+                 actual.data());
+    // Value should be green as it was updated during PBO transfer to mTexture
+    std::vector<GLColor> expected(windowPixelCount, GLColor::green);
+    EXPECT_EQ(expected, actual);
+}
+
+// Test that glTexSubImage2D combined with a PBO works properly when glTexStorage2DEXT has
+// initialized the image with a default color and one different color in the middle pixel.
+TEST_P(Texture2DTest, TexStorageWithPBOMiddlePixelDifferent)
+{
     if (IsGLExtensionEnabled("GL_NV_pixel_buffer_object"))
     {
         int width  = getWindowWidth();
@@ -1935,6 +2182,8 @@ TEST_P(Texture2DTest, TexStorageWithPBO)
     }
 }
 
+// Test that glTexSubImage2D combined with a PBO works properly when glTexImage2D has
+// initialized the image with a luminance color
 TEST_P(Texture2DTest, TexStorageWithLuminancePBO)
 {
     if (IsGLExtensionEnabled("GL_NV_pixel_buffer_object"))
@@ -1989,6 +2238,8 @@ TEST_P(Texture2DTest, TexStorageWithLuminancePBO)
     }
 }
 
+// Test that glTexSubImage2D combined with a PBO works properly when glTexStorage2DEXT has
+// initialized the image with a RGB656 color
 TEST_P(Texture2DTest, TexStorageWithRGB565PBO)
 {
     if (IsGLExtensionEnabled("GL_NV_pixel_buffer_object"))
@@ -2043,6 +2294,8 @@ TEST_P(Texture2DTest, TexStorageWithRGB565PBO)
     }
 }
 
+// Test that glTexSubImage2D combined with a PBO works properly when glTexStorage2DEXT has
+// initialized the image with a RGBA4444 color
 TEST_P(Texture2DTest, TexStorageWithRGBA4444PBO)
 {
     if (IsGLExtensionEnabled("GL_NV_pixel_buffer_object"))
@@ -2097,6 +2350,8 @@ TEST_P(Texture2DTest, TexStorageWithRGBA4444PBO)
     }
 }
 
+// Test that glTexSubImage2D combined with a PBO works properly when glTexStorage2DEXT has
+// initialized the image with a RGBA5551 color
 TEST_P(Texture2DTest, TexStorageWithRGBA5551PBO)
 {
     if (IsGLExtensionEnabled("GL_NV_pixel_buffer_object"))
@@ -3751,6 +4006,9 @@ TEST_P(TextureSizeTextureArrayTest, BaseLevelVariesInTextureArray)
 {
     ANGLE_SKIP_TEST_IF(IsAMD() && IsD3D11());
 
+    // http://anglebug.com/4391
+    ANGLE_SKIP_TEST_IF(IsNVIDIA() && IsWindows() && IsD3D11());
+
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, mTexture2DA);
     GLsizei size = 64;
@@ -4831,6 +5089,12 @@ TEST_P(TextureLimitsTest, MaxFragmentTextures)
 // Test rendering with maximum combined texture units.
 TEST_P(TextureLimitsTest, MaxCombinedTextures)
 {
+    // TODO(timvp): http://anglebug.com/3570
+    // Currently only fails on SwiftShader but we don't have an IsSwiftShader().
+    // max per-stage sampled image bindings count (32) exceeds device
+    // maxPerStageDescriptorSampledImages limit (16)
+    ANGLE_SKIP_TEST_IF(IsVulkan());
+
     GLint vertexTextures = mMaxVertexTextures;
 
     if (vertexTextures + mMaxFragmentTextures > mMaxCombinedTextures)
@@ -4960,6 +5224,10 @@ class Texture2DNorm16TestES3 : public Texture2DTestES3
 
     void testNorm16Texture(GLint internalformat, GLenum format, GLenum type)
     {
+        // TODO(http://anglebug.com/4089) Fails on Win Intel OpenGL driver
+        ANGLE_SKIP_TEST_IF(IsIntel() && IsOpenGL());
+        ANGLE_SKIP_TEST_IF(!IsGLExtensionEnabled("GL_EXT_texture_norm16"));
+
         GLushort pixelValue  = (type == GL_SHORT) ? 0x7FFF : 0x6A35;
         GLushort imageData[] = {pixelValue, pixelValue, pixelValue, pixelValue};
 
@@ -4990,15 +5258,101 @@ class Texture2DNorm16TestES3 : public Texture2DTestES3
         ASSERT_GL_NO_ERROR();
     }
 
-    void testNorm16Render(GLint internalformat, GLenum format, GLenum type)
+    void testReadPixelsRGBAWithRangeAndPixelStoreMode(GLuint x,
+                                                      GLuint y,
+                                                      GLuint width,
+                                                      GLuint height,
+                                                      GLint packRowLength,
+                                                      GLint packAlignment,
+                                                      GLint packSkipPixels,
+                                                      GLint packSkipRows,
+                                                      GLenum type,
+                                                      GLColor16UI color)
     {
+        // PACK modes debugging
+        GLint s = 2;  // single component size in bytes, UNSIGNED_SHORT -> 2 in our case
+        GLint n = 4;  // 4 components per pixel, stands for GL_RGBA
+
+        GLuint l       = packRowLength == 0 ? width : packRowLength;
+        const GLint &a = packAlignment;
+
+        // According to
+        // https://www.khronos.org/registry/OpenGL-Refpages/es3.0/html/glPixelStorei.xhtml
+        GLint k                    = (s >= a) ? n * l : a / s * (1 + (s * n * l - 1) / a);
+        std::size_t componentCount = n * packSkipPixels + k * (packSkipRows + height);
+        if (static_cast<GLuint>(packRowLength) < width)
+        {
+            componentCount += width * n * s - k;
+        }
+
+        // Populate the pixels array with random dirty value
+        constexpr GLushort kDirtyValue = 0x1234;
+        std::vector<GLushort> pixels(componentCount, kDirtyValue);
+        glReadPixels(x, y, width, height, GL_RGBA, type, pixels.data());
+
+        EXPECT_GL_NO_ERROR();
+
+        GLushort *pixelRowStart = pixels.data();
+        pixelRowStart += n * packSkipPixels + k * packSkipRows;
+
+        std::vector<bool> modifiedPixels(componentCount, false);
+
+        char errorInfo[200];
+
+        for (GLuint y = 0; y < height; ++y)
+        {
+            GLushort *curPixel = pixelRowStart;
+            for (GLuint x = 0, len = (y == height - 1) ? width : std::min(l, width); x < len; ++x)
+            {
+                snprintf(errorInfo, sizeof(errorInfo),
+                         "extent: {%u, %u}, coord: (%u, %u), rowLength: %d, alignment: %d, "
+                         "skipPixels: %d, skipRows: %d\n",
+                         width, height, x, y, packRowLength, packAlignment, packSkipPixels,
+                         packSkipRows);
+                EXPECT_EQ(color.R, curPixel[0]) << errorInfo;
+                EXPECT_EQ(color.G, curPixel[1]) << errorInfo;
+                EXPECT_EQ(color.B, curPixel[2]) << errorInfo;
+                EXPECT_EQ(color.A, curPixel[3]) << errorInfo;
+
+                std::ptrdiff_t diff      = curPixel - pixels.data();
+                modifiedPixels[diff + 0] = true;
+                modifiedPixels[diff + 1] = true;
+                modifiedPixels[diff + 2] = true;
+                modifiedPixels[diff + 3] = true;
+
+                curPixel += n;
+            }
+            pixelRowStart += k;
+        }
+
+        for (std::size_t i = 0; i < modifiedPixels.size(); ++i)
+        {
+            if (!modifiedPixels[i])
+            {
+                EXPECT_EQ(pixels[i], kDirtyValue);
+            }
+        }
+    }
+
+    void testNorm16RenderAndReadPixels(GLint internalformat, GLenum format, GLenum type)
+    {
+        // TODO(http://anglebug.com/4089) Fails on Win Intel OpenGL driver
+        ANGLE_SKIP_TEST_IF(IsIntel() && IsOpenGL());
+        // TODO(http://anglebug.com/4245) Fails on Win AMD OpenGL driver
+        ANGLE_SKIP_TEST_IF(IsWindows() && IsAMD() && IsDesktopOpenGL());
+        ANGLE_SKIP_TEST_IF(!IsGLExtensionEnabled("GL_EXT_texture_norm16"));
+
         GLushort pixelValue  = 0x6A35;
         GLushort imageData[] = {pixelValue, pixelValue, pixelValue, pixelValue};
+        GLColor16UI color    = SliceFormatColor16UI(
+            format, GLColor16UI(pixelValue, pixelValue, pixelValue, pixelValue));
+        // Size of drawing viewport
+        constexpr GLint width = 8, height = 8;
 
         setUpProgram();
 
         glBindTexture(GL_TEXTURE_2D, mTextures[1]);
-        glTexImage2D(GL_TEXTURE_2D, 0, internalformat, 1, 1, 0, format, type, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, internalformat, width, height, 0, format, type, nullptr);
 
         glBindFramebuffer(GL_FRAMEBUFFER, mFBO);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mTextures[1],
@@ -5006,15 +5360,72 @@ class Texture2DNorm16TestES3 : public Texture2DTestES3
 
         glBindTexture(GL_TEXTURE_2D, mTextures[2]);
         glTexImage2D(GL_TEXTURE_2D, 0, internalformat, 1, 1, 0, format, type, imageData);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
         EXPECT_GL_NO_ERROR();
 
         drawQuad(mProgram, "position", 0.5f);
 
-        GLubyte expectedValue = static_cast<GLubyte>(pixelValue >> 8);
-        EXPECT_PIXEL_COLOR_EQ(0, 0,
-                              SliceFormatColor(format, GLColor(expectedValue, expectedValue,
-                                                               expectedValue, expectedValue)));
+        // ReadPixels against different width, height, pixel pack mode combinations to test
+        // workaround of pixels rearrangement
+
+        // {x, y, width, height}
+        std::vector<std::array<GLint, 4>> areas = {
+            {0, 0, 1, 1}, {0, 0, 1, 2}, {0, 0, 2, 1}, {0, 0, 2, 2},
+            {0, 0, 3, 2}, {0, 0, 3, 3}, {0, 0, 4, 3}, {0, 0, 4, 4},
+
+            {1, 3, 3, 2}, {1, 3, 3, 3}, {3, 2, 4, 3}, {3, 2, 4, 4},
+
+            {0, 0, 5, 6}, {2, 1, 5, 6}, {0, 0, 6, 1}, {0, 0, 7, 1},
+            {0, 0, 7, 3}, {0, 0, 7, 8}, {1, 0, 7, 8}, {0, 0, 8, 8},
+        };
+
+        // Put default settings at the last
+        std::vector<GLint> paramsPackRowLength = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0};
+        std::vector<GLint> paramsPackAlignment = {1, 2, 8, 4};
+        std::vector<std::array<GLint, 2>> paramsPackSkipPixelsAndRows = {{1, 0}, {0, 1},   {1, 1},
+                                                                         {3, 1}, {20, 20}, {0, 0}};
+
+        // Restore pixel pack modes later
+        GLint restorePackAlignment;
+        glGetIntegerv(GL_PACK_ALIGNMENT, &restorePackAlignment);
+        GLint restorePackRowLength;
+        glGetIntegerv(GL_PACK_ROW_LENGTH, &restorePackRowLength);
+        GLint restorePackSkipPixels;
+        glGetIntegerv(GL_PACK_SKIP_PIXELS, &restorePackSkipPixels);
+        GLint restorePackSkipRows;
+        glGetIntegerv(GL_PACK_SKIP_ROWS, &restorePackSkipRows);
+
+        // Variable symbols are based on:
+        // https://www.khronos.org/registry/OpenGL-Refpages/es3.0/html/glPixelStorei.xhtml
+        for (const auto &skipped : paramsPackSkipPixelsAndRows)
+        {
+            glPixelStorei(GL_PACK_SKIP_PIXELS, skipped[0]);
+            glPixelStorei(GL_PACK_SKIP_ROWS, skipped[1]);
+            for (GLint a : paramsPackAlignment)
+            {
+                glPixelStorei(GL_PACK_ALIGNMENT, a);
+                for (GLint l : paramsPackRowLength)
+                {
+                    glPixelStorei(GL_PACK_ROW_LENGTH, l);
+
+                    for (const auto &area : areas)
+                    {
+                        ASSERT(area[0] + area[2] <= width);
+                        ASSERT(area[1] + area[3] <= height);
+                        testReadPixelsRGBAWithRangeAndPixelStoreMode(area[0], area[1], area[2],
+                                                                     area[3], l, a, skipped[0],
+                                                                     skipped[1], type, color);
+                    }
+                }
+            }
+        }
+
+        glPixelStorei(GL_PACK_ALIGNMENT, restorePackAlignment);
+        glPixelStorei(GL_PACK_ROW_LENGTH, restorePackRowLength);
+        glPixelStorei(GL_PACK_SKIP_PIXELS, restorePackSkipPixels);
+        glPixelStorei(GL_PACK_SKIP_ROWS, restorePackSkipRows);
 
         glBindRenderbuffer(GL_RENDERBUFFER, mRenderbuffer);
         glRenderbufferStorage(GL_RENDERBUFFER, internalformat, 1, 1);
@@ -5026,18 +5437,20 @@ class Texture2DNorm16TestES3 : public Texture2DTestES3
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        EXPECT_PIXEL_COLOR_EQ(0, 0, SliceFormatColor(format, GLColor::white));
+        EXPECT_PIXEL_16UI_COLOR(
+            0, 0, SliceFormatColor16UI(format, GLColor16UI(0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF)));
 
         glBindTexture(GL_TEXTURE_2D, mTextures[1]);
         glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, 1, 1);
 
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mTextures[1],
                                0);
-        EXPECT_PIXEL_COLOR_EQ(0, 0, SliceFormatColor(format, GLColor::white));
-
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        EXPECT_PIXEL_16UI_COLOR(
+            0, 0, SliceFormatColor16UI(format, GLColor16UI(0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF)));
 
         ASSERT_GL_NO_ERROR();
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
     GLuint mTextures[3];
@@ -5045,29 +5458,65 @@ class Texture2DNorm16TestES3 : public Texture2DTestES3
     GLuint mRenderbuffer;
 };
 
-// Test texture formats enabled by the GL_EXT_texture_norm16 extension.
-TEST_P(Texture2DNorm16TestES3, TextureNorm16Test)
+TEST_P(Texture2DNorm16TestES3, TextureNorm16R16TextureTest)
 {
-    // TODO(crbug.com/angleproject/4089) Fails on Nexus5X Adreno
-    // TODO(crbug.com/1024387) Fails on Nexus6P
-    ANGLE_SKIP_TEST_IF(IsNexus5X() || IsNexus6P());
-    // TODO(crbug.com/angleproject/4089) Fails on Win Intel OpenGL driver
-    ANGLE_SKIP_TEST_IF(IsIntel() && IsOpenGL());
-
-    ANGLE_SKIP_TEST_IF(!IsGLExtensionEnabled("GL_EXT_texture_norm16"));
-
     testNorm16Texture(GL_R16_EXT, GL_RED, GL_UNSIGNED_SHORT);
-    testNorm16Texture(GL_RG16_EXT, GL_RG, GL_UNSIGNED_SHORT);
-    testNorm16Texture(GL_RGB16_EXT, GL_RGB, GL_UNSIGNED_SHORT);
-    testNorm16Texture(GL_RGBA16_EXT, GL_RGBA, GL_UNSIGNED_SHORT);
-    testNorm16Texture(GL_R16_SNORM_EXT, GL_RED, GL_SHORT);
-    testNorm16Texture(GL_RG16_SNORM_EXT, GL_RG, GL_SHORT);
-    testNorm16Texture(GL_RGB16_SNORM_EXT, GL_RGB, GL_SHORT);
-    testNorm16Texture(GL_RGBA16_SNORM_EXT, GL_RGBA, GL_SHORT);
+}
 
-    testNorm16Render(GL_R16_EXT, GL_RED, GL_UNSIGNED_SHORT);
-    testNorm16Render(GL_RG16_EXT, GL_RG, GL_UNSIGNED_SHORT);
-    testNorm16Render(GL_RGBA16_EXT, GL_RGBA, GL_UNSIGNED_SHORT);
+TEST_P(Texture2DNorm16TestES3, TextureNorm16R16SNORMTextureTest)
+{
+    testNorm16Texture(GL_R16_SNORM_EXT, GL_RED, GL_SHORT);
+}
+
+TEST_P(Texture2DNorm16TestES3, TextureNorm16RG16TextureTest)
+{
+    testNorm16Texture(GL_RG16_EXT, GL_RG, GL_UNSIGNED_SHORT);
+}
+
+TEST_P(Texture2DNorm16TestES3, TextureNorm16RG16SNORMTextureTest)
+{
+    testNorm16Texture(GL_RG16_SNORM_EXT, GL_RG, GL_SHORT);
+}
+
+TEST_P(Texture2DNorm16TestES3, TextureNorm16RGB16TextureTest)
+{
+    // (http://anglebug.com/4215) Driver bug on some Qualcomm Adreno gpu
+    ANGLE_SKIP_TEST_IF((IsNexus5X() || IsNexus6P()) && IsOpenGLES());
+
+    testNorm16Texture(GL_RGB16_EXT, GL_RGB, GL_UNSIGNED_SHORT);
+}
+
+TEST_P(Texture2DNorm16TestES3, TextureNorm16RGB16SNORMTextureTest)
+{
+    // (http://anglebug.com/4215) Driver bug on some Qualcomm Adreno gpu
+    ANGLE_SKIP_TEST_IF((IsNexus5X() || IsNexus6P()) && IsOpenGLES());
+
+    testNorm16Texture(GL_RGB16_SNORM_EXT, GL_RGB, GL_SHORT);
+}
+
+TEST_P(Texture2DNorm16TestES3, TextureNorm16RGBA16TextureTest)
+{
+    testNorm16Texture(GL_RGBA16_EXT, GL_RGBA, GL_UNSIGNED_SHORT);
+}
+
+TEST_P(Texture2DNorm16TestES3, TextureNorm16RGBA16SNORMTextureTest)
+{
+    testNorm16Texture(GL_RGBA16_SNORM_EXT, GL_RGBA, GL_SHORT);
+}
+
+TEST_P(Texture2DNorm16TestES3, TextureNorm16R16RenderTest)
+{
+    testNorm16RenderAndReadPixels(GL_R16_EXT, GL_RED, GL_UNSIGNED_SHORT);
+}
+
+TEST_P(Texture2DNorm16TestES3, TextureNorm16RG16RenderTest)
+{
+    testNorm16RenderAndReadPixels(GL_RG16_EXT, GL_RG, GL_UNSIGNED_SHORT);
+}
+
+TEST_P(Texture2DNorm16TestES3, TextureNorm16RGBA16RenderTest)
+{
+    testNorm16RenderAndReadPixels(GL_RGBA16_EXT, GL_RGBA, GL_UNSIGNED_SHORT);
 }
 
 class Texture2DRGTest : public Texture2DTest
@@ -6007,6 +6456,7 @@ TEST_P(Texture2DDepthTest, DepthTextureES2Compatibility)
                        !IsGLExtensionEnabled("GL_OES_depth_texture"));
     // http://anglebug.com/4092
     ANGLE_SKIP_TEST_IF(IsOpenGL() || IsOpenGLES());
+    ANGLE_SKIP_TEST_IF(IsARM64() && IsWindows() && IsD3D());
 
     // When the depth texture is specified with unsized internalformat implementations follow
     // OES_depth_texture behavior. Otherwise they follow GLES 3.0 behavior.
@@ -6665,6 +7115,109 @@ TEST_P(Texture3DIntegerTestES3, NonZeroBaseLevel)
     EXPECT_PIXEL_COLOR_EQ(width - 1, height - 1, color);
 }
 
+// Test that uses glCompressedTexSubImage2D combined with a PBO
+TEST_P(PBOCompressedTextureTest, PBOCompressedSubImage)
+{
+    // ETC texture formats are not supported on Mac OpenGL. http://anglebug.com/3853
+    ANGLE_SKIP_TEST_IF(IsOSX() && IsDesktopOpenGL());
+    // http://anglebug.com/4115
+    ANGLE_SKIP_TEST_IF(IsAMD() && IsWindows() && IsDesktopOpenGL());
+    ANGLE_SKIP_TEST_IF(IsIntel() && IsWindows() && IsDesktopOpenGL());
+
+    if (getClientMajorVersion() < 3)
+    {
+        ANGLE_SKIP_TEST_IF(!IsGLExtensionEnabled("GL_EXT_texture_storage"));
+        ANGLE_SKIP_TEST_IF(!IsGLExtensionEnabled("GL_NV_pixel_buffer_object"));
+        ANGLE_SKIP_TEST_IF(!IsGLExtensionEnabled("GL_OES_compressed_ETC2_RGB8_texture"));
+    }
+
+    const GLuint width  = 4u;
+    const GLuint height = 4u;
+
+    setWindowWidth(width);
+    setWindowHeight(height);
+
+    // Setup primary Texture
+    glBindTexture(GL_TEXTURE_2D, mTexture2D);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    if (getClientMajorVersion() < 3)
+    {
+        glTexStorage2DEXT(GL_TEXTURE_2D, 1, GL_COMPRESSED_RGB8_ETC2, width, height);
+    }
+    else
+    {
+        glTexStorage2D(GL_TEXTURE_2D, 1, GL_COMPRESSED_RGB8_ETC2, width, height);
+    }
+    ASSERT_GL_NO_ERROR();
+
+    // Setup PBO and fill it with a red
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, mPBO);
+    glBufferData(GL_PIXEL_UNPACK_BUFFER, width * height / 2u, kCompressedImageETC2, GL_STATIC_DRAW);
+    ASSERT_GL_NO_ERROR();
+
+    // Write PBO to mTexture
+    glCompressedTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_COMPRESSED_RGB8_ETC2,
+                              width * height / 2u, nullptr);
+    ASSERT_GL_NO_ERROR();
+
+    setUpProgram();
+    // Draw using PBO updated texture
+    glUseProgram(mProgram);
+    glUniform1i(mTexture2DUniformLocation, 0);
+    glBindTexture(GL_TEXTURE_2D, mTexture2D);
+    drawQuad(mProgram, "position", 0.5f);
+    ASSERT_GL_NO_ERROR();
+
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 2, getWindowHeight() / 2, GLColor::red);
+    ASSERT_GL_NO_ERROR();
+}
+
+// Test using ETC1_RGB8 with subimage updates
+TEST_P(ETC1CompressedTextureTest, ETC1CompressedSubImage)
+{
+    // ETC texture formats are not supported on Mac OpenGL. http://anglebug.com/3853
+    ANGLE_SKIP_TEST_IF(IsOSX() && IsDesktopOpenGL());
+
+    ANGLE_SKIP_TEST_IF(getClientMajorVersion() < 3 &&
+                       !IsGLExtensionEnabled("GL_EXT_texture_storage"));
+    ANGLE_SKIP_TEST_IF(!IsGLExtensionEnabled("GL_EXT_compressed_ETC1_RGB8_sub_texture"));
+
+    const GLuint width  = 4u;
+    const GLuint height = 4u;
+
+    setWindowWidth(width);
+    setWindowHeight(height);
+
+    // Setup primary Texture
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    if (getClientMajorVersion() < 3)
+    {
+        glTexStorage2DEXT(GL_TEXTURE_2D, 1, GL_ETC1_RGB8_OES, width, height);
+    }
+    else
+    {
+        glTexStorage2D(GL_TEXTURE_2D, 1, GL_ETC1_RGB8_OES, width, height);
+    }
+    ASSERT_GL_NO_ERROR();
+
+    // Populate a subimage of the texture
+    glCompressedTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_ETC1_RGB8_OES,
+                              width * height / 2u, kCompressedImageETC2);
+    ASSERT_GL_NO_ERROR();
+
+    // Render and ensure we get red
+    glUseProgram(mProgram);
+    drawQuad(mProgram, "position", 0.5f);
+    ASSERT_GL_NO_ERROR();
+
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 2, getWindowHeight() / 2, GLColor::red);
+    ASSERT_GL_NO_ERROR();
+}
+
 // Use this to select which configurations (e.g. which renderer, which GLES major version) these
 // tests should be run against.
 ANGLE_INSTANTIATE_TEST_ES2(Texture2DTest);
@@ -6703,5 +7256,7 @@ ANGLE_INSTANTIATE_TEST_ES3(Texture2DIntegerProjectiveOffsetTestES3);
 ANGLE_INSTANTIATE_TEST_ES3(Texture2DArrayIntegerTestES3);
 ANGLE_INSTANTIATE_TEST_ES3(Texture3DIntegerTestES3);
 ANGLE_INSTANTIATE_TEST_ES2_AND_ES3(Texture2DDepthTest);
+ANGLE_INSTANTIATE_TEST_ES2_AND_ES3(PBOCompressedTextureTest);
+ANGLE_INSTANTIATE_TEST_ES2_AND_ES3(ETC1CompressedTextureTest);
 
 }  // anonymous namespace

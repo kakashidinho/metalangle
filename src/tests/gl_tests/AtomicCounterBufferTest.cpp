@@ -433,14 +433,67 @@ void main()
     }
 }
 
+// Test inactive atomic counter
+TEST_P(AtomicCounterBufferTest31, AtomicCounterInactive)
+{
+    constexpr char kFS[] =
+        "#version 310 es\n"
+        "precision highp float;\n"
+
+        // This inactive atomic counter should be removed by RemoveInactiveInterfaceVariables
+        "layout(binding = 0) uniform atomic_uint inactive;\n"
+
+        "out highp vec4 my_color;\n"
+        "void main()\n"
+        "{\n"
+        "    my_color = vec4(0.0, 1.0, 0.0, 1.0);\n"
+        "}\n";
+
+    ANGLE_GL_PROGRAM(program, essl31_shaders::vs::Simple(), kFS);
+    glUseProgram(program);
+
+    drawQuad(program, essl31_shaders::PositionAttrib(), 0.0f);
+    ASSERT_GL_NO_ERROR();
+
+    EXPECT_PIXEL_COLOR_EQ(0, 0, GLColor::green);
+}
+
+// Test inactive memoryBarrierAtomicCounter
+TEST_P(AtomicCounterBufferTest31, AtomicCounterMemoryBarrier)
+{
+    constexpr char kFS[] =
+        "#version 310 es\n"
+        "precision highp float;\n"
+        // This inactive atomic counter should be removed by RemoveInactiveInterfaceVariables
+        "layout(binding = 0) uniform atomic_uint inactive;\n"
+        "out highp vec4 my_color;\n"
+        "void main()\n"
+        "{\n"
+        "    my_color = vec4(0.0, 1.0, 0.0, 1.0);\n"
+        // This barrier should be removed by RemoveAtomicCounterBuiltins because
+        // there are no active atomic counters
+        "    memoryBarrierAtomicCounter();\n"
+        "}\n";
+
+    ANGLE_GL_PROGRAM(program, essl31_shaders::vs::Simple(), kFS);
+    glUseProgram(program);
+
+    drawQuad(program, essl31_shaders::PositionAttrib(), 0.0f);
+    ASSERT_GL_NO_ERROR();
+
+    EXPECT_PIXEL_COLOR_EQ(0, 0, GLColor::green);
+}
+
 // TODO(syoussefi): re-enable tests on Vulkan once http://anglebug.com/3738 is resolved.  The issue
 // is with WGL where if a Vulkan test is run first in the shard, it causes crashes when an OpenGL
 // test is run afterwards.  AtomicCounter* tests are alphabetically first, and having them not run
 // on Vulkan makes every shard our bots currently make do have at least some OpenGL test run before
 // any Vulkan test. When these tests can be enabled on Vulkan, can replace the current macros with
 // the updated macros below that include Vulkan:
-// ANGLE_INSTANTIATE_TEST_ES3_AND_ES31(AtomicCounterBufferTest);
-// ANGLE_INSTANTIATE_TEST_ES31(AtomicCounterBufferTest31);
+#if !defined(ANGLE_PLATFORM_WINDOWS)
+ANGLE_INSTANTIATE_TEST_ES3_AND_ES31(AtomicCounterBufferTest);
+ANGLE_INSTANTIATE_TEST_ES31(AtomicCounterBufferTest31);
+#else
 ANGLE_INSTANTIATE_TEST(AtomicCounterBufferTest,
                        ES3_OPENGL(),
                        ES3_OPENGLES(),
@@ -448,5 +501,6 @@ ANGLE_INSTANTIATE_TEST(AtomicCounterBufferTest,
                        ES31_OPENGLES(),
                        ES31_D3D11());
 ANGLE_INSTANTIATE_TEST(AtomicCounterBufferTest31, ES31_OPENGL(), ES31_OPENGLES(), ES31_D3D11());
+#endif
 
 }  // namespace

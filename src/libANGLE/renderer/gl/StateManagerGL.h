@@ -121,8 +121,8 @@ class StateManagerGL final : angle::NonCopyable
     void setRasterizerDiscardEnabled(bool enabled);
     void setLineWidth(float width);
 
-    void setPrimitiveRestartEnabled(bool enabled);
-    void setPrimitiveRestartIndex(GLuint index);
+    angle::Result setPrimitiveRestartEnabled(const gl::Context *context, bool enabled);
+    angle::Result setPrimitiveRestartIndex(const gl::Context *context, GLuint index);
 
     void setClearColor(const gl::ColorF &clearColor);
     void setClearDepth(float clearDepth);
@@ -150,10 +150,6 @@ class StateManagerGL final : angle::NonCopyable
 
     void setCoverageModulation(GLenum components);
 
-    void setPathRenderingModelViewMatrix(const GLfloat *m);
-    void setPathRenderingProjectionMatrix(const GLfloat *m);
-    void setPathRenderingStencilState(GLenum func, GLint ref, GLuint mask);
-
     void setProvokingVertex(GLenum mode);
 
     void setClipDistancesEnable(const gl::State::ClipDistanceEnableBits &enables);
@@ -165,9 +161,9 @@ class StateManagerGL final : angle::NonCopyable
     angle::Result resumeQuery(const gl::Context *context, gl::QueryType type);
     angle::Result onMakeCurrent(const gl::Context *context);
 
-    void syncState(const gl::Context *context,
-                   const gl::State::DirtyBits &glDirtyBits,
-                   const gl::State::DirtyBits &bitMask);
+    angle::Result syncState(const gl::Context *context,
+                            const gl::State::DirtyBits &glDirtyBits,
+                            const gl::State::DirtyBits &bitMask);
 
     ANGLE_INLINE void updateMultiviewBaseViewLayerIndexUniform(
         const gl::Program *program,
@@ -345,12 +341,6 @@ class StateManagerGL final : angle::NonCopyable
     bool mSampleAlphaToOneEnabled;
 
     GLenum mCoverageModulation;
-
-    GLfloat mPathMatrixMV[16];
-    GLfloat mPathMatrixProj[16];
-    GLenum mPathStencilFunc;
-    GLint mPathStencilRef;
-    GLuint mPathStencilMask;
 
     const bool mIsMultiviewEnabled;
 

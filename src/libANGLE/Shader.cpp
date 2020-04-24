@@ -317,7 +317,8 @@ void Shader::compile(const Context *context)
     mState.mGeometryShaderInputPrimitiveType.reset();
     mState.mGeometryShaderOutputPrimitiveType.reset();
     mState.mGeometryShaderMaxVertices.reset();
-    mState.mGeometryShaderInvocations = 1;
+    mState.mGeometryShaderInvocations      = 1;
+    mState.mEarlyFragmentTestsOptimization = false;
 
     mState.mCompileStatus = CompileStatus::COMPILE_REQUESTED;
     mBoundCompiler.set(context, context->getCompiler());
@@ -349,7 +350,10 @@ void Shader::compile(const Context *context)
         options |= SH_SCALARIZE_VEC_AND_MAT_CONSTRUCTOR_ARGS;
     }
 
-    mCurrentMaxComputeWorkGroupInvocations = context->getCaps().maxComputeWorkGroupInvocations;
+    mCurrentMaxComputeWorkGroupInvocations =
+        static_cast<GLuint>(context->getCaps().maxComputeWorkGroupInvocations);
+
+    mMaxComputeSharedMemory = context->getCaps().maxComputeSharedMemorySize;
 
     ASSERT(mBoundCompiler.get());
     ShCompilerInstance compilerInstance = mBoundCompiler->getInstance(mState.mShaderType);
@@ -433,7 +437,9 @@ void Shader::resolveCompile()
     {
         case ShaderType::Compute:
         {
-            mState.mLocalSize = sh::GetComputeShaderLocalGroupSize(compilerHandle);
+            mState.mAllAttributes    = GetShaderVariables(sh::GetAttributes(compilerHandle));
+            mState.mActiveAttributes = GetActiveShaderVariables(&mState.mAllAttributes);
+            mState.mLocalSize        = sh::GetComputeShaderLocalGroupSize(compilerHandle);
             if (mState.mLocalSize.isDeclared())
             {
                 angle::CheckedNumeric<uint32_t> checked_local_size_product(mState.mLocalSize[0]);
@@ -458,6 +464,14 @@ void Shader::resolveCompile()
                     return;
                 }
             }
+
+            unsigned int sharedMemSize = sh::GetShaderSharedMemorySize(compilerHandle);
+            if (sharedMemSize > mMaxComputeSharedMemory)
+            {
+                WARN() << std::endl << "Exceeded maximum shared memory size";
+                mState.mCompileStatus = CompileStatus::NOT_COMPILED;
+                return;
+            }
             break;
         }
         case ShaderType::Vertex:
@@ -477,6 +491,8 @@ void Shader::resolveCompile()
             std::sort(mState.mInputVaryings.begin(), mState.mInputVaryings.end(), CompareShaderVar);
             mState.mActiveOutputVariables =
                 GetActiveShaderVariables(sh::GetOutputVariables(compilerHandle));
+            mState.mEarlyFragmentTestsOptimization =
+                sh::HasEarlyFragmentTestsOptimization(compilerHandle);
             break;
         }
         case ShaderType::Geometry:

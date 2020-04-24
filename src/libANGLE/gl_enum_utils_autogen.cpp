@@ -712,6 +712,8 @@ const char *GLenumToString(GLenumGroup enumGroup, unsigned int value)
                     return "GL_CLAMP_TO_BORDER_OES";
                 case 0x81A6:
                     return "GL_DEPTH_COMPONENT24";
+                case 0x8210:
+                    return "GL_FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING_EXT";
                 case 0x8218:
                     return "GL_FRAMEBUFFER_DEFAULT";
                 case 0x821A:
@@ -1400,6 +1402,8 @@ const char *GLenumToString(GLenumGroup enumGroup, unsigned int value)
                     return "GL_SIGNED_NORMALIZED";
                 case 0x8FBB:
                     return "GL_GPU_DISJOINT_EXT";
+                case 0x8FBD:
+                    return "GL_SR8_EXT";
                 case 0x900A:
                     return "GL_TEXTURE_BINDING_CUBE_MAP_ARRAY";
                 case 0x900C:
@@ -1710,6 +1714,10 @@ const char *GLenumToString(GLenumGroup enumGroup, unsigned int value)
                     return "GL_BGRA8_EXT";
                 case 0x93A6:
                     return "GL_PROGRAM_BINARY_ANGLE";
+                case 0x93AE:
+                    return "GL_HANDLE_TYPE_ZIRCON_VMO_ANGLE";
+                case 0x93AF:
+                    return "GL_HANDLE_TYPE_ZIRCON_EVENT_ANGLE";
                 case 0x93B0:
                     return "GL_COMPRESSED_RGBA_ASTC_4x4";
                 case 0x93B1:
@@ -2387,14 +2395,22 @@ const char *GLenumToString(GLenumGroup enumGroup, unsigned int value)
         {
             switch (value)
             {
+                case 0x1802:
+                    return "GL_STENCIL";
                 case 0x1902:
                     return "GL_DEPTH_COMPONENT";
                 case 0x1903:
                     return "GL_RED";
+                case 0x1906:
+                    return "GL_ALPHA";
                 case 0x1907:
                     return "GL_RGB";
                 case 0x1908:
                     return "GL_RGBA";
+                case 0x1909:
+                    return "GL_LUMINANCE";
+                case 0x190A:
+                    return "GL_LUMINANCE_ALPHA";
                 case 0x8051:
                     return "GL_RGB8";
                 case 0x8052:
@@ -2407,8 +2423,12 @@ const char *GLenumToString(GLenumGroup enumGroup, unsigned int value)
                     return "GL_RGBA8";
                 case 0x8059:
                     return "GL_RGB10_A2";
+                case 0x80E1:
+                    return "GL_BGRA_EXT";
                 case 0x81A5:
                     return "GL_DEPTH_COMPONENT16";
+                case 0x81A7:
+                    return "GL_DEPTH_COMPONENT32_OES";
                 case 0x8227:
                     return "GL_RG";
                 case 0x8229:
@@ -2447,6 +2467,14 @@ const char *GLenumToString(GLenumGroup enumGroup, unsigned int value)
                     return "GL_RG32I";
                 case 0x823C:
                     return "GL_RG32UI";
+                case 0x83F0:
+                    return "GL_COMPRESSED_RGB_S3TC_DXT1_EXT";
+                case 0x83F1:
+                    return "GL_COMPRESSED_RGBA_S3TC_DXT1_EXT";
+                case 0x83F2:
+                    return "GL_COMPRESSED_RGBA_S3TC_DXT3_EXT";
+                case 0x83F3:
+                    return "GL_COMPRESSED_RGBA_S3TC_DXT5_EXT";
                 case 0x84F9:
                     return "GL_DEPTH_STENCIL";
                 case 0x8814:
@@ -2465,12 +2493,24 @@ const char *GLenumToString(GLenumGroup enumGroup, unsigned int value)
                     return "GL_SRGB";
                 case 0x8C41:
                     return "GL_SRGB8";
+                case 0x8C42:
+                    return "GL_SRGB_ALPHA_EXT";
                 case 0x8C43:
                     return "GL_SRGB8_ALPHA8";
+                case 0x8C4C:
+                    return "GL_COMPRESSED_SRGB_S3TC_DXT1_EXT";
+                case 0x8C4D:
+                    return "GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT";
+                case 0x8C4E:
+                    return "GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT";
+                case 0x8C4F:
+                    return "GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT";
                 case 0x8CAC:
                     return "GL_DEPTH_COMPONENT32F";
                 case 0x8CAD:
                     return "GL_DEPTH32F_STENCIL8";
+                case 0x8D64:
+                    return "GL_ETC1_RGB8_OES";
                 case 0x8D70:
                     return "GL_RGBA32UI";
                 case 0x8D71:
@@ -2495,6 +2535,22 @@ const char *GLenumToString(GLenumGroup enumGroup, unsigned int value)
                     return "GL_RGBA8I";
                 case 0x8D8F:
                     return "GL_RGB8I";
+                case 0x8DBB:
+                    return "GL_COMPRESSED_RED_RGTC1_EXT";
+                case 0x8DBC:
+                    return "GL_COMPRESSED_SIGNED_RED_RGTC1_EXT";
+                case 0x8DBD:
+                    return "GL_COMPRESSED_RED_GREEN_RGTC2_EXT";
+                case 0x8DBE:
+                    return "GL_COMPRESSED_SIGNED_RED_GREEN_RGTC2_EXT";
+                case 0x8E8C:
+                    return "GL_COMPRESSED_RGBA_BPTC_UNORM_EXT";
+                case 0x8E8D:
+                    return "GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM_EXT";
+                case 0x8E8E:
+                    return "GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT_EXT";
+                case 0x8E8F:
+                    return "GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT_EXT";
                 case 0x8F94:
                     return "GL_R8_SNORM";
                 case 0x8F95:
@@ -2929,10 +2985,22 @@ const char *GLenumToString(GLenumGroup enumGroup, unsigned int value)
                     return "GL_UNSIGNED_INT";
                 case 0x1406:
                     return "GL_FLOAT";
+                case 0x140B:
+                    return "GL_HALF_FLOAT";
                 case 0x8033:
                     return "GL_UNSIGNED_SHORT_4_4_4_4";
                 case 0x8034:
                     return "GL_UNSIGNED_SHORT_5_5_5_1";
+                case 0x8365:
+                    return "GL_UNSIGNED_SHORT_4_4_4_4_REV_EXT";
+                case 0x8366:
+                    return "GL_UNSIGNED_SHORT_1_5_5_5_REV_EXT";
+                case 0x8368:
+                    return "GL_UNSIGNED_INT_2_10_10_10_REV";
+                case 0x8C3B:
+                    return "GL_UNSIGNED_INT_10F_11F_11F_REV";
+                case 0x8D61:
+                    return "GL_HALF_FLOAT_OES";
                 default:
                     return kUnknownGLenumString;
             }
@@ -3969,6 +4037,11 @@ const char *GLenumToString(GLenumGroup enumGroup, unsigned int value)
 std::string GLbitfieldToString(GLenumGroup enumGroup, unsigned int value)
 {
     std::stringstream st;
+
+    if (value == 0)
+    {
+        return "0";
+    }
 
     const angle::BitSet<32> bitSet(value);
     bool first = true;

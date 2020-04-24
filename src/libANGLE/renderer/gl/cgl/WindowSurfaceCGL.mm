@@ -8,7 +8,7 @@
 
 #include "common/platform.h"
 
-#ifdef ANGLE_PLATFORM_MACOS
+#if defined(ANGLE_PLATFORM_MACOS) || defined(ANGLE_PLATFORM_MACCATALYST)
 
 #    include "libANGLE/renderer/gl/cgl/WindowSurfaceCGL.h"
 
@@ -153,7 +153,7 @@ WindowSurfaceCGL::WindowSurfaceCGL(const egl::SurfaceState &state,
     : SurfaceGL(state),
       mSwapLayer(nil),
       mCurrentSwapId(0),
-      mLayer(reinterpret_cast<CALayer *>(layer)),
+      mLayer((__bridge CALayer *)layer),
       mContext(context),
       mFunctions(renderer->getFunctions()),
       mStateManager(renderer->getStateManager()),
@@ -212,6 +212,7 @@ egl::Error WindowSurfaceCGL::initialize(const egl::Display *display)
                                                withContext:mContext
                                              withFunctions:mFunctions];
     [mLayer addSublayer:mSwapLayer];
+    [mSwapLayer setContentsScale:[mLayer contentsScale]];
 
     mFunctions->genRenderbuffers(1, &mDSRenderbuffer);
     mStateManager->bindRenderbuffer(GL_RENDERBUFFER, mDSRenderbuffer);
@@ -301,12 +302,12 @@ void WindowSurfaceCGL::setSwapInterval(EGLint interval)
 
 EGLint WindowSurfaceCGL::getWidth() const
 {
-    return (EGLint)CGRectGetWidth([mLayer frame]);
+    return static_cast<EGLint>(CGRectGetWidth([mLayer frame]) * [mLayer contentsScale]);
 }
 
 EGLint WindowSurfaceCGL::getHeight() const
 {
-    return (EGLint)CGRectGetHeight([mLayer frame]);
+    return static_cast<EGLint>(CGRectGetHeight([mLayer frame]) * [mLayer contentsScale]);
 }
 
 EGLint WindowSurfaceCGL::isPostSubBufferSupported() const
@@ -339,4 +340,4 @@ FramebufferImpl *WindowSurfaceCGL::createDefaultFramebuffer(const gl::Context *c
 
 }  // namespace rx
 
-#endif  // ANGLE_PLATFORM_MACOS
+#endif  // defined(ANGLE_PLATFORM_MACOS) || defined(ANGLE_PLATFORM_MACCATALYST)

@@ -28,13 +28,15 @@
     void debugMessageInsert(GLenum source, GLenum type, GLuint id, GLenum severity,                \
                             GLsizei length, const GLchar *buf);                                    \
     void disablei(GLenum target, GLuint index);                                                    \
-    void drawElementsBaseVertex(GLenum mode, GLsizei count, GLenum type, const void *indices,      \
+    void drawElementsBaseVertex(PrimitiveMode modePacked, GLsizei count,                           \
+                                DrawElementsType typePacked, const void *indices,                  \
                                 GLint basevertex);                                                 \
-    void drawElementsInstancedBaseVertex(GLenum mode, GLsizei count, GLenum type,                  \
-                                         const void *indices, GLsizei instancecount,               \
-                                         GLint basevertex);                                        \
-    void drawRangeElementsBaseVertex(GLenum mode, GLuint start, GLuint end, GLsizei count,         \
-                                     GLenum type, const void *indices, GLint basevertex);          \
+    void drawElementsInstancedBaseVertex(PrimitiveMode modePacked, GLsizei count,                  \
+                                         DrawElementsType typePacked, const void *indices,         \
+                                         GLsizei instancecount, GLint basevertex);                 \
+    void drawRangeElementsBaseVertex(PrimitiveMode modePacked, GLuint start, GLuint end,           \
+                                     GLsizei count, DrawElementsType typePacked,                   \
+                                     const void *indices, GLint basevertex);                       \
     void enablei(GLenum target, GLuint index);                                                     \
     void framebufferTexture(GLenum target, GLenum attachment, TextureID texturePacked,             \
                             GLint level);                                                          \
@@ -50,13 +52,13 @@
     void getSamplerParameterIuiv(SamplerID samplerPacked, GLenum pname, GLuint *params);           \
     void getTexParameterIiv(TextureType targetPacked, GLenum pname, GLint *params);                \
     void getTexParameterIuiv(TextureType targetPacked, GLenum pname, GLuint *params);              \
-    void getnUniformfv(ShaderProgramID programPacked, GLint location, GLsizei bufSize,             \
-                       GLfloat *params);                                                           \
-    void getnUniformiv(ShaderProgramID programPacked, GLint location, GLsizei bufSize,             \
-                       GLint *params);                                                             \
-    void getnUniformuiv(ShaderProgramID programPacked, GLint location, GLsizei bufSize,            \
-                        GLuint *params);                                                           \
-    GLboolean isEnabledi(GLenum target, GLuint index);                                             \
+    void getnUniformfv(ShaderProgramID programPacked, UniformLocation locationPacked,              \
+                       GLsizei bufSize, GLfloat *params);                                          \
+    void getnUniformiv(ShaderProgramID programPacked, UniformLocation locationPacked,              \
+                       GLsizei bufSize, GLint *params);                                            \
+    void getnUniformuiv(ShaderProgramID programPacked, UniformLocation locationPacked,             \
+                        GLsizei bufSize, GLuint *params);                                          \
+    GLboolean isEnabledi(GLenum target, GLuint index) const;                                       \
     void minSampleShading(GLfloat value);                                                          \
     void objectLabel(GLenum identifier, GLuint name, GLsizei length, const GLchar *label);         \
     void objectPtrLabel(const void *ptr, GLsizei length, const GLchar *label);                     \

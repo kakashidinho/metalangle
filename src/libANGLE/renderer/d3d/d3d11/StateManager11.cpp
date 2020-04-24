@@ -193,8 +193,9 @@ void SortAttributesByLayout(const ProgramD3D &programD3D,
     sortedAttributesOut->clear();
 
     const AttribIndexArray &locationToSemantic = programD3D.getAttribLocationToD3DSemantics();
+    const gl::ProgramExecutable &executable    = programD3D.getState().getProgramExecutable();
 
-    for (auto locationIndex : programD3D.getState().getActiveAttribLocationsMask())
+    for (auto locationIndex : executable.getActiveAttribLocationsMask())
     {
         int d3dSemantic = locationToSemantic[locationIndex];
         if (sortedAttributesOut->size() <= static_cast<size_t>(d3dSemantic))
@@ -665,6 +666,8 @@ angle::Result ShaderConstants11::updateBuffer(const gl::Context *context,
 StateManager11::StateManager11(Renderer11 *renderer)
     : mRenderer(renderer),
       mInternalDirtyBits(),
+      mCurSampleAlphaToCoverage(false),
+      mCurBlendStateArray(),
       mCurBlendColor(0, 0, 0, 0),
       mCurSampleMask(0),
       mCurStencilRef(0),
@@ -694,25 +697,12 @@ StateManager11::StateManager11(Renderer11 *renderer)
       mVertexDataManager(renderer),
       mIndexDataManager(renderer),
       mIsMultiviewEnabled(false),
+      mIndependentBlendStates(false),
       mEmptySerial(mRenderer->generateSerial()),
       mProgramD3D(nullptr),
       mVertexArray11(nullptr),
       mFramebuffer11(nullptr)
 {
-    mCurBlendState.blend                 = false;
-    mCurBlendState.sourceBlendRGB        = GL_ONE;
-    mCurBlendState.destBlendRGB          = GL_ZERO;
-    mCurBlendState.sourceBlendAlpha      = GL_ONE;
-    mCurBlendState.destBlendAlpha        = GL_ZERO;
-    mCurBlendState.blendEquationRGB      = GL_FUNC_ADD;
-    mCurBlendState.blendEquationAlpha    = GL_FUNC_ADD;
-    mCurBlendState.colorMaskRed          = true;
-    mCurBlendState.colorMaskBlue         = true;
-    mCurBlendState.colorMaskGreen        = true;
-    mCurBlendState.colorMaskAlpha        = true;
-    mCurBlendState.sampleAlphaToCoverage = false;
-    mCurBlendState.dither                = false;
-
     mCurDepthStencilState.depthTest                = false;
     mCurDepthStencilState.depthFunc                = GL_LESS;
     mCurDepthStencilState.depthMask                = true;
@@ -738,6 +728,7 @@ StateManager11::StateManager11(Renderer11 *renderer)
     mCurRasterState.polygonOffsetUnits  = 0.0f;
     mCurRasterState.pointDrawMode       = false;
     mCurRasterState.multiSample         = false;
+    mCurRasterState.dither              = false;
 
     // Start with all internal dirty bits set except DIRTY_BIT_COMPUTE_SRVUAV_STATE and
     // DIRTY_BIT_GRAPHICS_SRVUAV_STATE.
@@ -959,54 +950,94 @@ void StateManager11::syncState(const gl::Context *context, const gl::State::Dirt
         {
             case gl::State::DIRTY_BIT_BLEND_EQUATIONS:
             {
-                const gl::BlendState &blendState = state.getBlendState();
-                if (blendState.blendEquationRGB != mCurBlendState.blendEquationRGB ||
-                    blendState.blendEquationAlpha != mCurBlendState.blendEquationAlpha)
+                const gl::BlendStateArray &blendStateArray = state.getBlendStateArray();
+                const size_t statesCount = mIndependentBlendStates ? blendStateArray.size() : 1;
+                for (size_t i = 0; i < statesCount; i++)
                 {
-                    mInternalDirtyBits.set(DIRTY_BIT_BLEND_STATE);
+                    const gl::BlendState &blendState = blendStateArray[i];
+                    if (!blendState.blend)
+                    {
+                        // Subsequent sync stages enforce default values for buffers with disabled
+                        // blending anyway, no need to touch internal dirty bits.
+                        continue;
+                    }
+                    const gl::BlendState &curBlendState = mCurBlendStateArray[i];
+                    if (blendState.blendEquationRGB != curBlendState.blendEquationRGB ||
+                        blendState.blendEquationAlpha != curBlendState.blendEquationAlpha)
+                    {
+                        mInternalDirtyBits.set(DIRTY_BIT_BLEND_STATE);
+                        break;
+                    }
                 }
                 break;
             }
             case gl::State::DIRTY_BIT_BLEND_FUNCS:
             {
-                const gl::BlendState &blendState = state.getBlendState();
-                if (blendState.sourceBlendRGB != mCurBlendState.sourceBlendRGB ||
-                    blendState.destBlendRGB != mCurBlendState.destBlendRGB ||
-                    blendState.sourceBlendAlpha != mCurBlendState.sourceBlendAlpha ||
-                    blendState.destBlendAlpha != mCurBlendState.destBlendAlpha)
+                const gl::BlendStateArray &blendStateArray = state.getBlendStateArray();
+                const size_t statesCount = mIndependentBlendStates ? blendStateArray.size() : 1;
+                for (size_t i = 0; i < statesCount; i++)
                 {
-                    mInternalDirtyBits.set(DIRTY_BIT_BLEND_STATE);
+                    const gl::BlendState &blendState = blendStateArray[i];
+                    if (!blendState.blend)
+                    {
+                        // Subsequent sync stages enforce default values for buffers with disabled
+                        // blending anyway, no need to touch internal dirty bits.
+                        continue;
+                    }
+                    const gl::BlendState &curBlendState = mCurBlendStateArray[i];
+                    if (blendState.sourceBlendRGB != curBlendState.sourceBlendRGB ||
+                        blendState.destBlendRGB != curBlendState.destBlendRGB ||
+                        blendState.sourceBlendAlpha != curBlendState.sourceBlendAlpha ||
+                        blendState.destBlendAlpha != curBlendState.destBlendAlpha)
+                    {
+                        mInternalDirtyBits.set(DIRTY_BIT_BLEND_STATE);
+                        break;
+                    }
                 }
                 break;
             }
             case gl::State::DIRTY_BIT_BLEND_ENABLED:
-                if (state.getBlendState().blend != mCurBlendState.blend)
+            {
+                const gl::BlendStateArray &blendStateArray = state.getBlendStateArray();
+                const size_t statesCount = mIndependentBlendStates ? blendStateArray.size() : 1;
+                for (size_t i = 0; i < statesCount; i++)
                 {
-                    mInternalDirtyBits.set(DIRTY_BIT_BLEND_STATE);
+                    if (blendStateArray[i].blend != mCurBlendStateArray[i].blend)
+                    {
+                        mInternalDirtyBits.set(DIRTY_BIT_BLEND_STATE);
+                        break;
+                    }
                 }
                 break;
+            }
             case gl::State::DIRTY_BIT_SAMPLE_ALPHA_TO_COVERAGE_ENABLED:
-                if (state.getBlendState().sampleAlphaToCoverage !=
-                    mCurBlendState.sampleAlphaToCoverage)
+                if (state.isSampleAlphaToCoverageEnabled() != mCurSampleAlphaToCoverage)
                 {
                     mInternalDirtyBits.set(DIRTY_BIT_BLEND_STATE);
                 }
                 break;
             case gl::State::DIRTY_BIT_DITHER_ENABLED:
-                if (state.getBlendState().dither != mCurBlendState.dither)
+                if (state.getRasterizerState().dither != mCurRasterState.dither)
                 {
-                    mInternalDirtyBits.set(DIRTY_BIT_BLEND_STATE);
+                    mInternalDirtyBits.set(DIRTY_BIT_RASTERIZER_STATE);
                 }
                 break;
             case gl::State::DIRTY_BIT_COLOR_MASK:
             {
-                const gl::BlendState &blendState = state.getBlendState();
-                if (blendState.colorMaskRed != mCurBlendState.colorMaskRed ||
-                    blendState.colorMaskGreen != mCurBlendState.colorMaskGreen ||
-                    blendState.colorMaskBlue != mCurBlendState.colorMaskBlue ||
-                    blendState.colorMaskAlpha != mCurBlendState.colorMaskAlpha)
+                const gl::BlendStateArray &blendStateArray = state.getBlendStateArray();
+                const size_t statesCount = mIndependentBlendStates ? blendStateArray.size() : 1;
+                for (size_t i = 0; i < statesCount; i++)
                 {
-                    mInternalDirtyBits.set(DIRTY_BIT_BLEND_STATE);
+                    const gl::BlendState &blendState    = blendStateArray[i];
+                    const gl::BlendState &curBlendState = mCurBlendStateArray[i];
+                    if (blendState.colorMaskRed != curBlendState.colorMaskRed ||
+                        blendState.colorMaskGreen != curBlendState.colorMaskGreen ||
+                        blendState.colorMaskBlue != curBlendState.colorMaskBlue ||
+                        blendState.colorMaskAlpha != curBlendState.colorMaskAlpha)
+                    {
+                        mInternalDirtyBits.set(DIRTY_BIT_BLEND_STATE);
+                        break;
+                    }
                 }
                 break;
             }
@@ -1175,8 +1206,8 @@ void StateManager11::syncState(const gl::Context *context, const gl::State::Dirt
                 invalidateProgramAtomicCounterBuffers();
                 invalidateProgramShaderStorageBuffers();
                 invalidateDriverUniforms();
-                const gl::Program *program = state.getProgram();
-                if (!program || !program->hasLinkedShaderStage(gl::ShaderType::Compute))
+                const gl::ProgramExecutable *executable = state.getProgramExecutable();
+                if (!executable || !executable->isCompute())
                 {
                     mInternalDirtyBits.set(DIRTY_BIT_PRIMITIVE_TOPOLOGY);
                     invalidateVertexBuffer();
@@ -1230,42 +1261,36 @@ void StateManager11::handleMultiviewDrawFramebufferChange(const gl::Context *con
 }
 
 angle::Result StateManager11::syncBlendState(const gl::Context *context,
-                                             const gl::BlendState &blendState,
+                                             const gl::BlendStateArray &blendStateArray,
                                              const gl::ColorF &blendColor,
-                                             unsigned int sampleMask)
+                                             unsigned int sampleMask,
+                                             bool sampleAlphaToCoverage,
+                                             bool emulateConstantAlpha)
 {
     const d3d11::BlendState *dxBlendState = nullptr;
-    const d3d11::BlendStateKey &key =
-        RenderStateCache::GetBlendStateKey(context, mFramebuffer11, blendState);
+    const d3d11::BlendStateKey &key       = RenderStateCache::GetBlendStateKey(
+        context, mFramebuffer11, blendStateArray, sampleAlphaToCoverage);
 
     ANGLE_TRY(mRenderer->getBlendState(context, key, &dxBlendState));
 
     ASSERT(dxBlendState != nullptr);
 
+    // D3D11 does not support CONSTANT_ALPHA as source or destination color factor, so ANGLE sets
+    // the factor to CONSTANT_COLOR and swizzles the color value to aaaa. For this reason, it's
+    // impossible to simultaneously use CONSTANT_ALPHA and CONSTANT_COLOR as source or destination
+    // color factors in the same blend state. This is enforced in the validation layer.
     float blendColors[4] = {0.0f};
-    if (blendState.sourceBlendRGB != GL_CONSTANT_ALPHA &&
-        blendState.sourceBlendRGB != GL_ONE_MINUS_CONSTANT_ALPHA &&
-        blendState.destBlendRGB != GL_CONSTANT_ALPHA &&
-        blendState.destBlendRGB != GL_ONE_MINUS_CONSTANT_ALPHA)
-    {
-        blendColors[0] = blendColor.red;
-        blendColors[1] = blendColor.green;
-        blendColors[2] = blendColor.blue;
-        blendColors[3] = blendColor.alpha;
-    }
-    else
-    {
-        blendColors[0] = blendColor.alpha;
-        blendColors[1] = blendColor.alpha;
-        blendColors[2] = blendColor.alpha;
-        blendColors[3] = blendColor.alpha;
-    }
+    blendColors[0]       = emulateConstantAlpha ? blendColor.alpha : blendColor.red;
+    blendColors[1]       = emulateConstantAlpha ? blendColor.alpha : blendColor.green;
+    blendColors[2]       = emulateConstantAlpha ? blendColor.alpha : blendColor.blue;
+    blendColors[3]       = blendColor.alpha;
 
     mRenderer->getDeviceContext()->OMSetBlendState(dxBlendState->get(), blendColors, sampleMask);
 
-    mCurBlendState = blendState;
-    mCurBlendColor = blendColor;
-    mCurSampleMask = sampleMask;
+    mCurBlendStateArray       = blendStateArray;
+    mCurBlendColor            = blendColor;
+    mCurSampleMask            = sampleMask;
+    mCurSampleAlphaToCoverage = sampleAlphaToCoverage;
 
     return angle::Result::Continue;
 }
@@ -1411,8 +1436,8 @@ void StateManager11::syncViewport(const gl::Context *context)
     float actualZFar             = gl::clamp01(glState.getFarPlane());
 
     const auto &caps         = context->getCaps();
-    int dxMaxViewportBoundsX = static_cast<int>(caps.maxViewportWidth);
-    int dxMaxViewportBoundsY = static_cast<int>(caps.maxViewportHeight);
+    int dxMaxViewportBoundsX = caps.maxViewportWidth;
+    int dxMaxViewportBoundsY = caps.maxViewportHeight;
     int dxMinViewportBoundsX = -dxMaxViewportBoundsX;
     int dxMinViewportBoundsY = -dxMaxViewportBoundsY;
 
@@ -1531,7 +1556,7 @@ void StateManager11::processFramebufferInvalidation(const gl::Context *context)
         mCurDisableStencil = disableStencil;
     }
 
-    bool multiSample = (fbo->getCachedSamples(context, gl::AttachmentSampleType::Emulated) != 0);
+    bool multiSample = (fbo->getSamples(context) != 0);
     if (multiSample != mCurRasterState.multiSample)
     {
         mInternalDirtyBits.set(DIRTY_BIT_RASTERIZER_STATE);
@@ -1888,7 +1913,8 @@ angle::Result StateManager11::ensureInitialized(const gl::Context *context)
 
     for (gl::ShaderType shaderType : gl::AllShaderTypes())
     {
-        const GLuint maxShaderTextureImageUnits = caps.maxShaderTextureImageUnits[shaderType];
+        const GLuint maxShaderTextureImageUnits =
+            static_cast<GLuint>(caps.maxShaderTextureImageUnits[shaderType]);
 
         mCurShaderSRVs[shaderType].initialize(maxShaderTextureImageUnits);
         mForceSetShaderSamplerStates[shaderType].resize(maxShaderTextureImageUnits, true);
@@ -1907,6 +1933,8 @@ angle::Result StateManager11::ensureInitialized(const gl::Context *context)
     mShaderConstants.init(caps);
 
     mIsMultiviewEnabled = extensions.multiview || extensions.multiview2;
+
+    mIndependentBlendStates = extensions.drawBuffersIndexedAny();  // requires FL10_1
 
     ANGLE_TRY(mVertexDataManager.initialize(context));
 
@@ -2025,8 +2053,9 @@ angle::Result StateManager11::syncCurrentValueAttribs(
     const gl::Context *context,
     const std::vector<gl::VertexAttribCurrentValueData> &currentValues)
 {
-    const auto &activeAttribsMask  = mProgramD3D->getState().getActiveAttribLocationsMask();
-    const auto &dirtyActiveAttribs = (activeAttribsMask & mDirtyCurrentValueAttribs);
+    const gl::ProgramExecutable &executable = mProgramD3D->getState().getProgramExecutable();
+    const auto &activeAttribsMask           = executable.getActiveAttribLocationsMask();
+    const auto &dirtyActiveAttribs          = (activeAttribsMask & mDirtyCurrentValueAttribs);
 
     if (!dirtyActiveAttribs.any())
     {
@@ -2246,8 +2275,9 @@ angle::Result StateManager11::updateState(const gl::Context *context,
                 ANGLE_TRY(syncRasterizerState(context, mode));
                 break;
             case DIRTY_BIT_BLEND_STATE:
-                ANGLE_TRY(syncBlendState(context, glState.getBlendState(), glState.getBlendColor(),
-                                         sampleMask));
+                ANGLE_TRY(syncBlendState(
+                    context, glState.getBlendStateArray(), glState.getBlendColor(), sampleMask,
+                    glState.isSampleAlphaToCoverageEnabled(), glState.hasConstantAlphaBlendFunc()));
                 break;
             case DIRTY_BIT_DEPTH_STENCIL_STATE:
                 ANGLE_TRY(syncDepthStencilState(context));
@@ -2591,8 +2621,7 @@ angle::Result StateManager11::setSamplerState(const gl::Context *context,
 
     auto *deviceContext = mRenderer->getDeviceContext();
 
-    ASSERT(static_cast<unsigned int>(index) <
-           mRenderer->getNativeCaps().maxShaderTextureImageUnits[type]);
+    ASSERT(index < mRenderer->getNativeCaps().maxShaderTextureImageUnits[type]);
 
     if (mForceSetShaderSamplerStates[type][index] ||
         memcmp(&samplerState, &mCurShaderSamplerStates[type][index], sizeof(gl::SamplerState)) != 0)
@@ -2665,15 +2694,13 @@ angle::Result StateManager11::setTextureForSampler(const gl::Context *context,
         textureImpl->resetDirty();
     }
 
-    ASSERT((type == gl::ShaderType::Fragment &&
-            static_cast<unsigned int>(index) <
-                mRenderer->getNativeCaps().maxShaderTextureImageUnits[gl::ShaderType::Fragment]) ||
-           (type == gl::ShaderType::Vertex &&
-            static_cast<unsigned int>(index) <
-                mRenderer->getNativeCaps().maxShaderTextureImageUnits[gl::ShaderType::Vertex]) ||
-           (type == gl::ShaderType::Compute &&
-            static_cast<unsigned int>(index) <
-                mRenderer->getNativeCaps().maxShaderTextureImageUnits[gl::ShaderType::Compute]));
+    ASSERT(
+        (type == gl::ShaderType::Fragment &&
+         index < mRenderer->getNativeCaps().maxShaderTextureImageUnits[gl::ShaderType::Fragment]) ||
+        (type == gl::ShaderType::Vertex &&
+         index < mRenderer->getNativeCaps().maxShaderTextureImageUnits[gl::ShaderType::Vertex]) ||
+        (type == gl::ShaderType::Compute &&
+         index < mRenderer->getNativeCaps().maxShaderTextureImageUnits[gl::ShaderType::Compute]));
 
     setShaderResourceInternal(type, index, textureSRV);
     return angle::Result::Continue;
@@ -2684,8 +2711,7 @@ angle::Result StateManager11::setImageState(const gl::Context *context,
                                             int index,
                                             const gl::ImageUnit &imageUnit)
 {
-    ASSERT(static_cast<unsigned int>(index) <
-           mRenderer->getNativeCaps().maxShaderImageUniforms[type]);
+    ASSERT(index < mRenderer->getNativeCaps().maxShaderImageUniforms[type]);
 
     mShaderConstants.onImageChange(type, index, imageUnit);
 
@@ -2705,7 +2731,7 @@ angle::Result StateManager11::applyTexturesForSRVs(const gl::Context *context,
     ASSERT(!mProgramD3D->isSamplerMappingDirty());
 
     // TODO(jmadill): Use the Program's sampler bindings.
-    const gl::ActiveTexturePointerArray &completeTextures = glState.getActiveTexturesCache();
+    const gl::ActiveTexturesCache &completeTextures = glState.getActiveTexturesCache();
 
     const gl::RangeUI samplerRange = mProgramD3D->getUsedSamplerRange(shaderType);
     for (unsigned int samplerIndex = samplerRange.low(); samplerIndex < samplerRange.high();
@@ -2836,7 +2862,7 @@ angle::Result StateManager11::setTextureForImage(const gl::Context *context,
         // If we get an invalid SRV here, something went wrong in the texture class and we're
         // unexpectedly missing the shader resource view.
         ASSERT(textureSRV->valid());
-        ASSERT((static_cast<unsigned int>(index) < mRenderer->getNativeCaps().maxImageUnits));
+        ASSERT((index < mRenderer->getNativeCaps().maxImageUnits));
         setShaderResourceInternal(type, index, textureSRV);
     }
     else
@@ -2846,7 +2872,7 @@ angle::Result StateManager11::setTextureForImage(const gl::Context *context,
         // If we get an invalid UAV here, something went wrong in the texture class and we're
         // unexpectedly missing the unordered access view.
         ASSERT(textureUAV->valid());
-        ASSERT((static_cast<unsigned int>(index) < mRenderer->getNativeCaps().maxImageUnits));
+        ASSERT((index < mRenderer->getNativeCaps().maxImageUnits));
         setUnorderedAccessViewInternal(type, index, textureUAV);
     }
 
@@ -3484,24 +3510,21 @@ angle::Result StateManager11::applyComputeUniforms(const gl::Context *context,
 angle::Result StateManager11::syncUniformBuffersForShader(const gl::Context *context,
                                                           gl::ShaderType shaderType)
 {
-    gl::ShaderMap<unsigned int> shaderReservedUBOs = mRenderer->getReservedShaderUniformBuffers();
-
     const auto &glState                  = context->getState();
     ID3D11DeviceContext *deviceContext   = mRenderer->getDeviceContext();
     ID3D11DeviceContext1 *deviceContext1 = mRenderer->getDeviceContext1IfSupported();
 
     const auto &shaderUniformBuffers = mProgramD3D->getShaderUniformBufferCache(shaderType);
-    const unsigned int reservedUBOs  = shaderReservedUBOs[shaderType];
 
     for (size_t bufferIndex = 0; bufferIndex < shaderUniformBuffers.size(); ++bufferIndex)
     {
-        const GLint binding = shaderUniformBuffers[bufferIndex];
-        if (binding == -1)
+        const D3DUBOCache cache = shaderUniformBuffers[bufferIndex];
+        if (cache.binding == -1)
         {
             continue;
         }
 
-        const auto &uniformBuffer          = glState.getIndexedUniformBuffer(binding);
+        const auto &uniformBuffer          = glState.getIndexedUniformBuffer(cache.binding);
         const GLintptr uniformBufferOffset = uniformBuffer.getOffset();
         const GLsizeiptr uniformBufferSize = uniformBuffer.getSize();
 
@@ -3520,7 +3543,6 @@ angle::Result StateManager11::syncUniformBuffersForShader(const gl::Context *con
                                                         &firstConstant, &numConstants));
         ASSERT(constantBuffer);
 
-        const unsigned int appliedIndex = reservedUBOs + static_cast<unsigned int>(bufferIndex);
         switch (shaderType)
         {
             case gl::ShaderType::Vertex:
@@ -3535,19 +3557,19 @@ angle::Result StateManager11::syncUniformBuffersForShader(const gl::Context *con
                 if (firstConstant != 0 && uniformBufferSize != 0)
                 {
                     ASSERT(numConstants != 0);
-                    deviceContext1->VSSetConstantBuffers1(appliedIndex, 1,
+                    deviceContext1->VSSetConstantBuffers1(cache.registerIndex, 1,
                                                           constantBuffer->getPointer(),
                                                           &firstConstant, &numConstants);
                 }
                 else
                 {
-                    deviceContext->VSSetConstantBuffers(appliedIndex, 1,
+                    deviceContext->VSSetConstantBuffers(cache.registerIndex, 1,
                                                         constantBuffer->getPointer());
                 }
 
-                mCurrentConstantBufferVS[appliedIndex]       = constantBuffer->getSerial();
-                mCurrentConstantBufferVSOffset[appliedIndex] = uniformBufferOffset;
-                mCurrentConstantBufferVSSize[appliedIndex]   = uniformBufferSize;
+                mCurrentConstantBufferVS[cache.registerIndex]       = constantBuffer->getSerial();
+                mCurrentConstantBufferVSOffset[cache.registerIndex] = uniformBufferOffset;
+                mCurrentConstantBufferVSSize[cache.registerIndex]   = uniformBufferSize;
                 break;
             }
 
@@ -3562,19 +3584,19 @@ angle::Result StateManager11::syncUniformBuffersForShader(const gl::Context *con
 
                 if (firstConstant != 0 && uniformBufferSize != 0)
                 {
-                    deviceContext1->PSSetConstantBuffers1(appliedIndex, 1,
+                    deviceContext1->PSSetConstantBuffers1(cache.registerIndex, 1,
                                                           constantBuffer->getPointer(),
                                                           &firstConstant, &numConstants);
                 }
                 else
                 {
-                    deviceContext->PSSetConstantBuffers(appliedIndex, 1,
+                    deviceContext->PSSetConstantBuffers(cache.registerIndex, 1,
                                                         constantBuffer->getPointer());
                 }
 
-                mCurrentConstantBufferPS[appliedIndex]       = constantBuffer->getSerial();
-                mCurrentConstantBufferPSOffset[appliedIndex] = uniformBufferOffset;
-                mCurrentConstantBufferPSSize[appliedIndex]   = uniformBufferSize;
+                mCurrentConstantBufferPS[cache.registerIndex]       = constantBuffer->getSerial();
+                mCurrentConstantBufferPSOffset[cache.registerIndex] = uniformBufferOffset;
+                mCurrentConstantBufferPSSize[cache.registerIndex]   = uniformBufferSize;
                 break;
             }
 
@@ -3589,19 +3611,19 @@ angle::Result StateManager11::syncUniformBuffersForShader(const gl::Context *con
 
                 if (firstConstant != 0 && uniformBufferSize != 0)
                 {
-                    deviceContext1->CSSetConstantBuffers1(appliedIndex, 1,
+                    deviceContext1->CSSetConstantBuffers1(cache.registerIndex, 1,
                                                           constantBuffer->getPointer(),
                                                           &firstConstant, &numConstants);
                 }
                 else
                 {
-                    deviceContext->CSSetConstantBuffers(appliedIndex, 1,
+                    deviceContext->CSSetConstantBuffers(cache.registerIndex, 1,
                                                         constantBuffer->getPointer());
                 }
 
-                mCurrentConstantBufferCS[appliedIndex]       = constantBuffer->getSerial();
-                mCurrentConstantBufferCSOffset[appliedIndex] = uniformBufferOffset;
-                mCurrentConstantBufferCSSize[appliedIndex]   = uniformBufferSize;
+                mCurrentConstantBufferCS[cache.registerIndex]       = constantBuffer->getSerial();
+                mCurrentConstantBufferCSOffset[cache.registerIndex] = uniformBufferOffset;
+                mCurrentConstantBufferCSSize[cache.registerIndex]   = uniformBufferSize;
                 break;
             }
 
@@ -3613,6 +3635,33 @@ angle::Result StateManager11::syncUniformBuffersForShader(const gl::Context *con
             default:
                 UNREACHABLE();
         }
+    }
+
+    const auto &shaderUniformBuffersUseSB =
+        mProgramD3D->getShaderUniformBufferCacheUseSB(shaderType);
+    for (size_t bufferIndex = 0; bufferIndex < shaderUniformBuffersUseSB.size(); ++bufferIndex)
+    {
+        const D3DUBOCacheUseSB cache = shaderUniformBuffersUseSB[bufferIndex];
+        if (cache.binding == -1)
+        {
+            continue;
+        }
+
+        const auto &uniformBuffer = glState.getIndexedUniformBuffer(cache.binding);
+        if (uniformBuffer.get() == nullptr)
+        {
+            continue;
+        }
+        const GLintptr uniformBufferOffset = uniformBuffer.getOffset();
+
+        Buffer11 *bufferStorage                    = GetImplAs<Buffer11>(uniformBuffer.get());
+        const d3d11::ShaderResourceView *bufferSRV = nullptr;
+        ANGLE_TRY(bufferStorage->getStructuredBufferRangeSRV(
+            context, static_cast<unsigned int>(uniformBufferOffset), cache.byteWidth,
+            cache.structureByteStride, &bufferSRV));
+
+        ASSERT(bufferSRV->valid());
+        setShaderResourceInternal(shaderType, cache.registerIndex, bufferSRV);
     }
 
     return angle::Result::Continue;
@@ -3696,8 +3745,7 @@ angle::Result StateManager11::syncShaderStorageBuffersForShader(const gl::Contex
 
 angle::Result StateManager11::syncUniformBuffers(const gl::Context *context)
 {
-    gl::ShaderMap<unsigned int> shaderReservedUBOs = mRenderer->getReservedShaderUniformBuffers();
-    mProgramD3D->updateUniformBufferCache(context->getCaps(), shaderReservedUBOs);
+    mProgramD3D->updateUniformBufferCache(context->getCaps());
 
     if (mProgramD3D->hasShaderStage(gl::ShaderType::Compute))
     {

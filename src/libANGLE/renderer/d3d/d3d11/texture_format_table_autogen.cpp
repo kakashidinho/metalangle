@@ -224,6 +224,34 @@ const Format &Format::Get(GLenum internalFormat, const Renderer11DeviceCaps &dev
                                          nullptr);
             return info;
         }
+        case GL_COMPRESSED_RED_GREEN_RGTC2_EXT:
+        {
+            static constexpr Format info(GL_COMPRESSED_RED_GREEN_RGTC2_EXT,
+                                         angle::FormatID::BC5_RG_UNORM_BLOCK,
+                                         DXGI_FORMAT_BC5_UNORM,
+                                         DXGI_FORMAT_BC5_UNORM,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_BC5_UNORM,
+                                         GL_RGBA8,
+                                         nullptr);
+            return info;
+        }
+        case GL_COMPRESSED_RED_RGTC1_EXT:
+        {
+            static constexpr Format info(GL_COMPRESSED_RED_RGTC1_EXT,
+                                         angle::FormatID::BC4_RED_UNORM_BLOCK,
+                                         DXGI_FORMAT_BC4_UNORM,
+                                         DXGI_FORMAT_BC4_UNORM,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_BC4_UNORM,
+                                         GL_RGBA8,
+                                         nullptr);
+            return info;
+        }
         case GL_COMPRESSED_RG11_EAC:
         {
             static constexpr Format info(GL_COMPRESSED_RG11_EAC,
@@ -809,6 +837,34 @@ const Format &Format::Get(GLenum internalFormat, const Renderer11DeviceCaps &dev
                                          DXGI_FORMAT_UNKNOWN,
                                          DXGI_FORMAT_R16_SNORM,
                                          GL_RGBA16_SNORM_EXT,
+                                         nullptr);
+            return info;
+        }
+        case GL_COMPRESSED_SIGNED_RED_GREEN_RGTC2_EXT:
+        {
+            static constexpr Format info(GL_COMPRESSED_SIGNED_RED_GREEN_RGTC2_EXT,
+                                         angle::FormatID::BC5_RG_SNORM_BLOCK,
+                                         DXGI_FORMAT_BC5_SNORM,
+                                         DXGI_FORMAT_BC5_SNORM,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_BC5_SNORM,
+                                         GL_RGBA8_SNORM,
+                                         nullptr);
+            return info;
+        }
+        case GL_COMPRESSED_SIGNED_RED_RGTC1_EXT:
+        {
+            static constexpr Format info(GL_COMPRESSED_SIGNED_RED_RGTC1_EXT,
+                                         angle::FormatID::BC4_RED_SNORM_BLOCK,
+                                         DXGI_FORMAT_BC4_SNORM,
+                                         DXGI_FORMAT_BC4_SNORM,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_BC4_SNORM,
+                                         GL_RGBA8_SNORM,
                                          nullptr);
             return info;
         }
@@ -2482,6 +2538,20 @@ const Format &Format::Get(GLenum internalFormat, const Renderer11DeviceCaps &dev
                                          DXGI_FORMAT_UNKNOWN,
                                          DXGI_FORMAT_R8G8B8A8_SNORM,
                                          GL_RGBA8_SNORM,
+                                         nullptr);
+            return info;
+        }
+        case GL_SR8_EXT:
+        {
+            static constexpr Format info(GL_SR8_EXT,
+                                         angle::FormatID::NONE,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         GL_NONE,
                                          nullptr);
             return info;
         }

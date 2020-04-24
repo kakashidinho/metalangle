@@ -599,6 +599,18 @@ angle::Result ContextMtl::drawElements(const gl::Context *context,
     return drawElementsImpl(context, mode, count, type, indices, 0);
 }
 
+angle::Result ContextMtl::drawElementsBaseVertex(const gl::Context *context,
+                                                 gl::PrimitiveMode mode,
+                                                 GLsizei count,
+                                                 gl::DrawElementsType type,
+                                                 const void *indices,
+                                                 GLint baseVertex)
+{
+    // NOTE(hqle): ES 3.2
+    UNIMPLEMENTED();
+    return angle::Result::Stop;
+}
+
 angle::Result ContextMtl::drawElementsInstanced(const gl::Context *context,
                                                 gl::PrimitiveMode mode,
                                                 GLsizei count,
@@ -613,6 +625,19 @@ angle::Result ContextMtl::drawElementsInstanced(const gl::Context *context,
     return drawElementsImpl(context, mode, count, type, indices, instanceCount);
 }
 
+angle::Result ContextMtl::drawElementsInstancedBaseVertex(const gl::Context *context,
+                                                          gl::PrimitiveMode mode,
+                                                          GLsizei count,
+                                                          gl::DrawElementsType type,
+                                                          const void *indices,
+                                                          GLsizei instanceCount,
+                                                          GLint baseVertex)
+{
+    // NOTE(hqle): ES 3.2
+    UNIMPLEMENTED();
+    return angle::Result::Stop;
+}
+
 angle::Result ContextMtl::drawElementsInstancedBaseVertexBaseInstance(const gl::Context *context,
                                                                       gl::PrimitiveMode mode,
                                                                       GLsizei count,
@@ -625,6 +650,7 @@ angle::Result ContextMtl::drawElementsInstancedBaseVertexBaseInstance(const gl::
     UNIMPLEMENTED();
     return angle::Result::Stop;
 }
+
 angle::Result ContextMtl::drawRangeElements(const gl::Context *context,
                                             gl::PrimitiveMode mode,
                                             GLuint start,
@@ -635,6 +661,21 @@ angle::Result ContextMtl::drawRangeElements(const gl::Context *context,
 {
     return drawElementsImpl(context, mode, count, type, indices, 0);
 }
+
+angle::Result ContextMtl::drawRangeElementsBaseVertex(const gl::Context *context,
+                                                      gl::PrimitiveMode mode,
+                                                      GLuint start,
+                                                      GLuint end,
+                                                      GLsizei count,
+                                                      gl::DrawElementsType type,
+                                                      const void *indices,
+                                                      GLint baseVertex)
+{
+    // NOTE(hqle): ES 3.2
+    UNIMPLEMENTED();
+    return angle::Result::Stop;
+}
+
 angle::Result ContextMtl::drawArraysIndirect(const gl::Context *context,
                                              gl::PrimitiveMode mode,
                                              const void *indirect)
@@ -728,23 +769,37 @@ std::string ContextMtl::getRendererDescription() const
 }
 
 // EXT_debug_marker
-void ContextMtl::insertEventMarker(GLsizei length, const char *marker)
+angle::Result ContextMtl::insertEventMarker(GLsizei length, const char *marker)
 {
     mCmdBuffer.insertDebugSign(ConvertMarkerToCpp(length, marker));
+    return angle::Result::Continue;
 }
 
-void ContextMtl::pushGroupMarker(GLsizei length, const char *marker)
+angle::Result ContextMtl::pushGroupMarker(GLsizei length, const char *marker)
 {
     mCmdBuffer.pushDebugGroup(ConvertMarkerToCpp(length, marker));
+    return angle::Result::Continue;
 }
-void ContextMtl::popGroupMarker()
+
+angle::Result ContextMtl::popGroupMarker()
 {
     mCmdBuffer.popDebugGroup();
+    return angle::Result::Continue;
 }
 
 // KHR_debug
-void ContextMtl::pushDebugGroup(GLenum source, GLuint id, const std::string &message) {}
-void ContextMtl::popDebugGroup() {}
+angle::Result ContextMtl::pushDebugGroup(const gl::Context *context,
+                                         GLenum source,
+                                         GLuint id,
+                                         const std::string &message)
+{
+    return angle::Result::Continue;
+}
+
+angle::Result ContextMtl::popDebugGroup(const gl::Context *context)
+{
+    return angle::Result::Continue;
+}
 
 // State sync with dirty bits.
 angle::Result ContextMtl::syncState(const gl::Context *context,
@@ -951,8 +1006,6 @@ angle::Result ContextMtl::syncState(const gl::Context *context,
                 break;
             case gl::State::DIRTY_BIT_COVERAGE_MODULATION:
                 break;
-            case gl::State::DIRTY_BIT_PATH_RENDERING:
-                break;
             case gl::State::DIRTY_BIT_FRAMEBUFFER_SRGB:
                 break;
             case gl::State::DIRTY_BIT_CURRENT_VALUES:
@@ -1100,13 +1153,6 @@ ProgramPipelineImpl *ContextMtl::createProgramPipeline(const gl::ProgramPipeline
     // NOTE(hqle): ES 3.0
     UNIMPLEMENTED();
     return nullptr;
-}
-
-// Path object creation
-std::vector<PathImpl *> ContextMtl::createPaths(GLsizei)
-{
-    UNIMPLEMENTED();
-    return std::vector<PathImpl *>();
 }
 
 // Memory object creation.
@@ -1830,8 +1876,8 @@ angle::Result ContextMtl::handleDirtyActiveTextures(const gl::Context *context)
     const gl::State &glState   = mState;
     const gl::Program *program = glState.getProgram();
 
-    const gl::ActiveTexturePointerArray &textures = glState.getActiveTexturesCache();
-    const gl::ActiveTextureMask &activeTextures   = program->getActiveSamplersMask();
+    const gl::ActiveTexturesCache &textures     = glState.getActiveTexturesCache();
+    const gl::ActiveTextureMask &activeTextures = program->getExecutable().getActiveSamplersMask();
 
     for (size_t textureUnit : activeTextures)
     {
@@ -1886,13 +1932,23 @@ angle::Result ContextMtl::handleDirtyDriverUniforms(const gl::Context *context)
     mDriverUniforms.viewportYScale    = mDrawFramebuffer->flipY() ? -1.0f : 1.0f;
     mDriverUniforms.negViewportYScale = -mDriverUniforms.viewportYScale;
 
+    // gl_ClipDistance
+    mDriverUniforms.enabledClipDistances = mState.getEnabledClipDistances().bits();
+
     mDriverUniforms.depthRange[0] = depthRangeNear;
     mDriverUniforms.depthRange[1] = depthRangeFar;
     mDriverUniforms.depthRange[2] = depthRangeDiff;
     mDriverUniforms.depthRange[3] = NeedToInvertDepthRange(depthRangeNear, depthRangeFar) ? -1 : 1;
 
-    // gl_ClipDistance
-    mDriverUniforms.enabledClipDistances = mState.getEnabledClipDistances().bits();
+    // Fill in a mat2 identity matrix, plus padding
+    mDriverUniforms.preRotation[0] = 1.0f;
+    mDriverUniforms.preRotation[1] = 0.0f;
+    mDriverUniforms.preRotation[2] = 0.0f;
+    mDriverUniforms.preRotation[3] = 0.0f;
+    mDriverUniforms.preRotation[4] = 0.0f;
+    mDriverUniforms.preRotation[5] = 1.0f;
+    mDriverUniforms.preRotation[6] = 0.0f;
+    mDriverUniforms.preRotation[7] = 0.0f;
 
     // Sample coverage mask
     uint32_t sampleBitCount = mDrawFramebuffer->getSamples();

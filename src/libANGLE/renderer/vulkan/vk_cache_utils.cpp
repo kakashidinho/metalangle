@@ -155,8 +155,10 @@ void UnpackAttachmentDesc(VkAttachmentDescription *desc,
     desc->storeOp        = static_cast<VkAttachmentStoreOp>(ops.storeOp);
     desc->stencilLoadOp  = static_cast<VkAttachmentLoadOp>(ops.stencilLoadOp);
     desc->stencilStoreOp = static_cast<VkAttachmentStoreOp>(ops.stencilStoreOp);
-    desc->initialLayout  = static_cast<VkImageLayout>(ops.initialLayout);
-    desc->finalLayout    = static_cast<VkImageLayout>(ops.finalLayout);
+    desc->initialLayout =
+        ConvertImageLayoutToVkImageLayout(static_cast<ImageLayout>(ops.initialLayout));
+    desc->finalLayout =
+        ConvertImageLayoutToVkImageLayout(static_cast<ImageLayout>(ops.finalLayout));
 }
 
 void UnpackStencilState(const vk::PackedStencilOpState &packedState,
@@ -186,6 +188,7 @@ void UnpackBlendAttachmentState(const vk::PackedColorBlendAttachmentState &packe
 void SetPipelineShaderStageInfo(const VkStructureType type,
                                 const VkShaderStageFlagBits stage,
                                 const VkShaderModule module,
+                                const VkSpecializationInfo &specializationInfo,
                                 VkPipelineShaderStageCreateInfo *shaderStage)
 {
     shaderStage->sType               = type;
@@ -193,7 +196,7 @@ void SetPipelineShaderStageInfo(const VkStructureType type,
     shaderStage->stage               = stage;
     shaderStage->module              = module;
     shaderStage->pName               = "main";
-    shaderStage->pSpecializationInfo = nullptr;
+    shaderStage->pSpecializationInfo = &specializationInfo;
 }
 
 angle::Result InitializeRenderPassFromDesc(vk::Context *context,
@@ -294,6 +297,29 @@ angle::Result InitializeRenderPassFromDesc(vk::Context *context,
     return angle::Result::Continue;
 }
 
+void InitializeSpecializationInfo(
+    vk::SpecializationConstantBitSet specConsts,
+    vk::SpecializationConstantMap<VkSpecializationMapEntry> *specializationEntriesOut,
+    vk::SpecializationConstantMap<VkBool32> *specializationValuesOut,
+    VkSpecializationInfo *specializationInfoOut)
+{
+    // Collect specialization constants.
+    for (const sh::vk::SpecializationConstantId id :
+         angle::AllEnums<sh::vk::SpecializationConstantId>())
+    {
+        const uint32_t offset                      = static_cast<uint32_t>(id);
+        (*specializationValuesOut)[id]             = specConsts.test(id);
+        (*specializationEntriesOut)[id].constantID = offset;
+        (*specializationEntriesOut)[id].offset     = offset;
+        (*specializationEntriesOut)[id].size       = sizeof(VkBool32);
+    }
+
+    specializationInfoOut->mapEntryCount = static_cast<uint32_t>(specializationEntriesOut->size());
+    specializationInfoOut->pMapEntries   = specializationEntriesOut->data();
+    specializationInfoOut->dataSize      = specializationEntriesOut->size() * sizeof(VkBool32);
+    specializationInfoOut->pData         = specializationValuesOut->data();
+}
+
 // Utility for setting a value on a packed 4-bit integer array.
 template <typename SrcT>
 void Int4Array_Set(uint8_t *arrayBytes, uint32_t arrayIndex, SrcT value)
@@ -328,11 +354,6 @@ DestT Int4Array_Get(const uint8_t *arrayBytes, uint32_t arrayIndex)
         return static_cast<DestT>(arrayBytes[byteIndex] >> 4);
     }
 }
-
-// Helper macro that casts to a bitfield type then verifies no bits were dropped.
-#define SetBitField(lhs, rhs)                                         \
-    lhs = static_cast<typename std::decay<decltype(lhs)>::type>(rhs); \
-    ASSERT(static_cast<decltype(rhs)>(lhs) == (rhs))
 
 // When converting a byte number to a transition bit index we can shift instead of divide.
 constexpr size_t kTransitionByteShift = Log2(kGraphicsPipelineDirtyBitBytes);
@@ -617,6 +638,7 @@ angle::Result GraphicsPipelineDesc::initializePipeline(
     const ShaderModule *vertexModule,
     const ShaderModule *fragmentModule,
     const ShaderModule *geometryModule,
+    vk::SpecializationConstantBitSet specConsts,
     Pipeline *pipelineOut) const
 {
     angle::FixedVector<VkPipelineShaderStageCreateInfo, 3> shaderStages;
@@ -629,13 +651,20 @@ angle::Result GraphicsPipelineDesc::initializePipeline(
     std::array<VkPipelineColorBlendAttachmentState, gl::IMPLEMENTATION_MAX_DRAW_BUFFERS>
         blendAttachmentState;
     VkPipelineColorBlendStateCreateInfo blendState = {};
+    VkSpecializationInfo specializationInfo        = {};
     VkGraphicsPipelineCreateInfo createInfo        = {};
+
+    vk::SpecializationConstantMap<VkSpecializationMapEntry> specializationEntries;
+    vk::SpecializationConstantMap<VkBool32> specializationValues;
+    InitializeSpecializationInfo(specConsts, &specializationEntries, &specializationValues,
+                                 &specializationInfo);
 
     // Vertex shader is always expected to be present.
     ASSERT(vertexModule != nullptr);
     VkPipelineShaderStageCreateInfo vertexStage = {};
     SetPipelineShaderStageInfo(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-                               VK_SHADER_STAGE_VERTEX_BIT, vertexModule->getHandle(), &vertexStage);
+                               VK_SHADER_STAGE_VERTEX_BIT, vertexModule->getHandle(),
+                               specializationInfo, &vertexStage);
     shaderStages.push_back(vertexStage);
 
     if (geometryModule)
@@ -643,7 +672,7 @@ angle::Result GraphicsPipelineDesc::initializePipeline(
         VkPipelineShaderStageCreateInfo geometryStage = {};
         SetPipelineShaderStageInfo(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
                                    VK_SHADER_STAGE_GEOMETRY_BIT, geometryModule->getHandle(),
-                                   &geometryStage);
+                                   specializationInfo, &geometryStage);
         shaderStages.push_back(geometryStage);
     }
 
@@ -654,7 +683,7 @@ angle::Result GraphicsPipelineDesc::initializePipeline(
         VkPipelineShaderStageCreateInfo fragmentStage = {};
         SetPipelineShaderStageInfo(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
                                    VK_SHADER_STAGE_FRAGMENT_BIT, fragmentModule->getHandle(),
-                                   &fragmentStage);
+                                   specializationInfo, &fragmentStage);
         shaderStages.push_back(fragmentStage);
     }
 
@@ -794,8 +823,9 @@ angle::Result GraphicsPipelineDesc::initializePipeline(
 
     VkPipelineRasterizationLineStateCreateInfoEXT rasterLineState = {};
     rasterLineState.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_LINE_STATE_CREATE_INFO_EXT;
-    // Always enable Bresenham line rasterization if available.
-    if (contextVk->getFeatures().bresenhamLineRasterization.enabled)
+    // Enable Bresenham line rasterization if available and not multisampling.
+    if (rasterAndMS.bits.rasterizationSamples <= 1 &&
+        contextVk->getFeatures().bresenhamLineRasterization.enabled)
     {
         rasterLineState.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT;
         *pNextPtr                             = &rasterLineState;
@@ -811,6 +841,13 @@ angle::Result GraphicsPipelineDesc::initializePipeline(
         provokingVertexState.provokingVertexMode = VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT;
         *pNextPtr                                = &provokingVertexState;
         pNextPtr                                 = &provokingVertexState.pNext;
+    }
+    VkPipelineRasterizationStateStreamCreateInfoEXT rasterStreamState = {};
+    rasterStreamState.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_STREAM_CREATE_INFO_EXT;
+    if (contextVk->getFeatures().supportsTransformFeedbackExtension.enabled)
+    {
+        rasterStreamState.rasterizationStream = 0;
+        rasterState.pNext                     = &rasterLineState;
     }
 
     // Multisample state.
@@ -980,6 +1017,11 @@ void GraphicsPipelineDesc::updateRasterizerDiscardEnabled(
     mRasterizationAndMultisampleStateInfo.bits.rasterizationDiscardEnable =
         static_cast<uint32_t>(rasterizerDiscardEnabled);
     transition->set(ANGLE_GET_TRANSITION_BIT(mRasterizationAndMultisampleStateInfo, bits));
+}
+
+uint32_t GraphicsPipelineDesc::getRasterizationSamples() const
+{
+    return mRasterizationAndMultisampleStateInfo.bits.rasterizationSamples;
 }
 
 void GraphicsPipelineDesc::setRasterizationSamples(uint32_t rasterizationSamples)
@@ -1401,8 +1443,8 @@ PackedAttachmentOpsDesc &AttachmentOpsArray::operator[](size_t index)
 }
 
 void AttachmentOpsArray::initDummyOp(size_t index,
-                                     VkImageLayout initialLayout,
-                                     VkImageLayout finalLayout)
+                                     ImageLayout initialLayout,
+                                     ImageLayout finalLayout)
 {
     PackedAttachmentOpsDesc &ops = mOps[index];
 
@@ -1414,16 +1456,17 @@ void AttachmentOpsArray::initDummyOp(size_t index,
     SetBitField(ops.stencilStoreOp, VK_ATTACHMENT_STORE_OP_DONT_CARE);
 }
 
-void AttachmentOpsArray::initWithLoadStore(size_t index,
-                                           VkImageLayout initialLayout,
-                                           VkImageLayout finalLayout)
+void AttachmentOpsArray::initWithStore(size_t index,
+                                       VkAttachmentLoadOp loadOp,
+                                       ImageLayout initialLayout,
+                                       ImageLayout finalLayout)
 {
     PackedAttachmentOpsDesc &ops = mOps[index];
 
     SetBitField(ops.initialLayout, initialLayout);
     SetBitField(ops.finalLayout, finalLayout);
-    SetBitField(ops.loadOp, VK_ATTACHMENT_LOAD_OP_LOAD);
-    SetBitField(ops.stencilLoadOp, VK_ATTACHMENT_LOAD_OP_LOAD);
+    SetBitField(ops.loadOp, loadOp);
+    SetBitField(ops.stencilLoadOp, loadOp);
     SetBitField(ops.storeOp, VK_ATTACHMENT_STORE_OP_STORE);
     SetBitField(ops.stencilStoreOp, VK_ATTACHMENT_STORE_OP_STORE);
 }
@@ -1605,6 +1648,160 @@ bool TextureDescriptorDesc::operator==(const TextureDescriptorDesc &other) const
     return memcmp(mSerials.data(), other.mSerials.data(), sizeof(TexUnitSerials) * mMaxIndex) == 0;
 }
 
+// FramebufferDesc implementation.
+
+FramebufferDesc::FramebufferDesc()
+{
+    reset();
+}
+
+FramebufferDesc::~FramebufferDesc()                            = default;
+FramebufferDesc::FramebufferDesc(const FramebufferDesc &other) = default;
+FramebufferDesc &FramebufferDesc::operator=(const FramebufferDesc &other) = default;
+
+void FramebufferDesc::update(uint32_t index, AttachmentSerial serial)
+{
+    ASSERT(index < kMaxFramebufferAttachments);
+    mSerials[index] = serial;
+}
+
+size_t FramebufferDesc::hash() const
+{
+    return angle::ComputeGenericHash(&mSerials,
+                                     sizeof(AttachmentSerial) * kMaxFramebufferAttachments);
+}
+
+void FramebufferDesc::reset()
+{
+    memset(&mSerials, 0, sizeof(AttachmentSerial) * kMaxFramebufferAttachments);
+}
+
+bool FramebufferDesc::operator==(const FramebufferDesc &other) const
+{
+    return memcmp(&mSerials, &other.mSerials, sizeof(Serial) * kMaxFramebufferAttachments) == 0;
+}
+
+uint32_t FramebufferDesc::attachmentCount() const
+{
+    uint32_t count = 0;
+    for (const AttachmentSerial &serial : mSerials)
+    {
+        if (serial.imageSerial != 0)
+        {
+            count++;
+        }
+    }
+    return count;
+}
+
+// SamplerDesc implementation.
+SamplerDesc::SamplerDesc()
+{
+    reset();
+}
+
+SamplerDesc::~SamplerDesc() = default;
+
+SamplerDesc::SamplerDesc(const SamplerDesc &other) = default;
+
+SamplerDesc &SamplerDesc::operator=(const SamplerDesc &rhs) = default;
+
+SamplerDesc::SamplerDesc(const gl::SamplerState &samplerState, bool stencilMode)
+{
+    update(samplerState, stencilMode);
+}
+
+void SamplerDesc::reset()
+{
+    mMipLodBias     = 0.0f;
+    mMaxAnisotropy  = 0.0f;
+    mMinLod         = 0.0f;
+    mMaxLod         = 0.0f;
+    mMagFilter      = 0;
+    mMinFilter      = 0;
+    mMipmapMode     = 0;
+    mAddressModeU   = 0;
+    mAddressModeV   = 0;
+    mAddressModeW   = 0;
+    mCompareEnabled = 0;
+    mCompareOp      = 0;
+    mReserved       = 0;
+}
+
+void SamplerDesc::update(const gl::SamplerState &samplerState, bool stencilMode)
+{
+    mMipLodBias    = 0.0f;
+    mMaxAnisotropy = samplerState.getMaxAnisotropy();
+    mMinLod        = samplerState.getMinLod();
+    mMaxLod        = samplerState.getMaxLod();
+
+    bool compareEnable    = samplerState.getCompareMode() == GL_COMPARE_REF_TO_TEXTURE;
+    VkCompareOp compareOp = gl_vk::GetCompareOp(samplerState.getCompareFunc());
+    // When sampling from stencil, deqp tests expect texture compare to have no effect
+    // dEQP - GLES31.functional.stencil_texturing.misc.compare_mode_effect
+    // states: NOTE: Texture compare mode has no effect when reading stencil values.
+    if (stencilMode)
+    {
+        compareEnable = VK_FALSE;
+        compareOp     = VK_COMPARE_OP_ALWAYS;
+    }
+
+    SetBitField(mMagFilter, gl_vk::GetFilter(samplerState.getMagFilter()));
+    SetBitField(mMinFilter, gl_vk::GetFilter(samplerState.getMinFilter()));
+    SetBitField(mMipmapMode, gl_vk::GetSamplerMipmapMode(samplerState.getMinFilter()));
+    SetBitField(mAddressModeU, gl_vk::GetSamplerAddressMode(samplerState.getWrapS()));
+    SetBitField(mAddressModeV, gl_vk::GetSamplerAddressMode(samplerState.getWrapT()));
+    SetBitField(mAddressModeW, gl_vk::GetSamplerAddressMode(samplerState.getWrapR()));
+    SetBitField(mCompareEnabled, compareEnable);
+    SetBitField(mCompareOp, compareOp);
+
+    if (!gl::IsMipmapFiltered(samplerState))
+    {
+        // Per the Vulkan spec, GL_NEAREST and GL_LINEAR do not map directly to Vulkan, so
+        // they must be emulated (See "Mapping of OpenGL to Vulkan filter modes")
+        SetBitField(mMipmapMode, VK_SAMPLER_MIPMAP_MODE_NEAREST);
+        mMinLod = 0.0f;
+        mMaxLod = 0.25f;
+    }
+}
+
+VkSamplerCreateInfo SamplerDesc::unpack(ContextVk *contextVk) const
+{
+    const gl::Extensions &extensions = contextVk->getExtensions();
+
+    bool anisotropyEnable = extensions.textureFilterAnisotropic && mMaxAnisotropy > 1.0f;
+
+    VkSamplerCreateInfo createInfo     = {};
+    createInfo.sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    createInfo.flags                   = 0;
+    createInfo.magFilter               = static_cast<VkFilter>(mMagFilter);
+    createInfo.minFilter               = static_cast<VkFilter>(mMinFilter);
+    createInfo.mipmapMode              = static_cast<VkSamplerMipmapMode>(mMipmapMode);
+    createInfo.addressModeU            = static_cast<VkSamplerAddressMode>(mAddressModeU);
+    createInfo.addressModeV            = static_cast<VkSamplerAddressMode>(mAddressModeV);
+    createInfo.addressModeW            = static_cast<VkSamplerAddressMode>(mAddressModeW);
+    createInfo.mipLodBias              = 0.0f;
+    createInfo.anisotropyEnable        = anisotropyEnable;
+    createInfo.maxAnisotropy           = mMaxAnisotropy;
+    createInfo.compareEnable           = mCompareEnabled ? VK_TRUE : VK_FALSE;
+    createInfo.compareOp               = static_cast<VkCompareOp>(mCompareOp);
+    createInfo.minLod                  = mMinLod;
+    createInfo.maxLod                  = mMaxLod;
+    createInfo.borderColor             = VK_BORDER_COLOR_INT_TRANSPARENT_BLACK;
+    createInfo.unnormalizedCoordinates = VK_FALSE;
+
+    return createInfo;
+}
+
+size_t SamplerDesc::hash() const
+{
+    return angle::ComputeGenericHash(*this);
+}
+
+bool SamplerDesc::operator==(const SamplerDesc &other) const
+{
+    return (memcmp(this, &other, sizeof(SamplerDesc)) == 0);
+}
 }  // namespace vk
 
 // RenderPassCache implementation.
@@ -1647,15 +1844,15 @@ angle::Result RenderPassCache::addRenderPass(ContextVk *contextVk,
         }
 
         uint32_t colorIndexVk = colorAttachmentCount++;
-        ops.initDummyOp(colorIndexVk, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+        ops.initDummyOp(colorIndexVk, vk::ImageLayout::ColorAttachment,
+                        vk::ImageLayout::ColorAttachment);
     }
 
     if (desc.hasDepthStencilAttachment())
     {
         uint32_t depthStencilIndexVk = colorAttachmentCount;
-        ops.initDummyOp(depthStencilIndexVk, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+        ops.initDummyOp(depthStencilIndexVk, vk::ImageLayout::DepthStencilAttachment,
+                        vk::ImageLayout::DepthStencilAttachment);
     }
 
     return getRenderPassWithOps(contextVk, serial, desc, ops, renderPassOut);
@@ -1741,6 +1938,7 @@ angle::Result GraphicsPipelineCache::insertPipeline(
     const vk::ShaderModule *vertexModule,
     const vk::ShaderModule *fragmentModule,
     const vk::ShaderModule *geometryModule,
+    vk::SpecializationConstantBitSet specConsts,
     const vk::GraphicsPipelineDesc &desc,
     const vk::GraphicsPipelineDesc **descPtrOut,
     vk::PipelineHelper **pipelineOut)
@@ -1754,7 +1952,7 @@ angle::Result GraphicsPipelineCache::insertPipeline(
         ANGLE_TRY(desc.initializePipeline(contextVk, pipelineCacheVk, compatibleRenderPass,
                                           pipelineLayout, activeAttribLocationsMask,
                                           programAttribsTypeMask, vertexModule, fragmentModule,
-                                          geometryModule, &newPipeline));
+                                          geometryModule, specConsts, &newPipeline));
     }
 
     // The Serial will be updated outside of this query.
@@ -1911,6 +2109,56 @@ angle::Result PipelineLayoutCache::getPipelineLayout(
     auto insertedItem = mPayload.emplace(desc, vk::RefCountedPipelineLayout(std::move(newLayout)));
     vk::RefCountedPipelineLayout &insertedLayout = insertedItem.first->second;
     pipelineLayoutOut->set(&insertedLayout);
+
+    return angle::Result::Continue;
+}
+
+// SamplerCache implementation.
+SamplerCache::SamplerCache() = default;
+
+SamplerCache::~SamplerCache()
+{
+    ASSERT(mPayload.empty());
+}
+
+void SamplerCache::destroy(RendererVk *renderer)
+{
+    VkDevice device = renderer->getDevice();
+
+    for (auto &iter : mPayload)
+    {
+        vk::RefCountedSampler &sampler = iter.second;
+        ASSERT(!sampler.isReferenced());
+        sampler.get().destroy(device);
+
+        renderer->getActiveHandleCounts().onDeallocate(vk::HandleType::Sampler);
+    }
+
+    mPayload.clear();
+}
+
+angle::Result SamplerCache::getSampler(ContextVk *contextVk,
+                                       const vk::SamplerDesc &desc,
+                                       vk::BindingPointer<vk::Sampler> *samplerOut)
+{
+    auto iter = mPayload.find(desc);
+    if (iter != mPayload.end())
+    {
+        vk::RefCountedSampler &sampler = iter->second;
+        samplerOut->set(&sampler);
+        return angle::Result::Continue;
+    }
+
+    VkSamplerCreateInfo createInfo = desc.unpack(contextVk);
+
+    vk::Sampler sampler;
+    ANGLE_VK_TRY(contextVk, sampler.init(contextVk->getDevice(), createInfo));
+
+    auto insertedItem = mPayload.emplace(desc, vk::RefCountedSampler(std::move(sampler)));
+    vk::RefCountedSampler &insertedSampler = insertedItem.first->second;
+    samplerOut->set(&insertedSampler);
+
+    contextVk->getRenderer()->getActiveHandleCounts().onAllocate(vk::HandleType::Sampler);
 
     return angle::Result::Continue;
 }

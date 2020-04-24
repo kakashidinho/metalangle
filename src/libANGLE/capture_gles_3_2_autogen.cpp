@@ -231,22 +231,22 @@ CallCapture CaptureDisablei(const State &glState, bool isCallValid, GLenum targe
 
 CallCapture CaptureDrawElementsBaseVertex(const State &glState,
                                           bool isCallValid,
-                                          GLenum mode,
+                                          PrimitiveMode modePacked,
                                           GLsizei count,
-                                          GLenum type,
+                                          DrawElementsType typePacked,
                                           const void *indices,
                                           GLint basevertex)
 {
     ParamBuffer paramBuffer;
 
-    paramBuffer.addEnumParam("mode", GLenumGroup::PrimitiveType, ParamType::TGLenum, mode);
+    paramBuffer.addValueParam("modePacked", ParamType::TPrimitiveMode, modePacked);
     paramBuffer.addValueParam("count", ParamType::TGLsizei, count);
-    paramBuffer.addEnumParam("type", GLenumGroup::DrawElementsType, ParamType::TGLenum, type);
+    paramBuffer.addValueParam("typePacked", ParamType::TDrawElementsType, typePacked);
 
     ParamCapture indicesParam("indices", ParamType::TvoidConstPointer);
     InitParamValue(ParamType::TvoidConstPointer, indices, &indicesParam.value);
-    CaptureDrawElementsBaseVertex_indices(glState, isCallValid, mode, count, type, indices,
-                                          basevertex, &indicesParam);
+    CaptureDrawElementsBaseVertex_indices(glState, isCallValid, modePacked, count, typePacked,
+                                          indices, basevertex, &indicesParam);
     paramBuffer.addParam(std::move(indicesParam));
 
     paramBuffer.addValueParam("basevertex", ParamType::TGLint, basevertex);
@@ -256,23 +256,24 @@ CallCapture CaptureDrawElementsBaseVertex(const State &glState,
 
 CallCapture CaptureDrawElementsInstancedBaseVertex(const State &glState,
                                                    bool isCallValid,
-                                                   GLenum mode,
+                                                   PrimitiveMode modePacked,
                                                    GLsizei count,
-                                                   GLenum type,
+                                                   DrawElementsType typePacked,
                                                    const void *indices,
                                                    GLsizei instancecount,
                                                    GLint basevertex)
 {
     ParamBuffer paramBuffer;
 
-    paramBuffer.addEnumParam("mode", GLenumGroup::PrimitiveType, ParamType::TGLenum, mode);
+    paramBuffer.addValueParam("modePacked", ParamType::TPrimitiveMode, modePacked);
     paramBuffer.addValueParam("count", ParamType::TGLsizei, count);
-    paramBuffer.addEnumParam("type", GLenumGroup::DrawElementsType, ParamType::TGLenum, type);
+    paramBuffer.addValueParam("typePacked", ParamType::TDrawElementsType, typePacked);
 
     ParamCapture indicesParam("indices", ParamType::TvoidConstPointer);
     InitParamValue(ParamType::TvoidConstPointer, indices, &indicesParam.value);
-    CaptureDrawElementsInstancedBaseVertex_indices(glState, isCallValid, mode, count, type, indices,
-                                                   instancecount, basevertex, &indicesParam);
+    CaptureDrawElementsInstancedBaseVertex_indices(glState, isCallValid, modePacked, count,
+                                                   typePacked, indices, instancecount, basevertex,
+                                                   &indicesParam);
     paramBuffer.addParam(std::move(indicesParam));
 
     paramBuffer.addValueParam("instancecount", ParamType::TGLsizei, instancecount);
@@ -283,26 +284,26 @@ CallCapture CaptureDrawElementsInstancedBaseVertex(const State &glState,
 
 CallCapture CaptureDrawRangeElementsBaseVertex(const State &glState,
                                                bool isCallValid,
-                                               GLenum mode,
+                                               PrimitiveMode modePacked,
                                                GLuint start,
                                                GLuint end,
                                                GLsizei count,
-                                               GLenum type,
+                                               DrawElementsType typePacked,
                                                const void *indices,
                                                GLint basevertex)
 {
     ParamBuffer paramBuffer;
 
-    paramBuffer.addEnumParam("mode", GLenumGroup::PrimitiveType, ParamType::TGLenum, mode);
+    paramBuffer.addValueParam("modePacked", ParamType::TPrimitiveMode, modePacked);
     paramBuffer.addValueParam("start", ParamType::TGLuint, start);
     paramBuffer.addValueParam("end", ParamType::TGLuint, end);
     paramBuffer.addValueParam("count", ParamType::TGLsizei, count);
-    paramBuffer.addEnumParam("type", GLenumGroup::DrawElementsType, ParamType::TGLenum, type);
+    paramBuffer.addValueParam("typePacked", ParamType::TDrawElementsType, typePacked);
 
     ParamCapture indicesParam("indices", ParamType::TvoidConstPointer);
     InitParamValue(ParamType::TvoidConstPointer, indices, &indicesParam.value);
-    CaptureDrawRangeElementsBaseVertex_indices(glState, isCallValid, mode, start, end, count, type,
-                                               indices, basevertex, &indicesParam);
+    CaptureDrawRangeElementsBaseVertex_indices(glState, isCallValid, modePacked, start, end, count,
+                                               typePacked, indices, basevertex, &indicesParam);
     paramBuffer.addParam(std::move(indicesParam));
 
     paramBuffer.addValueParam("basevertex", ParamType::TGLint, basevertex);
@@ -568,20 +569,20 @@ CallCapture CaptureGetTexParameterIuiv(const State &glState,
 CallCapture CaptureGetnUniformfv(const State &glState,
                                  bool isCallValid,
                                  ShaderProgramID programPacked,
-                                 GLint location,
+                                 UniformLocation locationPacked,
                                  GLsizei bufSize,
                                  GLfloat *params)
 {
     ParamBuffer paramBuffer;
 
     paramBuffer.addValueParam("programPacked", ParamType::TShaderProgramID, programPacked);
-    paramBuffer.addValueParam("location", ParamType::TGLint, location);
+    paramBuffer.addValueParam("locationPacked", ParamType::TUniformLocation, locationPacked);
     paramBuffer.addValueParam("bufSize", ParamType::TGLsizei, bufSize);
 
     ParamCapture paramsParam("params", ParamType::TGLfloatPointer);
     InitParamValue(ParamType::TGLfloatPointer, params, &paramsParam.value);
-    CaptureGetnUniformfv_params(glState, isCallValid, programPacked, location, bufSize, params,
-                                &paramsParam);
+    CaptureGetnUniformfv_params(glState, isCallValid, programPacked, locationPacked, bufSize,
+                                params, &paramsParam);
     paramBuffer.addParam(std::move(paramsParam));
 
     return CallCapture(gl::EntryPoint::GetnUniformfv, std::move(paramBuffer));
@@ -590,20 +591,20 @@ CallCapture CaptureGetnUniformfv(const State &glState,
 CallCapture CaptureGetnUniformiv(const State &glState,
                                  bool isCallValid,
                                  ShaderProgramID programPacked,
-                                 GLint location,
+                                 UniformLocation locationPacked,
                                  GLsizei bufSize,
                                  GLint *params)
 {
     ParamBuffer paramBuffer;
 
     paramBuffer.addValueParam("programPacked", ParamType::TShaderProgramID, programPacked);
-    paramBuffer.addValueParam("location", ParamType::TGLint, location);
+    paramBuffer.addValueParam("locationPacked", ParamType::TUniformLocation, locationPacked);
     paramBuffer.addValueParam("bufSize", ParamType::TGLsizei, bufSize);
 
     ParamCapture paramsParam("params", ParamType::TGLintPointer);
     InitParamValue(ParamType::TGLintPointer, params, &paramsParam.value);
-    CaptureGetnUniformiv_params(glState, isCallValid, programPacked, location, bufSize, params,
-                                &paramsParam);
+    CaptureGetnUniformiv_params(glState, isCallValid, programPacked, locationPacked, bufSize,
+                                params, &paramsParam);
     paramBuffer.addParam(std::move(paramsParam));
 
     return CallCapture(gl::EntryPoint::GetnUniformiv, std::move(paramBuffer));
@@ -612,20 +613,20 @@ CallCapture CaptureGetnUniformiv(const State &glState,
 CallCapture CaptureGetnUniformuiv(const State &glState,
                                   bool isCallValid,
                                   ShaderProgramID programPacked,
-                                  GLint location,
+                                  UniformLocation locationPacked,
                                   GLsizei bufSize,
                                   GLuint *params)
 {
     ParamBuffer paramBuffer;
 
     paramBuffer.addValueParam("programPacked", ParamType::TShaderProgramID, programPacked);
-    paramBuffer.addValueParam("location", ParamType::TGLint, location);
+    paramBuffer.addValueParam("locationPacked", ParamType::TUniformLocation, locationPacked);
     paramBuffer.addValueParam("bufSize", ParamType::TGLsizei, bufSize);
 
     ParamCapture paramsParam("params", ParamType::TGLuintPointer);
     InitParamValue(ParamType::TGLuintPointer, params, &paramsParam.value);
-    CaptureGetnUniformuiv_params(glState, isCallValid, programPacked, location, bufSize, params,
-                                 &paramsParam);
+    CaptureGetnUniformuiv_params(glState, isCallValid, programPacked, locationPacked, bufSize,
+                                 params, &paramsParam);
     paramBuffer.addParam(std::move(paramsParam));
 
     return CallCapture(gl::EntryPoint::GetnUniformuiv, std::move(paramBuffer));

@@ -105,7 +105,8 @@ enum TBasicType
     EbtUSampler2DRect,
     EbtUSamplerBuffer,
     EbtUSamplerCubeArray,
-    EbtGuardSamplerEnd = EbtUSamplerCubeArray,  // non type: see implementation of IsSampler()
+    EbtSamplerVideoWEBGL,
+    EbtGuardSamplerEnd = EbtSamplerVideoWEBGL,  // non type: see implementation of IsSampler()
 
     // images
     EbtGuardImageBegin,
@@ -272,9 +273,10 @@ inline bool IsIntegerSampler(TBasicType type)
         case EbtSamplerCubeArrayShadow:
         case EbtSampler1DShadow:
         case EbtSampler2DRectShadow:
+        case EbtSamplerVideoWEBGL:
             return false;
         default:
-            assert(!IsSampler(type));
+            ASSERT(!IsSampler(type));
     }
 
     return false;
@@ -309,7 +311,7 @@ inline bool IsIntegerSamplerUnsigned(TBasicType type)
         case EbtUSamplerCubeArray:
             return true;
         default:
-            assert(!IsIntegerSampler(type));
+            ASSERT(!IsIntegerSampler(type));
     }
 
     return false;
@@ -434,6 +436,7 @@ inline bool IsSampler2D(TBasicType type)
         case EbtSampler2DMS:
         case EbtISampler2DMS:
         case EbtUSampler2DMS:
+        case EbtSamplerVideoWEBGL:
             return true;
         case EbtSampler2DArray:
         case EbtISampler2DArray:
@@ -466,7 +469,7 @@ inline bool IsSampler2D(TBasicType type)
         case EbtUSamplerCubeArray:
             return false;
         default:
-            assert(!IsSampler(type));
+            ASSERT(!IsSampler(type));
     }
 
     return false;
@@ -519,9 +522,10 @@ inline bool IsSamplerCube(TBasicType type)
         case EbtUSampler2DRect:
         case EbtUSamplerBuffer:
         case EbtUSamplerCubeArray:
+        case EbtSamplerVideoWEBGL:
             return false;
         default:
-            assert(!IsSampler(type));
+            ASSERT(!IsSampler(type));
     }
 
     return false;
@@ -574,9 +578,10 @@ inline bool IsSampler3D(TBasicType type)
         case EbtUSampler2DRect:
         case EbtUSamplerBuffer:
         case EbtUSamplerCubeArray:
+        case EbtSamplerVideoWEBGL:
             return false;
         default:
-            assert(!IsSampler(type));
+            ASSERT(!IsSampler(type));
     }
 
     return false;
@@ -629,9 +634,10 @@ inline bool IsSamplerArray(TBasicType type)
         case EbtUSampler1D:
         case EbtUSampler2DRect:
         case EbtUSamplerBuffer:
+        case EbtSamplerVideoWEBGL:
             return false;
         default:
-            assert(!IsSampler(type));
+            ASSERT(!IsSampler(type));
     }
 
     return false;
@@ -684,9 +690,10 @@ inline bool IsShadowSampler(TBasicType type)
         case EbtUSampler2DRect:
         case EbtUSamplerBuffer:
         case EbtUSamplerCubeArray:
+        case EbtSamplerVideoWEBGL:
             return false;
         default:
-            assert(!IsSampler(type));
+            ASSERT(!IsSampler(type));
     }
 
     return false;
@@ -735,7 +742,7 @@ inline bool IsImage2D(TBasicType type)
         case EbtUImageBuffer:
             return false;
         default:
-            assert(!IsImage(type));
+            ASSERT(!IsImage(type));
     }
 
     return false;
@@ -784,7 +791,7 @@ inline bool IsImage3D(TBasicType type)
         case EbtUImageBuffer:
             return false;
         default:
-            assert(!IsImage(type));
+            ASSERT(!IsImage(type));
     }
 
     return false;
@@ -833,7 +840,7 @@ inline bool IsImage2DArray(TBasicType type)
         case EbtUImageBuffer:
             return false;
         default:
-            assert(!IsImage(type));
+            ASSERT(!IsImage(type));
     }
 
     return false;
@@ -882,7 +889,7 @@ inline bool IsImageCube(TBasicType type)
         case EbtUImageBuffer:
             return false;
         default:
-            assert(!IsImage(type));
+            ASSERT(!IsImage(type));
     }
 
     return false;
@@ -965,14 +972,17 @@ enum TQualifier
     EvqLastFragData,
 
     // GLSL ES 3.0 vertex output and fragment input
-    EvqSmooth,    // Incomplete qualifier, smooth is the default
-    EvqFlat,      // Incomplete qualifier
-    EvqCentroid,  // Incomplete qualifier
+    EvqSmooth,         // Incomplete qualifier, smooth is the default
+    EvqFlat,           // Incomplete qualifier
+    EvqNoPerspective,  // Incomplete qualifier
+    EvqCentroid,       // Incomplete qualifier
     EvqSmoothOut,
     EvqFlatOut,
+    EvqNoPerspectiveOut,
     EvqCentroidOut,  // Implies smooth
     EvqSmoothIn,
     EvqFlatIn,
+    EvqNoPerspectiveIn,
     EvqCentroidIn,  // Implies smooth
 
     // GLSL ES 3.1 compute shader special variables
@@ -1001,6 +1011,9 @@ enum TQualifier
     EvqPrimitiveID,    // gl_PrimitiveID
     EvqLayer,          // gl_Layer
 
+    // GLSL ES 3.1 extension EXT_gpu_shader5 qualifiers
+    EvqPrecise,
+
     // end of list
     EvqLast
 };
@@ -1013,6 +1026,43 @@ inline bool IsQualifierUnspecified(TQualifier qualifier)
 inline bool IsStorageBuffer(TQualifier qualifier)
 {
     return qualifier == EvqBuffer;
+}
+
+inline bool IsShaderIn(TQualifier qualifier)
+{
+    switch (qualifier)
+    {
+        case EvqVertexIn:
+        case EvqGeometryIn:
+        case EvqFragmentIn:
+        case EvqAttribute:
+        case EvqVaryingIn:
+        case EvqSmoothIn:
+        case EvqFlatIn:
+        case EvqNoPerspectiveIn:
+        case EvqCentroidIn:
+            return true;
+        default:
+            return false;
+    }
+}
+
+inline bool IsShaderOut(TQualifier qualifier)
+{
+    switch (qualifier)
+    {
+        case EvqVertexOut:
+        case EvqGeometryOut:
+        case EvqFragmentOut:
+        case EvqVaryingOut:
+        case EvqSmoothOut:
+        case EvqFlatOut:
+        case EvqNoPerspectiveOut:
+        case EvqCentroidOut:
+            return true;
+        default:
+            return false;
+    }
 }
 
 enum TLayoutImageInternalFormat
@@ -1079,16 +1129,16 @@ struct TLayoutQualifier
     bool isEmpty() const
     {
         return location == -1 && binding == -1 && offset == -1 && numViews == -1 && yuv == false &&
-               matrixPacking == EmpUnspecified && blockStorage == EbsUnspecified &&
-               !localSize.isAnyValueSet() && imageInternalFormat == EiifUnspecified &&
-               primitiveType == EptUndefined && invocations == 0 && maxVertices == -1 &&
-               index == -1;
+               earlyFragmentTests == false && matrixPacking == EmpUnspecified &&
+               blockStorage == EbsUnspecified && !localSize.isAnyValueSet() &&
+               imageInternalFormat == EiifUnspecified && primitiveType == EptUndefined &&
+               invocations == 0 && maxVertices == -1 && index == -1;
     }
 
     bool isCombinationValid() const
     {
-        bool workSizeSpecified = localSize.isAnyValueSet();
-        bool numViewsSet       = (numViews != -1);
+        bool workGroupSizeSpecified = localSize.isAnyValueSet();
+        bool numViewsSet            = (numViews != -1);
         bool geometryShaderSpecified =
             (primitiveType != EptUndefined) || (invocations != 0) || (maxVertices != -1);
         bool otherLayoutQualifiersSpecified =
@@ -1096,9 +1146,11 @@ struct TLayoutQualifier
              blockStorage != EbsUnspecified || imageInternalFormat != EiifUnspecified);
 
         // we can have either the work group size specified, or number of views,
-        // or yuv layout qualifier, or the other layout qualifiers.
-        return (workSizeSpecified ? 1 : 0) + (numViewsSet ? 1 : 0) + (yuv ? 1 : 0) +
-                   (otherLayoutQualifiersSpecified ? 1 : 0) + (geometryShaderSpecified ? 1 : 0) <=
+        // or yuv layout qualifier, or early_fragment_tests layout qualifier, or the other layout
+        // qualifiers.
+        return (workGroupSizeSpecified ? 1 : 0) + (numViewsSet ? 1 : 0) + (yuv ? 1 : 0) +
+                   (earlyFragmentTests ? 1 : 0) + (otherLayoutQualifiersSpecified ? 1 : 0) +
+                   (geometryShaderSpecified ? 1 : 0) <=
                1;
     }
 
@@ -1127,6 +1179,9 @@ struct TLayoutQualifier
     // EXT_YUV_target yuv layout qualifier.
     bool yuv;
 
+    // early_fragment_tests qualifier.
+    bool earlyFragmentTests;
+
     // OES_geometry_shader layout qualifiers.
     TLayoutPrimitiveType primitiveType;
     int invocations;
@@ -1147,6 +1202,7 @@ struct TLayoutQualifier
           imageInternalFormat(EiifUnspecified),
           numViews(-1),
           yuv(false),
+          earlyFragmentTests(false),
           primitiveType(EptUndefined),
           invocations(0),
           maxVertices(-1),
@@ -1252,11 +1308,14 @@ inline const char *getQualifierString(TQualifier q)
     case EvqSmoothOut:              return "smooth out";
     case EvqCentroidOut:            return "smooth centroid out";
     case EvqFlatOut:                return "flat out";
+    case EvqNoPerspectiveOut:       return "noperspective out";
     case EvqSmoothIn:               return "smooth in";
     case EvqFlatIn:                 return "flat in";
+    case EvqNoPerspectiveIn:        return "noperspective in";
     case EvqCentroidIn:             return "smooth centroid in";
     case EvqCentroid:               return "centroid";
     case EvqFlat:                   return "flat";
+    case EvqNoPerspective:          return "noperspective";
     case EvqSmooth:                 return "smooth";
     case EvqShared:                 return "shared";
     case EvqComputeIn:              return "in";
@@ -1271,6 +1330,7 @@ inline const char *getQualifierString(TQualifier q)
     case EvqGeometryIn:             return "in";
     case EvqGeometryOut:            return "out";
     case EvqPerVertexIn:            return "gl_in";
+    case EvqPrecise:                return "precise";
     case EvqClipDistance:           return "ClipDistance";
     default: UNREACHABLE();         return "unknown qualifier";
     }

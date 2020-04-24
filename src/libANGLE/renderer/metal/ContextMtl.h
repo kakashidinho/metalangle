@@ -66,12 +66,25 @@ class ContextMtl : public ContextImpl, public mtl::Context
                                GLsizei count,
                                gl::DrawElementsType type,
                                const void *indices) override;
+    angle::Result drawElementsBaseVertex(const gl::Context *context,
+                                         gl::PrimitiveMode mode,
+                                         GLsizei count,
+                                         gl::DrawElementsType type,
+                                         const void *indices,
+                                         GLint baseVertex) override;
     angle::Result drawElementsInstanced(const gl::Context *context,
                                         gl::PrimitiveMode mode,
                                         GLsizei count,
                                         gl::DrawElementsType type,
                                         const void *indices,
                                         GLsizei instanceCount) override;
+    angle::Result drawElementsInstancedBaseVertex(const gl::Context *context,
+                                                  gl::PrimitiveMode mode,
+                                                  GLsizei count,
+                                                  gl::DrawElementsType type,
+                                                  const void *indices,
+                                                  GLsizei instanceCount,
+                                                  GLint baseVertex) override;
     angle::Result drawElementsInstancedBaseVertexBaseInstance(const gl::Context *context,
                                                               gl::PrimitiveMode mode,
                                                               GLsizei count,
@@ -87,6 +100,14 @@ class ContextMtl : public ContextImpl, public mtl::Context
                                     GLsizei count,
                                     gl::DrawElementsType type,
                                     const void *indices) override;
+    angle::Result drawRangeElementsBaseVertex(const gl::Context *context,
+                                              gl::PrimitiveMode mode,
+                                              GLuint start,
+                                              GLuint end,
+                                              GLsizei count,
+                                              gl::DrawElementsType type,
+                                              const void *indices,
+                                              GLint baseVertex) override;
     angle::Result drawArraysIndirect(const gl::Context *context,
                                      gl::PrimitiveMode mode,
                                      const void *indirect) override;
@@ -103,13 +124,16 @@ class ContextMtl : public ContextImpl, public mtl::Context
     std::string getRendererDescription() const override;
 
     // EXT_debug_marker
-    void insertEventMarker(GLsizei length, const char *marker) override;
-    void pushGroupMarker(GLsizei length, const char *marker) override;
-    void popGroupMarker() override;
+    angle::Result insertEventMarker(GLsizei length, const char *marker) override;
+    angle::Result pushGroupMarker(GLsizei length, const char *marker) override;
+    angle::Result popGroupMarker() override;
 
     // KHR_debug
-    void pushDebugGroup(GLenum source, GLuint id, const std::string &message) override;
-    void popDebugGroup() override;
+    angle::Result pushDebugGroup(const gl::Context *context,
+                                 GLenum source,
+                                 GLuint id,
+                                 const std::string &message) override;
+    angle::Result popDebugGroup(const gl::Context *context) override;
 
     // State sync with dirty bits.
     angle::Result syncState(const gl::Context *context,
@@ -164,9 +188,6 @@ class ContextMtl : public ContextImpl, public mtl::Context
 
     // Program Pipeline object creation
     ProgramPipelineImpl *createProgramPipeline(const gl::ProgramPipelineState &data) override;
-
-    // Path object creation
-    std::vector<PathImpl *> createPaths(GLsizei) override;
 
     // Memory object creation.
     MemoryObjectImpl *createMemoryObject() override;
@@ -409,8 +430,14 @@ class ContextMtl : public ContextImpl, public mtl::Context
         float viewportYScale;
         float negViewportYScale;
 
+        // 32 bits for 32 clip distances
+        uint32_t enabledClipDistances;
+
         // NOTE(hqle): Transform feedsback is not supported yet.
         uint32_t xfbActiveUnpaused;
+        uint32_t xfbVerticesPerDraw;
+        // NOTE: Explicit padding. Fill in with useful data when needed in the future.
+        int32_t padding[2];
 
         int32_t xfbBufferOffsets[4];
         uint32_t acbBufferOffsets[4];
@@ -418,14 +445,15 @@ class ContextMtl : public ContextImpl, public mtl::Context
         // We'll use x, y, z, w for near / far / diff / zscale respectively.
         float depthRange[4];
 
-        // 32 bits for 32 clip distances
-        uint32_t enabledClipDistances;
+        // Used to pre-rotate gl_Position for Vulkan swapchain images on Android (a mat2, which is
+        // padded to the size of two vec4's).
+        float preRotation[8];
 
         uint32_t coverageMask;
 
         int32_t emulatedInstanceID;
 
-        float padding;
+        float padding2[2];
     };
 
     struct DefaultAttribute
