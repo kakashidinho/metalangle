@@ -101,6 +101,7 @@ class FramebufferMtl : public FramebufferImpl
     // Call this to notify FramebufferMtl whenever its render pass has started.
     void onStartedDrawingToFrameBuffer(const gl::Context *context);
     void onFrameEnd(const gl::Context *context);
+    angle::Result onColorMaskChanged(const gl::Context *context);
 
     // The actual area will be adjusted based on framebuffer flipping property.
     gl::Rectangle getCorrectFlippedReadArea(const gl::Context *context,
@@ -194,6 +195,10 @@ class FramebufferMtl : public FramebufferImpl
     RenderTargetMtl *mDepthRenderTarget   = nullptr;
     RenderTargetMtl *mStencilRenderTarget = nullptr;
     mtl::RenderPassDesc mRenderPassDesc;
+
+    // Dummy depth render target, used when there is no attachment in the render pass.
+    mtl::TextureRef mDummyDepthTexture;
+    RenderTargetMtl mDummyDepthRenderTarget;
 
     const mtl::Format *mRenderPassFirstColorAttachmentFormat = nullptr;
     bool mRenderPassAttachmentsSameColorType                 = false;

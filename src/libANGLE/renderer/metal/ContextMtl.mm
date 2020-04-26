@@ -847,8 +847,13 @@ angle::Result ContextMtl::syncState(const gl::Context *context,
                 invalidateRenderPipeline();
                 break;
             case gl::State::DIRTY_BIT_COLOR_MASK:
+            {
                 mBlendDesc.updateWriteMask(glState.getBlendState());
                 invalidateRenderPipeline();
+
+                FramebufferMtl *framebufferMtl = mtl::GetImpl(glState.getDrawFramebuffer());
+                ANGLE_TRY(framebufferMtl->onColorMaskChanged(context));
+            }
                 break;
             case gl::State::DIRTY_BIT_SAMPLE_ALPHA_TO_COVERAGE_ENABLED:
                 invalidateRenderPipeline();

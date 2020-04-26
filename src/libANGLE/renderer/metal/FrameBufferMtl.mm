@@ -44,6 +44,9 @@ void FramebufferMtl::reset()
 
     mRenderPassFirstColorAttachmentFormat = nullptr;
 
+    mDummyDepthTexture = nullptr;
+    mDummyDepthRenderTarget.reset();
+
     mReadPixelBuffer = nullptr;
 }
 
@@ -514,17 +517,19 @@ angle::Result FramebufferMtl::syncState(const gl::Context *context,
                                         const gl::Framebuffer::DirtyBits &dirtyBits)
 {
     ContextMtl *contextMtl = mtl::GetImpl(context);
-    ASSERT(dirtyBits.any());
     bool mustNotifyContext = false;
+    bool attachmentChanged = false;
     for (size_t dirtyBit : dirtyBits)
     {
         switch (dirtyBit)
         {
             case gl::Framebuffer::DIRTY_BIT_DEPTH_ATTACHMENT:
                 ANGLE_TRY(updateDepthRenderTarget(context));
+                attachmentChanged = true;
                 break;
             case gl::Framebuffer::DIRTY_BIT_STENCIL_ATTACHMENT:
                 ANGLE_TRY(updateStencilRenderTarget(context));
+                attachmentChanged = true;
                 break;
             case gl::Framebuffer::DIRTY_BIT_DEPTH_BUFFER_CONTENTS:
             case gl::Framebuffer::DIRTY_BIT_STENCIL_BUFFER_CONTENTS:
@@ -547,6 +552,7 @@ angle::Result FramebufferMtl::syncState(const gl::Context *context,
                     size_t colorIndexGL = static_cast<size_t>(
                         dirtyBit - gl::Framebuffer::DIRTY_BIT_COLOR_ATTACHMENT_0);
                     ANGLE_TRY(updateColorRenderTarget(context, colorIndexGL));
+                    attachmentChanged = true;
                 }
                 else
                 {
@@ -570,6 +576,16 @@ angle::Result FramebufferMtl::syncState(const gl::Context *context,
             mtl::GetImpl(context->getState().getDrawFramebuffer());
         if (currentDrawFramebuffer == this)
         {
+            if (renderPassChanged && !attachmentChanged)
+            {
+                // Render pass descriptor changed but there is no new attachment,
+                // this usually happens in WebGL2 when draw buffer(s) is enabled/disabled.
+                // See prepareRenderPass() for more details.
+                ASSERT(context->isWebGL());
+
+                // flush and store results of the pending render pass.
+                contextMtl->endEncoding(true);
+            }
             contextMtl->onDrawFrameBufferChangedState(context, this, renderPassChanged);
         }
 
@@ -752,6 +768,16 @@ void FramebufferMtl::onFrameEnd(const gl::Context *context)
     }
 }
 
+angle::Result FramebufferMtl::onColorMaskChanged(const gl::Context *context)
+{
+    if (!context->isWebGL())
+    {
+        return angle::Result::Continue;
+    }
+    // Force re-create render pass descriptor.
+    return syncState(context, GL_FRAMEBUFFER, gl::Framebuffer::DirtyBits());
+}
+
 angle::Result FramebufferMtl::updateColorRenderTarget(const gl::Context *context,
                                                       size_t colorIndexGL)
 {
@@ -880,22 +906,53 @@ angle::Result FramebufferMtl::getReadableViewForRenderTarget(
 angle::Result FramebufferMtl::prepareRenderPass(const gl::Context *context,
                                                 mtl::RenderPassDesc *pDescOut)
 {
+    ContextMtl *contextMtl           = mtl::GetImpl(context);
+    gl::DrawBufferMask enabledBuffer = mState.getEnabledDrawBuffers();
+    if (context->isWebGL() && context->getState().getClientMajorVersion() >= 3 &&
+        contextMtl->getColorMask() == MTLColorWriteMaskNone)
+    {
+        // WebGL2 spec conformance work-around: WebGL2 allows shader writes incompatible formatted
+        // data if color mask = none. In this case, treat the render pass as if there is no color
+        // attachment.
+        enabledBuffer.reset();
+    }
+
     auto &desc = *pDescOut;
 
     mRenderPassFirstColorAttachmentFormat = nullptr;
     mRenderPassAttachmentsSameColorType   = true;
     uint32_t maxColorAttachments = static_cast<uint32_t>(mState.getColorAttachments().size());
     desc.numColorAttachments     = 0;
+    desc.sampleCount             = 1;
     for (uint32_t colorIndexGL = 0; colorIndexGL < maxColorAttachments; ++colorIndexGL)
     {
         ASSERT(colorIndexGL < mtl::kMaxRenderTargets);
 
         mtl::RenderPassColorAttachmentDesc &colorAttachment = desc.colorAttachments[colorIndexGL];
         const RenderTargetMtl *colorRenderTarget            = mColorRenderTargets[colorIndexGL];
+
+        if (colorRenderTarget)
+        {
+            // Even if we might exclude this render target from the render pass descriptor, the
+            // render pass's sample count must be correctly set.
+            desc.sampleCount = std::max(desc.sampleCount, colorRenderTarget->getRenderSamples());
+        }
+
+        if (context->isWebGL() && context->getState().getClientMajorVersion() >= 3 &&
+            !enabledBuffer.test(colorIndexGL))
+        {
+            // WebGL2 spec conformance work-around: if draw is disabled for a draw buffer, we should
+            // not include it as an attachment of metal render pass. Because in this case, WebGL
+            // allows shader to write incompatible data, such as writing integer value to float
+            // attachment. To work-around this, do not include it in the Metal attachments list. The
+            // downside is that a new render pass would have to be started everytime enabled draw
+            // buffers are changed even though attachments remain the same.
+            colorRenderTarget = nullptr;
+        }
+
         if (colorRenderTarget)
         {
             colorRenderTarget->toRenderPassAttachmentDesc(&colorAttachment);
-            desc.sampleCount = std::max(desc.sampleCount, colorRenderTarget->getRenderSamples());
 
             desc.numColorAttachments = std::max(desc.numColorAttachments, colorIndexGL + 1);
 
@@ -925,11 +982,52 @@ angle::Result FramebufferMtl::prepareRenderPass(const gl::Context *context,
         mDepthRenderTarget->toRenderPassAttachmentDesc(&desc.depthAttachment);
         desc.sampleCount = std::max(desc.sampleCount, mDepthRenderTarget->getRenderSamples());
     }
+    else
+    {
+        desc.depthAttachment.reset();
+    }
 
     if (mStencilRenderTarget)
     {
         mStencilRenderTarget->toRenderPassAttachmentDesc(&desc.stencilAttachment);
         desc.sampleCount = std::max(desc.sampleCount, mStencilRenderTarget->getRenderSamples());
+    }
+    else
+    {
+        desc.stencilAttachment.reset();
+    }
+
+    if (context->isWebGL() && desc.numColorAttachments == 0 && !desc.depthAttachment.texture() &&
+        !desc.stencilAttachment.texture())
+    {
+        // In WebGL compatibility mode, we don't include attachment in render pass if its color
+        // write is disabled. However, it could lead to render pass having no attachment, and it is
+        // not allowed in metal. In this case, use a dummy depth attachment to work-around this.
+        const gl::Rectangle renderArea = getCompleteRenderArea();
+        if (!mDummyDepthTexture ||
+            mDummyDepthTexture->width() != static_cast<uint32_t>(renderArea.width) ||
+            mDummyDepthTexture->height() != static_cast<uint32_t>(renderArea.height) ||
+            mDummyDepthTexture->samples() != desc.sampleCount)
+        {
+            const mtl::Format &dummyFormat = contextMtl->getPixelFormat(angle::FormatID::D16_UNORM);
+
+            if (desc.sampleCount == 1)
+            {
+                ANGLE_TRY(mtl::Texture::Make2DTexture(contextMtl, dummyFormat, renderArea.width,
+                                                      renderArea.height, 1, true, false,
+                                                      &mDummyDepthTexture));
+            }
+            else
+            {
+                ANGLE_TRY(mtl::Texture::Make2DMSTexture(contextMtl, dummyFormat, renderArea.width,
+                                                        renderArea.height, desc.sampleCount, true,
+                                                        false, &mDummyDepthTexture));
+            }
+
+            mDummyDepthRenderTarget.set(mDummyDepthTexture, 0, 0, dummyFormat);
+        }
+
+        mDummyDepthRenderTarget.toRenderPassAttachmentDesc(&desc.depthAttachment);
     }
 
     return angle::Result::Continue;
