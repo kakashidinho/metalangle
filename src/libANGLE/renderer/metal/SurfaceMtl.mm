@@ -239,6 +239,11 @@ void SurfaceMtl::destroy(const egl::Display *display)
 
     mMSColorTexture = nullptr;
 
+    mColorRenderTarget.reset();
+    mColorManualResolveRenderTarget.reset();
+    mDepthRenderTarget.reset();
+    mStencilRenderTarget.reset();
+
     mCurrentDrawable = nil;
     if (mMetalLayer && mMetalLayer.get() != mLayer)
     {
@@ -544,9 +549,6 @@ angle::Result SurfaceMtl::checkIfLayerResized(const gl::Context *context)
         mMetalLayer.get().drawableSize = expectedDrawableSize;
     }
 
-    // Now we have to resize depth stencil buffers if required.
-    ANGLE_TRY(ensureTexturesSizeCorrect(context));
-
     return angle::Result::Continue;
 }
 
@@ -572,6 +574,7 @@ angle::Result SurfaceMtl::obtainNextDrawable(const gl::Context *context)
         if (!mDrawableTexture)
         {
             mDrawableTexture = mtl::Texture::MakeFromMetal(mCurrentDrawable.get().texture);
+            ASSERT(!mColorRenderTarget.getTexture());
             mColorRenderTarget.set(mDrawableTexture, mMSColorTexture, 0, 0, mColorFormat);
         }
         else
