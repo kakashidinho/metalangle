@@ -1509,6 +1509,12 @@ RenderCommandEncoder &RenderCommandEncoder::draw(MTLPrimitiveType primitiveType,
                                                  uint32_t vertexStart,
                                                  uint32_t vertexCount)
 {
+    if (ANGLE_UNLIKELY(!mStateCache.renderPipeline))
+    {
+        // Ignore draw call if there is no render pipeline state set prior to this.
+        return *this;
+    }
+
     mHasDrawCalls = true;
     mCommands.push(CmdType::Draw).push(primitiveType).push(vertexStart).push(vertexCount);
 
@@ -1520,6 +1526,12 @@ RenderCommandEncoder &RenderCommandEncoder::drawInstanced(MTLPrimitiveType primi
                                                           uint32_t vertexCount,
                                                           uint32_t instances)
 {
+    if (ANGLE_UNLIKELY(!mStateCache.renderPipeline))
+    {
+        // Ignore draw call if there is no render pipeline state set prior to this.
+        return *this;
+    }
+
     mHasDrawCalls = true;
     mCommands.push(CmdType::DrawInstanced)
         .push(primitiveType)
@@ -1536,7 +1548,13 @@ RenderCommandEncoder &RenderCommandEncoder::drawIndexed(MTLPrimitiveType primiti
                                                         const BufferRef &indexBuffer,
                                                         size_t bufferOffset)
 {
-    if (!indexBuffer)
+    if (ANGLE_UNLIKELY(!mStateCache.renderPipeline))
+    {
+        // Ignore draw call if there is no render pipeline state set prior to this.
+        return *this;
+    }
+
+    if (ANGLE_UNLIKELY(!indexBuffer))
     {
         return *this;
     }
@@ -1561,7 +1579,13 @@ RenderCommandEncoder &RenderCommandEncoder::drawIndexedInstanced(MTLPrimitiveTyp
                                                                  size_t bufferOffset,
                                                                  uint32_t instances)
 {
-    if (!indexBuffer)
+    if (ANGLE_UNLIKELY(!mStateCache.renderPipeline))
+    {
+        // Ignore draw call if there is no render pipeline state set prior to this.
+        return *this;
+    }
+
+    if (ANGLE_UNLIKELY(!indexBuffer))
     {
         return *this;
     }
@@ -1589,7 +1613,13 @@ RenderCommandEncoder &RenderCommandEncoder::drawIndexedInstancedBaseVertex(
     uint32_t instances,
     uint32_t baseVertex)
 {
-    if (!indexBuffer)
+    if (ANGLE_UNLIKELY(!mStateCache.renderPipeline))
+    {
+        // Ignore draw call if there is no render pipeline state set prior to this.
+        return *this;
+    }
+
+    if (ANGLE_UNLIKELY(!indexBuffer))
     {
         return *this;
     }
