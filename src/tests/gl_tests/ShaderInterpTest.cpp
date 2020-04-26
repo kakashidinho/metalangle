@@ -98,6 +98,9 @@ TEST_P(ShaderInterpTest, Flat)
     // causing it to be stripped and thus causing the extension to behave as if it is disabled.
     ANGLE_SKIP_TEST_IF(IsVulkan());
 
+    // TODO(hqle): Metal doesn't implement last provking vertex yet. http://anglebug.com/4565
+    ANGLE_SKIP_TEST_IF(IsMetal());
+
     const char *vertSrc = R"(#version 300 es
 precision highp float;
 in vec4 position;
