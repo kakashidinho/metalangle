@@ -650,6 +650,19 @@ void DisplayMtl::initializeFeatures()
     ANGLE_FEATURE_CONDITION((&mFeatures), allowMultisampleStoreAndResolve,
                             supportEitherGPUFamily(3, 1));
 
+    if (ANGLE_APPLE_AVAILABLE_XCI(10.15, 13.0, 13.0))
+    {
+        // Disable Compute Shader based mipmap generation on iOS GPU family 3 and below.
+        ANGLE_FEATURE_CONDITION((&mFeatures), forceNonCSBaseMipmapGeneration,
+                                !supportEitherGPUFamily(4, 1));
+    }
+    else
+    {
+        // NOTE(hqle): Disable Compute Shader based mipmap generation on macOS 10.14, iOS 12.0 and
+        // below also. Until CS based mipmap generation can be tested on those platform.
+        mFeatures.forceNonCSBaseMipmapGeneration.enabled = true;
+    }
+
     if (ANGLE_APPLE_AVAILABLE_XCI(10.14, 13.0, 12.0))
     {
         mFeatures.hasStencilOutput.enabled = true;
