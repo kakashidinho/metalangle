@@ -84,7 +84,13 @@ struct FeaturesMtl : FeatureSetBase
         "On systems that support both buffer' memory allocation on GPU and shared memory (such as "
         "macOS), force using GPU memory allocation for buffers everytime or not.",
         &members};
-};  // namespace angle
+
+    Feature forceNonCSBaseMipmapGeneration = {
+        "force_non_cs_mipmap_gen", FeatureCategory::MetalFeatures,
+        "Turn this feature on to disallow Compute Shader based mipmap generation. Compute Shader "
+        "based mipmap generation might cause GPU hang on some older iOS devices.",
+        &members};
+};
 
 }  // namespace angle
 
