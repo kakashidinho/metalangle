@@ -907,6 +907,7 @@ angle::Result FramebufferMtl::prepareRenderPass(const gl::Context *context,
     mRenderPassAttachmentsSameColorType   = true;
     uint32_t maxColorAttachments = static_cast<uint32_t>(mState.getColorAttachments().size());
     desc.numColorAttachments     = 0;
+    desc.sampleCount             = 1;
     for (uint32_t colorIndexGL = 0; colorIndexGL < maxColorAttachments; ++colorIndexGL)
     {
         ASSERT(colorIndexGL < mtl::kMaxRenderTargets);
