@@ -53,16 +53,6 @@ struct WritePixelParams
     bool reverseTextureRowOrder;
 };
 
-static inline float4 sRGBtoLinear(float4 color)
-{
-    float3 linear1 = color.rgb / 12.92;
-    float3 linear2 = pow((color.rgb + float3(0.055)) / 1.055, 2.4);
-    float3 factor  = float3(color.rgb <= float3(0.04045));
-    float4 linear  = float4(factor * linear1 + float3(1.0 - factor) * linear2, color.a);
-
-    return linear;
-}
-
 // clang-format off
 #define TEXTURE_PARAMS(TYPE, ACCESS, NAME_PREFIX)               \
     texture2d<TYPE, ACCESS> NAME_PREFIX##Texture2d              \

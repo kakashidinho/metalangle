@@ -1014,8 +1014,10 @@ angle::Result TextureMtl::generateMipmap(const gl::Context *context)
     if (caps.writable)
     {
         ANGLE_TRY(ensureNativeLevelViewsCreated());
+        bool sRGB = mFormat.metalFormat == MTLPixelFormatRGBA8Unorm_sRGB ||
+                    mFormat.metalFormat == MTLPixelFormatBGRA8Unorm_sRGB;
         ANGLE_TRY(contextMtl->getDisplay()->getUtils().generateMipmapCS(contextMtl, mNativeTexture,
-                                                                        &mNativeLevelViews));
+                                                                        sRGB, &mNativeLevelViews));
     }
     else if (caps.filterable && caps.colorRenderable)
     {

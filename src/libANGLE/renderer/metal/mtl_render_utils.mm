@@ -100,11 +100,12 @@ struct CombineVisibilityResultUniform
 };
 
 // See libANGLE/renderer/metal/shaders/gen_mipmap.metal
-struct Generate3DMipmapUniform
+struct GenerateMipmapUniform
 {
     uint32_t srcLevel;
     uint32_t numMipmapsToGenerate;
-    uint32_t padding[2];
+    uint8_t sRGB;
+    uint8_t padding[7];
 };
 
 // See libANGLE/renderer/metal/shaders/copy_buffer.metal
@@ -1052,9 +1053,10 @@ void RenderUtils::combineVisibilityResult(
 // Compute based mipmap generation
 angle::Result RenderUtils::generateMipmapCS(ContextMtl *contextMtl,
                                             const TextureRef &srcTexture,
+                                            bool sRGBMipmap,
                                             gl::TexLevelArray<mtl::TextureRef> *mipmapOutputViews)
 {
-    return mMipmapUtils.generateMipmapCS(contextMtl, srcTexture, mipmapOutputViews);
+    return mMipmapUtils.generateMipmapCS(contextMtl, srcTexture, sRGBMipmap, mipmapOutputViews);
 }
 
 angle::Result RenderUtils::unpackPixelsFromBufferToTexture(ContextMtl *contextMtl,
@@ -2374,6 +2376,7 @@ void MipmapUtils::ensureCubeMipGeneratorPipelineInitialized(ContextMtl *contextM
 
 angle::Result MipmapUtils::generateMipmapCS(ContextMtl *contextMtl,
                                             const TextureRef &srcTexture,
+                                            bool sRGBMipmap,
                                             gl::TexLevelArray<mtl::TextureRef> *mipmapOutputViews)
 {
     ComputeCommandEncoder *cmdEncoder = contextMtl->getComputeCommandEncoder();
@@ -2414,11 +2417,12 @@ angle::Result MipmapUtils::generateMipmapCS(ContextMtl *contextMtl,
             UNREACHABLE();
     }
 
-    Generate3DMipmapUniform options;
+    GenerateMipmapUniform options;
     uint32_t maxMipsPerBatch = 4;
 
     uint32_t remainMips = srcTexture->mipmapLevels() - 1;
     options.srcLevel    = 0;
+    options.sRGB        = sRGBMipmap;
 
     cmdEncoder->setTexture(srcTexture, 0);
     cmdEncoder->markResourceBeingWrittenByGPU(srcTexture);

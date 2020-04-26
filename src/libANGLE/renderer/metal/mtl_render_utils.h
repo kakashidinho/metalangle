@@ -421,6 +421,7 @@ class MipmapUtils
     // Compute based mipmap generation
     angle::Result generateMipmapCS(ContextMtl *contextMtl,
                                    const TextureRef &srcTexture,
+                                   bool sRGBMipmap,
                                    gl::TexLevelArray<mtl::TextureRef> *mipmapOutputViews);
 
   private:
@@ -602,6 +603,7 @@ class RenderUtils : public Context, angle::NonCopyable
     // Compute based mipmap generation
     angle::Result generateMipmapCS(ContextMtl *contextMtl,
                                    const TextureRef &srcTexture,
+                                   bool sRGBMipmap,
                                    gl::TexLevelArray<mtl::TextureRef> *mipmapOutputViews);
 
     angle::Result unpackPixelsFromBufferToTexture(ContextMtl *contextMtl,
