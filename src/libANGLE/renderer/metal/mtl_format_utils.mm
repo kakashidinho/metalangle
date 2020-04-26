@@ -192,6 +192,19 @@ angle::Result FormatTable::initialize(const DisplayMtl *display)
         mVertexFormatTables[1][i].init(formatId, true);
     }
 
+    // NOTE(hqle): Work-around AMD's issue that D24S8 format sometimes returns zero during sampling:
+    if (display->getRendererDescription().find("AMD") != std::string::npos)
+    {
+        // Fallback to D32_FLOAT_S8X24_UINT.
+        Format &format =
+            mPixelFormatTable[static_cast<uint32_t>(angle::FormatID::D24_UNORM_S8_UINT)];
+        format.actualFormatId       = angle::FormatID::D32_FLOAT_S8X24_UINT;
+        format.metalFormat          = MTLPixelFormatDepth32Float_Stencil8;
+        format.initFunction         = nullptr;
+        format.textureLoadFunctions = nullptr;
+        format.caps = &mNativePixelFormatCapsTable[MTLPixelFormatDepth32Float_Stencil8];
+    }
+
     return angle::Result::Continue;
 }
 
