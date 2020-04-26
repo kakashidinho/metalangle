@@ -824,6 +824,7 @@ TEST_P(GLSLTest_ES3, GLVertexIDIntegerTextureDrawArrays)
 {
     // http://anglebug.com/4092
     ANGLE_SKIP_TEST_IF(isSwiftshader());
+
     // Have to set a large point size because the window size is much larger than the texture
     constexpr char kVS[] = R"(#version 300 es
 flat out highp int vVertexID;
@@ -858,6 +859,8 @@ void main() {
     int pixel[4];
     glReadPixels(0, 0, 1, 1, GL_RGBA_INTEGER, GL_INT, pixel);
     EXPECT_EQ(pixel[0], val[0]);
+
+    glViewport(0, 0, 1, 1);
 
     GLVertexIDIntegerTextureDrawArrays_helper(0, 1, GL_NO_ERROR);
     GLVertexIDIntegerTextureDrawArrays_helper(1, 1, GL_NO_ERROR);
