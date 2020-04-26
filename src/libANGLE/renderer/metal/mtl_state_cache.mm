@@ -919,6 +919,10 @@ AutoObjCPtr<id<MTLRenderPipelineState>> RenderPipelineCache::insertRenderPipelin
 {
     AutoObjCPtr<id<MTLRenderPipelineState>> newState =
         createRenderPipelineState(context, desc, insertDefaultAttribLayout);
+    if (!newState)
+    {
+        return nil;
+    }
 
     int tableIdx = insertDefaultAttribLayout ? 1 : 0;
     auto re      = mRenderPipelineStates[tableIdx].insert(std::make_pair(desc, newState));
@@ -947,11 +951,20 @@ AutoObjCPtr<id<MTLRenderPipelineState>> RenderPipelineCache::createRenderPipelin
             alphaToCoverageEnabled = false;
         }
 
+        // Choose shader variant
+        const AutoObjCPtr<id<MTLFunction>> &vertShader = mVertexShaders[emulatedRasterDiscard];
+        const AutoObjCPtr<id<MTLFunction>> &fragShader = mFragmentShaders[coverageMaskEnabled];
+        if (!vertShader)
+        {
+            // Render pipeline without vertex shader is invalid.
+            context->handleError(GL_INVALID_OPERATION, __FILE__, ANGLE_FUNCTION, __LINE__);
+            return nil;
+        }
+
         auto metalDevice = context->getMetalDevice();
 
         // Convert to Objective-C desc:
-        AutoObjCObj<MTLRenderPipelineDescriptor> objCDesc = ToObjC(
-            mVertexShaders[emulatedRasterDiscard], mFragmentShaders[coverageMaskEnabled], desc);
+        AutoObjCObj<MTLRenderPipelineDescriptor> objCDesc = ToObjC(vertShader, fragShader, desc);
 
         // MSAA settings
         objCDesc.get().alphaToCoverageEnabled = alphaToCoverageEnabled;
