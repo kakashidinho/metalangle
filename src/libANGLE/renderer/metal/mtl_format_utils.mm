@@ -77,6 +77,7 @@ void GenerateTextureCapsMap(const FormatTable &formatTable,
             textureCaps.renderbuffer =
                 mtlFormat.getCaps().colorRenderable || mtlFormat.getCaps().depthRenderable;
             textureCaps.texturable        = true;
+            textureCaps.blendable         = mtlFormat.getCaps().blendable;
             textureCaps.textureAttachment = textureCaps.renderbuffer;
         }
 
