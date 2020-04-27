@@ -273,6 +273,7 @@ struct BlitStencilToBufferParams
 
     uint2 dstSize;
     uint dstBufferRowPitch;
+    bool resolveMS;
 };
 
 kernel void blitStencilToBufferCS(ushort2 gIndices [[thread_position_in_grid]],
@@ -293,11 +294,27 @@ kernel void blitStencilToBufferCS(ushort2 gIndices [[thread_position_in_grid]],
     }
 
     float2 srcTexCoords = options.srcStartTexCoords + float2(gIndices) * options.srcTexCoordSteps;
-    uint32_t stencil =
-        sampleStencil(srcTexture2d, srcTexture2dArray, srcTexture2dMS, srcTextureCube, srcTexCoords,
-                      options.srcLevel, options.srcLayer);
+    
+    if (kSourceTexture2Type == kTextureType2DMultisample && !options.resolveMS)
+    {
+        uint samples      = srcTexture2dMS.get_num_samples();
+        uint2 imageCoords = getImageCoords(srcTexture2dMS, srcTexCoords);
+        uint bufferOffset = options.dstBufferRowPitch * gIndices.y + samples * gIndices.x;
 
-    buffer[options.dstBufferRowPitch * gIndices.y + gIndices.x] = static_cast<uchar>(stencil);
+        for (uint sample = 0; sample < samples; ++sample)
+        {
+            uint stencilPerSample         = srcTexture2dMS.read(imageCoords, sample).r;
+            buffer[bufferOffset + sample] = static_cast<uchar>(stencilPerSample);
+        }
+    }
+    else
+    {
+        uint32_t stencil =
+            sampleStencil(srcTexture2d, srcTexture2dArray, srcTexture2dMS, srcTextureCube,
+                          srcTexCoords, options.srcLevel, options.srcLayer);
+
+        buffer[options.dstBufferRowPitch * gIndices.y + gIndices.x] = static_cast<uchar>(stencil);
+    }
 }
 
 #if __METAL_VERSION__ >= 210

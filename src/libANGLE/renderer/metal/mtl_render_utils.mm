@@ -71,8 +71,9 @@ struct BlitStencilToBufferParamsUniform
 
     uint32_t dstSize[2];
     uint32_t dstBufferRowPitch;
+    uint8_t resolveMS;
 
-    uint32_t padding[3];
+    uint8_t padding[11];
 };
 
 // See libANGLE/renderer/metal/shaders/genIndices.metal
@@ -1701,7 +1702,8 @@ angle::Result DepthStencilBlitUtils::blitStencilViaCopyBuffer(
     ContextMtl *contextMtl = GetImpl(context);
 
     // Create intermediate buffer.
-    uint32_t bufferRequiredRowPitch = static_cast<uint32_t>(params.dstRect.width);
+    uint32_t bufferRequiredRowPitch =
+        static_cast<uint32_t>(params.dstRect.width) * params.dstStencil->samples();
     uint32_t bufferRequiredSize =
         bufferRequiredRowPitch * static_cast<uint32_t>(params.dstRect.height);
     if (!mStencilCopyBuffer || mStencilCopyBuffer->size() < bufferRequiredSize)
@@ -1745,6 +1747,7 @@ angle::Result DepthStencilBlitUtils::blitStencilViaCopyBuffer(
     uniform.dstSize[0]           = params.dstRect.width;
     uniform.dstSize[1]           = params.dstRect.height;
     uniform.dstBufferRowPitch    = bufferRequiredRowPitch;
+    uniform.resolveMS            = params.dstStencil->samples() == 1;
 
     cmdEncoder->setTexture(params.srcStencil, 1);
 
