@@ -128,8 +128,11 @@ egl::Error WindowSurfaceEAGL::swap(const gl::Context *context)
 
     if (mDSBufferWidth != width || mDSBufferHeight != height)
     {
-        // Resize depth stencil buffer
+        // Resize color, depth stencil buffer
         mSwapLayer.frame = mLayer.frame;
+
+        mStateManager->bindRenderbuffer(GL_RENDERBUFFER, mColorRenderbuffer);
+        [mContext renderbufferStorage:GL_RENDERBUFFER fromDrawable:mSwapLayer];
 
         stateManager->bindRenderbuffer(GL_RENDERBUFFER, mDSRenderbuffer);
         functions->renderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
