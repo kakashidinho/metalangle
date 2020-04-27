@@ -36,6 +36,30 @@ constexpr angle::FormatID kDefaultFrameBufferStencilFormatId = angle::FormatID::
 constexpr angle::FormatID kDefaultFrameBufferDepthStencilFormatId =
     angle::FormatID::D24_UNORM_S8_UINT;
 
+void CopyTextureNoScale(ContextMtl *contextMtl,
+                        const mtl::TextureRef &src,
+                        const mtl::TextureRef *dst)
+{
+    mtl::BlitCommandEncoder *encoder = contextMtl->getBlitCommandEncoder();
+    encoder->copyTexture(src, 0, 0, MTLOriginMake(0, 0, 0),
+                         MTLSizeMake(src->width(), src->height(), 1), *dst, 0, 0,
+                         MTLOriginMake(0, 0, 0));
+    contextMtl->endEncoding(true);
+}
+
+void InitBlitParams(const mtl::TextureRef &src,
+                    const mtl::TextureRef &dst,
+                    mtl::BlitParams *paramsOut)
+{
+    mtl::BlitParams &params = *paramsOut;
+    params.src              = src;
+    params.srcRect =
+        gl::Rectangle(0, 0, static_cast<int>(src->width()), static_cast<int>(src->height()));
+    params.dstTextureSize =
+        gl::Extents(static_cast<int>(dst->width()), static_cast<int>(dst->height()), 1);
+    params.dstRect = params.dstScissorRect =
+        gl::Rectangle(0, 0, params.dstTextureSize.width, params.dstTextureSize.height);
+}
 ANGLE_MTL_UNUSED
 bool IsFrameCaptureEnabled()
 {
@@ -240,6 +264,8 @@ void SurfaceMtl::destroy(const egl::Display *display)
 
     mMSColorTexture = nullptr;
 
+    mRetainedColorTexture = nullptr;
+
     mColorRenderTarget.reset();
     mColorManualResolveRenderTarget.reset();
     mDepthRenderTarget.reset();
@@ -398,9 +424,14 @@ EGLint SurfaceMtl::isPostSubBufferSupported() const
     return EGL_FALSE;
 }
 
+void SurfaceMtl::setSwapBehavior(EGLint behavior)
+{
+    mRetainBuffer = behavior == EGL_BUFFER_PRESERVED;
+}
+
 EGLint SurfaceMtl::getSwapBehavior() const
 {
-    return EGL_BUFFER_DESTROYED;
+    return mRetainBuffer ? EGL_BUFFER_PRESERVED : EGL_BUFFER_DESTROYED;
 }
 
 angle::Result SurfaceMtl::getAttachmentRenderTarget(const gl::Context *context,
@@ -451,23 +482,34 @@ angle::Result SurfaceMtl::ensureTexturesSizeCorrect(const gl::Context *context)
     gl::Extents size(static_cast<int>(mMetalLayer.get().drawableSize.width),
                      static_cast<int>(mMetalLayer.get().drawableSize.height), 1);
 
-    if (mSamples > 1 && (!mMSColorTexture || mMSColorTexture->size() != size))
+    if (mSamples > 1)
     {
-        mAutoResolveMSColorTexture =
-            contextMtl->getDisplay()->getFeatures().allowMultisampleStoreAndResolve.enabled;
-        ANGLE_TRY(createTexture(context, mColorFormat, size.width, size.height, mSamples,
-                                /** renderTargetOnly */ mAutoResolveMSColorTexture,
-                                &mMSColorTexture));
+        if (!mMSColorTexture || mMSColorTexture->size() != size)
+        {
+            mAutoResolveMSColorTexture =
+                contextMtl->getDisplay()->getFeatures().allowMultisampleStoreAndResolve.enabled;
+            ANGLE_TRY(createTexture(context, mColorFormat, size.width, size.height, mSamples,
+                                    /** renderTargetOnly */ mAutoResolveMSColorTexture,
+                                    &mMSColorTexture));
 
-        if (mAutoResolveMSColorTexture)
-        {
-            // Use auto MSAA resolve at the end of render pass.
-            mColorRenderTarget.setImplicitMSTexture(mMSColorTexture);
+            if (mAutoResolveMSColorTexture)
+            {
+                // Use auto MSAA resolve at the end of render pass.
+                mColorRenderTarget.setImplicitMSTexture(mMSColorTexture);
+            }
+            else
+            {
+                mColorRenderTarget.setTexture(mMSColorTexture);
+            }
         }
-        else
-        {
-            mColorRenderTarget.setTexture(mMSColorTexture);
-        }
+    }
+    else if (mRetainBuffer && (!mRetainedColorTexture || mRetainedColorTexture->size() != size))
+    {
+        ANGLE_TRY(createTexture(context, mColorFormat, size.width, size.height, 1,
+                                /** renderTargetOnly */ true, &mRetainedColorTexture));
+
+        // All drawing will be drawn to this texture instead of the main one.
+        mColorRenderTarget.setTexture(mRetainedColorTexture);
     }
 
     if (mDepthFormat.valid() && (!mDepthTexture || mDepthTexture->size() != size))
@@ -557,10 +599,21 @@ angle::Result SurfaceMtl::obtainNextDrawable(const gl::Context *context)
 
         ANGLE_MTL_TRY(contextMtl, mMetalLayer);
 
+        mtl::TextureRef preservedColorTexture;
+        mtl::TextureRef preservedDepthTexture;
+        mtl::TextureRef preservedStencilTexture;
+
         // Check if layer was resized
         if (checkIfLayerResized(context))
         {
             contextMtl->onBackbufferResized(context, this);
+
+            if (mRetainBuffer)
+            {
+                preservedColorTexture   = mMSColorTexture ? mMSColorTexture : mRetainedColorTexture;
+                preservedDepthTexture   = mDepthTexture;
+                preservedStencilTexture = mStencilTexture;
+            }
         }
 
         mCurrentDrawable.retainAssign([mMetalLayer nextDrawable]);
@@ -591,8 +644,102 @@ angle::Result SurfaceMtl::obtainNextDrawable(const gl::Context *context)
         // Now we have to resize depth stencil buffers if required.
         ANGLE_TRY(ensureTexturesSizeCorrect(context));
 
+        // Copy old content after resize.
+        if (preservedColorTexture || preservedDepthTexture || preservedStencilTexture)
+        {
+            ANGLE_TRY(copyOldContents(context, preservedColorTexture, preservedDepthTexture,
+                                      preservedStencilTexture));
+        }
+
         return angle::Result::Continue;
     }
+}
+
+angle::Result SurfaceMtl::copyOldContents(const gl::Context *context,
+                                          const mtl::TextureRef &oldColorTexture,
+                                          const mtl::TextureRef &oldDepthTexture,
+                                          const mtl::TextureRef &oldStencilTexture)
+{
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+
+    if (oldColorTexture)
+    {
+        mtl::TextureRef readableColorTexture = oldColorTexture->getReadableCopy(
+            contextMtl, contextMtl->getBlitCommandEncoder(), 0, 0,
+            MTLRegionMake2D(0, 0, oldColorTexture->width(), oldColorTexture->height()));
+
+        mtl::ColorBlitParams params;
+        InitBlitParams(readableColorTexture, mColorRenderTarget.getTexture(), &params);
+        params.enabledBuffers.set(0);
+
+        mtl::RenderCommandEncoder *encoder =
+            contextMtl->getRenderCommandEncoder(mColorRenderTarget);
+
+        ANGLE_TRY(contextMtl->getDisplay()->getUtils().blitColorWithDraw(
+            context, encoder, mColorFormat.actualAngleFormat(), params));
+
+        contextMtl->endEncoding(true);
+    }
+
+    if (oldDepthTexture)
+    {
+        mtl::TextureRef readableDepthTexture = oldDepthTexture->getReadableCopy(
+            contextMtl, contextMtl->getBlitCommandEncoder(), 0, 0,
+            MTLRegionMake2D(0, 0, oldDepthTexture->width(), oldDepthTexture->height()));
+
+        mtl::DepthStencilBlitParams params;
+        InitBlitParams(readableDepthTexture, mDepthTexture, &params);
+
+        mtl::RenderPassDesc rpDesc;
+        mDepthRenderTarget.toRenderPassAttachmentDesc(&rpDesc.depthAttachment);
+        rpDesc.sampleCount = mDepthTexture->samples();
+
+        mtl::RenderCommandEncoder *encoder = contextMtl->getRenderCommandEncoder(rpDesc);
+
+        ANGLE_TRY(contextMtl->getDisplay()->getUtils().blitDepthStencilWithDraw(context, encoder,
+                                                                                params));
+
+        contextMtl->endEncoding(true);
+    }
+
+    if (oldStencilTexture)
+    {
+        mtl::TextureRef readableStencilTexture = oldStencilTexture->getReadableCopy(
+            contextMtl, contextMtl->getBlitCommandEncoder(), 0, 0,
+            MTLRegionMake2D(0, 0, oldStencilTexture->width(), oldStencilTexture->height()));
+
+        if (contextMtl->getDisplay()->getFeatures().hasStencilOutput.enabled)
+        {
+            mtl::DepthStencilBlitParams params;
+            InitBlitParams(readableStencilTexture, mStencilTexture, &params);
+            params.src        = nullptr;
+            params.srcStencil = readableStencilTexture->getStencilView();
+
+            mtl::RenderPassDesc rpDesc;
+            mStencilRenderTarget.toRenderPassAttachmentDesc(&rpDesc.stencilAttachment);
+            rpDesc.sampleCount = mStencilTexture->samples();
+
+            mtl::RenderCommandEncoder *encoder = contextMtl->getRenderCommandEncoder(rpDesc);
+
+            ANGLE_TRY(contextMtl->getDisplay()->getUtils().blitDepthStencilWithDraw(
+                context, encoder, params));
+        }
+        else
+        {
+            mtl::StencilBlitViaBufferParams params;
+            InitBlitParams(readableStencilTexture, mStencilTexture, &params);
+            params.src                         = nullptr;
+            params.srcStencil                  = readableStencilTexture->getStencilView();
+            params.dstStencil                  = mStencilTexture;
+            params.dstPackedDepthStencilFormat = mUsePackedDepthStencil;
+
+            ANGLE_TRY(
+                contextMtl->getDisplay()->getUtils().blitStencilViaCopyBuffer(context, params));
+        }
+        contextMtl->endEncoding(true);
+    }
+
+    return angle::Result::Continue;
 }
 
 angle::Result SurfaceMtl::swapImpl(const gl::Context *context)
@@ -613,6 +760,10 @@ angle::Result SurfaceMtl::swapImpl(const gl::Context *context)
                 context, encoder, mColorFormat.actualAngleFormat(), mMSColorTexture));
             contextMtl->endEncoding(true);
             mColorManualResolveRenderTarget.reset();
+        }
+        else if (mRetainedColorTexture)
+        {
+            CopyTextureNoScale(contextMtl, mRetainedColorTexture, &mDrawableTexture);
         }
 
         contextMtl->present(context, mCurrentDrawable);

@@ -846,6 +846,8 @@ ANGLE_INLINE void SetPipelineState(ComputeCommandEncoder *encoder,
 }  // namespace
 
 // StencilBlitViaBufferParams implementation
+StencilBlitViaBufferParams::StencilBlitViaBufferParams() {}
+
 StencilBlitViaBufferParams::StencilBlitViaBufferParams(const DepthStencilBlitParams &src)
 {
     dstTextureSize = src.dstTextureSize;

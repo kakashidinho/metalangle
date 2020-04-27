@@ -280,7 +280,7 @@ egl::ConfigSet DisplayMtl::generateConfigs()
     config.bindToTextureRGB  = EGL_FALSE;
     config.bindToTextureRGBA = EGL_FALSE;
 
-    config.surfaceType = EGL_WINDOW_BIT;
+    config.surfaceType = EGL_WINDOW_BIT | EGL_SWAP_BEHAVIOR_PRESERVED_BIT;
 
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
     config.minSwapInterval = 0;

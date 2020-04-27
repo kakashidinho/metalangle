@@ -1392,6 +1392,7 @@ mtl::RenderCommandEncoder *ContextMtl::getRenderCommandEncoder(
     mtl::RenderPassDesc rpDesc;
     renderTarget.toRenderPassAttachmentDesc(&rpDesc.colorAttachments[0]);
     rpDesc.numColorAttachments = 1;
+    rpDesc.sampleCount         = renderTarget.getRenderSamples();
 
     if (clearColor.valid())
     {

@@ -333,9 +333,8 @@ void Surface::setMultisampleResolve(EGLenum resolve)
 
 void Surface::setSwapBehavior(EGLenum behavior)
 {
-    // Behaviour is set but ignored
-    UNIMPLEMENTED();
     mSwapBehavior = behavior;
+    mImplementation->setSwapBehavior(behavior);
 }
 
 void Surface::setFixedWidth(EGLint width)

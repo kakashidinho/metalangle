@@ -37,6 +37,11 @@ egl::Error SurfaceImpl::setPresentationTime(EGLnsecsANDROID time)
     return egl::EglBadSurface() << "setPresentationTime implementation missing.";
 }
 
+void SurfaceImpl::setSwapBehavior(EGLint behavior)
+{
+    UNIMPLEMENTED();
+}
+
 void SurfaceImpl::setFixedWidth(EGLint width)
 {
     UNREACHABLE();

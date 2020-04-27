@@ -748,7 +748,7 @@ void FramebufferMtl::onStartedDrawingToFrameBuffer(const gl::Context *context)
 
 void FramebufferMtl::onFrameEnd(const gl::Context *context)
 {
-    if (!mBackbuffer)
+    if (!mBackbuffer || mBackbuffer->preserveBuffer())
     {
         return;
     }

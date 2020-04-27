@@ -55,6 +55,7 @@ class SurfaceMtl : public SurfaceImpl
     egl::Error releaseTexImage(const gl::Context *context, EGLint buffer) override;
     egl::Error getSyncValues(EGLuint64KHR *ust, EGLuint64KHR *msc, EGLuint64KHR *sbc) override;
     void setSwapInterval(EGLint interval) override;
+    void setSwapBehavior(EGLint behavior) override;
     void setFixedWidth(EGLint width) override;
     void setFixedHeight(EGLint height) override;
 
@@ -66,6 +67,7 @@ class SurfaceMtl : public SurfaceImpl
     EGLint getSwapBehavior() const override;
 
     int getSamples() const { return mSamples; }
+    bool preserveBuffer() const { return mRetainBuffer; }
 
     angle::Result getAttachmentRenderTarget(const gl::Context *context,
                                             GLenum binding,
@@ -91,6 +93,11 @@ class SurfaceMtl : public SurfaceImpl
     // Check if metal layer has been resized.
     bool checkIfLayerResized(const gl::Context *context);
 
+    angle::Result copyOldContents(const gl::Context *context,
+                                  const mtl::TextureRef &oldColorTexture,
+                                  const mtl::TextureRef &oldDepthTexture,
+                                  const mtl::TextureRef &oldStencilTexture);
+
     mtl::AutoObjCObj<CAMetalLayer> mMetalLayer = nil;
     CALayer *mLayer;
     mtl::AutoObjCPtr<id<CAMetalDrawable>> mCurrentDrawable = nil;
@@ -108,6 +115,9 @@ class SurfaceMtl : public SurfaceImpl
     // Implicit multisample texture
     mtl::TextureRef mMSColorTexture;
 
+    // Texture for preserving content of color buffer.
+    mtl::TextureRef mRetainedColorTexture;
+
     bool mUsePackedDepthStencil     = false;
     bool mAutoResolveMSColorTexture = false;
 
@@ -115,7 +125,8 @@ class SurfaceMtl : public SurfaceImpl
     mtl::Format mDepthFormat;
     mtl::Format mStencilFormat;
 
-    int mSamples = 0;
+    int mSamples       = 0;
+    bool mRetainBuffer = false;
 
     RenderTargetMtl mColorRenderTarget;
     RenderTargetMtl mColorManualResolveRenderTarget;
