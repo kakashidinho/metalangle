@@ -1328,9 +1328,10 @@ void ContextMtl::present(const gl::Context *context, id<CAMetalDrawable> present
 {
     ensureCommandBufferValid();
 
-    if (mDrawFramebuffer)
+    FramebufferMtl *currentframebuffer = mtl::GetImpl(getState().getDrawFramebuffer());
+    if (currentframebuffer)
     {
-        mDrawFramebuffer->onFrameEnd(context);
+        currentframebuffer->onFrameEnd(context);
     }
 
     endEncoding(false);
