@@ -89,11 +89,16 @@ class SurfaceMtl : public SurfaceImpl
 
     CGSize calcExpectedDrawableSize() const;
     // Check if metal layer has been resized.
-    angle::Result checkIfLayerResized(const gl::Context *context);
+    bool checkIfLayerResized(const gl::Context *context);
 
     mtl::AutoObjCObj<CAMetalLayer> mMetalLayer = nil;
     CALayer *mLayer;
     mtl::AutoObjCPtr<id<CAMetalDrawable>> mCurrentDrawable = nil;
+
+    // Cache last known drawable size that is used by GL context. Can be used to detect resize
+    // event. We don't use mMetalLayer.drawableSize directly since it might be changed internally by
+    // metal runtime.
+    CGSize mCurrentKnownDrawableSize;
 
     // Normal textures
     mtl::TextureRef mDrawableTexture;

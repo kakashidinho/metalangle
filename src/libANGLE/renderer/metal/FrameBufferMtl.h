@@ -93,6 +93,7 @@ class FramebufferMtl : public FramebufferImpl
 
     gl::Rectangle getCompleteRenderArea() const;
     int getSamples() const;
+    SurfaceMtl *getAttachedBackbuffer() const { return mBackbuffer; }
 
     bool renderPassHasStarted(ContextMtl *contextMtl) const;
     mtl::RenderCommandEncoder *ensureRenderPassStarted(const gl::Context *context);

@@ -1579,6 +1579,20 @@ void ContextMtl::onDrawFrameBufferChangedState(const gl::Context *context,
     }
 }
 
+void ContextMtl::onBackbufferResized(const gl::Context *context, SurfaceMtl *backbuffer)
+{
+    const gl::State &glState    = getState();
+    FramebufferMtl *framebuffer = mtl::GetImpl(glState.getDrawFramebuffer());
+    if (framebuffer->getAttachedBackbuffer() != backbuffer)
+    {
+        return;
+    }
+
+    updateViewport(framebuffer, glState.getViewport(), glState.getNearPlane(),
+                   glState.getFarPlane());
+    updateScissor(glState);
+}
+
 angle::Result ContextMtl::onOcclusionQueryBegan(const gl::Context *context, QueryMtl *query)
 {
     ASSERT(mOcclusionQuery == nullptr);

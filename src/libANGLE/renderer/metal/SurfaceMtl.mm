@@ -176,6 +176,7 @@ SurfaceMtl::SurfaceMtl(DisplayMtl *display,
     : SurfaceImpl(state), mLayer((__bridge CALayer *)(window))
 {
     // NOTE(hqle): Width and height attributes is ignored for now.
+    mCurrentKnownDrawableSize = CGSizeMake(0, 0);
 
     if (attribs.get(EGL_GL_COLORSPACE, EGL_GL_COLORSPACE_LINEAR) == EGL_GL_COLORSPACE_SRGB_KHR)
     {
@@ -283,7 +284,7 @@ egl::Error SurfaceMtl::initialize(const egl::Display *display)
 #endif
 
         // ensure drawableSize is set to correct value:
-        mMetalLayer.get().drawableSize = calcExpectedDrawableSize();
+        mMetalLayer.get().drawableSize = mCurrentKnownDrawableSize = calcExpectedDrawableSize();
 
         if (mMetalLayer.get() != mLayer)
         {
@@ -384,20 +385,12 @@ void SurfaceMtl::setFixedHeight(EGLint height)
 // width and height can change with client window resizing
 EGLint SurfaceMtl::getWidth() const
 {
-    if (mMetalLayer)
-    {
-        return static_cast<EGLint>(mMetalLayer.get().drawableSize.width);
-    }
-    return 0;
+    return static_cast<EGLint>(mCurrentKnownDrawableSize.width);
 }
 
 EGLint SurfaceMtl::getHeight() const
 {
-    if (mMetalLayer)
-    {
-        return static_cast<EGLint>(mMetalLayer.get().drawableSize.height);
-    }
-    return 0;
+    return static_cast<EGLint>(mCurrentKnownDrawableSize.height);
 }
 
 EGLint SurfaceMtl::isPostSubBufferSupported() const
@@ -537,19 +530,23 @@ CGSize SurfaceMtl::calcExpectedDrawableSize() const
     return expectedDrawableSize;
 }
 
-angle::Result SurfaceMtl::checkIfLayerResized(const gl::Context *context)
+bool SurfaceMtl::checkIfLayerResized(const gl::Context *context)
 {
-    CGSize currentDrawableSize  = mMetalLayer.get().drawableSize;
-    CGSize expectedDrawableSize = calcExpectedDrawableSize();
+    CGSize currentLayerDrawableSize = mMetalLayer.get().drawableSize;
+    CGSize expectedDrawableSize     = calcExpectedDrawableSize();
 
-    if (currentDrawableSize.width != expectedDrawableSize.width ||
-        currentDrawableSize.height != expectedDrawableSize.height)
+    if (currentLayerDrawableSize.width != expectedDrawableSize.width ||
+        currentLayerDrawableSize.height != expectedDrawableSize.height ||
+        mCurrentKnownDrawableSize.width != expectedDrawableSize.width ||
+        mCurrentKnownDrawableSize.height != expectedDrawableSize.height)
     {
         // Resize the internal drawable texture.
-        mMetalLayer.get().drawableSize = expectedDrawableSize;
+        mMetalLayer.get().drawableSize = mCurrentKnownDrawableSize = expectedDrawableSize;
+
+        return true;
     }
 
-    return angle::Result::Continue;
+    return false;
 }
 
 angle::Result SurfaceMtl::obtainNextDrawable(const gl::Context *context)
@@ -559,6 +556,12 @@ angle::Result SurfaceMtl::obtainNextDrawable(const gl::Context *context)
         ContextMtl *contextMtl = mtl::GetImpl(context);
 
         ANGLE_MTL_TRY(contextMtl, mMetalLayer);
+
+        // Check if layer was resized
+        if (checkIfLayerResized(context))
+        {
+            contextMtl->onBackbufferResized(context, this);
+        }
 
         mCurrentDrawable.retainAssign([mMetalLayer nextDrawable]);
         if (!mCurrentDrawable)
@@ -621,9 +624,6 @@ angle::Result SurfaceMtl::swapImpl(const gl::Context *context)
         mDrawableTexture->set(nil);
         mCurrentDrawable = nil;
     }
-
-    // Check if layer was resized
-    ANGLE_TRY(checkIfLayerResized(context));
 
     return angle::Result::Continue;
 }
