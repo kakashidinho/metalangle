@@ -360,7 +360,7 @@ GLint LinkProgram(GLuint program)
     }
     else
     {
-        _legacyGLLayer = [[CALayer alloc] init];
+        _legacyGLLayer       = [[CALayer alloc] init];
         _legacyGLLayer.frame = self.bounds;
         [self addSublayer:_legacyGLLayer];
     }
@@ -445,7 +445,8 @@ GLint LinkProgram(GLuint program)
             if (![self blitFBO:_defaultOpenGLFrameBufferID
                          sourceSize:_offscreenFBOSize
                               toFBO:0
-                    destinationSize:self.drawableSize])
+                    destinationSize:self.drawableSize
+                    destinationMSAA:NO])
             {
                 return NO;
             }
@@ -470,8 +471,9 @@ GLint LinkProgram(GLuint program)
          sourceSize:(CGSize)srcSize
               toFBO:(GLuint)dstFbo
     destinationSize:(CGSize)dstSize
+    destinationMSAA:(BOOL)destinationMSAA
 {
-    if (srcSize.width != dstSize.width || srcSize.height != dstSize.height)
+    if (srcSize.width != dstSize.width || srcSize.height != dstSize.height || destinationMSAA)
     {
         // Blit to a temporary texture
         ScopedTexture tempTexture;
@@ -489,7 +491,11 @@ GLint LinkProgram(GLuint program)
         gl::FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tempTexture,
                                  0);
 
-        if (![self blitFBO:srcFbo sourceSize:srcSize toFBO:tempFBO destinationSize:srcSize])
+        if (![self blitFBO:srcFbo
+                     sourceSize:srcSize
+                          toFBO:tempFBO
+                destinationSize:srcSize
+                destinationMSAA:NO])
         {
             return NO;
         }
@@ -805,7 +811,8 @@ GLint LinkProgram(GLuint program)
             return [self blitFBO:tempFBO
                       sourceSize:oldOffscreenSize
                            toFBO:_defaultOpenGLFrameBufferID
-                 destinationSize:_offscreenFBOSize];
+                 destinationSize:_offscreenFBOSize
+                 destinationMSAA:_drawableMultisample];
         }
         return [self blitOffscreenTexture:oldOffscreenTexture toFBO:_defaultOpenGLFrameBufferID];
     }
