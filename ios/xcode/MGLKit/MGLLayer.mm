@@ -586,16 +586,20 @@ GLint LinkProgram(GLuint program)
 
 - (void)setRetainedBacking:(BOOL)retainedBacking
 {
-    if (!rx::IsMetalDisplayAvailable() && _drawableMultisample > 0)
+    if (!rx::IsMetalDisplayAvailable())
     {
-        // Default backbuffer MSAA is not supported in native GL backend yet.
-        // Always use offscreen MSAA buffer.
-        _useOffscreenFBO = YES;
+        if (_drawableMultisample > 0)
+        {
+            // Default backbuffer MSAA is not supported in native GL backend yet.
+            // Always use offscreen MSAA buffer.
+            _useOffscreenFBO = YES;
+        }
+        else
+        {
+            _useOffscreenFBO = retainedBacking;
+        }
     }
-    else
-    {
-        _useOffscreenFBO = retainedBacking;
-    }
+    // else Metal back-end already supports preserve swap behavior.
     _retainedBacking = retainedBacking;
 }
 
@@ -730,6 +734,11 @@ GLint LinkProgram(GLuint program)
     if (_eglSurface == EGL_NO_SURFACE)
     {
         Throw(@"Failed to call eglCreateWindowSurface()");
+    }
+
+    if (_retainedBacking && !_useOffscreenFBO)
+    {
+        eglSurfaceAttrib(_display.eglDisplay, _eglSurface, EGL_SWAP_BEHAVIOR, EGL_BUFFER_PRESERVED);
     }
 }
 
