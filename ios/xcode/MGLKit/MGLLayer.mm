@@ -225,8 +225,13 @@ class ScopedReadBuffer
 class ScopedDrawBuffer
 {
   public:
-    ScopedDrawBuffer(GLenum drawbuffer)
+    ScopedDrawBuffer(GLenum drawbuffer, PFNGLDRAWBUFFERSEXTPROC drawBuffersFunc)
+        : mDrawBuffersFunc(drawBuffersFunc)
     {
+        if (!mDrawBuffersFunc)
+        {
+            return;
+        }
         GLint maxDrawBuffers;
         gl::GetIntegerv(GL_MAX_DRAW_BUFFERS, &maxDrawBuffers);
         mPrevDrawBuffers.resize(maxDrawBuffers, GL_NONE);
@@ -236,24 +241,29 @@ class ScopedDrawBuffer
             gl::GetIntegerv(GL_DRAW_BUFFER0 + i, &buffer);
             mPrevDrawBuffers[i] = buffer;
         }
-        gl::DrawBuffersEXT(1, &drawbuffer);
+        mDrawBuffersFunc(1, &drawbuffer);
     }
     ~ScopedDrawBuffer()
     {
+        if (!mDrawBuffersFunc)
+        {
+            return;
+        }
         GLint currentFBO;
         gl::GetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &currentFBO);
         if (currentFBO == 0)
         {
-            gl::DrawBuffersEXT(1, mPrevDrawBuffers.data());
+            mDrawBuffersFunc(1, mPrevDrawBuffers.data());
         }
         else
         {
-            gl::DrawBuffersEXT(mPrevDrawBuffers.size(), mPrevDrawBuffers.data());
+            mDrawBuffersFunc(mPrevDrawBuffers.size(), mPrevDrawBuffers.data());
         }
     }
 
   private:
     std::vector<GLenum> mPrevDrawBuffers;
+    const PFNGLDRAWBUFFERSEXTPROC mDrawBuffersFunc;
 };
 
 void Throw(NSString *msg)
@@ -485,13 +495,16 @@ GLint LinkProgram(GLuint program)
 
     ScopedDrawFBOBind bindDrawFBO(dstFbo);
     ScopedReadFBOBind bindReadFBO(srcFbo);
-    ScopedReadBuffer setReadBuffer(GL_COLOR_ATTACHMENT0, _readBufferAvail);
-    ScopedDrawBuffer setDrawBuffer(dstFbo ? GL_COLOR_ATTACHMENT0 : GL_BACK);
+    ScopedReadBuffer setReadBuffer(GL_COLOR_ATTACHMENT0, _isGLES3Plus);
+    ScopedDrawBuffer setDrawBuffer(dstFbo ? GL_COLOR_ATTACHMENT0 : GL_BACK,
+                                   _isGLES3Plus ? gl::DrawBuffers : gl::DrawBuffersEXT);
+    ScopedGLEnable<GL_SCISSOR_TEST> disableScissorTest(false);
 
-    gl::BlitFramebufferANGLE(0, 0, static_cast<GLint>(srcSize.width),
-                             static_cast<GLint>(srcSize.height), 0, 0,
-                             static_cast<GLint>(dstSize.width), static_cast<GLint>(dstSize.height),
-                             GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    auto blitFunc = _isGLES3Plus ? gl::BlitFramebuffer : gl::BlitFramebufferANGLE;
+
+    blitFunc(0, 0, static_cast<GLint>(srcSize.width), static_cast<GLint>(srcSize.height), 0, 0,
+             static_cast<GLint>(dstSize.width), static_cast<GLint>(dstSize.height),
+             GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
     BOOL re = gl::GetError() == GL_NO_ERROR;
 
@@ -509,7 +522,8 @@ GLint LinkProgram(GLuint program)
     [MGLContext setCurrentContext:_offscreenFBOCreatorContext forLayer:self];
 
     ScopedFBOBind bindFBO(fbo);
-    ScopedDrawBuffer setDrawBuffer(fbo ? GL_COLOR_ATTACHMENT0 : GL_BACK);
+    ScopedDrawBuffer setDrawBuffer(fbo ? GL_COLOR_ATTACHMENT0 : GL_BACK,
+                                   _isGLES3Plus ? gl::DrawBuffers : gl::DrawBuffersEXT);
     ScopedProgramBind bindProgram(_offscreenBlitProgram);
     ScopedActiveTexture activeTexture(GL_TEXTURE0);
     ScopedTextureBind bindTexture(texture);
@@ -779,8 +793,9 @@ GLint LinkProgram(GLuint program)
 {
     auto version          = reinterpret_cast<const char *>(gl::GetString(GL_VERSION));
     auto exts             = reinterpret_cast<const char *>(gl::GetString(GL_EXTENSIONS));
-    _readBufferAvail      = strstr(version, "OpenGL ES 3") != nullptr;
-    _blitFramebufferAvail = strstr(exts, "GL_ANGLE_framebuffer_blit") != nullptr;
+    _isGLES3Plus          = strstr(version, "OpenGL ES 3") != nullptr;
+    _drawBuffersAvail     = _isGLES3Plus || strstr(exts, "GL_EXT_draw_buffers") != nullptr;
+    _blitFramebufferAvail = _isGLES3Plus || strstr(exts, "GL_ANGLE_framebuffer_blit") != nullptr;
 
     if (![self createOffscreenBlitVBO])
     {

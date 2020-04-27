@@ -33,8 +33,9 @@
     GLuint _offscreenBlitVBO;
     GLuint _offscreenBlitVAO;
     CGSize _offscreenFBOSize;
+    BOOL _isGLES3Plus;
     BOOL _blitFramebufferAvail;
-    BOOL _readBufferAvail;
+    BOOL _drawBuffersAvail;
     BOOL _useOffscreenFBO;
 }
 
