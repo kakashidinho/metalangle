@@ -358,6 +358,12 @@ GLint LinkProgram(GLuint program)
         _metalLayer.frame = self.bounds;
         [self addSublayer:_metalLayer];
     }
+    else
+    {
+        _legacyGLLayer = [[CALayer alloc] init];
+        _legacyGLLayer.frame = self.bounds;
+        [self addSublayer:_legacyGLLayer];
+    }
 }
 
 - (void)dealloc
@@ -369,11 +375,16 @@ GLint LinkProgram(GLuint program)
 
 - (void)setContentsScale:(CGFloat)contentsScale
 {
-    [super setContentsScale:contentsScale];
-
     if (rx::IsMetalDisplayAvailable())
     {
+        [super setContentsScale:contentsScale];
         _metalLayer.contentsScale = contentsScale;
+    }
+    else
+    {
+        // GL backend doesn't handle retina properly yet.
+        [super setContentsScale:1];
+        _legacyGLLayer.contentsScale = 1;
     }
 }
 
@@ -663,6 +674,10 @@ GLint LinkProgram(GLuint program)
             CGSizeMake(_metalLayer.bounds.size.width * _metalLayer.contentsScale,
                        _metalLayer.bounds.size.height * _metalLayer.contentsScale);
     }
+    else
+    {
+        _legacyGLLayer.frame = self.bounds;
+    }
 }
 
 - (void)ensureSurfaceCreated
@@ -726,7 +741,7 @@ GLint LinkProgram(GLuint program)
     }
     else
     {
-        nativeWindowPtr = (__bridge EGLNativeWindowType)self;
+        nativeWindowPtr = (__bridge EGLNativeWindowType)_legacyGLLayer;
     }
 
     _eglSurface =

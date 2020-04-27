@@ -22,6 +22,7 @@
     MGLContext *_offscreenFBOCreatorContext;
     EGLSurface _eglSurface;
     CAMetalLayer *_metalLayer;
+    CALayer *_legacyGLLayer;
 
     // Textures used to retain the content of framebuffer.
     GLuint _offscreenColorUnsizedFormat;
