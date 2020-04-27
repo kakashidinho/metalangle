@@ -60,6 +60,10 @@ void InitBlitParams(const mtl::TextureRef &src,
     params.dstRect = params.dstScissorRect =
         gl::Rectangle(0, 0, params.dstTextureSize.width, params.dstTextureSize.height);
 }
+
+ANGLE_MTL_UNUSED
+void StartFrameCaptureImmediately(id<MTLDevice> metalDevice, id<MTLCommandQueue> metalCmdQueue);
+
 ANGLE_MTL_UNUSED
 bool IsFrameCaptureEnabled()
 {
@@ -132,12 +136,6 @@ void StartFrameCapture(id<MTLDevice> metalDevice, id<MTLCommandQueue> metalCmdQu
         return;
     }
 
-    MTLCaptureManager *captureManager = [MTLCaptureManager sharedCaptureManager];
-    if (captureManager.isCapturing)
-    {
-        return;
-    }
-
     gFrameCaptured++;
 
     if (gFrameCaptured < MinAllowedFrameCapture())
@@ -145,30 +143,52 @@ void StartFrameCapture(id<MTLDevice> metalDevice, id<MTLCommandQueue> metalCmdQu
         return;
     }
 
-#    ifdef __MAC_10_15
-    if (ANGLE_APPLE_AVAILABLE_XCI(10.15, 13.0, 13))
-    {
-        MTLCaptureDescriptor *captureDescriptor = [[MTLCaptureDescriptor alloc] init];
-        captureDescriptor.captureObject         = metalDevice;
+    StartFrameCaptureImmediately(metalDevice, metalCmdQueue);
+#endif  // ANGLE_METAL_FRAME_CAPTURE_ENABLED
+}
 
-        NSError *error;
-        if (![captureManager startCaptureWithDescriptor:captureDescriptor error:&error])
-        {
-            NSLog(@"Failed to start capture, error %@", error);
-        }
-    }
-    else
-#    endif  // __MAC_10_15
+ANGLE_MTL_UNUSED
+void StartFrameCaptureImmediately(id<MTLDevice> metalDevice, id<MTLCommandQueue> metalCmdQueue)
+{
+#if ANGLE_METAL_FRAME_CAPTURE_ENABLED
+    if (!IsFrameCaptureEnabled())
     {
-        if (FrameCaptureDeviceScope())
+        return;
+    }
+
+    ANGLE_MTL_OBJC_SCOPE
+    {
+        MTLCaptureManager *captureManager = [MTLCaptureManager sharedCaptureManager];
+        if (captureManager.isCapturing)
         {
-            [captureManager startCaptureWithDevice:metalDevice];
+            return;
+        }
+
+#    ifdef __MAC_10_15
+        if (ANGLE_APPLE_AVAILABLE_XCI(10.15, 13.0, 13))
+        {
+            MTLCaptureDescriptor *captureDescriptor = [[MTLCaptureDescriptor alloc] init];
+            captureDescriptor.captureObject         = metalDevice;
+
+            NSError *error;
+            if (![captureManager startCaptureWithDescriptor:captureDescriptor error:&error])
+            {
+                NSLog(@"Failed to start capture, error %@", error);
+            }
         }
         else
+#    endif  // __MAC_10_15
         {
-            [captureManager startCaptureWithCommandQueue:metalCmdQueue];
+            if (FrameCaptureDeviceScope())
+            {
+                [captureManager startCaptureWithDevice:metalDevice];
+            }
+            else
+            {
+                [captureManager startCaptureWithCommandQueue:metalCmdQueue];
+            }
         }
-    }
+    }   // ANGLE_MTL_OBJC_SCOPE
 #endif  // ANGLE_METAL_FRAME_CAPTURE_ENABLED
 }
 
@@ -177,18 +197,27 @@ void StartFrameCapture(ContextMtl *context)
     StartFrameCapture(context->getMetalDevice(), context->cmdQueue().get());
 }
 
-void StopFrameCapture()
+void StartFrameCaptureImmediately(ContextMtl *context)
+{
+    StartFrameCaptureImmediately(context->getMetalDevice(), context->cmdQueue().get());
+}
+
+void StopFrameCapture(ContextMtl *context)
 {
 #if ANGLE_METAL_FRAME_CAPTURE_ENABLED
     if (!IsFrameCaptureEnabled())
     {
         return;
     }
-    MTLCaptureManager *captureManager = [MTLCaptureManager sharedCaptureManager];
-    if (captureManager.isCapturing)
+    ANGLE_MTL_OBJC_SCOPE
     {
-        [captureManager stopCapture];
-    }
+        MTLCaptureManager *captureManager = [MTLCaptureManager sharedCaptureManager];
+        if (captureManager.isCapturing)
+        {
+            context->flushCommandBufer();
+            [captureManager stopCapture];
+        }
+    }  // ANGLE_MTL_OBJC_SCOPE
 #endif
 }
 }
@@ -341,7 +370,8 @@ egl::Error SurfaceMtl::makeCurrent(const gl::Context *context)
 
 egl::Error SurfaceMtl::unMakeCurrent(const gl::Context *context)
 {
-    StopFrameCapture();
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+    StopFrameCapture(contextMtl);
     return egl::NoError();
 }
 
@@ -662,6 +692,10 @@ angle::Result SurfaceMtl::copyOldContents(const gl::Context *context,
 {
     ContextMtl *contextMtl = mtl::GetImpl(context);
 
+#if !defined(ANGLE_MTL_DEBUG_SURFACE_RESIZE)
+    StartFrameCaptureImmediately(contextMtl);
+#endif
+
     if (oldColorTexture)
     {
         mtl::TextureRef readableColorTexture = oldColorTexture->getReadableCopy(
@@ -739,6 +773,10 @@ angle::Result SurfaceMtl::copyOldContents(const gl::Context *context,
         contextMtl->endEncoding(true);
     }
 
+#if !defined(ANGLE_MTL_DEBUG_SURFACE_RESIZE)
+    StopFrameCapture(contextMtl);
+#endif
+
     return angle::Result::Continue;
 }
 
@@ -768,7 +806,7 @@ angle::Result SurfaceMtl::swapImpl(const gl::Context *context)
 
         contextMtl->present(context, mCurrentDrawable);
 
-        StopFrameCapture();
+        StopFrameCapture(contextMtl);
         StartFrameCapture(contextMtl);
 
         // Invalidate current drawable
