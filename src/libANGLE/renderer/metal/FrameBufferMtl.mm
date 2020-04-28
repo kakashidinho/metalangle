@@ -26,7 +26,7 @@ namespace rx
 // FramebufferMtl implementation
 FramebufferMtl::FramebufferMtl(const gl::FramebufferState &state,
                                bool flipY,
-                               SurfaceMtl *backbuffer)
+                               WindowSurfaceMtl *backbuffer)
     : FramebufferImpl(state), mBackbuffer(backbuffer), mFlipY(flipY)
 {
     reset();

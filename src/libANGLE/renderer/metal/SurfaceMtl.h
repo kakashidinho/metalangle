@@ -8,6 +8,7 @@
 #ifndef LIBANGLE_RENDERER_METAL_SURFACEMTL_H_
 #define LIBANGLE_RENDERER_METAL_SURFACEMTL_H_
 
+#import <IOSurface/IOSurfaceRef.h>
 #import <Metal/Metal.h>
 #import <QuartzCore/CALayer.h>
 #import <QuartzCore/CAMetalLayer.h>
@@ -29,7 +30,6 @@ class SurfaceMtl : public SurfaceImpl
   public:
     SurfaceMtl(DisplayMtl *display,
                const egl::SurfaceState &state,
-               EGLNativeWindowType window,
                const egl::AttributeMap &attribs);
     ~SurfaceMtl() override;
 
@@ -56,19 +56,85 @@ class SurfaceMtl : public SurfaceImpl
     egl::Error getSyncValues(EGLuint64KHR *ust, EGLuint64KHR *msc, EGLuint64KHR *sbc) override;
     egl::Error getMscRate(EGLint *numerator, EGLint *denominator) override;
     void setSwapInterval(EGLint interval) override;
-    void setSwapBehavior(EGLint behavior) override;
     void setFixedWidth(EGLint width) override;
     void setFixedHeight(EGLint height) override;
 
-    // width and height can change with client window resizing
     EGLint getWidth() const override;
     EGLint getHeight() const override;
 
     EGLint isPostSubBufferSupported() const override;
     EGLint getSwapBehavior() const override;
 
+    const mtl::TextureRef &getColorTexture() { return mColorTexture; }
+    const mtl::Format &getColorFormat() const { return mColorFormat; }
     int getSamples() const { return mSamples; }
-    bool preserveBuffer() const { return mRetainBuffer; }
+
+    angle::Result getAttachmentRenderTarget(const gl::Context *context,
+                                            GLenum binding,
+                                            const gl::ImageIndex &imageIndex,
+                                            GLsizei samples,
+                                            FramebufferAttachmentRenderTarget **rtOut) override;
+
+  protected:
+    // Ensure companion (MS, depth, stencil) textures' size is correct w.r.t color texture.
+    angle::Result ensureCompanionTexturesSizeCorrect(const gl::Context *context,
+                                                     const gl::Extents &size);
+    angle::Result createTexture(const gl::Context *context,
+                                const mtl::Format &format,
+                                uint32_t width,
+                                uint32_t height,
+                                uint32_t samples,
+                                bool renderTargetOnly,
+                                mtl::TextureRef *textureOut);
+    angle::Result resolveColorTextureIfNeeded(const gl::Context *context);
+
+    // Normal textures
+    mtl::TextureRef mColorTexture;
+    mtl::TextureRef mDepthTexture;
+    mtl::TextureRef mStencilTexture;
+
+    // Implicit multisample texture
+    mtl::TextureRef mMSColorTexture;
+
+    bool mUsePackedDepthStencil     = false;
+    bool mAutoResolveMSColorTexture = false;
+
+    mtl::Format mColorFormat;
+    mtl::Format mDepthFormat;
+    mtl::Format mStencilFormat;
+
+    int mSamples = 0;
+
+    RenderTargetMtl mColorRenderTarget;
+    RenderTargetMtl mColorManualResolveRenderTarget;
+    RenderTargetMtl mDepthRenderTarget;
+    RenderTargetMtl mStencilRenderTarget;
+};
+
+class WindowSurfaceMtl : public SurfaceMtl
+{
+  public:
+    WindowSurfaceMtl(DisplayMtl *display,
+                     const egl::SurfaceState &state,
+                     EGLNativeWindowType window,
+                     const egl::AttributeMap &attribs);
+    ~WindowSurfaceMtl() override;
+
+    void destroy(const egl::Display *display) override;
+
+    egl::Error initialize(const egl::Display *display) override;
+    FramebufferImpl *createDefaultFramebuffer(const gl::Context *context,
+                                              const gl::FramebufferState &state) override;
+
+    egl::Error swap(const gl::Context *context) override;
+
+    void setSwapInterval(EGLint interval) override;
+    void setSwapBehavior(EGLint behavior) override;
+    EGLint getSwapBehavior() const override;
+
+    // width and height can change with client window resizing
+    EGLint getWidth() const override;
+    EGLint getHeight() const override;
 
     angle::Result getAttachmentRenderTarget(const gl::Context *context,
                                             GLenum binding,
@@ -78,17 +144,12 @@ class SurfaceMtl : public SurfaceImpl
 
     angle::Result ensureCurrentDrawableObtained(const gl::Context *context);
 
+    bool preserveBuffer() const { return mRetainBuffer; }
+
   private:
     angle::Result swapImpl(const gl::Context *context);
     angle::Result obtainNextDrawable(const gl::Context *context);
-    angle::Result ensureTexturesSizeCorrect(const gl::Context *context);
-    angle::Result createTexture(const gl::Context *context,
-                                const mtl::Format &format,
-                                uint32_t width,
-                                uint32_t height,
-                                uint32_t samples,
-                                bool renderTargetOnly,
-                                mtl::TextureRef *textureOut);
+    angle::Result ensureCompanionTexturesSizeCorrect(const gl::Context *context);
 
     CGSize calcExpectedDrawableSize() const;
     // Check if metal layer has been resized.
@@ -103,36 +164,83 @@ class SurfaceMtl : public SurfaceImpl
     CALayer *mLayer;
     mtl::AutoObjCPtr<id<CAMetalDrawable>> mCurrentDrawable = nil;
 
+    // Texture for preserving content of color buffer (used when multisample texture is not
+    // enabled).
+    mtl::TextureRef mRetainedColorTexture;
+
+    bool mRetainBuffer = false;
+
     // Cache last known drawable size that is used by GL context. Can be used to detect resize
     // event. We don't use mMetalLayer.drawableSize directly since it might be changed internally by
     // metal runtime.
     CGSize mCurrentKnownDrawableSize;
+};
 
-    // Normal textures
-    mtl::TextureRef mDrawableTexture;
-    mtl::TextureRef mDepthTexture;
-    mtl::TextureRef mStencilTexture;
+class OffscreenSurfaceMtl : public SurfaceMtl
+{
+  public:
+    OffscreenSurfaceMtl(DisplayMtl *display,
+                        const egl::SurfaceState &state,
+                        const egl::AttributeMap &attribs);
+    ~OffscreenSurfaceMtl() override;
 
-    // Implicit multisample texture
-    mtl::TextureRef mMSColorTexture;
+    egl::Error swap(const gl::Context *context) override;
 
-    // Texture for preserving content of color buffer.
-    mtl::TextureRef mRetainedColorTexture;
+    egl::Error bindTexImage(const gl::Context *context,
+                            gl::Texture *texture,
+                            EGLint buffer) override;
+    egl::Error releaseTexImage(const gl::Context *context, EGLint buffer) override;
 
-    bool mUsePackedDepthStencil     = false;
-    bool mAutoResolveMSColorTexture = false;
+    angle::Result getAttachmentRenderTarget(const gl::Context *context,
+                                            GLenum binding,
+                                            const gl::ImageIndex &imageIndex,
+                                            GLsizei samples,
+                                            FramebufferAttachmentRenderTarget **rtOut) override;
 
-    mtl::Format mColorFormat;
-    mtl::Format mDepthFormat;
-    mtl::Format mStencilFormat;
+  protected:
+    angle::Result ensureTexturesSizeCorrect(const gl::Context *context);
 
-    int mSamples       = 0;
-    bool mRetainBuffer = false;
+    gl::Extents mSize;
+};
 
-    RenderTargetMtl mColorRenderTarget;
-    RenderTargetMtl mColorManualResolveRenderTarget;
-    RenderTargetMtl mDepthRenderTarget;
-    RenderTargetMtl mStencilRenderTarget;
+class PBufferSurfaceMtl : public OffscreenSurfaceMtl
+{
+  public:
+    PBufferSurfaceMtl(DisplayMtl *display,
+                      const egl::SurfaceState &state,
+                      const egl::AttributeMap &attribs);
+
+    void setFixedWidth(EGLint width) override;
+    void setFixedHeight(EGLint height) override;
+};
+
+class IOSurfaceSurfaceMtl : public OffscreenSurfaceMtl
+{
+  public:
+    IOSurfaceSurfaceMtl(DisplayMtl *display,
+                        const egl::SurfaceState &state,
+                        EGLClientBuffer buffer,
+                        const egl::AttributeMap &attribs);
+    ~IOSurfaceSurfaceMtl() override;
+
+    egl::Error bindTexImage(const gl::Context *context,
+                            gl::Texture *texture,
+                            EGLint buffer) override;
+
+    angle::Result getAttachmentRenderTarget(const gl::Context *context,
+                                            GLenum binding,
+                                            const gl::ImageIndex &imageIndex,
+                                            GLsizei samples,
+                                            FramebufferAttachmentRenderTarget **rtOut) override;
+
+    static bool ValidateAttributes(EGLClientBuffer buffer, const egl::AttributeMap &attribs);
+
+  private:
+    angle::Result ensureColorTextureCreated(const gl::Context *context);
+
+    IOSurfaceRef mIOSurface;
+    NSUInteger mIOSurfacePlane;
+    int mIOSurfaceFormatIdx;
 };
 
 }  // namespace rx

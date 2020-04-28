@@ -202,6 +202,8 @@ class IOSurfaceClientBufferTest : public ANGLETest
         EXPECT_EGL_TRUE(result);
         EXPECT_EGL_SUCCESS();
 
+        glFinish();
+
         IOSurfaceLock(ioSurface.get(), kIOSurfaceLockReadOnly, nullptr);
         ASSERT_EQ(0, memcmp(IOSurfaceGetBaseAddress(ioSurface.get()), data, dataSize));
         IOSurfaceUnlock(ioSurface.get(), kIOSurfaceLockReadOnly, nullptr);
@@ -452,6 +454,9 @@ TEST_P(IOSurfaceClientBufferTest, RenderToR16IOSurface)
     ANGLE_SKIP_TEST_IF(getClientMajorVersion() < 3);
     // TODO(http://anglebug.com/4369)
     ANGLE_SKIP_TEST_IF(isSwiftshader());
+
+    // TODO(hqle): glClear() doesn't work with integer texture.
+    ANGLE_SKIP_TEST_IF(IsMetal());
 
     // HACK(cwallez@chromium.org) 'L016' doesn't seem to be an official pixel format but it works
     // sooooooo let's test using it
@@ -915,5 +920,7 @@ TEST_P(IOSurfaceClientBufferTest, MakeCurrent)
 ANGLE_INSTANTIATE_TEST(IOSurfaceClientBufferTest,
                        ES2_OPENGL(),
                        ES3_OPENGL(),
+                       ES2_METAL(),
+                       ES3_METAL(),
                        ES2_VULKAN_SWIFTSHADER(),
                        ES3_VULKAN_SWIFTSHADER());

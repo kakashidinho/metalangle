@@ -164,14 +164,13 @@ SurfaceImpl *DisplayMtl::createWindowSurface(const egl::SurfaceState &state,
                                              EGLNativeWindowType window,
                                              const egl::AttributeMap &attribs)
 {
-    return new SurfaceMtl(this, state, window, attribs);
+    return new WindowSurfaceMtl(this, state, window, attribs);
 }
 
 SurfaceImpl *DisplayMtl::createPbufferSurface(const egl::SurfaceState &state,
                                               const egl::AttributeMap &attribs)
 {
-    UNIMPLEMENTED();
-    return static_cast<SurfaceImpl *>(0);
+    return new PBufferSurfaceMtl(this, state, attribs);
 }
 
 SurfaceImpl *DisplayMtl::createPbufferFromClientBuffer(const egl::SurfaceState &state,
@@ -179,8 +178,8 @@ SurfaceImpl *DisplayMtl::createPbufferFromClientBuffer(const egl::SurfaceState &
                                                        EGLClientBuffer clientBuffer,
                                                        const egl::AttributeMap &attribs)
 {
-    UNIMPLEMENTED();
-    return static_cast<SurfaceImpl *>(0);
+    ASSERT(buftype == EGL_IOSURFACE_ANGLE);
+    return new IOSurfaceSurfaceMtl(this, state, clientBuffer, attribs);
 }
 
 SurfaceImpl *DisplayMtl::createPixmapSurface(const egl::SurfaceState &state,
@@ -250,6 +249,7 @@ void DisplayMtl::generateExtensions(egl::DisplayExtensions *outExtensions) const
     outExtensions->fenceSync                    = true;
     outExtensions->waitSync                     = true;
     outExtensions->glColorspace                 = true;
+    outExtensions->iosurfaceClientBuffer        = true;
 }
 
 void DisplayMtl::generateCaps(egl::Caps *outCaps) const {}
@@ -279,9 +279,10 @@ egl::ConfigSet DisplayMtl::generateConfigs()
     config.transparentType = EGL_NONE;
 
     // Pbuffer
-    config.maxPBufferWidth  = 4096;
-    config.maxPBufferHeight = 4096;
-    config.maxPBufferPixels = 4096 * 4096;
+    config.bindToTextureTarget = EGL_TEXTURE_2D;
+    config.maxPBufferWidth     = 4096;
+    config.maxPBufferHeight    = 4096;
+    config.maxPBufferPixels    = 4096 * 4096;
 
     // Caveat
     config.configCaveat = EGL_NONE;
@@ -290,9 +291,9 @@ egl::ConfigSet DisplayMtl::generateConfigs()
     config.sampleBuffers     = 0;
     config.level             = 0;
     config.bindToTextureRGB  = EGL_FALSE;
-    config.bindToTextureRGBA = EGL_FALSE;
+    config.bindToTextureRGBA = EGL_TRUE;
 
-    config.surfaceType = EGL_WINDOW_BIT | EGL_SWAP_BEHAVIOR_PRESERVED_BIT;
+    config.surfaceType = EGL_WINDOW_BIT | EGL_PBUFFER_BIT | EGL_SWAP_BEHAVIOR_PRESERVED_BIT;
 
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
     config.minSwapInterval = 0;
@@ -353,8 +354,25 @@ egl::ConfigSet DisplayMtl::generateConfigs()
 
 bool DisplayMtl::isValidNativeWindow(EGLNativeWindowType window) const
 {
-    NSObject *layer = (__bridge NSObject *)(window);
-    return [layer isKindOfClass:[CALayer class]];
+    ANGLE_MTL_OBJC_SCOPE
+    {
+        NSObject *layer = (__bridge NSObject *)(window);
+        return [layer isKindOfClass:[CALayer class]];
+    }
+}
+
+egl::Error DisplayMtl::validateClientBuffer(const egl::Config *configuration,
+                                            EGLenum buftype,
+                                            EGLClientBuffer clientBuffer,
+                                            const egl::AttributeMap &attribs) const
+{
+    ASSERT(buftype == EGL_IOSURFACE_ANGLE);
+
+    if (!IOSurfaceSurfaceMtl::ValidateAttributes(clientBuffer, attribs))
+    {
+        return egl::EglBadAttribute();
+    }
+    return egl::NoError();
 }
 
 std::string DisplayMtl::getRendererDescription() const
