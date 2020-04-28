@@ -375,16 +375,15 @@ GLint LinkProgram(GLuint program)
 
 - (void)setContentsScale:(CGFloat)contentsScale
 {
+    [super setContentsScale:contentsScale];
+
     if (rx::IsMetalDisplayAvailable())
     {
-        [super setContentsScale:contentsScale];
         _metalLayer.contentsScale = contentsScale;
     }
     else
     {
-        // GL backend doesn't handle retina properly yet.
-        [super setContentsScale:1];
-        _legacyGLLayer.contentsScale = 1;
+        _legacyGLLayer.contentsScale = contentsScale;
     }
 }
 
@@ -399,7 +398,8 @@ GLint LinkProgram(GLuint program)
         return _metalLayer.drawableSize;
     }
 
-    return self.bounds.size;
+    return CGSizeMake(self.bounds.size.width * self.contentsScale,
+                      self.bounds.size.height * self.contentsScale);
 }
 
 - (BOOL)setCurrentContext:(MGLContext *)context
