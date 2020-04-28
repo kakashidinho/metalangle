@@ -98,15 +98,6 @@ jobs:
       - mac/xcode/travis_build_mac.sh Release
       - ios/xcode/travis_build_tvos.sh Release
     osx_image: xcode9.4
-  - name: "macos gn xcode 9.4"
-    python: "3.5"
-    script:
-      - export PATH=$PATH:$HOME/depot_tools
-      - python scripts/bootstrap.py
-      - gclient sync
-      - gn gen out/release --args="angle_enable_gl=false is_debug=false strip_absolute_paths_from_debug_symbols=true"
-      - ninja -j 2 -C out/release angle_end2end_tests angle_deqp_gles2_tests hello_triangle
-    osx_image: xcode9.4
 
   - name: "ios simulator xcode 11.2"
     osx_image: xcode11.2
