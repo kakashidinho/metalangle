@@ -79,13 +79,6 @@ class SurfaceMtl : public SurfaceImpl
     // Ensure companion (MS, depth, stencil) textures' size is correct w.r.t color texture.
     angle::Result ensureCompanionTexturesSizeCorrect(const gl::Context *context,
                                                      const gl::Extents &size);
-    angle::Result createTexture(const gl::Context *context,
-                                const mtl::Format &format,
-                                uint32_t width,
-                                uint32_t height,
-                                uint32_t samples,
-                                bool renderTargetOnly,
-                                mtl::TextureRef *textureOut);
     angle::Result resolveColorTextureIfNeeded(const gl::Context *context);
 
     // Normal textures
