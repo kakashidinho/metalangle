@@ -141,6 +141,62 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		0A4B6AED24569A7B009D5842 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0A93697A244CCFDE00B3497E;
+			remoteInfo = MetalANGLE_static;
+		};
+		0A4B6AEF24569A7B009D5842 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0A936F22244CEFA800B3497E;
+			remoteInfo = angle_base;
+		};
+		0A4B6AF124569A7B009D5842 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0A4B69632456832B009D5842;
+			remoteInfo = "spirv-tools";
+		};
+		0A4B6AF324569A7B009D5842 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0A936BC4244CD98B00B3497E;
+			remoteInfo = MetalANGLE_static_mac;
+		};
+		0A4B6AF524569A7B009D5842 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0A93703D244CF03700B3497E;
+			remoteInfo = angle_base_mac;
+		};
+		0A4B6AF724569A7B009D5842 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0A936E0A244CD9AA00B3497E;
+			remoteInfo = MetalANGLE_static_tvos;
+		};
+		0A4B6AF924569A7B009D5842 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0A937154244CF04900B3497E;
+			remoteInfo = angle_base_tvos;
+		};
+		0A4B6AFB24569A7B009D5842 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0A4B6AA224569A3B009D5842;
+			remoteInfo = "spirv-tools_tvos";
+		};
 		0A8BCF682406EF0A00600A41 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
@@ -862,16 +918,21 @@
 			isa = PBXGroup;
 			children = (
 				0AAF40CA2354CB64000E3CC8 /* MetalANGLE.framework */,
+				0A4B6AEE24569A7B009D5842 /* libMetalANGLE_static.a */,
+				0A4B6AF024569A7B009D5842 /* libangle_base.a */,
 				0AAF40CC2354CB64000E3CC8 /* libangle_metal_backend.a */,
 				0A9A6BDD2391283C006A152A /* libangle_gl_backend.a */,
 				0AAF40CE2354CB64000E3CC8 /* libangle_image_util.a */,
 				0AAF40D02354CB64000E3CC8 /* libglslang.a */,
 				0AAF40D22354CB64000E3CC8 /* libspirv-cross.a */,
+				0A4B6AF224569A7B009D5842 /* libspirv-tools.a */,
 				0AAF40D42354CB64000E3CC8 /* libjsoncpp.a */,
 				0AAF40DA2354CB64000E3CC8 /* libangle_util.a */,
 				0AAF40DC2354CB64000E3CC8 /* libangle_common.a */,
 				0AAF40DE2354CB64000E3CC8 /* sample_util.framework */,
 				0A90FA6A24068856005BA9A8 /* MetalANGLE.framework */,
+				0A4B6AF424569A7B009D5842 /* libMetalANGLE_static_mac.a */,
+				0A4B6AF624569A7B009D5842 /* libangle_base_mac.a */,
 				0A90FA6C24068856005BA9A8 /* libangle_metal_backend_mac.a */,
 				0A90FA6E24068856005BA9A8 /* libangle_gl_backend_mac.a */,
 				0A90FA7024068856005BA9A8 /* libangle_image_util_mac.a */,
@@ -882,9 +943,12 @@
 				0A90FA7A24068856005BA9A8 /* libangle_common_mac.a */,
 				0A90FA7C24068856005BA9A8 /* sample_util_mac.framework */,
 				0AFDDBEA244CBD3D000B60B1 /* MetalANGLE.framework */,
+				0A4B6AF824569A7B009D5842 /* libMetalANGLE_static_tvos.a */,
+				0A4B6AFA24569A7B009D5842 /* libangle_base_tvos.a */,
 				0AFDDBEC244CBD3D000B60B1 /* libangle_metal_backend_tvos.a */,
 				0AFDDBEE244CBD3D000B60B1 /* libangle_gl_backend_tvos.a */,
 				0AFDDBF0244CBD3D000B60B1 /* libspirv-cross_tvos.a */,
+				0A4B6AFC24569A7B009D5842 /* libspirv-tools_tvos.a */,
 				0AFDDBF2244CBD3D000B60B1 /* libglslang_tvos.a */,
 				0AFDDBF4244CBD3D000B60B1 /* libangle_image_util_tvos.a */,
 				0AFDDBF6244CBD3D000B60B1 /* libjsoncpp_tvos.a */,
@@ -1148,6 +1212,62 @@
 /* End PBXProject section */
 
 /* Begin PBXReferenceProxy section */
+		0A4B6AEE24569A7B009D5842 /* libMetalANGLE_static.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libMetalANGLE_static.a;
+			remoteRef = 0A4B6AED24569A7B009D5842 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		0A4B6AF024569A7B009D5842 /* libangle_base.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libangle_base.a;
+			remoteRef = 0A4B6AEF24569A7B009D5842 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		0A4B6AF224569A7B009D5842 /* libspirv-tools.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = "libspirv-tools.a";
+			remoteRef = 0A4B6AF124569A7B009D5842 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		0A4B6AF424569A7B009D5842 /* libMetalANGLE_static_mac.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libMetalANGLE_static_mac.a;
+			remoteRef = 0A4B6AF324569A7B009D5842 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		0A4B6AF624569A7B009D5842 /* libangle_base_mac.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libangle_base_mac.a;
+			remoteRef = 0A4B6AF524569A7B009D5842 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		0A4B6AF824569A7B009D5842 /* libMetalANGLE_static_tvos.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libMetalANGLE_static_tvos.a;
+			remoteRef = 0A4B6AF724569A7B009D5842 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		0A4B6AFA24569A7B009D5842 /* libangle_base_tvos.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libangle_base_tvos.a;
+			remoteRef = 0A4B6AF924569A7B009D5842 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		0A4B6AFC24569A7B009D5842 /* libspirv-tools_tvos.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = "libspirv-tools_tvos.a";
+			remoteRef = 0A4B6AFB24569A7B009D5842 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
 		0A8BCF962406EF0A00600A41 /* hello_triangle_mac.app */ = {
 			isa = PBXReferenceProxy;
 			fileType = wrapper.application;
