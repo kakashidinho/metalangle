@@ -195,6 +195,8 @@ angle::Result BufferMtl::unmap(const gl::Context *context, GLboolean *result)
         }
         else
         {
+            // Buffer is already mapped with readonly flag, so just unmap it, no flushing will
+            // occur.
             mBuffer->unmap(contextMtl);
         }
     }
@@ -205,7 +207,7 @@ angle::Result BufferMtl::unmap(const gl::Context *context, GLboolean *result)
         if (mState.getAccessFlags() & GL_MAP_UNSYNCHRONIZED_BIT)
         {
             // Copy the mapped region without synchronization with GPU
-            auto ptr = mBuffer->map(contextMtl);
+            auto ptr = mBuffer->map(contextMtl, /* readonly */ false, /* noSync */ true);
             std::copy(mShadowCopy.data() + offset, mShadowCopy.data() + len, ptr);
             mBuffer->unmap(contextMtl, offset, len);
         }
