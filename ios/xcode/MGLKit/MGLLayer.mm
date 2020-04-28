@@ -225,8 +225,13 @@ class ScopedReadBuffer
 class ScopedDrawBuffer
 {
   public:
-    ScopedDrawBuffer(GLenum drawbuffer)
+    ScopedDrawBuffer(GLenum drawbuffer, PFNGLDRAWBUFFERSEXTPROC drawBuffersFunc)
+        : mDrawBuffersFunc(drawBuffersFunc)
     {
+        if (!mDrawBuffersFunc)
+        {
+            return;
+        }
         GLint maxDrawBuffers;
         gl::GetIntegerv(GL_MAX_DRAW_BUFFERS, &maxDrawBuffers);
         mPrevDrawBuffers.resize(maxDrawBuffers, GL_NONE);
@@ -236,24 +241,29 @@ class ScopedDrawBuffer
             gl::GetIntegerv(GL_DRAW_BUFFER0 + i, &buffer);
             mPrevDrawBuffers[i] = buffer;
         }
-        gl::DrawBuffersEXT(1, &drawbuffer);
+        mDrawBuffersFunc(1, &drawbuffer);
     }
     ~ScopedDrawBuffer()
     {
+        if (!mDrawBuffersFunc)
+        {
+            return;
+        }
         GLint currentFBO;
         gl::GetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &currentFBO);
         if (currentFBO == 0)
         {
-            gl::DrawBuffersEXT(1, mPrevDrawBuffers.data());
+            mDrawBuffersFunc(1, mPrevDrawBuffers.data());
         }
         else
         {
-            gl::DrawBuffersEXT(mPrevDrawBuffers.size(), mPrevDrawBuffers.data());
+            mDrawBuffersFunc(mPrevDrawBuffers.size(), mPrevDrawBuffers.data());
         }
     }
 
   private:
     std::vector<GLenum> mPrevDrawBuffers;
+    const PFNGLDRAWBUFFERSEXTPROC mDrawBuffersFunc;
 };
 
 void Throw(NSString *msg)
@@ -348,6 +358,12 @@ GLint LinkProgram(GLuint program)
         _metalLayer.frame = self.bounds;
         [self addSublayer:_metalLayer];
     }
+    else
+    {
+        _legacyGLLayer       = [[CALayer alloc] init];
+        _legacyGLLayer.frame = self.bounds;
+        [self addSublayer:_legacyGLLayer];
+    }
 }
 
 - (void)dealloc
@@ -359,11 +375,16 @@ GLint LinkProgram(GLuint program)
 
 - (void)setContentsScale:(CGFloat)contentsScale
 {
-    [super setContentsScale:contentsScale];
-
     if (rx::IsMetalDisplayAvailable())
     {
+        [super setContentsScale:contentsScale];
         _metalLayer.contentsScale = contentsScale;
+    }
+    else
+    {
+        // GL backend doesn't handle retina properly yet.
+        [super setContentsScale:1];
+        _legacyGLLayer.contentsScale = 1;
     }
 }
 
@@ -424,7 +445,8 @@ GLint LinkProgram(GLuint program)
             if (![self blitFBO:_defaultOpenGLFrameBufferID
                          sourceSize:_offscreenFBOSize
                               toFBO:0
-                    destinationSize:self.drawableSize])
+                    destinationSize:self.drawableSize
+                    destinationMSAA:NO])
             {
                 return NO;
             }
@@ -449,8 +471,9 @@ GLint LinkProgram(GLuint program)
          sourceSize:(CGSize)srcSize
               toFBO:(GLuint)dstFbo
     destinationSize:(CGSize)dstSize
+    destinationMSAA:(BOOL)destinationMSAA
 {
-    if (srcSize.width != dstSize.width || srcSize.height != dstSize.height)
+    if (srcSize.width != dstSize.width || srcSize.height != dstSize.height || destinationMSAA)
     {
         // Blit to a temporary texture
         ScopedTexture tempTexture;
@@ -468,7 +491,11 @@ GLint LinkProgram(GLuint program)
         gl::FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tempTexture,
                                  0);
 
-        if (![self blitFBO:srcFbo sourceSize:srcSize toFBO:tempFBO destinationSize:srcSize])
+        if (![self blitFBO:srcFbo
+                     sourceSize:srcSize
+                          toFBO:tempFBO
+                destinationSize:srcSize
+                destinationMSAA:NO])
         {
             return NO;
         }
@@ -485,13 +512,16 @@ GLint LinkProgram(GLuint program)
 
     ScopedDrawFBOBind bindDrawFBO(dstFbo);
     ScopedReadFBOBind bindReadFBO(srcFbo);
-    ScopedReadBuffer setReadBuffer(GL_COLOR_ATTACHMENT0, _readBufferAvail);
-    ScopedDrawBuffer setDrawBuffer(dstFbo ? GL_COLOR_ATTACHMENT0 : GL_BACK);
+    ScopedReadBuffer setReadBuffer(GL_COLOR_ATTACHMENT0, _isGLES3Plus);
+    ScopedDrawBuffer setDrawBuffer(dstFbo ? GL_COLOR_ATTACHMENT0 : GL_BACK,
+                                   _isGLES3Plus ? gl::DrawBuffers : gl::DrawBuffersEXT);
+    ScopedGLEnable<GL_SCISSOR_TEST> disableScissorTest(false);
 
-    gl::BlitFramebufferANGLE(0, 0, static_cast<GLint>(srcSize.width),
-                             static_cast<GLint>(srcSize.height), 0, 0,
-                             static_cast<GLint>(dstSize.width), static_cast<GLint>(dstSize.height),
-                             GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    auto blitFunc = _isGLES3Plus ? gl::BlitFramebuffer : gl::BlitFramebufferANGLE;
+
+    blitFunc(0, 0, static_cast<GLint>(srcSize.width), static_cast<GLint>(srcSize.height), 0, 0,
+             static_cast<GLint>(dstSize.width), static_cast<GLint>(dstSize.height),
+             GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
     BOOL re = gl::GetError() == GL_NO_ERROR;
 
@@ -509,7 +539,8 @@ GLint LinkProgram(GLuint program)
     [MGLContext setCurrentContext:_offscreenFBOCreatorContext forLayer:self];
 
     ScopedFBOBind bindFBO(fbo);
-    ScopedDrawBuffer setDrawBuffer(fbo ? GL_COLOR_ATTACHMENT0 : GL_BACK);
+    ScopedDrawBuffer setDrawBuffer(fbo ? GL_COLOR_ATTACHMENT0 : GL_BACK,
+                                   _isGLES3Plus ? gl::DrawBuffers : gl::DrawBuffersEXT);
     ScopedProgramBind bindProgram(_offscreenBlitProgram);
     ScopedActiveTexture activeTexture(GL_TEXTURE0);
     ScopedTextureBind bindTexture(texture);
@@ -572,16 +603,20 @@ GLint LinkProgram(GLuint program)
 
 - (void)setRetainedBacking:(BOOL)retainedBacking
 {
-    if (!rx::IsMetalDisplayAvailable() && _drawableMultisample > 0)
+    if (!rx::IsMetalDisplayAvailable())
     {
-        // Default backbuffer MSAA is not supported in native GL backend yet.
-        // Always use offscreen MSAA buffer.
-        _useOffscreenFBO = YES;
+        if (_drawableMultisample > 0)
+        {
+            // Default backbuffer MSAA is not supported in native GL backend yet.
+            // Always use offscreen MSAA buffer.
+            _useOffscreenFBO = YES;
+        }
+        else
+        {
+            _useOffscreenFBO = retainedBacking;
+        }
     }
-    else
-    {
-        _useOffscreenFBO = retainedBacking;
-    }
+    // else Metal back-end already supports preserve swap behavior.
     _retainedBacking = retainedBacking;
 }
 
@@ -644,6 +679,10 @@ GLint LinkProgram(GLuint program)
         _metalLayer.drawableSize =
             CGSizeMake(_metalLayer.bounds.size.width * _metalLayer.contentsScale,
                        _metalLayer.bounds.size.height * _metalLayer.contentsScale);
+    }
+    else
+    {
+        _legacyGLLayer.frame = self.bounds;
     }
 }
 
@@ -708,7 +747,7 @@ GLint LinkProgram(GLuint program)
     }
     else
     {
-        nativeWindowPtr = (__bridge EGLNativeWindowType)self;
+        nativeWindowPtr = (__bridge EGLNativeWindowType)_legacyGLLayer;
     }
 
     _eglSurface =
@@ -716,6 +755,11 @@ GLint LinkProgram(GLuint program)
     if (_eglSurface == EGL_NO_SURFACE)
     {
         Throw(@"Failed to call eglCreateWindowSurface()");
+    }
+
+    if (_retainedBacking && !_useOffscreenFBO)
+    {
+        eglSurfaceAttrib(_display.eglDisplay, _eglSurface, EGL_SWAP_BEHAVIOR, EGL_BUFFER_PRESERVED);
     }
 }
 
@@ -767,7 +811,8 @@ GLint LinkProgram(GLuint program)
             return [self blitFBO:tempFBO
                       sourceSize:oldOffscreenSize
                            toFBO:_defaultOpenGLFrameBufferID
-                 destinationSize:_offscreenFBOSize];
+                 destinationSize:_offscreenFBOSize
+                 destinationMSAA:_drawableMultisample];
         }
         return [self blitOffscreenTexture:oldOffscreenTexture toFBO:_defaultOpenGLFrameBufferID];
     }
@@ -779,8 +824,9 @@ GLint LinkProgram(GLuint program)
 {
     auto version          = reinterpret_cast<const char *>(gl::GetString(GL_VERSION));
     auto exts             = reinterpret_cast<const char *>(gl::GetString(GL_EXTENSIONS));
-    _readBufferAvail      = strstr(version, "OpenGL ES 3") != nullptr;
-    _blitFramebufferAvail = strstr(exts, "GL_ANGLE_framebuffer_blit") != nullptr;
+    _isGLES3Plus          = strstr(version, "OpenGL ES 3") != nullptr;
+    _drawBuffersAvail     = _isGLES3Plus || strstr(exts, "GL_EXT_draw_buffers") != nullptr;
+    _blitFramebufferAvail = _isGLES3Plus || strstr(exts, "GL_ANGLE_framebuffer_blit") != nullptr;
 
     if (![self createOffscreenBlitVBO])
     {

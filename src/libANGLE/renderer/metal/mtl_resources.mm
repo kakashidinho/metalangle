@@ -691,7 +691,7 @@ TextureRef Texture::getReadableCopy(ContextMtl *context,
         // Create a texture that big enough to store the first level data and any smaller level
         ANGLE_MTL_OBJC_SCOPE
         {
-            auto desc            = [MTLTextureDescriptor new];
+            auto desc            = [[MTLTextureDescriptor new] ANGLE_MTL_AUTORELEASE];
             desc.textureType     = get().textureType;
             desc.pixelFormat     = get().pixelFormat;
             desc.width           = firstLevelSize.width;
@@ -713,6 +713,11 @@ TextureRef Texture::getReadableCopy(ContextMtl *context,
                          areaToCopy.size, mReadCopy, 0, 0, MTLOriginMake(0, 0, 0));
 
     return mReadCopy;
+}
+
+void Texture::releaseReadableCopy()
+{
+    mReadCopy = nullptr;
 }
 
 void Texture::set(id<MTLTexture> metalTexture)

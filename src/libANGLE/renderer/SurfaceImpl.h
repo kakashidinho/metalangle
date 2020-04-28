@@ -73,6 +73,7 @@ class SurfaceImpl : public FramebufferAttachmentObjectImpl
     virtual egl::Error getSyncValues(EGLuint64KHR *ust, EGLuint64KHR *msc, EGLuint64KHR *sbc) = 0;
     virtual egl::Error getMscRate(EGLint *numerator, EGLint *denominator)                     = 0;
     virtual void setSwapInterval(EGLint interval)                                             = 0;
+    virtual void setSwapBehavior(EGLint behavior);
     virtual void setFixedWidth(EGLint width);
     virtual void setFixedHeight(EGLint height);
 

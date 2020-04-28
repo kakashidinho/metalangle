@@ -232,6 +232,8 @@ class Texture final : public Resource,
                                const uint32_t sliceToCopy,
                                const MTLRegion &areaToCopy);
 
+    void releaseReadableCopy();
+
     // Change the wrapped metal object. Special case for swapchain image
     void set(id<MTLTexture> metalTexture);
 

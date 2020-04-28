@@ -97,6 +97,7 @@ struct DepthStencilBlitParams : public BlitParams
 // See DepthStencilBlitUtils::blitStencilViaCopyBuffer()
 struct StencilBlitViaBufferParams : public DepthStencilBlitParams
 {
+    StencilBlitViaBufferParams();
     StencilBlitViaBufferParams(const DepthStencilBlitParams &src);
 
     TextureRef dstStencil;
