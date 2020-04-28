@@ -29,6 +29,16 @@
 #    include <sys/resource.h>
 #endif
 
+#if defined (ANGLE_PLATFORM_APPLE) && TARGET_OS_TV
+// Unsupported functions.
+#    define fork(...) \
+        ({            \
+            abort();  \
+            0;        \
+        })
+#    define execv(...) abort()
+#endif
+
 namespace angle
 {
 namespace
