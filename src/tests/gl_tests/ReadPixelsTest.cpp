@@ -11,6 +11,7 @@
 
 #include <array>
 
+#include "test_utils/gl_raii.h"
 #include "util/random_utils.h"
 
 using namespace angle;
@@ -435,6 +436,87 @@ TEST_P(ReadPixelsPBOTest, SubDataOffsetPreservesContents)
     glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
     glBindBuffer(GL_ARRAY_BUFFER, mPBO);
     glBufferSubData(GL_ARRAY_BUFFER, 16, 4, data);
+
+    void *mappedPtr    = glMapBufferRange(GL_ARRAY_BUFFER, 0, 32, GL_MAP_READ_BIT);
+    GLColor *dataColor = static_cast<GLColor *>(mappedPtr);
+    EXPECT_GL_NO_ERROR();
+
+    EXPECT_EQ(GLColor::red, dataColor[0]);
+    EXPECT_EQ(GLColor(1, 2, 3, 4), dataColor[4]);
+
+    glUnmapBuffer(GL_ARRAY_BUFFER);
+    EXPECT_GL_NO_ERROR();
+}
+
+// Test that glCopyBufferSubData from PBO works
+TEST_P(ReadPixelsPBOTest, CopyBufferFromPBO)
+{
+    GLBuffer pbo;
+    GLBuffer copyBuffer;
+    GLBuffer copyBuffer2;
+    glBindBuffer(GL_COPY_READ_BUFFER, copyBuffer);
+    glBufferData(GL_COPY_READ_BUFFER, 4 * getWindowWidth() * getWindowHeight(), nullptr,
+                 GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, copyBuffer2);
+    glBufferData(GL_ARRAY_BUFFER, 4 * getWindowWidth() * getWindowHeight(), nullptr,
+                 GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo);
+    glBufferData(GL_PIXEL_PACK_BUFFER, 4 * getWindowWidth() * getWindowHeight(), nullptr,
+                 GL_DYNAMIC_DRAW);
+
+    glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    EXPECT_GL_NO_ERROR();
+
+    glReadPixels(0, 0, 16, 16, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+
+    // Copy from GL_PIXEL_PACK_BUFFER to GL_COPY_READ_BUFFER
+    glCopyBufferSubData(GL_PIXEL_PACK_BUFFER, GL_COPY_READ_BUFFER, 0, sizeof(GLColor),
+                        sizeof(GLColor));
+
+    void *mappedPtr    = glMapBufferRange(GL_COPY_READ_BUFFER, 0, 32, GL_MAP_READ_BIT);
+    GLColor *dataColor = static_cast<GLColor *>(mappedPtr);
+    EXPECT_GL_NO_ERROR();
+
+    EXPECT_EQ(GLColor::red, dataColor[1]);
+
+    glUnmapBuffer(GL_COPY_READ_BUFFER);
+
+    // Copy from GL_COPY_READ_BUFFER to ARRAY_BUFFER
+    glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_ARRAY_BUFFER, 0, sizeof(GLColor) * 2,
+                        2 * sizeof(GLColor));
+
+    mappedPtr = glMapBufferRange(GL_ARRAY_BUFFER, 0, 32, GL_MAP_READ_BIT);
+    dataColor = static_cast<GLColor *>(mappedPtr);
+    EXPECT_GL_NO_ERROR();
+
+    EXPECT_EQ(GLColor::red, dataColor[3]);
+
+    glUnmapBuffer(GL_ARRAY_BUFFER);
+
+    EXPECT_GL_NO_ERROR();
+}
+
+// Test that glCopyBufferSubData after readPixels works as expected, that the copy won't overwrite
+// the readPixels region.
+TEST_P(ReadPixelsPBOTest, CopyBufferAfterReadPreserveData)
+{
+    GLBuffer copyBuffer;
+    unsigned char data[4] = {1, 2, 3, 4};
+    glBindBuffer(GL_COPY_READ_BUFFER, copyBuffer);
+    glBufferData(GL_COPY_READ_BUFFER, sizeof(data), data, GL_DYNAMIC_DRAW);
+
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, mPBO);
+
+    glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    EXPECT_GL_NO_ERROR();
+
+    glReadPixels(0, 0, 16, 16, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, mPBO);
+    glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_ARRAY_BUFFER, 0, 16, sizeof(GLColor));
 
     void *mappedPtr    = glMapBufferRange(GL_ARRAY_BUFFER, 0, 32, GL_MAP_READ_BIT);
     GLColor *dataColor = static_cast<GLColor *>(mappedPtr);
