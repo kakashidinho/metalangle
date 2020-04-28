@@ -175,6 +175,7 @@ class BufferMtl : public BufferImpl, public BufferHolderMtl
     {
         return getClientShadowCopyData(mtl::GetImpl(context));
     }
+    bool clientShadowCopyDataNeedSync(ContextMtl *contextMtl);
     void ensureShadowCopySyncedFromGPU(ContextMtl *contextMtl);
     uint8_t *syncAndObtainShadowCopy(ContextMtl *contextMtl);
 
