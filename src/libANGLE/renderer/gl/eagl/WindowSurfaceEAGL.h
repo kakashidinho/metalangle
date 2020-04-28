@@ -18,11 +18,9 @@ typedef EAGLContext *EAGLContextObj;
 typedef void *EAGLContextObj;
 #endif
 @class CALayer;
+@class CAEAGLLayer;
 struct __IOSurface;
 typedef __IOSurface *IOSurfaceRef;
-
-// WebKit's build process requires that every Objective-C class name has the prefix "Web".
-@class WebSwapLayer;
 
 namespace rx
 {
@@ -32,29 +30,6 @@ class FramebufferGL;
 class FunctionsGL;
 class RendererGL;
 class StateManagerGL;
-
-struct SharedSwapState
-{
-    struct SwapTexture
-    {
-        GLuint texture;
-        unsigned int width;
-        unsigned int height;
-        uint64_t swapId;
-    };
-
-    SwapTexture textures[3];
-
-    // This code path is not going to be used by Chrome so we take the liberty
-    // to use pthreads directly instead of using mutexes and condition variables
-    // via the Platform API.
-    pthread_mutex_t mutex;
-    // The following members should be accessed only when holding the mutex
-    // (or doing construction / destruction)
-    SwapTexture *beingRendered;
-    SwapTexture *lastRendered;
-    SwapTexture *beingPresented;
-};
 
 class WindowSurfaceEAGL : public SurfaceGL
 {
@@ -67,6 +42,7 @@ class WindowSurfaceEAGL : public SurfaceGL
 
     egl::Error initialize(const egl::Display *display) override;
     egl::Error makeCurrent(const gl::Context *context) override;
+    egl::Error unMakeCurrent(const gl::Context *context) override;
 
     egl::Error swap(const gl::Context *context) override;
     egl::Error postSubBuffer(const gl::Context *context,
@@ -91,16 +67,16 @@ class WindowSurfaceEAGL : public SurfaceGL
                                               const gl::FramebufferState &state) override;
 
   private:
-    WebSwapLayer *mSwapLayer;
-    SharedSwapState mSwapState;
-    uint64_t mCurrentSwapId;
-
+    CAEAGLLayer *mSwapLayer;
     CALayer *mLayer;
     EAGLContextObj mContext;
     const FunctionsGL *mFunctions;
     StateManagerGL *mStateManager;
 
+    GLuint mColorRenderbuffer;
     GLuint mDSRenderbuffer;
+    EGLint mDSBufferWidth;
+    EGLint mDSBufferHeight;
 };
 
 }  // namespace rx

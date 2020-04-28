@@ -119,6 +119,7 @@ void DisplayEAGL::terminate()
     if (mContext != nullptr)
     {
         [EAGLContext setCurrentContext:nil];
+        [mContext release];
         mContext = nullptr;
     }
 }
