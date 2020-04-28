@@ -80,7 +80,7 @@ class Resource : angle::NonCopyable
         uint64_t cmdBufferQueueSerial = 0;
 
         // This flag means the resource was issued to be modified by GPU, if CPU wants to read
-        // its content, explicit synchornization call must be invoked.
+        // its content, explicit synchronization call must be invoked.
         bool cpuReadMemNeedSync = false;
 
         // This flag is useful for BufferMtl to know whether it should update the shadow copy
