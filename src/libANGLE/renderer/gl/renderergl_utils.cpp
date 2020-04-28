@@ -1546,10 +1546,12 @@ void InitializeFeatures(const FunctionsGL *functions, angle::FeaturesGL *feature
 
     ANGLE_FEATURE_CONDITION(features, addAndTrueToLoopCondition, IsApple() && isIntel);
 
+#if defined(ANGLE_PLATFORM_MACOS)
     // Ported from gpu_driver_bug_list.json (#191)
     ANGLE_FEATURE_CONDITION(
         features, emulateIsnanFloat,
         isIntel && IsApple() && IsSkylake(device) && GetMacOSVersion() < OSVersion(10, 13, 2));
+#endif
 
     ANGLE_FEATURE_CONDITION(features, doesSRGBClearsOnLinearFramebufferAttachments,
                             functions->standard == STANDARD_GL_DESKTOP && (isIntel || isAMD));
@@ -1560,6 +1562,7 @@ void InitializeFeatures(const FunctionsGL *functions, angle::FeaturesGL *feature
         features, useUnusedBlocksWithStandardOrSharedLayout,
         (IsApple() && functions->standard == STANDARD_GL_DESKTOP) || (IsLinux() && isAMD));
 
+#if defined(ANGLE_PLATFORM_MACOS)
     // Ported from gpu_driver_bug_list.json (#187)
     ANGLE_FEATURE_CONDITION(features, doWhileGLSLCausesGPUHang,
                             IsApple() && functions->standard == STANDARD_GL_DESKTOP &&
@@ -1568,6 +1571,7 @@ void InitializeFeatures(const FunctionsGL *functions, angle::FeaturesGL *feature
     // Ported from gpu_driver_bug_list.json (#211)
     ANGLE_FEATURE_CONDITION(features, rewriteFloatUnaryMinusOperator,
                             IsApple() && isIntel && GetMacOSVersion() < OSVersion(10, 12, 0));
+#endif
 
     ANGLE_FEATURE_CONDITION(features, addBaseVertexToVertexID, IsApple() && isAMD);
 

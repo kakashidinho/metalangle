@@ -275,8 +275,10 @@ rx::DisplayImpl *CreateDisplayFromAttribs(EGLAttrib displayType,
 #if defined(ANGLE_ENABLE_OPENGL)
 #    if defined(ANGLE_PLATFORM_WINDOWS)
             impl = new rx::DisplayWGL(state);
-#    elif defined(ANGLE_PLATFORM_MACOS) || defined(ANGLE_PLATFORM_MACCATALYST)
+#    elif defined(ANGLE_PLATFORM_MACOS)
             impl = new rx::DisplayCGL(state);
+#    elif defined(ANGLE_PLATFORM_MACCATALYST)
+            impl = nullptr;  // Mac Catalyst doesn't support OpenGL.
 #    elif defined(ANGLE_PLATFORM_IOS)
             impl = new rx::DisplayEAGL(state);
 #    elif defined(ANGLE_PLATFORM_LINUX)
