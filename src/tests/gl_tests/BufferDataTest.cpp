@@ -576,8 +576,9 @@ void main()
 // this could incorrectly pass.
 TEST_P(BufferDataTestES3, MapBufferRangeUnsynchronizedBit)
 {
-    // We can currently only control the behavior of the Vulkan backend's synchronizing operation's
-    ANGLE_SKIP_TEST_IF(!IsVulkan());
+    // We can currently only control the behavior of the Vulkan/Metal backend's synchronizing
+    // operation's
+    ANGLE_SKIP_TEST_IF(!IsVulkan() && !IsMetal());
 
     const size_t numElements = 10;
     std::vector<uint8_t> srcData(numElements);
@@ -600,10 +601,23 @@ TEST_P(BufferDataTestES3, MapBufferRangeUnsynchronizedBit)
     glBindBuffer(GL_COPY_WRITE_BUFFER, dstBuffer);
     ASSERT_GL_NO_ERROR();
 
-    glBufferData(GL_COPY_READ_BUFFER, srcData.size(), srcData.data(), GL_STATIC_DRAW);
+    glBufferData(GL_COPY_READ_BUFFER, srcData.size() + 4, nullptr, GL_STATIC_DRAW);
+    glBufferSubData(GL_COPY_READ_BUFFER, 0, srcData.size(), srcData.data());
     ASSERT_GL_NO_ERROR();
     glBufferData(GL_COPY_WRITE_BUFFER, dstData.size(), dstData.data(), GL_STATIC_READ);
     ASSERT_GL_NO_ERROR();
+
+    if (IsMetal())
+    {
+        // The Metal back-end only does GPU side copy if either source or destination is being used
+        // by GPU. So force GPU usage of source buffer by using dummy glReadPixels()
+        glBindBuffer(GL_COPY_READ_BUFFER, 0);
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, srcBuffer);
+        glReadPixels(0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE,
+                     reinterpret_cast<void *>(srcData.size()));
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+        glBindBuffer(GL_COPY_READ_BUFFER, srcBuffer);
+    }
 
     glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, numElements);
 
