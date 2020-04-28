@@ -474,7 +474,7 @@ class RenderCommandEncoder final : public CommandEncoder
     }
     void insertDebugSignImpl(NSString *label) override;
 
-    void initWriteDependency(const TextureRef &texture);
+    void initAttachmentWriteDependencyAndScissorRect(const RenderPassAttachmentDesc &attachment);
 
     void finalizeLoadStoreAction(MTLRenderPassAttachmentDescriptor *objCRenderPassAttachment);
 
@@ -490,6 +490,7 @@ class RenderCommandEncoder final : public CommandEncoder
     RenderPassDesc mRenderPassDesc;
     // Cached Objective-C render pass desc to avoid re-allocate every frame.
     mtl::AutoObjCObj<MTLRenderPassDescriptor> mCachedRenderPassDescObjC;
+    MTLScissorRect mRenderPassMaxScissorRect;
 
     const OcclusionQueryPool &mOcclusionQueryPool;
     bool mRecording    = false;
