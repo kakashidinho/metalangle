@@ -847,8 +847,7 @@ angle::Result VertexArrayMtl::convertVertexBuffer(const gl::Context *glContext,
     }
 
     conversion->data.releaseInFlightBuffers(contextMtl);
-
-    ASSERT((conversion->data.getAlignment() % convertedAngleFormat.pixelBytes) == 0);
+    conversion->data.updateAlignment(contextMtl, convertedAngleFormat.pixelBytes);
 
     if (canConvertToFloatOnGPU || canExpandComponentsOnGPU)
     {
