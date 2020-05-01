@@ -214,10 +214,15 @@ void Throw(NSString *msg)
 
 + (BOOL)setCurrentContext:(MGLContext *)context
 {
+    ThreadLocalInfo &tlsData = CurrentTLS();
     if (context)
     {
-        return [context setCurrentContextForLayer:nil];
+        return [context setCurrentContextForLayer:tlsData.currentLayer];
     }
+
+    // No context
+    tlsData.currentContext   = nil;
+    tlsData.currentLayer     = nil;
 
     return eglMakeCurrent([MGLDisplay defaultDisplay].eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE,
                           EGL_NO_CONTEXT);
