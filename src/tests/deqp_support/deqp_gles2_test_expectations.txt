@@ -389,7 +389,8 @@
 // Fails on 431.02 NVIDIA driver
 3748 VULKAN WIN NVIDIA : dEQP-GLES2.functional.fbo.render.repeated_clear.* = FAIL
 
-// Fails on Metal
+// Fails on Metal, some of filtering tests fail when MSAA is off and pass when MSAA is on. Some
+// tests are opposite. The filtering tests mostly fail on a few pixels.
 4235 METAL : dEQP-GLES2.functional.shaders.texture_functions.vertex.texturecubelod = FAIL
 4235 METAL : dEQP-GLES2.functional.texture.mipmap.2d.basic.nearest_linear_clamp = FAIL
 4235 METAL : dEQP-GLES2.functional.texture.mipmap.2d.basic.nearest_linear_clamp_non_square = FAIL
@@ -441,6 +442,9 @@
 4235 METAL : dEQP-GLES2.functional.texture.vertex.cube.filtering.linear_mipmap_linear_linear_clamp = FAIL
 4235 METAL : dEQP-GLES2.functional.texture.vertex.cube.filtering.linear_mipmap_linear_linear_repeat = FAIL
 4235 METAL : dEQP-GLES2.functional.texture.vertex.cube.filtering.linear_mipmap_linear_linear_mirror = FAIL
+4235 METAL : dEQP-GLES2.functional.texture.filtering.cube.nearest_nearest_clamp_rgba8888_npot = FAIL
+4235 METAL : dEQP-GLES2.functional.texture.filtering.cube.nearest_nearest_clamp_rgb888_npot = FAIL
+4235 METAL : dEQP-GLES2.functional.texture.filtering.cube.nearest_nearest_clamp_rgba4444_npot = FAIL
 4235 METAL : dEQP-GLES2.functional.texture.vertex.cube.wrap.* = FAIL
 4235 METAL : dEQP-GLES2.functional.attribute_location.bind_aliasing.*cond_* = FAIL
 4235 METAL : dEQP-GLES2.functional.clipping.point.wide_point_clip = FAIL
