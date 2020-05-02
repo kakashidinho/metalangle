@@ -52,10 +52,11 @@ class BufferPool
     ~BufferPool();
 
     // Init is called after the buffer creation so that the alignment can be specified later.
-    void initialize(ContextMtl *contextMtl,
-                    size_t initialSize,
-                    size_t alignment,
-                    size_t maxBuffers = 0);
+    void initialize(Context *context, size_t initialSize, size_t alignment, size_t maxBuffers = 0);
+    // Calling this without initialize() will have same effect as calling initialize().
+    // If called after initialize(), the old pending buffers will be flushed and might be re-used if
+    // their size are big enough for the requested initialSize parameter.
+    void reset(ContextMtl *contextMtl, size_t initialSize, size_t alignment, size_t maxBuffers = 0);
 
     // This call will allocate a new region at the end of the buffer. It internally may trigger
     // a new buffer to be created (which is returned in the optional parameter
@@ -80,7 +81,7 @@ class BufferPool
     const BufferRef &getCurrentBuffer() { return mBuffer; }
 
     size_t getAlignment() { return mAlignment; }
-    void updateAlignment(ContextMtl *contextMtl, size_t alignment);
+    void updateAlignment(Context *context, size_t alignment);
 
     size_t getMaxBuffers() const { return mMaxBuffers; }
 

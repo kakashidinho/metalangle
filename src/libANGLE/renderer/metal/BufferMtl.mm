@@ -440,7 +440,7 @@ angle::Result BufferMtl::setDataImpl(const gl::Context *context,
 
     // Re-create the buffer
     mBuffer = nullptr;
-    mBufferPool.initialize(contextMtl, adjustedSize, 1, maxBuffers);
+    mBufferPool.reset(contextMtl, adjustedSize, 1, maxBuffers);
 
     if (maxBuffers > 1)
     {

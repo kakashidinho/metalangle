@@ -30,7 +30,7 @@ struct TranslatedShaderInfo
 {
     std::array<SamplerBinding, kMaxGLSamplerBindings> actualSamplerBindings;
     std::array<uint32_t, kMaxGLUBOBindings> actualUBOBindings;
-    bool hasArgumentBuffer;
+    bool hasUBOArgumentBuffer;
 };
 
 void GlslangGetShaderSource(const gl::ProgramState &programState,

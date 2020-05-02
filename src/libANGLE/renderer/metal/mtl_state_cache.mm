@@ -168,6 +168,7 @@ MTLRenderPipelineDescriptor *ToObjC(id<MTLFunction> vertexShader,
     ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, inputPrimitiveTopology);
 #endif
     ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, rasterizationEnabled);
+    ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, alphaToCoverageEnabled);
 
     return [objCDesc ANGLE_MTL_AUTORELEASE];
 }
@@ -848,15 +849,18 @@ bool RenderPassDesc::operator==(const RenderPassDesc &other) const
 }
 
 // RenderPipelineCache implementation
-RenderPipelineCache::RenderPipelineCache() {}
+RenderPipelineCache::RenderPipelineCache() : RenderPipelineCache(nullptr) {}
+
+RenderPipelineCache::RenderPipelineCache(
+    RenderPipelineCacheSpecializeShaderFactory *specializedShaderFactory)
+    : mSpecializedShaderFactory(specializedShaderFactory)
+{}
 
 RenderPipelineCache::~RenderPipelineCache() {}
 
-void RenderPipelineCache::setVertexShader(Context *context,
-                                          id<MTLFunction> shader,
-                                          bool emulatedRasterDiscard)
+void RenderPipelineCache::setVertexShader(Context *context, id<MTLFunction> shader)
 {
-    mVertexShaders[emulatedRasterDiscard ? 1 : 0].retainAssign(shader);
+    mVertexShader.retainAssign(shader);
 
     if (!shader)
     {
@@ -867,11 +871,9 @@ void RenderPipelineCache::setVertexShader(Context *context,
     recreatePipelineStates(context);
 }
 
-void RenderPipelineCache::setFragmentShader(Context *context,
-                                            id<MTLFunction> shader,
-                                            bool withCoverageMaskWrite)
+void RenderPipelineCache::setFragmentShader(Context *context, id<MTLFunction> shader)
 {
-    mFragmentShaders[withCoverageMaskWrite ? 1 : 0].retainAssign(shader);
+    mFragmentShader.retainAssign(shader);
 
     if (!shader)
     {
@@ -936,24 +938,53 @@ AutoObjCPtr<id<MTLRenderPipelineState>> RenderPipelineCache::insertRenderPipelin
 
 AutoObjCPtr<id<MTLRenderPipelineState>> RenderPipelineCache::createRenderPipelineState(
     Context *context,
-    const RenderPipelineDesc &desc,
+    const RenderPipelineDesc &originalDesc,
     bool insertDefaultAttribLayout)
 {
     ANGLE_MTL_OBJC_SCOPE
     {
         // Disable coverage if the render pipeline's sample count is only 1.
-        int coverageMaskEnabled     = desc.coverageMaskEnabled;
-        bool alphaToCoverageEnabled = desc.alphaToCoverageEnabled;
-        bool emulatedRasterDiscard  = desc.emulatedRasterizatonDiscard;
+        RenderPipelineDesc desc = originalDesc;
         if (desc.outputDescriptor.sampleCount == 1)
         {
-            coverageMaskEnabled    = 0;
-            alphaToCoverageEnabled = false;
+            // Disable sample coverage if the output is not multisample
+            desc.emulateCoverageMask    = false;
+            desc.alphaToCoverageEnabled = false;
         }
 
         // Choose shader variant
-        const AutoObjCPtr<id<MTLFunction>> &vertShader = mVertexShaders[emulatedRasterDiscard];
-        const AutoObjCPtr<id<MTLFunction>> &fragShader = mFragmentShaders[coverageMaskEnabled];
+        id<MTLFunction> vertShader = nil;
+        id<MTLFunction> fragShader = nil;
+        if (mSpecializedShaderFactory &&
+            mSpecializedShaderFactory->hasSpecializedShader(gl::ShaderType::Vertex, desc))
+        {
+            if (IsError(mSpecializedShaderFactory->getSpecializedShader(
+                    context, gl::ShaderType::Vertex, desc, &vertShader)))
+            {
+                return nil;
+            }
+        }
+        else
+        {
+            // Non-specialized versions
+            vertShader = mVertexShader;
+        }
+
+        if (mSpecializedShaderFactory &&
+            mSpecializedShaderFactory->hasSpecializedShader(gl::ShaderType::Fragment, desc))
+        {
+            if (IsError(mSpecializedShaderFactory->getSpecializedShader(
+                    context, gl::ShaderType::Fragment, desc, &fragShader)))
+            {
+                return nil;
+            }
+        }
+        else
+        {
+            // Non-specialized versions
+            fragShader = mFragmentShader;
+        }
+
         if (!vertShader)
         {
             // Render pipeline without vertex shader is invalid.
@@ -965,9 +996,6 @@ AutoObjCPtr<id<MTLRenderPipelineState>> RenderPipelineCache::createRenderPipelin
 
         // Convert to Objective-C desc:
         AutoObjCObj<MTLRenderPipelineDescriptor> objCDesc = ToObjC(vertShader, fragShader, desc);
-
-        // MSAA settings
-        objCDesc.get().alphaToCoverageEnabled = alphaToCoverageEnabled;
 
         // Special attribute slot for default attribute
         if (insertDefaultAttribLayout)
@@ -1013,10 +1041,8 @@ void RenderPipelineCache::recreatePipelineStates(Context *context)
 
 void RenderPipelineCache::clear()
 {
-    mVertexShaders[0]   = nil;
-    mVertexShaders[1]   = nil;
-    mFragmentShaders[0] = nil;
-    mFragmentShaders[1] = nil;
+    mVertexShader   = nil;
+    mFragmentShader = nil;
     clearPipelineStates();
 }
 
