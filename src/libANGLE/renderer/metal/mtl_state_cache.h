@@ -94,6 +94,7 @@ struct alignas(4) SamplerDesc
     SamplerDesc(SamplerDesc &&src);
 
     explicit SamplerDesc(const gl::SamplerState &glState);
+    explicit SamplerDesc(const gl::SamplerState &glState, bool normalizedCoordinatesIn);
 
     SamplerDesc &operator=(const SamplerDesc &src);
 
@@ -118,6 +119,8 @@ struct alignas(4) SamplerDesc
 
     // Use uint8_t instead of MTLCompareFunction to compact space
     uint8_t compareFunction : 3;
+
+    bool normalizedCoordinates : 1;
 };
 
 struct VertexAttributeDesc

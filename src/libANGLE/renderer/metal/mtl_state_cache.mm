@@ -68,14 +68,29 @@ MTLSamplerDescriptor *ToObjC(const SamplerDesc &desc)
 {
     MTLSamplerDescriptor *objCDesc = [[MTLSamplerDescriptor alloc] init];
 
-    ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, rAddressMode);
-    ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, sAddressMode);
-    ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, tAddressMode);
     ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, minFilter);
-    ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, magFilter);
-    ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, mipFilter);
-    ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, maxAnisotropy);
+    ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, normalizedCoordinates);
     ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, compareFunction);
+
+    if (ANGLE_LIKELY(desc.normalizedCoordinates))
+    {
+        ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, rAddressMode);
+        ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, sAddressMode);
+        ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, tAddressMode);
+        ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, magFilter);
+        ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, mipFilter);
+        ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, maxAnisotropy);
+    }
+    else
+    {
+        // If normalizedCoordinates = false, we needs to use restricted settings, otherwise
+        // undefined results will occur according to Metal docs.
+        objCDesc.rAddressMode = objCDesc.sAddressMode = objCDesc.tAddressMode =
+            MTLSamplerAddressModeClampToEdge;
+        objCDesc.magFilter     = objCDesc.minFilter;
+        objCDesc.mipFilter     = MTLSamplerMipFilterNotMipmapped;
+        objCDesc.maxAnisotropy = 1;
+    }
 
     return [objCDesc ANGLE_MTL_AUTORELEASE];
 }
@@ -444,7 +459,9 @@ SamplerDesc::SamplerDesc(SamplerDesc &&src)
     memcpy(this, &src, sizeof(*this));
 }
 
-SamplerDesc::SamplerDesc(const gl::SamplerState &glState) : SamplerDesc()
+SamplerDesc::SamplerDesc(const gl::SamplerState &glState) : SamplerDesc(glState, true) {}
+SamplerDesc::SamplerDesc(const gl::SamplerState &glState, bool normalizedCoordinatesIn)
+    : SamplerDesc()
 {
     rAddressMode = GetSamplerAddressMode(glState.getWrapR());
     sAddressMode = GetSamplerAddressMode(glState.getWrapS());
@@ -457,6 +474,8 @@ SamplerDesc::SamplerDesc(const gl::SamplerState &glState) : SamplerDesc()
     maxAnisotropy = static_cast<uint32_t>(glState.getMaxAnisotropy());
 
     compareFunction = GetCompareFunc(glState.getCompareFunc());
+
+    normalizedCoordinates = normalizedCoordinatesIn;
 }
 
 SamplerDesc &SamplerDesc::operator=(const SamplerDesc &src)
@@ -478,6 +497,8 @@ void SamplerDesc::reset()
     maxAnisotropy = 1;
 
     compareFunction = MTLCompareFunctionNever;
+
+    normalizedCoordinates = true;
 }
 
 bool SamplerDesc::operator==(const SamplerDesc &rhs) const
@@ -490,7 +511,9 @@ bool SamplerDesc::operator==(const SamplerDesc &rhs) const
 
            ANGLE_PROP_EQ(*this, rhs, maxAnisotropy) &&
 
-           ANGLE_PROP_EQ(*this, rhs, compareFunction);
+           ANGLE_PROP_EQ(*this, rhs, compareFunction) &&
+
+           ANGLE_PROP_EQ(*this, rhs, normalizedCoordinates);
 }
 
 size_t SamplerDesc::hash() const

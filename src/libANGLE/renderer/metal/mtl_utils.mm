@@ -325,6 +325,7 @@ MTLTextureType GetTextureType(gl::TextureType glType)
     switch (glType)
     {
         case gl::TextureType::_2D:
+        case gl::TextureType::Rectangle:
             return MTLTextureType2D;
         case gl::TextureType::CubeMap:
             return MTLTextureTypeCube;

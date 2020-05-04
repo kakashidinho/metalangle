@@ -24,7 +24,8 @@ SamplerMtl::~SamplerMtl() = default;
 
 void SamplerMtl::onDestroy(const gl::Context *context)
 {
-    mSamplerState = nil;
+    mSamplerState          = nil;
+    mSamplerStateRectangle = nil;
 }
 
 const mtl::AutoObjCPtr<id<MTLSamplerState>> &SamplerMtl::getSampler(ContextMtl *contextMtl)
@@ -42,12 +43,28 @@ const mtl::AutoObjCPtr<id<MTLSamplerState>> &SamplerMtl::getSampler(ContextMtl *
     return mSamplerState;
 }
 
+const mtl::AutoObjCPtr<id<MTLSamplerState>> &SamplerMtl::getRectangleSampler(ContextMtl *contextMtl)
+{
+    if (!mSamplerStateRectangle)
+    {
+        DisplayMtl *displayMtl = contextMtl->getDisplay();
+
+        mtl::SamplerDesc samplerDesc(mState, /* normalizedCoordinates */ false);
+
+        mSamplerStateRectangle =
+            displayMtl->getStateCache().getSamplerState(displayMtl->getMetalDevice(), samplerDesc);
+    }
+
+    return mSamplerStateRectangle;
+}
+
 angle::Result SamplerMtl::syncState(const gl::Context *context, const bool dirty)
 {
     if (dirty)
     {
         // Recreate sampler
-        mSamplerState = nil;
+        mSamplerState          = nil;
+        mSamplerStateRectangle = nil;
 
         if (mCompareMode != mState.getCompareMode() || mCompareFunc != mState.getCompareFunc())
         {

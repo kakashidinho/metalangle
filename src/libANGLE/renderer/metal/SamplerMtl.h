@@ -27,9 +27,12 @@ class SamplerMtl : public SamplerImpl
     void onDestroy(const gl::Context *context) override;
     angle::Result syncState(const gl::Context *context, const bool dirty) override;
     const mtl::AutoObjCPtr<id<MTLSamplerState>> &getSampler(ContextMtl *contextMtl);
+    const mtl::AutoObjCPtr<id<MTLSamplerState>> &getRectangleSampler(ContextMtl *contextMtl);
 
   private:
     mtl::AutoObjCPtr<id<MTLSamplerState>> mSamplerState;
+    // Sampler state for rectangle texture.
+    mtl::AutoObjCPtr<id<MTLSamplerState>> mSamplerStateRectangle;
     GLenum mCompareMode = 0;
     GLenum mCompareFunc = 0;
 };

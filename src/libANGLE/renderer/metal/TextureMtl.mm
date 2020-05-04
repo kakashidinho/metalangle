@@ -88,6 +88,7 @@ GLuint GetImageLayerIndex(const gl::ImageIndex &index)
     {
         case gl::TextureType::_2D:
         case gl::TextureType::_2DMultisample:
+        case gl::TextureType::Rectangle:
             return 0;
         case gl::TextureType::CubeMap:
             return index.cubeMapFaceIndex();
@@ -127,6 +128,7 @@ gl::TextureType GetTextureImageType(gl::TextureType texType)
         case gl::TextureType::_2DArray:
         case gl::TextureType::_2DMultisample:
         case gl::TextureType::_3D:
+        case gl::TextureType::Rectangle:
             return texType;
         default:
             UNREACHABLE();
@@ -541,6 +543,7 @@ angle::Result TextureMtl::createNativeTexture(const gl::Context *context,
     switch (type)
     {
         case gl::TextureType::_2D:
+        case gl::TextureType::Rectangle:
             ANGLE_TRY(mtl::Texture::Make2DTexture(contextMtl, mFormat, size.width, size.height,
                                                   mips,
                                                   /** renderTargetOnly */ false,
@@ -629,6 +632,11 @@ angle::Result TextureMtl::ensureSamplerStateCreated(const gl::Context *context)
         }
 
         samplerDesc.maxAnisotropy = 1;
+    }
+
+    if (ANGLE_UNLIKELY(mState.getType() == gl::TextureType::Rectangle))
+    {
+        samplerDesc.normalizedCoordinates = false;
     }
 
     mMetalSamplerState =
@@ -799,6 +807,7 @@ ImageDefinitionMtl &TextureMtl::getImageDefinition(const gl::ImageIndex &imageIn
 RenderTargetMtl &TextureMtl::getRenderTarget(const gl::ImageIndex &imageIndex)
 {
     ASSERT(imageIndex.getType() == gl::TextureType::_2D ||
+           imageIndex.getType() == gl::TextureType::Rectangle ||
            imageIndex.getType() == gl::TextureType::_2DMultisample || imageIndex.hasLayer());
     GLuint layer         = GetImageLayerIndex(imageIndex);
     RenderTargetMtl &rtt = mPerLayerRenderTargets[layer][imageIndex.getLevelIndex()];
@@ -1313,9 +1322,16 @@ angle::Result TextureMtl::bindToShader(const gl::Context *context,
     else
     {
         SamplerMtl *samplerMtl = mtl::GetImpl(sampler);
-        samplerState           = samplerMtl->getSampler(mtl::GetImpl(context));
-        minLodClamp            = sampler->getSamplerState().getMinLod();
-        maxLodClamp            = sampler->getSamplerState().getMaxLod();
+        if (ANGLE_UNLIKELY(mState.getType() == gl::TextureType::Rectangle))
+        {
+            samplerState = samplerMtl->getRectangleSampler(mtl::GetImpl(context));
+        }
+        else
+        {
+            samplerState = samplerMtl->getSampler(mtl::GetImpl(context));
+        }
+        minLodClamp = sampler->getSamplerState().getMinLod();
+        maxLodClamp = sampler->getSamplerState().getMaxLod();
     }
 
     minLodClamp = std::max(minLodClamp, 0.f);
@@ -1376,6 +1392,7 @@ angle::Result TextureMtl::redefineImage(const gl::Context *context,
         {
             case gl::TextureType::_2D:
             case gl::TextureType::CubeMap:
+            case gl::TextureType::Rectangle:
                 ANGLE_TRY(
                     mtl::Texture::Make2DTexture(contextMtl, mtlFormat, size.width, size.height, 1,
                                                 /** renderTargetOnly */ false,
@@ -1881,6 +1898,7 @@ angle::Result TextureMtl::copySubImageCPU(const gl::Context *context,
     {
         case gl::TextureType::_2D:
         case gl::TextureType::CubeMap:
+        case gl::TextureType::Rectangle:
             dstSlice = 0;
             break;
         case gl::TextureType::_2DArray:

@@ -250,6 +250,7 @@ void DisplayMtl::generateExtensions(egl::DisplayExtensions *outExtensions) const
     outExtensions->waitSync                     = true;
     outExtensions->glColorspace                 = true;
     outExtensions->iosurfaceClientBuffer        = true;
+    outExtensions->surfacelessContext           = true;
 }
 
 void DisplayMtl::generateCaps(egl::Caps *outCaps) const {}
@@ -279,7 +280,7 @@ egl::ConfigSet DisplayMtl::generateConfigs()
     config.transparentType = EGL_NONE;
 
     // Pbuffer
-    config.bindToTextureTarget = EGL_TEXTURE_2D;
+    config.bindToTextureTarget = EGL_TEXTURE_RECTANGLE_ANGLE;
     config.maxPBufferWidth     = 4096;
     config.maxPBufferHeight    = 4096;
     config.maxPBufferPixels    = 4096 * 4096;
@@ -445,11 +446,12 @@ void DisplayMtl::ensureCapsInitialized() const
     }
 #endif
 
-    mNativeCaps.maxArrayTextureLayers = 2048;
-    mNativeCaps.maxLODBias            = 2.0;
-    mNativeCaps.maxCubeMapTextureSize = mNativeCaps.max2DTextureSize;
-    mNativeCaps.maxRenderbufferSize   = mNativeCaps.max2DTextureSize;
-    mNativeCaps.minAliasedPointSize   = 1;
+    mNativeCaps.maxArrayTextureLayers   = 2048;
+    mNativeCaps.maxLODBias              = 2.0;
+    mNativeCaps.maxCubeMapTextureSize   = mNativeCaps.max2DTextureSize;
+    mNativeCaps.maxRenderbufferSize     = mNativeCaps.max2DTextureSize;
+    mNativeCaps.maxRectangleTextureSize = mNativeCaps.max2DTextureSize;
+    mNativeCaps.minAliasedPointSize     = 1;
     // NOTE(hqle): Metal has some problems drawing big point size even though
     // Metal-Feature-Set-Tables.pdf says that max supported point size is 511. We limit it to 255
     // on Intel and 64 on AMD for now.
@@ -646,6 +648,9 @@ void DisplayMtl::initializeExtensions() const
 
     // GL_OES_EGL_sync
     mNativeExtensions.eglSyncOES = true;
+
+    // GL_ANGLE_texture_rectangle
+    mNativeExtensions.textureRectangle = true;
 }
 
 void DisplayMtl::initializeTextureCaps() const
