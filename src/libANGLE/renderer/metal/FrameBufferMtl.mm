@@ -832,9 +832,6 @@ angle::Result FramebufferMtl::getReadableViewForRenderTarget(
     uint32_t level             = rtt.getLevelIndex();
     uint32_t slice             = rtt.getLayerIndex();
 
-    // NOTE(hqle): slice is not used atm.
-    ASSERT(slice == 0);
-
     bool readStencil = readableStencilViewOut;
 
     if (!srcTexture)

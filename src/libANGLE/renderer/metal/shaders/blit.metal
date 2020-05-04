@@ -294,7 +294,7 @@ kernel void blitStencilToBufferCS(ushort2 gIndices [[thread_position_in_grid]],
     }
 
     float2 srcTexCoords = options.srcStartTexCoords + float2(gIndices) * options.srcTexCoordSteps;
-    
+
     if (kSourceTexture2Type == kTextureType2DMultisample && !options.resolveMS)
     {
         uint samples      = srcTexture2dMS.get_num_samples();

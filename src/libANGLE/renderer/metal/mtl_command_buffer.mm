@@ -997,12 +997,11 @@ void RenderCommandEncoder::finalizeLoadStoreAction(
     {
         if (objCRenderPassAttachment.storeAction == MTLStoreActionStore)
         {
-            // NOTE(hqle): Currently if the store action with implicit MS texture is MTLStoreAction,
-            // it is automatically convert to store and resolve action. It might introduce
-            // unnecessary overhead.
-            // Consider an improvement such as only store the MS texture, and resolve only at
-            // the end of real render pass (not render pass the was interrupted by compute pass)
-            // or before glBlitFramebuffer operation starts.
+            // NOTE(hqle): Currently if the store action with implicit MS texture is
+            // MTLStoreActionStore, it is automatically convert to store and resolve action. It
+            // might introduce unnecessary overhead. Consider an improvement such as only store the
+            // MS texture, and resolve only at the end of real render pass (not render pass the was
+            // interrupted by compute pass) or before glBlitFramebuffer operation starts.
             objCRenderPassAttachment.storeAction = MTLStoreActionStoreAndMultisampleResolve;
         }
         else if (objCRenderPassAttachment.storeAction == MTLStoreActionDontCare)
@@ -1201,7 +1200,7 @@ RenderCommandEncoder &RenderCommandEncoder::restart(const RenderPassDesc &desc)
                                  .width  = std::numeric_limits<NSUInteger>::max(),
                                  .height = std::numeric_limits<NSUInteger>::max()};
 
-    // mask writing dependency & set appropriate store options
+    // Set writing dependency & appropriate store options
     for (uint32_t i = 0; i < mRenderPassDesc.numColorAttachments; ++i)
     {
         initAttachmentWriteDependencyAndScissorRect(mRenderPassDesc.colorAttachments[i]);

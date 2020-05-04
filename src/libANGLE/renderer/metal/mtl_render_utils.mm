@@ -92,7 +92,7 @@ struct IndexConversionUniform
     uint8_t padding[7];
 };
 
-// See libANGLE/renderer/metal/shaders/misc.metal
+// See libANGLE/renderer/metal/shaders/visibility.metal
 struct CombineVisibilityResultUniform
 {
     uint32_t startOffset;

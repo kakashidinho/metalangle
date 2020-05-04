@@ -6,8 +6,6 @@
 // mtl_render_utils.h:
 //    Defines the class interface for RenderUtils, which contains many utility functions and shaders
 //    for converting, blitting, copying as well as generating data, and many more.
-// NOTE(hqle): Consider splitting this class into multiple classes each doing different utilities.
-// This class has become too big.
 //
 
 #ifndef LIBANGLE_RENDERER_METAL_MTL_RENDER_UTILS_H_
@@ -311,25 +309,33 @@ class IndexGeneratorUtils
   public:
     void onDestroy();
 
+    // Convert index buffer.
     angle::Result convertIndexBufferGPU(ContextMtl *contextMtl,
                                         const IndexConversionParams &params);
+    // Generate triangle fan index buffer for glDrawArrays().
     angle::Result generateTriFanBufferFromArrays(ContextMtl *contextMtl,
                                                  const TriFanOrLineLoopFromArrayParams &params);
+    // Generate triangle fan index buffer for glDrawElements().
     angle::Result generateTriFanBufferFromElementsArray(ContextMtl *contextMtl,
                                                         const IndexGenerationParams &params);
 
+    // Generate line loop index buffer for glDrawArrays().
     angle::Result generateLineLoopBufferFromArrays(ContextMtl *contextMtl,
                                                    const TriFanOrLineLoopFromArrayParams &params);
+    // Generate line loop's last segment index buffer for glDrawArrays().
+    // This is used when primitive restart is not enabled.
     angle::Result generateLineLoopLastSegment(ContextMtl *contextMtl,
                                               uint32_t firstVertex,
                                               uint32_t lastVertex,
                                               const BufferRef &dstBuffer,
                                               uint32_t dstOffset);
+    // Generate line loop index buffer for glDrawElements().
     // Destination buffer must have at least 2x the number of original indices if primitive restart
     // is enabled.
     angle::Result generateLineLoopBufferFromElementsArray(ContextMtl *contextMtl,
                                                           const IndexGenerationParams &params,
                                                           uint32_t *indicesGenerated);
+    // Generate line loop's last segment index buffer for glDrawElements().
     // NOTE: this function assumes primitive restart is not enabled.
     angle::Result generateLineLoopLastSegmentFromElementsArray(ContextMtl *contextMtl,
                                                                const IndexGenerationParams &params);
@@ -539,7 +545,7 @@ class VertexFormatConversionUtils
     RenderPipelineCache mComponentsExpandRenderPipelineCache;
 };
 
-// RenderUtils: container class of variable util classes above
+// RenderUtils: container class of various util classes above
 class RenderUtils : public Context, angle::NonCopyable
 {
   public:
@@ -572,6 +578,7 @@ class RenderUtils : public Context, angle::NonCopyable
     angle::Result blitStencilViaCopyBuffer(const gl::Context *context,
                                            const StencilBlitViaBufferParams &params);
 
+    // See IndexGeneratorUtils
     angle::Result convertIndexBufferGPU(ContextMtl *contextMtl,
                                         const IndexConversionParams &params);
     angle::Result generateTriFanBufferFromArrays(ContextMtl *contextMtl,
@@ -586,12 +593,9 @@ class RenderUtils : public Context, angle::NonCopyable
                                               uint32_t lastVertex,
                                               const BufferRef &dstBuffer,
                                               uint32_t dstOffset);
-    // Destination buffer must have at least 2x the number of original indices if primitive restart
-    // is enabled.
     angle::Result generateLineLoopBufferFromElementsArray(ContextMtl *contextMtl,
                                                           const IndexGenerationParams &params,
                                                           uint32_t *indicesGenerated);
-    // NOTE: this function assumes primitive restart is not enabled.
     angle::Result generateLineLoopLastSegmentFromElementsArray(ContextMtl *contextMtl,
                                                                const IndexGenerationParams &params);
 

@@ -134,7 +134,7 @@ constexpr uint32_t kIndexBufferOffsetAlignment       = 4;
 constexpr uint32_t kArgumentBufferOffsetAlignment    = kUniformBufferSettingOffsetMinAlignment;
 constexpr uint32_t kTextureToBufferBlittingAlignment = 256;
 
-// Font end binding limits
+// Front end binding limits
 constexpr uint32_t kMaxGLSamplerBindings = 2 * kMaxShaderSamplers;
 constexpr uint32_t kMaxGLUBOBindings     = 2 * kMaxShaderUBOs;
 

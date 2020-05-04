@@ -827,7 +827,7 @@ angle::Result Buffer::reset(ContextMtl *context,
 
         set([newBuffer ANGLE_MTL_AUTORELEASE]);
 
-        // Reset reference counter
+        // Reset command buffer's reference serial
         Resource::reset();
 
         return angle::Result::Continue;
