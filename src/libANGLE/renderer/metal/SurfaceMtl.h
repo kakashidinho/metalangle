@@ -13,6 +13,8 @@
 #import <QuartzCore/CALayer.h>
 #import <QuartzCore/CAMetalLayer.h>
 
+#include <unordered_map>
+
 #include "libANGLE/renderer/FramebufferImpl.h"
 #include "libANGLE/renderer/SurfaceImpl.h"
 #include "libANGLE/renderer/metal/RenderTargetMtl.h"
@@ -177,6 +179,8 @@ class OffscreenSurfaceMtl : public SurfaceMtl
                         const egl::AttributeMap &attribs);
     ~OffscreenSurfaceMtl() override;
 
+    void destroy(const egl::Display *display) override;
+
     egl::Error swap(const gl::Context *context) override;
 
     egl::Error bindTexImage(const gl::Context *context,
@@ -190,10 +194,18 @@ class OffscreenSurfaceMtl : public SurfaceMtl
                                             GLsizei samples,
                                             FramebufferAttachmentRenderTarget **rtOut) override;
 
+    // Get or create implicit MS color texture. Used by glFramebufferTexture2DMultisampleEXT()
+    // after eglBindTexImage()
+    angle::Result getAttachmentMSColorTexture(const gl::Context *context,
+                                              GLsizei samples,
+                                              mtl::TextureRef *texOut);
+
   protected:
     angle::Result ensureTexturesSizeCorrect(const gl::Context *context);
 
     gl::Extents mSize;
+
+    std::unordered_map<GLsizei, mtl::TextureRef> mAttachmentMSColorTextures;
 };
 
 class PBufferSurfaceMtl : public OffscreenSurfaceMtl

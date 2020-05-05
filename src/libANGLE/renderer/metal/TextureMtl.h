@@ -21,6 +21,8 @@
 namespace rx
 {
 
+class OffscreenSurfaceMtl;
+
 struct ImageDefinitionMtl
 {
     mtl::TextureRef image;
@@ -268,6 +270,7 @@ class TextureMtl : public TextureImpl
     // The real texture used by Metal draw calls.
     mtl::TextureRef mNativeTexture;
     id<MTLSamplerState> mMetalSamplerState = nil;
+    OffscreenSurfaceMtl *mBoundPBuffer     = nullptr;
 
     // Number of slices
     uint32_t mSlices = 1;

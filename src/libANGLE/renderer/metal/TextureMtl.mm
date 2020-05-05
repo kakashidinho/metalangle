@@ -478,6 +478,7 @@ void TextureMtl::releaseTexture(bool releaseImages, bool releaseTextureObjectsOn
 
     mNativeTexture             = nullptr;
     mNativeSwizzleSamplingView = nullptr;
+    mBoundPBuffer              = nullptr;
 
     mImplicitMSTextures.clear();
 
@@ -1144,11 +1145,11 @@ angle::Result TextureMtl::bindTexImage(const gl::Context *context, egl::Surface 
 {
     releaseTexture(true);
 
-    OffscreenSurfaceMtl *surfaceMtl = GetImplAs<OffscreenSurfaceMtl>(surface);
-    mNativeTexture                  = surfaceMtl->getColorTexture();
-    mFormat                         = surfaceMtl->getColorFormat();
-    gl::Extents size                = mNativeTexture->size();
-    mIsPow2 = gl::isPow2(size.width) && gl::isPow2(size.height) && gl::isPow2(size.depth);
+    mBoundPBuffer    = GetImplAs<OffscreenSurfaceMtl>(surface);
+    mNativeTexture   = mBoundPBuffer->getColorTexture();
+    mFormat          = mBoundPBuffer->getColorFormat();
+    gl::Extents size = mNativeTexture->size();
+    mIsPow2          = gl::isPow2(size.width) && gl::isPow2(size.height) && gl::isPow2(size.depth);
     ANGLE_TRY(ensureSamplerStateCreated(context));
 
     // Tell context to rebind textures
@@ -1198,12 +1199,22 @@ angle::Result TextureMtl::getAttachmentRenderTarget(const gl::Context *context,
                 mtl::TextureRef &msTexture = getImplicitMSTexture(imageIndex);
                 if (!msTexture || msTexture->samples() != static_cast<uint32_t>(samples))
                 {
-                    const gl::ImageDesc &desc = mState.getImageDesc(imageIndex);
+                    if (mBoundPBuffer)
+                    {
+                        // NOTE(hqle): mipmapped pbuffer is not supported yet.
+                        ASSERT(imageIndex.getLevelIndex() == 0);
+                        ANGLE_TRY(mBoundPBuffer->getAttachmentMSColorTexture(context, samples,
+                                                                             &msTexture));
+                    }
+                    else
+                    {
+                        const gl::ImageDesc &desc = mState.getImageDesc(imageIndex);
 
-                    ANGLE_TRY(mtl::Texture::Make2DMSTexture(
-                        contextMtl, mFormat, desc.size.width, desc.size.height, samples,
-                        /* renderTargetOnly */ true,
-                        /* allowFormatView */ false, &msTexture));
+                        ANGLE_TRY(mtl::Texture::Make2DMSTexture(
+                            contextMtl, mFormat, desc.size.width, desc.size.height, samples,
+                            /* renderTargetOnly */ true,
+                            /* allowFormatView */ false, &msTexture));
+                    }
 
                     ANGLE_TRY(checkForEmulatedChannels(context, mFormat, msTexture));
                 }

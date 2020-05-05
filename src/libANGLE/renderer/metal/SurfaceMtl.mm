@@ -939,6 +939,12 @@ OffscreenSurfaceMtl::OffscreenSurfaceMtl(DisplayMtl *display,
 
 OffscreenSurfaceMtl::~OffscreenSurfaceMtl() {}
 
+void OffscreenSurfaceMtl::destroy(const egl::Display *display)
+{
+    mAttachmentMSColorTextures.clear();
+    SurfaceMtl::destroy(display);
+}
+
 egl::Error OffscreenSurfaceMtl::swap(const gl::Context *context)
 {
     // Check for surface resize.
@@ -984,6 +990,30 @@ angle::Result OffscreenSurfaceMtl::getAttachmentRenderTarget(
     ANGLE_TRY(ensureTexturesSizeCorrect(context));
 
     return SurfaceMtl::getAttachmentRenderTarget(context, binding, imageIndex, samples, rtOut);
+}
+
+angle::Result OffscreenSurfaceMtl::getAttachmentMSColorTexture(const gl::Context *context,
+                                                               GLsizei samples,
+                                                               mtl::TextureRef *texOut)
+{
+    mtl::TextureRef &msTexture = mAttachmentMSColorTextures[samples];
+    if (msTexture)
+    {
+        if (msTexture->size() == mColorTexture->size())
+        {
+            *texOut = msTexture;
+            return angle::Result::Continue;
+        }
+    }
+
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+
+    ANGLE_TRY(mtl::Texture::Make2DMSTexture(contextMtl, mColorFormat, mSize.width, mSize.height,
+                                            samples,
+                                            /* renderTargetOnly */ true,
+                                            /* allowFormatView */ false, &msTexture));
+    *texOut = msTexture;
+    return angle::Result::Continue;
 }
 
 angle::Result OffscreenSurfaceMtl::ensureTexturesSizeCorrect(const gl::Context *context)
