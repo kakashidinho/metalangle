@@ -832,7 +832,8 @@ RenderTargetMtl &TextureMtl::getRenderTarget(const gl::ImageIndex &imageIndex)
 }
 mtl::TextureRef &TextureMtl::getImplicitMSTexture(const gl::ImageIndex &imageIndex)
 {
-    ASSERT(imageIndex.getType() == gl::TextureType::_2D || imageIndex.hasLayer());
+    ASSERT(imageIndex.getType() == gl::TextureType::_2D ||
+           imageIndex.getType() == gl::TextureType::Rectangle || imageIndex.hasLayer());
     return mImplicitMSTextures[GetImageLayerIndex(imageIndex)][imageIndex.getLevelIndex()];
 }
 
@@ -1177,6 +1178,7 @@ angle::Result TextureMtl::getAttachmentRenderTarget(const gl::Context *context,
     switch (imageIndex.getType())
     {
         case gl::TextureType::_2D:
+        case gl::TextureType::Rectangle:
         {
             RenderTargetMtl &rtt = getRenderTarget(imageIndex);
             *rtOut               = &rtt;
@@ -1211,6 +1213,7 @@ angle::Result TextureMtl::getAttachmentRenderTarget(const gl::Context *context,
         }
         break;  // case gl::TextureType::_2D:
         default:
+            // NOTE(hqle): Support implicit MSAA for 2D array, 3D and cube textures.
             *rtOut = &getRenderTarget(imageIndex);
             break;
     }
