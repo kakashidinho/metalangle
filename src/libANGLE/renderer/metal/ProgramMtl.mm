@@ -303,12 +303,12 @@ void ProgramMtl::save(const gl::Context *context, gl::BinaryOutputStream *stream
 
 void ProgramMtl::setBinaryRetrievableHint(bool retrievable)
 {
-    UNIMPLEMENTED();
+    // NOTE(hqle): UNIMPLEMENTED();
 }
 
 void ProgramMtl::setSeparable(bool separable)
 {
-    UNIMPLEMENTED();
+    // NOTE(hqle): UNIMPLEMENTED();
 }
 
 std::unique_ptr<LinkEvent> ProgramMtl::link(const gl::Context *context,
