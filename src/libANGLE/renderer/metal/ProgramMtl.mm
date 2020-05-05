@@ -33,6 +33,7 @@ namespace
 
 #define SHADER_ENTRY_NAME @"main0"
 constexpr char kSpirvCrossSpecConstSuffix[] = "_tmp";
+constexpr uint32_t kBinaryShaderMagic        = 0xcac8e63f;
 
 template <typename T>
 class ScopedAutoClearVector
@@ -296,6 +297,8 @@ std::unique_ptr<rx::LinkEvent> ProgramMtl::load(const gl::Context *context,
 
 void ProgramMtl::save(const gl::Context *context, gl::BinaryOutputStream *stream)
 {
+    // Magic number:
+    stream->writeInt(kBinaryShaderMagic);
     saveTranslatedShaders(stream);
     saveShaderInternalInfo(stream);
     saveDefaultUniformBlocksInfo(stream);
@@ -368,6 +371,12 @@ angle::Result ProgramMtl::linkTranslatedShaders(const gl::Context *glContext,
 
     reset(contextMtl);
 
+    uint32_t magicHeader = stream->readInt<uint32_t>();
+    if (magicHeader != kBinaryShaderMagic)
+    {
+        infoLog << "Invalid header in program binary\n";
+        ANGLE_MTL_CHECK(contextMtl, false, GL_INVALID_OPERATION);
+    }
     loadTranslatedShaders(stream);
     loadShaderInternalInfo(stream);
     ANGLE_TRY(loadDefaultUniformBlocksInfo(glContext, stream));
