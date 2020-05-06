@@ -339,8 +339,7 @@ ANGLE_NO_DISCARD bool TranslatorMetal::insertRasterizationDiscardLogic(TIntermBl
     sink << "layout (constant_id=0) const bool " << kRasterizationDiscardEnabledConstName;
     sink << " = false;\n";
 
-    // Create kRasterizationDiscardEnabledConstName and kRasterizationDiscardFuncName variable
-    // references.
+    // Create kRasterizationDiscardEnabledConstName variable reference.
     TType *boolType = new TType(EbtBool);
     boolType->setQualifier(EvqConst);
     TVariable *discardEnabledVar = new TVariable(symbolTable, kRasterizationDiscardEnabledConstName,
