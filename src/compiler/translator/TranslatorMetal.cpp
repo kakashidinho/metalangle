@@ -167,6 +167,9 @@ bool TranslatorMetal::translate(TIntermBlock *root,
         return false;
     }
 
+    // In metal backend, treats sampler2DRect as sampler2D.
+    sink << "#define sampler2DRect sampler2D\n";
+
     if (getShaderType() == GL_VERTEX_SHADER)
     {
         auto negViewportYScale = getDriverUniformNegViewportYScaleRef(driverUniforms);
