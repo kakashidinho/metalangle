@@ -13,7 +13,6 @@
 #include "libANGLE/Surface.h"
 #include "libANGLE/renderer/glslang_wrapper_utils.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
-#include "libANGLE/renderer/metal/ImageMtl.h"
 #include "libANGLE/renderer/metal/SurfaceMtl.h"
 #include "libANGLE/renderer/metal/SyncMtl.h"
 #include "libANGLE/renderer/metal/mtl_common.h"
@@ -196,7 +195,8 @@ ImageImpl *DisplayMtl::createImage(const egl::ImageState &state,
                                    EGLenum target,
                                    const egl::AttributeMap &attribs)
 {
-    return new ImageMtl(state, context);
+    UNIMPLEMENTED();
+    return nullptr;
 }
 
 rx::ContextImpl *DisplayMtl::createContext(const gl::State &state,
@@ -251,14 +251,6 @@ void DisplayMtl::generateExtensions(egl::DisplayExtensions *outExtensions) const
     outExtensions->glColorspace                 = true;
     outExtensions->iosurfaceClientBuffer        = true;
     outExtensions->surfacelessContext           = true;
-
-    // EGL_KHR_image
-    outExtensions->image                 = true;
-    outExtensions->imageBase             = true;
-    outExtensions->glTexture2DImage      = true;
-    outExtensions->glTextureCubemapImage = true;
-    outExtensions->glTexture3DImage      = true;
-    outExtensions->glRenderbufferImage   = true;
 }
 
 void DisplayMtl::generateCaps(egl::Caps *outCaps) const {}
@@ -659,9 +651,6 @@ void DisplayMtl::initializeExtensions() const
 
     // GL_ANGLE_texture_rectangle
     mNativeExtensions.textureRectangle = true;
-
-    // GL_OES_EGL_image
-    mNativeExtensions.eglImageOES = true;
 }
 
 void DisplayMtl::initializeTextureCaps() const

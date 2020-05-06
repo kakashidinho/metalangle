@@ -20,7 +20,6 @@
 #include "libANGLE/renderer/metal/ContextMtl.h"
 #include "libANGLE/renderer/metal/DisplayMtl.h"
 #include "libANGLE/renderer/metal/FrameBufferMtl.h"
-#include "libANGLE/renderer/metal/ImageMtl.h"
 #include "libANGLE/renderer/metal/SamplerMtl.h"
 #include "libANGLE/renderer/metal/SurfaceMtl.h"
 #include "libANGLE/renderer/metal/mtl_common.h"
@@ -1020,23 +1019,7 @@ angle::Result TextureMtl::setEGLImageTarget(const gl::Context *context,
                                             gl::TextureType type,
                                             egl::Image *image)
 {
-    releaseTexture(true);
-
-    ContextMtl *contextMtl = mtl::GetImpl(context);
-
-    ImageMtl *imageMtl = mtl::GetImpl(image);
-    mNativeTexture     = imageMtl->getTexture();
-
-    const angle::FormatID angleFormatId =
-        angle::Format::InternalFormatToID(image->getFormat().info->sizedInternalFormat);
-    mFormat = contextMtl->getPixelFormat(angleFormatId);
-
-    gl::Extents size = mNativeTexture->size();
-    mIsPow2          = gl::isPow2(size.width) && gl::isPow2(size.height) && gl::isPow2(size.depth);
-    ANGLE_TRY(ensureSamplerStateCreated(context));
-
-    // Tell context to rebind textures
-    contextMtl->invalidateCurrentTextures();
+    UNIMPLEMENTED();
 
     return angle::Result::Stop;
 }
