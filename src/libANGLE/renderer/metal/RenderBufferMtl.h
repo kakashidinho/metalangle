@@ -45,6 +45,8 @@ class RenderbufferMtl : public RenderbufferImpl
     angle::Result initializeContents(const gl::Context *context,
                                      const gl::ImageIndex &imageIndex) override;
 
+    const mtl::TextureRef &getTexture() { return mTexture; }
+
   private:
     angle::Result setStorageImpl(const gl::Context *context,
                                  size_t samples,
