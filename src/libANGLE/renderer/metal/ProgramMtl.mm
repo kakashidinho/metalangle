@@ -375,7 +375,7 @@ angle::Result ProgramMtl::linkTranslatedShaders(const gl::Context *glContext,
     if (magicHeader != kBinaryShaderMagic)
     {
         infoLog << "Invalid header in program binary\n";
-        ANGLE_MTL_CHECK(contextMtl, false, GL_INVALID_OPERATION);
+        return angle::Result::Stop;
     }
     loadTranslatedShaders(stream);
     loadShaderInternalInfo(stream);
