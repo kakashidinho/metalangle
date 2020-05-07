@@ -111,7 +111,7 @@ static inline vec<T, 4> blitSampleTexture3D(texture3d<T> srcTexture,
         textureSampler, options
 
 template <typename T>
-static inline MultipleColorOutputs<T> blitFS(BLIT_COLOR_FS_PARAMS(T))
+static inline vec<T, 4> blitReadTexture(BLIT_COLOR_FS_PARAMS(T))
 {
     vec<T, 4> output;
 
@@ -154,6 +154,14 @@ static inline MultipleColorOutputs<T> blitFS(BLIT_COLOR_FS_PARAMS(T))
         output.g = output.b = output.r;
     }
 
+    return output;
+}
+
+template <typename T>
+static inline MultipleColorOutputs<T> blitFS(BLIT_COLOR_FS_PARAMS(T))
+{
+    vec<T, 4> output = blitReadTexture(FORWARD_BLIT_COLOR_FS_PARAMS);
+
     return toMultipleColorOutputs(output);
 }
 
@@ -168,6 +176,14 @@ fragment MultipleColorOutputs<int> blitIntFS(BLIT_COLOR_FS_PARAMS(int))
 fragment MultipleColorOutputs<uint> blitUIntFS(BLIT_COLOR_FS_PARAMS(uint))
 {
     return blitFS(FORWARD_BLIT_COLOR_FS_PARAMS);
+}
+
+fragment MultipleColorOutputs<uint> copyTextureFloatToUIntFS(BLIT_COLOR_FS_PARAMS(float))
+{
+    float4 inputColor = blitReadTexture<>(FORWARD_BLIT_COLOR_FS_PARAMS);
+    uint4 output = uint4(inputColor * float4(255.0));
+
+    return toMultipleColorOutputs(output);
 }
 
 // Depth & stencil blitting.

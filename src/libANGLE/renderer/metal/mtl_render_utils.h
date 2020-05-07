@@ -564,6 +564,11 @@ class RenderUtils : public Context, angle::NonCopyable
                                     RenderCommandEncoder *cmdEncoder,
                                     const angle::Format &srcAngleFormat,
                                     const ColorBlitParams &params);
+    angle::Result copyTextureWithDraw(const gl::Context *context,
+                                      RenderCommandEncoder *cmdEncoder,
+                                      const angle::Format &srcAngleFormat,
+                                      const angle::Format &dstAngleFormat,
+                                      const ColorBlitParams &params);
     // Same as above but blit the whole texture to the whole of current framebuffer.
     // This function assumes the framebuffer and the source texture have same size.
     angle::Result blitColorWithDraw(const gl::Context *context,
@@ -651,6 +656,7 @@ class RenderUtils : public Context, angle::NonCopyable
     std::array<ClearUtils, angle::EnumSize<PixelType>()> mClearUtils;
 
     std::array<ColorBlitUtils, angle::EnumSize<PixelType>()> mColorBlitUtils;
+    ColorBlitUtils mCopyTextureFloatToUIntUtils;
 
     DepthStencilBlitUtils mDepthStencilBlitUtils;
 

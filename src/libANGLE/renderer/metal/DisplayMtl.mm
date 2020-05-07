@@ -651,6 +651,9 @@ void DisplayMtl::initializeExtensions() const
 
     // GL_ANGLE_texture_rectangle
     mNativeExtensions.textureRectangle = true;
+
+    // GL_CHROMIUM_copy_texture
+    mNativeExtensions.copyTexture = true;
 }
 
 void DisplayMtl::initializeTextureCaps() const

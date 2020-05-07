@@ -874,6 +874,7 @@ RenderUtils::RenderUtils(DisplayMtl *display)
           {ClearUtils("clearIntFS"), ClearUtils("clearUIntFS"), ClearUtils("clearFloatFS")}),
       mColorBlitUtils({ColorBlitUtils("blitIntFS"), ColorBlitUtils("blitUIntFS"),
                        ColorBlitUtils("blitFloatFS")}),
+      mCopyTextureFloatToUIntUtils("copyTextureFloatToUIntFS"),
       mCopyPixelsUtils(
           {CopyPixelsUtils("readFromBufferToIntTexture", "writeFromIntTextureToBuffer"),
            CopyPixelsUtils("readFromBufferToUIntTexture", "writeFromUIntTextureToBuffer"),
@@ -894,6 +895,7 @@ void RenderUtils::onDestroy()
     mVisibilityResultUtils.onDestroy();
     mMipmapUtils.onDestroy();
     mVertexFormatUtils.onDestroy();
+    mCopyTextureFloatToUIntUtils.onDestroy();
 
     for (ClearUtils &util : mClearUtils)
     {
@@ -958,6 +960,21 @@ angle::Result RenderUtils::blitColorWithDraw(const gl::Context *context,
 {
     int index = GetPixelTypeIndex(srcAngleFormat);
     return mColorBlitUtils[index].blitColorWithDraw(context, cmdEncoder, params);
+}
+
+angle::Result RenderUtils::copyTextureWithDraw(const gl::Context *context,
+                                               RenderCommandEncoder *cmdEncoder,
+                                               const angle::Format &srcAngleFormat,
+                                               const angle::Format &dstAngleFormat,
+                                               const ColorBlitParams &params)
+{
+    if (!srcAngleFormat.isInt() && dstAngleFormat.isUint())
+    {
+        return mCopyTextureFloatToUIntUtils.blitColorWithDraw(context, cmdEncoder, params);
+    }
+    ASSERT(srcAngleFormat.isSint() == dstAngleFormat.isSint() &&
+           srcAngleFormat.isUint() == dstAngleFormat.isUint());
+    return blitColorWithDraw(context, cmdEncoder, srcAngleFormat, params);
 }
 
 angle::Result RenderUtils::blitColorWithDraw(const gl::Context *context,
@@ -1200,7 +1217,7 @@ id<MTLRenderPipelineState> ClearUtils::getClearRenderPipelineState(const gl::Con
 {
     ContextMtl *contextMtl = GetImpl(context);
     // The color mask to be applied to every color attachment:
-    MTLColorWriteMask globalColorMask = contextMtl->getColorMask();
+    MTLColorWriteMask globalColorMask = contextMtl->getClearColorMask();
     if (!params.clearColor.valid())
     {
         globalColorMask = MTLColorWriteMaskNone;

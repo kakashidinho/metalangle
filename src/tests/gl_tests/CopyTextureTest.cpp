@@ -1793,6 +1793,8 @@ TEST_P(CopyTextureTestES3, ES3UnormFormats)
     // New sRGB dest formats
     if (IsGLExtensionEnabled("GL_EXT_sRGB"))
     {
+        ANGLE_SKIP_TEST_IF(IsMetal());
+
         testCopyCombination(GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE, GLColor(128, 64, 32, 128), GL_SRGB,
                             GL_UNSIGNED_BYTE, false, false, false, GLColor(55, 13, 4, 255));
         testCopyCombination(GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE, GLColor(128, 64, 32, 128), GL_SRGB,

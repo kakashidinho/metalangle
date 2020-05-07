@@ -239,6 +239,41 @@ class TextureMtl : public TextureImpl
                                   const gl::InternalFormat &internalFormat,
                                   gl::Framebuffer *source);
 
+    angle::Result copySubTextureImpl(const gl::Context *context,
+                                     const gl::ImageIndex &index,
+                                     const gl::Offset &destOffset,
+                                     const gl::InternalFormat &internalFormat,
+                                     size_t sourceLevel,
+                                     const gl::Box &sourceBox,
+                                     bool unpackFlipY,
+                                     bool unpackPremultiplyAlpha,
+                                     bool unpackUnmultiplyAlpha,
+                                     const gl::Texture *source);
+
+    angle::Result copySubTextureWithDraw(const gl::Context *context,
+                                         const gl::ImageIndex &index,
+                                         const gl::Offset &destOffset,
+                                         const gl::InternalFormat &internalFormat,
+                                         uint32_t sourceNativeLevel,
+                                         const gl::Box &sourceBox,
+                                         const angle::Format &sourceAngleFormat,
+                                         bool unpackFlipY,
+                                         bool unpackPremultiplyAlpha,
+                                         bool unpackUnmultiplyAlpha,
+                                         const mtl::TextureRef &sourceTexture);
+
+    angle::Result copySubTextureCPU(const gl::Context *context,
+                                    const gl::ImageIndex &index,
+                                    const gl::Offset &destOffset,
+                                    const gl::InternalFormat &internalFormat,
+                                    uint32_t sourceNativeLevel,
+                                    const gl::Box &sourceBox,
+                                    const angle::Format &sourceAngleFormat,
+                                    bool unpackFlipY,
+                                    bool unpackPremultiplyAlpha,
+                                    bool unpackUnmultiplyAlpha,
+                                    const mtl::TextureRef &sourceTexture);
+
     angle::Result setPerSliceSubImage(const gl::Context *context,
                                       int slice,
                                       const MTLRegion &mtlArea,
