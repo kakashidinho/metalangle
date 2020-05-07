@@ -483,9 +483,9 @@ class RenderPipelineCache final : angle::NonCopyable
     void clear();
 
   protected:
-    // Non- specialized vertex shader
+    // Non-specialized vertex shader
     AutoObjCPtr<id<MTLFunction>> mVertexShader;
-    // Non- specialized vertex shader
+    // Non-specialized fragment shader
     AutoObjCPtr<id<MTLFunction>> mFragmentShader;
 
   private:

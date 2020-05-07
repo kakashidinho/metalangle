@@ -989,7 +989,7 @@ AutoObjCPtr<id<MTLRenderPipelineState>> RenderPipelineCache::createRenderPipelin
         }
         else
         {
-            // Non-specialized versions
+            // Non-specialized version
             vertShader = mVertexShader;
         }
 
@@ -1004,7 +1004,7 @@ AutoObjCPtr<id<MTLRenderPipelineState>> RenderPipelineCache::createRenderPipelin
         }
         else
         {
-            // Non-specialized versions
+            // Non-specialized version
             fragShader = mFragmentShader;
         }
 
