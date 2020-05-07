@@ -36,7 +36,7 @@ git_pull()
 glslang_revision="7d65f09b83112c1ec9e29313cb9913ed2b850aa0"
 spirv_headers_revision="f8bf11a0253a32375c32cad92c841237b96696c0"
 spirv_tools_revision="67f4838659f475d618c120e13d1a196d7e00ba4b"
-spirv_cross_revision="e58e8d5dbe03ea2cc755dbaf43ffefa1b8d77bef"
+spirv_cross_revision="f38cbeb814c73510b85697adbe5e894f9eac978f"
 jsoncpp_revision="493c9385c91023c3819b51ee0de552d52229a1e5"
 jsoncpp_src_revision="645250b6690785be60ab6780ce4b58698d884d11"
 zlib_revision="156be8c52f80cde343088b4a69a80579101b6e67"

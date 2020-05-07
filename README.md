@@ -7,6 +7,12 @@ This is a fork of Google's [ANGLE project](https://chromium.googlesource.com/ang
 Apple announced OpenGL (ES) deprecation in 2018. So the purpose of MetalANGLE is to allow OpenGL ES applications
 to continue operate on Apple platforms by translating OpenGL ES draw calls to Metal draw calls under the hood.
 
+Preliminary Metal based WebGL benchmarks (based on [gles3-dev branch](https://github.com/kakashidinho/metalangle/tree/gles3-dev) code):
+
+- Metal (54 fps) vs native OpenGL (46 fps) drawing 20k fish:
+![](src/libANGLE/renderer/metal/metal_vs_gl_aquarium_webgl.jpg)
+- This benchmark runs [https://webglsamples.org/aquarium/aquarium.html](https://webglsamples.org/aquarium/aquarium.html) on Chromium browser using AMD Radeon Pro 560 GPU.
+
 ### Current Metal backend implementation status
 - MetalANGLE is being migrated into official ANGLE repo. So this repo might not get updated for a
   while. See current [Differences between MetalANGLE and official
