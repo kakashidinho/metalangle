@@ -251,6 +251,8 @@ void DisplayMtl::generateExtensions(egl::DisplayExtensions *outExtensions) const
     outExtensions->glColorspace                 = true;
     outExtensions->iosurfaceClientBuffer        = true;
     outExtensions->surfacelessContext           = true;
+    outExtensions->robustResourceInitialization = true;
+    outExtensions->displayTextureShareGroup     = true;
 }
 
 void DisplayMtl::generateCaps(egl::Caps *outCaps) const {}
@@ -651,6 +653,12 @@ void DisplayMtl::initializeExtensions() const
 
     // GL_ANGLE_texture_rectangle
     mNativeExtensions.textureRectangle = true;
+
+    // GL_ANGLE_client_arrays
+    mNativeExtensions.clientArrays = true;
+
+    // GL_ANGLE_robust_resource_initialization
+    mNativeExtensions.robustResourceInitialization = true;
 
     // GL_CHROMIUM_copy_texture
     mNativeExtensions.copyTexture = true;
