@@ -231,6 +231,7 @@ class IOSurfaceSurfaceMtl : public OffscreenSurfaceMtl
     egl::Error bindTexImage(const gl::Context *context,
                             gl::Texture *texture,
                             EGLint buffer) override;
+    egl::Error releaseTexImage(const gl::Context *context, EGLint buffer) override;
 
     angle::Result getAttachmentRenderTarget(const gl::Context *context,
                                             GLenum binding,

@@ -1816,6 +1816,7 @@ angle::Result TextureMtl::checkForEmulatedChannels(const gl::Context *context,
 angle::Result TextureMtl::initializeContents(const gl::Context *context,
                                              const gl::ImageIndex &index)
 {
+    ANGLE_TRY(ensureImageCreated(context, index));
     mtl::TextureRef &image = getImage(index);
     return mtl::InitializeTextureContents(context, image, mFormat, GetZeroLevelIndex(image));
 }

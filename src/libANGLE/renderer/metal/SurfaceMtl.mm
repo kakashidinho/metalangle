@@ -1079,10 +1079,21 @@ egl::Error IOSurfaceSurfaceMtl::bindTexImage(const gl::Context *context,
                                              gl::Texture *texture,
                                              EGLint buffer)
 {
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+    StopFrameCapture();
+    StartFrameCapture(contextMtl);
+
     // Initialize offscreen texture if needed:
     ANGLE_TO_EGL_TRY(ensureColorTextureCreated(context));
 
     return OffscreenSurfaceMtl::bindTexImage(context, texture, buffer);
+}
+
+egl::Error IOSurfaceSurfaceMtl::releaseTexImage(const gl::Context *context, EGLint buffer)
+{
+    egl::Error re = OffscreenSurfaceMtl::releaseTexImage(context, buffer);
+    StopFrameCapture();
+    return re;
 }
 
 angle::Result IOSurfaceSurfaceMtl::getAttachmentRenderTarget(
