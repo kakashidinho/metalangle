@@ -97,6 +97,7 @@ class FramebufferMtl : public FramebufferImpl
     gl::Rectangle getCompleteRenderArea() const;
     int getSamples() const;
     WindowSurfaceMtl *getAttachedBackbuffer() const { return mBackbuffer; }
+    MTLColorWriteMask getLastSavedColorMask() const { return mSavedColorWriteMask; }
 
     bool renderPassHasStarted(ContextMtl *contextMtl) const;
     mtl::RenderCommandEncoder *ensureRenderPassStarted(const gl::Context *context);
@@ -104,7 +105,7 @@ class FramebufferMtl : public FramebufferImpl
     // Call this to notify FramebufferMtl whenever its render pass has started.
     void onStartedDrawingToFrameBuffer(const gl::Context *context);
     void onFrameEnd(const gl::Context *context);
-    angle::Result onColorMaskChanged(const gl::Context *context);
+    angle::Result onColorMaskChanged(const gl::Context *context, MTLColorWriteMask colorMask);
 
     // The actual area will be adjusted based on framebuffer flipping property.
     gl::Rectangle getCorrectFlippedReadArea(const gl::Context *context,
@@ -214,6 +215,9 @@ class FramebufferMtl : public FramebufferImpl
     const bool mFlipY             = false;
 
     mtl::BufferRef mReadPixelBuffer;
+
+    // This is used when WebGL compatibility mode enabled.
+    MTLColorWriteMask mSavedColorWriteMask = MTLColorWriteMaskAll;
 };
 }  // namespace rx
 

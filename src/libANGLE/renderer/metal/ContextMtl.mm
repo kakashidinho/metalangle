@@ -852,7 +852,7 @@ angle::Result ContextMtl::syncState(const gl::Context *context,
                 invalidateRenderPipeline();
 
                 FramebufferMtl *framebufferMtl = mtl::GetImpl(glState.getDrawFramebuffer());
-                ANGLE_TRY(framebufferMtl->onColorMaskChanged(context));
+                ANGLE_TRY(framebufferMtl->onColorMaskChanged(context, mBlendDesc.writeMask));
             }
                 break;
             case gl::State::DIRTY_BIT_SAMPLE_ALPHA_TO_COVERAGE_ENABLED:
@@ -1279,8 +1279,23 @@ const mtl::ClearColorValue &ContextMtl::getClearColorValue() const
 {
     return mClearColor;
 }
+
+MTLColorWriteMask ContextMtl::getClearColorMask() const
+{
+    return mBlendDesc.writeMask;
+}
+
 MTLColorWriteMask ContextMtl::getColorMask() const
 {
+    if (mState.isWebGL())
+    {
+        // For WebGL, we store write mask as part of framebuffer's state
+        FramebufferMtl *fb = mtl::GetImpl(mState.getDrawFramebuffer());
+        if (fb)
+        {
+            return fb->getLastSavedColorMask();
+        }
+    }
     return mBlendDesc.writeMask;
 }
 float ContextMtl::getClearDepthValue() const
@@ -2052,9 +2067,22 @@ angle::Result ContextMtl::checkIfPipelineChanged(const gl::Context *context,
     if (rppChange)
     {
         const mtl::RenderPassDesc &renderPassDesc = mRenderEncoder.renderPassDesc();
-        // Obtain RenderPipelineDesc's output descriptor.
-        renderPassDesc.populateRenderPipelineOutputDesc(mBlendDesc,
-                                                        &mRenderPipelineDesc.outputDescriptor);
+
+        if (mState.isWebGL())
+        {
+            // For WebGL, we store color mask as part of framebuffer's state.
+            mtl::BlendDesc perFBOBlendDesc = mBlendDesc;
+            perFBOBlendDesc.writeMask      = mDrawFramebuffer->getLastSavedColorMask();
+            // Obtain RenderPipelineDesc's output descriptor.
+            renderPassDesc.populateRenderPipelineOutputDesc(perFBOBlendDesc,
+                                                            &mRenderPipelineDesc.outputDescriptor);
+        }
+        else
+        {
+            // Obtain RenderPipelineDesc's output descriptor.
+            renderPassDesc.populateRenderPipelineOutputDesc(mBlendDesc,
+                                                            &mRenderPipelineDesc.outputDescriptor);
+        }
 
         mRenderPipelineDesc.inputPrimitiveTopology      = topologyClass;
         mRenderPipelineDesc.emulatedRasterizatonDiscard = mState.isRasterizerDiscardEnabled();

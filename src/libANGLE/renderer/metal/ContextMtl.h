@@ -253,6 +253,7 @@ class ContextMtl : public ContextImpl, public mtl::Context
     void serverWaitEvent(const mtl::SharedEventRef &event, uint64_t value);
 
     const mtl::ClearColorValue &getClearColorValue() const;
+    MTLColorWriteMask getClearColorMask() const;
     MTLColorWriteMask getColorMask() const;
     float getClearDepthValue() const;
     uint32_t getClearStencilValue() const;

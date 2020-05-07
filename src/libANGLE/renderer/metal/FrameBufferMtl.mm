@@ -768,12 +768,16 @@ void FramebufferMtl::onFrameEnd(const gl::Context *context)
     }
 }
 
-angle::Result FramebufferMtl::onColorMaskChanged(const gl::Context *context)
+angle::Result FramebufferMtl::onColorMaskChanged(const gl::Context *context,
+                                                 MTLColorWriteMask colorMask)
 {
     if (!context->isWebGL())
     {
         return angle::Result::Continue;
     }
+
+    mSavedColorWriteMask = colorMask;
+
     // Force re-create render pass descriptor.
     return syncState(context, GL_FRAMEBUFFER, gl::Framebuffer::DirtyBits());
 }
@@ -1223,7 +1227,7 @@ angle::Result FramebufferMtl::clearImpl(const gl::Context *context,
         return angle::Result::Continue;
     }
 
-    MTLColorWriteMask colorMask = contextMtl->getColorMask();
+    MTLColorWriteMask colorMask = contextMtl->getClearColorMask();
     uint32_t stencilMask        = contextMtl->getStencilMask();
     if (!contextMtl->getDepthMask())
     {
