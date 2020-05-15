@@ -194,8 +194,8 @@ id<MTLTexture> ToObjC(const TextureRef &texture)
     return textureRef ? textureRef->get() : nil;
 }
 
-void BaseRenderPassAttachmentDescToObjC(MTLRenderPassAttachmentDescriptor *dst,
-                                        const RenderPassAttachmentDesc &src)
+void BaseRenderPassAttachmentDescToObjC(const RenderPassAttachmentDesc &src,
+                                        MTLRenderPassAttachmentDescriptor *dst)
 {
     auto implicitMsTexture = src.implicitMSTexture();
 
@@ -241,26 +241,26 @@ void BaseRenderPassAttachmentDescToObjC(MTLRenderPassAttachmentDescriptor *dst,
     ANGLE_OBJC_CP_PROPERTY(dst, src, storeActionOptions);
 }
 
-void ToObjC(MTLRenderPassColorAttachmentDescriptor *objCDesc,
-            const RenderPassColorAttachmentDesc &desc)
+void ToObjC(const RenderPassColorAttachmentDesc &desc,
+            MTLRenderPassColorAttachmentDescriptor *objCDesc)
 {
-    BaseRenderPassAttachmentDescToObjC(objCDesc, desc);
+    BaseRenderPassAttachmentDescToObjC(desc, objCDesc);
 
     ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, clearColor);
 }
 
-void ToObjC(MTLRenderPassDepthAttachmentDescriptor *objCDesc,
-            const RenderPassDepthAttachmentDesc &desc)
+void ToObjC(const RenderPassDepthAttachmentDesc &desc,
+            MTLRenderPassDepthAttachmentDescriptor *objCDesc)
 {
-    BaseRenderPassAttachmentDescToObjC(objCDesc, desc);
+    BaseRenderPassAttachmentDescToObjC(desc, objCDesc);
 
     ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, clearDepth);
 }
 
-void ToObjC(MTLRenderPassStencilAttachmentDescriptor *objCDesc,
-            const RenderPassStencilAttachmentDesc &desc)
+void ToObjC(const RenderPassStencilAttachmentDesc &desc,
+            MTLRenderPassStencilAttachmentDescriptor *objCDesc)
 {
-    BaseRenderPassAttachmentDescToObjC(objCDesc, desc);
+    BaseRenderPassAttachmentDescToObjC(desc, objCDesc);
 
     ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, clearStencil);
 }
@@ -733,30 +733,6 @@ bool RenderPassAttachmentDesc::operator==(const RenderPassAttachmentDesc &other)
     return loadAction == other.loadAction && storeAction == other.storeAction &&
            storeActionOptions == other.storeActionOptions;
 }
-// Convert to Metal object
-void RenderPassDesc::convertToMetalDesc(MTLRenderPassDescriptor *objCDesc) const
-{
-    ANGLE_MTL_OBJC_SCOPE
-    {
-        for (uint32_t i = 0; i < numColorAttachments; ++i)
-        {
-            ToObjC(objCDesc.colorAttachments[i], colorAttachments[i]);
-        }
-        for (uint32_t i = numColorAttachments; i < kMaxRenderTargets; ++i)
-        {
-            // Inactive render target
-            objCDesc.colorAttachments[i].texture     = nil;
-            objCDesc.colorAttachments[i].level       = 0;
-            objCDesc.colorAttachments[i].slice       = 0;
-            objCDesc.colorAttachments[i].depthPlane  = 0;
-            objCDesc.colorAttachments[i].loadAction  = MTLLoadActionDontCare;
-            objCDesc.colorAttachments[i].storeAction = MTLStoreActionDontCare;
-        }
-
-        ToObjC(objCDesc.depthAttachment, depthAttachment);
-        ToObjC(objCDesc.stencilAttachment, stencilAttachment);
-    }
-}
 
 void RenderPassDesc::populateRenderPipelineOutputDesc(RenderPipelineOutputDesc *outDesc) const
 {
@@ -869,6 +845,31 @@ bool RenderPassDesc::operator==(const RenderPassDesc &other) const
     }
 
     return depthAttachment == other.depthAttachment && stencilAttachment == other.stencilAttachment;
+}
+
+// Convert to Metal object
+void RenderPassDesc::convertToMetalDesc(MTLRenderPassDescriptor *objCDesc) const
+{
+    ANGLE_MTL_OBJC_SCOPE
+    {
+        for (uint32_t i = 0; i < numColorAttachments; ++i)
+        {
+            ToObjC(colorAttachments[i], objCDesc.colorAttachments[i]);
+        }
+        for (uint32_t i = numColorAttachments; i < kMaxRenderTargets; ++i)
+        {
+            // Inactive render target
+            objCDesc.colorAttachments[i].texture     = nil;
+            objCDesc.colorAttachments[i].level       = 0;
+            objCDesc.colorAttachments[i].slice       = 0;
+            objCDesc.colorAttachments[i].depthPlane  = 0;
+            objCDesc.colorAttachments[i].loadAction  = MTLLoadActionDontCare;
+            objCDesc.colorAttachments[i].storeAction = MTLStoreActionDontCare;
+        }
+
+        ToObjC(depthAttachment, objCDesc.depthAttachment);
+        ToObjC(stencilAttachment, objCDesc.stencilAttachment);
+    }
 }
 
 // RenderPipelineCache implementation
@@ -1015,7 +1016,7 @@ AutoObjCPtr<id<MTLRenderPipelineState>> RenderPipelineCache::createRenderPipelin
             return nil;
         }
 
-        auto metalDevice = context->getMetalDevice();
+        id<MTLDevice> metalDevice = context->getMetalDevice();
 
         // Convert to Objective-C desc:
         AutoObjCObj<MTLRenderPipelineDescriptor> objCDesc = ToObjC(vertShader, fragShader, desc);
@@ -1034,8 +1035,9 @@ AutoObjCPtr<id<MTLRenderPipelineState>> RenderPipelineCache::createRenderPipelin
                 atIndexedSubscript:kDefaultAttribsBindingIndex];
         }
         // Create pipeline state
-        NSError *err  = nil;
-        auto newState = [metalDevice newRenderPipelineStateWithDescriptor:objCDesc error:&err];
+        NSError *err = nil;
+        id<MTLRenderPipelineState> newState =
+            [metalDevice newRenderPipelineStateWithDescriptor:objCDesc error:&err];
         if (err)
         {
             context->handleError(err, __FILE__, ANGLE_FUNCTION, __LINE__);

@@ -199,7 +199,7 @@ class IntermediateCommandStream
     template <typename T>
     inline IntermediateCommandStream &push(const T &val)
     {
-        auto ptr = reinterpret_cast<const uint8_t *>(&val);
+        const uint8_t *ptr = reinterpret_cast<const uint8_t *>(&val);
         mBuffer.insert(mBuffer.end(), ptr, ptr + sizeof(T));
         return *this;
     }
@@ -215,7 +215,7 @@ class IntermediateCommandStream
     {
         ASSERT(mReadPtr <= mBuffer.size() - sizeof(T));
         T re;
-        auto ptr = reinterpret_cast<uint8_t *>(&re);
+        uint8_t *ptr = reinterpret_cast<uint8_t *>(&re);
         std::copy(mBuffer.data() + mReadPtr, mBuffer.data() + mReadPtr + sizeof(T), ptr);
         return re;
     }
@@ -223,7 +223,7 @@ class IntermediateCommandStream
     template <typename T>
     inline T fetch()
     {
-        auto re = peek<T>();
+        T re = peek<T>();
         mReadPtr += sizeof(T);
         return re;
     }
@@ -231,7 +231,7 @@ class IntermediateCommandStream
     inline const uint8_t *fetch(size_t bytes)
     {
         ASSERT(mReadPtr <= mBuffer.size() - bytes);
-        auto cur = mReadPtr;
+        size_t cur = mReadPtr;
         mReadPtr += bytes;
         return mBuffer.data() + cur;
     }

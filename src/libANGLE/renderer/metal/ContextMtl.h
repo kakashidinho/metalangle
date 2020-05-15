@@ -267,9 +267,9 @@ class ContextMtl : public ContextImpl, public mtl::Context
     const mtl::VertexFormat &getVertexFormat(angle::FormatID angleFormatId,
                                              bool tightlyPacked) const;
 
-    angle::Result getNullTexture(const gl::Context *context,
-                                 gl::TextureType type,
-                                 gl::Texture **textureOut);
+    angle::Result getIncompleteTexture(const gl::Context *context,
+                                       gl::TextureType type,
+                                       gl::Texture **textureOut);
 
     // Recommended to call these methods to end encoding instead of invoking the encoder's
     // endEncoding() directly.

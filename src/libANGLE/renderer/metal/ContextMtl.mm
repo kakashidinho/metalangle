@@ -225,20 +225,21 @@ void ContextMtl::onDestroy(const gl::Context *context)
 
 angle::Result ContextMtl::ensureIncompleteTexturesCreated(const gl::Context *context)
 {
-    if (ANGLE_UNLIKELY(!mIncompleteTexturesInitialized))
+    if (ANGLE_LIKELY(mIncompleteTexturesInitialized))
     {
-        constexpr gl::TextureType supportedTextureTypes[] = {
-            gl::TextureType::_2D, gl::TextureType::_2DArray, gl::TextureType::_3D,
-            gl::TextureType::CubeMap, gl::TextureType::Rectangle};
-        for (auto texType : supportedTextureTypes)
-        {
-            gl::Texture *texture;
-            ANGLE_UNUSED_VARIABLE(texture);
-            ANGLE_TRY(
-                mIncompleteTextures.getIncompleteTexture(context, texType, nullptr, &texture));
-        }
-        mIncompleteTexturesInitialized = true;
+        return angle::Result::Continue;
     }
+    constexpr gl::TextureType supportedTextureTypes[] = {
+        gl::TextureType::_2D, gl::TextureType::_2DArray, gl::TextureType::_3D,
+        gl::TextureType::CubeMap, gl::TextureType::Rectangle};
+    for (gl::TextureType texType : supportedTextureTypes)
+    {
+        gl::Texture *texture;
+        ANGLE_UNUSED_VARIABLE(texture);
+        ANGLE_TRY(mIncompleteTextures.getIncompleteTexture(context, texType, nullptr, &texture));
+    }
+    mIncompleteTexturesInitialized = true;
+
     return angle::Result::Continue;
 }
 
@@ -1333,9 +1334,9 @@ const mtl::VertexFormat &ContextMtl::getVertexFormat(angle::FormatID angleFormat
     return getDisplay()->getVertexFormat(angleFormatId, tightlyPacked);
 }
 
-angle::Result ContextMtl::getNullTexture(const gl::Context *context,
-                                         gl::TextureType type,
-                                         gl::Texture **textureOut)
+angle::Result ContextMtl::getIncompleteTexture(const gl::Context *context,
+                                               gl::TextureType type,
+                                               gl::Texture **textureOut)
 {
     return mIncompleteTextures.getIncompleteTexture(context, type, nullptr, textureOut);
 }

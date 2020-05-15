@@ -194,7 +194,7 @@ class ClearUtils
                                 const ClearRectParams &params);
 
   private:
-    void ensureRenderPipelineStateInitialized(ContextMtl *ctx, uint32_t numColorAttachments);
+    void ensureRenderPipelineStateCacheInitialized(ContextMtl *ctx, uint32_t numColorAttachments);
 
     void setupClearWithDraw(const gl::Context *context,
                             RenderCommandEncoder *cmdEncoder,
@@ -226,11 +226,11 @@ class ColorBlitUtils
                                     const ColorBlitParams &params);
 
   private:
-    void ensureRenderPipelineStateInitialized(ContextMtl *ctx,
-                                              uint32_t numColorAttachments,
-                                              int alphaPremultiplyType,
-                                              int sourceTextureType,
-                                              RenderPipelineCache *cacheOut);
+    void ensureRenderPipelineStateCacheInitialized(ContextMtl *ctx,
+                                                   uint32_t numColorAttachments,
+                                                   int alphaPremultiplyType,
+                                                   int sourceTextureType,
+                                                   RenderPipelineCache *cacheOut);
 
     void setupColorBlitWithDraw(const gl::Context *context,
                                 RenderCommandEncoder *cmdEncoder,
@@ -271,10 +271,10 @@ class DepthStencilBlitUtils
                                            const StencilBlitViaBufferParams &params);
 
   private:
-    void ensureRenderPipelineStateInitialized(ContextMtl *ctx,
-                                              int sourceDepthTextureType,
-                                              int sourceStencilTextureType,
-                                              RenderPipelineCache *cacheOut);
+    void ensureRenderPipelineStateCacheInitialized(ContextMtl *ctx,
+                                                   int sourceDepthTextureType,
+                                                   int sourceStencilTextureType,
+                                                   RenderPipelineCache *cacheOut);
 
     void setupDepthStencilBlitWithDraw(const gl::Context *context,
                                        RenderCommandEncoder *cmdEncoder,
@@ -348,17 +348,21 @@ class IndexGeneratorUtils
         std::array<std::array<AutoObjCPtr<id<MTLComputePipelineState>>, 2>,
                    angle::EnumSize<gl::DrawElementsType>()>;
 
+    // Get compute pipeline to convert index between buffers.
     AutoObjCPtr<id<MTLComputePipelineState>> getIndexConversionPipeline(
         ContextMtl *contextMtl,
         gl::DrawElementsType srcType,
         uint32_t srcOffset);
+    // Get compute pipeline to generate tri fan/line loop index for glDrawElements().
     AutoObjCPtr<id<MTLComputePipelineState>> getIndicesFromElemArrayGeneratorPipeline(
         ContextMtl *contextMtl,
         gl::DrawElementsType srcType,
         uint32_t srcOffset,
         NSString *shaderName,
         IndexConversionPipelineArray *pipelineCacheArray);
+    // Defer loading of compute pipeline to generate tri fan index for glDrawArrays().
     void ensureTriFanFromArrayGeneratorInitialized(ContextMtl *contextMtl);
+    // Defer loading of compute pipeline to generate line loop index for glDrawArrays().
     void ensureLineLoopFromArrayGeneratorInitialized(ContextMtl *contextMtl);
 
     angle::Result generateTriFanBufferFromElementsArrayGPU(

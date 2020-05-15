@@ -474,7 +474,7 @@ void EnsureComputePipelineInitialized(DisplayMtl *display,
     ANGLE_MTL_OBJC_SCOPE
     {
         id<MTLDevice> metalDevice = display->getMetalDevice();
-        auto shaderLib            = display->getDefaultShadersLib();
+        id<MTLLibrary> shaderLib  = display->getDefaultShadersLib();
         NSError *err              = nil;
         id<MTLFunction> shader    = [shaderLib newFunctionWithName:functionName];
 
@@ -514,7 +514,7 @@ void EnsureSpecializedComputePipelineInitialized(
     ANGLE_MTL_OBJC_SCOPE
     {
         id<MTLDevice> metalDevice = display->getMetalDevice();
-        auto shaderLib            = display->getDefaultShadersLib();
+        id<MTLLibrary> shaderLib  = display->getDefaultShadersLib();
         NSError *err              = nil;
 
         id<MTLFunction> shader = [shaderLib newFunctionWithName:functionName
@@ -551,9 +551,9 @@ void EnsureVertexShaderOnlyPipelineCacheInitialized(Context *context,
 
     ANGLE_MTL_OBJC_SCOPE
     {
-        DisplayMtl *display    = context->getDisplay();
-        auto shaderLib         = display->getDefaultShadersLib();
-        id<MTLFunction> shader = [shaderLib newFunctionWithName:vertexFunctionName];
+        DisplayMtl *display      = context->getDisplay();
+        id<MTLLibrary> shaderLib = display->getDefaultShadersLib();
+        id<MTLFunction> shader   = [shaderLib newFunctionWithName:vertexFunctionName];
 
         ASSERT([shader ANGLE_MTL_AUTORELEASE]);
 
@@ -586,9 +586,9 @@ void EnsureSpecializedVertexShaderOnlyPipelineCacheInitialized(
 
     ANGLE_MTL_OBJC_SCOPE
     {
-        DisplayMtl *display = context->getDisplay();
-        auto shaderLib      = display->getDefaultShadersLib();
-        NSError *err        = nil;
+        DisplayMtl *display      = context->getDisplay();
+        id<MTLLibrary> shaderLib = display->getDefaultShadersLib();
+        NSError *err             = nil;
 
         id<MTLFunction> shader = [shaderLib newFunctionWithName:vertexFunctionName
                                                  constantValues:funcConstants
@@ -712,12 +712,13 @@ void SetupBlitWithDrawUniformData(RenderCommandEncoder *cmdEncoder,
     uniformParams.srcLayer = params.srcLayer;
     if (isColorBlit)
     {
-        const auto colorParams     = static_cast<const ColorBlitParams *>(&params);
-        uniformParams.dstLuminance = colorParams->dstLuminance ? 1 : 0;
+        const ColorBlitParams *colorParams = static_cast<const ColorBlitParams *>(&params);
+        uniformParams.dstLuminance         = colorParams->dstLuminance ? 1 : 0;
     }
     else
     {
-        const auto dsParams     = static_cast<const DepthStencilBlitParams *>(&params);
+        const DepthStencilBlitParams *dsParams =
+            static_cast<const DepthStencilBlitParams *>(&params);
         uniformParams.srcLevel2 = dsParams->srcStencilLevel;
         uniformParams.srcLayer2 = dsParams->srcStencilLayer;
     }
@@ -745,8 +746,8 @@ void SetupBlitWithDrawUniformData(RenderCommandEncoder *cmdEncoder,
     GetBlitTexCoords(srcWidth, srcHeight, params.srcRect, params.srcYFlipped, params.unpackFlipX,
                      params.unpackFlipY, &u0, &v0, &u1, &v1);
 
-    auto du = u1 - u0;
-    auto dv = v1 - v0;
+    float du = u1 - u0;
+    float dv = v1 - v0;
 
     // lower left
     uniformParams.srcTexCoords[0][0] = u0;
@@ -1141,7 +1142,7 @@ void ClearUtils::onDestroy()
     ClearRenderPipelineCacheArray(&mClearRenderPipelineCache);
 }
 
-void ClearUtils::ensureRenderPipelineStateInitialized(ContextMtl *ctx, uint32_t numOutputs)
+void ClearUtils::ensureRenderPipelineStateCacheInitialized(ContextMtl *ctx, uint32_t numOutputs)
 {
     RenderPipelineCache &cache = mClearRenderPipelineCache[numOutputs];
     if (cache.getVertexShader() && cache.getFragmentShader())
@@ -1152,10 +1153,12 @@ void ClearUtils::ensureRenderPipelineStateInitialized(ContextMtl *ctx, uint32_t 
 
     ANGLE_MTL_OBJC_SCOPE
     {
-        NSError *err       = nil;
-        auto shaderLib     = ctx->getDisplay()->getDefaultShadersLib();
-        auto vertexShader  = [[shaderLib newFunctionWithName:@"clearVS"] ANGLE_MTL_AUTORELEASE];
-        auto funcConstants = [[[MTLFunctionConstantValues alloc] init] ANGLE_MTL_AUTORELEASE];
+        NSError *err             = nil;
+        id<MTLLibrary> shaderLib = ctx->getDisplay()->getDefaultShadersLib();
+        id<MTLFunction> vertexShader =
+            [[shaderLib newFunctionWithName:@"clearVS"] ANGLE_MTL_AUTORELEASE];
+        MTLFunctionConstantValues *funcConstants =
+            [[[MTLFunctionConstantValues alloc] init] ANGLE_MTL_AUTORELEASE];
 
         // Create clear shader pipeline cache for each number of color outputs.
         // So clear k color outputs will use mClearRenderPipelineCache[k] for example:
@@ -1163,7 +1166,7 @@ void ClearUtils::ensureRenderPipelineStateInitialized(ContextMtl *ctx, uint32_t 
                                    type:MTLDataTypeUInt
                                withName:NUM_COLOR_OUTPUTS_CONSTANT_NAME];
 
-        auto fragmentShader = [[shaderLib
+        id<MTLFunction> fragmentShader = [[shaderLib
             newFunctionWithName:[NSString stringWithUTF8String:mFragmentShaderName.c_str()]
                  constantValues:funcConstants
                           error:&err] ANGLE_MTL_AUTORELEASE];
@@ -1234,7 +1237,7 @@ id<MTLRenderPipelineState> ClearUtils::getClearRenderPipelineState(const gl::Con
 
     pipelineDesc.inputPrimitiveTopology = kPrimitiveTopologyClassTriangle;
 
-    ensureRenderPipelineStateInitialized(contextMtl, renderPassDesc.numColorAttachments);
+    ensureRenderPipelineStateCacheInitialized(contextMtl, renderPassDesc.numColorAttachments);
     RenderPipelineCache &cache = mClearRenderPipelineCache[renderPassDesc.numColorAttachments];
 
     return cache.getRenderPipelineState(contextMtl, pipelineDesc);
@@ -1245,7 +1248,8 @@ void ClearUtils::setupClearWithDraw(const gl::Context *context,
                                     const ClearRectParams &params)
 {
     // Generate render pipeline state
-    auto renderPipelineState = getClearRenderPipelineState(context, cmdEncoder, params);
+    id<MTLRenderPipelineState> renderPipelineState =
+        getClearRenderPipelineState(context, cmdEncoder, params);
     ASSERT(renderPipelineState);
     // Setup states
     SetupFullscreenQuadDrawCommonStates(cmdEncoder);
@@ -1281,7 +1285,7 @@ angle::Result ClearUtils::clearWithDraw(const gl::Context *context,
                                         RenderCommandEncoder *cmdEncoder,
                                         const ClearRectParams &params)
 {
-    auto overridedParams = params;
+    ClearRectParams overridedParams = params;
     // Make sure we don't clear attachment that doesn't exist
     const RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
     if (renderPassDesc.numColorAttachments == 0)
@@ -1302,7 +1306,7 @@ angle::Result ClearUtils::clearWithDraw(const gl::Context *context,
     {
         return angle::Result::Continue;
     }
-    auto contextMtl = GetImpl(context);
+    ContextMtl *contextMtl = GetImpl(context);
     setupClearWithDraw(context, cmdEncoder, overridedParams);
 
     angle::Result result;
@@ -1334,11 +1338,11 @@ void ColorBlitUtils::onDestroy()
     ClearRenderPipelineCache2DArray(&mBlitUnmultiplyAlphaRenderPipelineCache);
 }
 
-void ColorBlitUtils::ensureRenderPipelineStateInitialized(ContextMtl *ctx,
-                                                          uint32_t numOutputs,
-                                                          int alphaPremultiplyType,
-                                                          int textureType,
-                                                          RenderPipelineCache *cacheOut)
+void ColorBlitUtils::ensureRenderPipelineStateCacheInitialized(ContextMtl *ctx,
+                                                               uint32_t numOutputs,
+                                                               int alphaPremultiplyType,
+                                                               int textureType,
+                                                               RenderPipelineCache *cacheOut)
 {
     RenderPipelineCache &pipelineCache = *cacheOut;
     if (pipelineCache.getVertexShader() && pipelineCache.getFragmentShader())
@@ -1349,10 +1353,12 @@ void ColorBlitUtils::ensureRenderPipelineStateInitialized(ContextMtl *ctx,
 
     ANGLE_MTL_OBJC_SCOPE
     {
-        NSError *err       = nil;
-        auto shaderLib     = ctx->getDisplay()->getDefaultShadersLib();
-        auto vertexShader  = [[shaderLib newFunctionWithName:@"blitVS"] ANGLE_MTL_AUTORELEASE];
-        auto funcConstants = [[[MTLFunctionConstantValues alloc] init] ANGLE_MTL_AUTORELEASE];
+        NSError *err             = nil;
+        id<MTLLibrary> shaderLib = ctx->getDisplay()->getDefaultShadersLib();
+        id<MTLFunction> vertexShader =
+            [[shaderLib newFunctionWithName:@"blitVS"] ANGLE_MTL_AUTORELEASE];
+        MTLFunctionConstantValues *funcConstants =
+            [[[MTLFunctionConstantValues alloc] init] ANGLE_MTL_AUTORELEASE];
 
         constexpr BOOL multiplyAlphaFlags[][2] = {// premultiply, unmultiply
 
@@ -1382,7 +1388,7 @@ void ColorBlitUtils::ensureRenderPipelineStateInitialized(ContextMtl *ctx,
                                    type:MTLDataTypeInt
                                withName:SOURCE_TEXTURE_TYPE_CONSTANT_NAME];
 
-        auto fragmentShader = [[shaderLib
+        id<MTLFunction> fragmentShader = [[shaderLib
             newFunctionWithName:[NSString stringWithUTF8String:mFragmentShaderName.c_str()]
                  constantValues:funcConstants
                           error:&err] ANGLE_MTL_AUTORELEASE];
@@ -1430,8 +1436,8 @@ id<MTLRenderPipelineState> ColorBlitUtils::getColorBlitRenderPipelineState(
         pipelineCache        = &mBlitUnmultiplyAlphaRenderPipelineCache[nOutputIndex][textureType];
     }
 
-    ensureRenderPipelineStateInitialized(contextMtl, renderPassDesc.numColorAttachments,
-                                         alphaPremultiplyType, textureType, pipelineCache);
+    ensureRenderPipelineStateCacheInitialized(contextMtl, renderPassDesc.numColorAttachments,
+                                              alphaPremultiplyType, textureType, pipelineCache);
 
     return pipelineCache->getRenderPipelineState(contextMtl, pipelineDesc);
 }
@@ -1445,7 +1451,8 @@ void ColorBlitUtils::setupColorBlitWithDraw(const gl::Context *context,
     ContextMtl *contextMtl = mtl::GetImpl(context);
 
     // Generate render pipeline state
-    auto renderPipelineState = getColorBlitRenderPipelineState(context, cmdEncoder, params);
+    id<MTLRenderPipelineState> renderPipelineState =
+        getColorBlitRenderPipelineState(context, cmdEncoder, params);
     ASSERT(renderPipelineState);
     // Setup states
     cmdEncoder->setRenderPipelineState(renderPipelineState);
@@ -1501,10 +1508,10 @@ void DepthStencilBlitUtils::onDestroy()
     mStencilCopyBuffer = nullptr;
 }
 
-void DepthStencilBlitUtils::ensureRenderPipelineStateInitialized(ContextMtl *ctx,
-                                                                 int sourceDepthTextureType,
-                                                                 int sourceStencilTextureType,
-                                                                 RenderPipelineCache *cacheOut)
+void DepthStencilBlitUtils::ensureRenderPipelineStateCacheInitialized(ContextMtl *ctx,
+                                                                      int sourceDepthTextureType,
+                                                                      int sourceStencilTextureType,
+                                                                      RenderPipelineCache *cacheOut)
 {
     RenderPipelineCache &cache = *cacheOut;
     if (cache.getVertexShader() && cache.getFragmentShader())
@@ -1515,10 +1522,12 @@ void DepthStencilBlitUtils::ensureRenderPipelineStateInitialized(ContextMtl *ctx
 
     ANGLE_MTL_OBJC_SCOPE
     {
-        NSError *err       = nil;
-        auto shaderLib     = ctx->getDisplay()->getDefaultShadersLib();
-        auto vertexShader  = [[shaderLib newFunctionWithName:@"blitVS"] ANGLE_MTL_AUTORELEASE];
-        auto funcConstants = [[[MTLFunctionConstantValues alloc] init] ANGLE_MTL_AUTORELEASE];
+        NSError *err             = nil;
+        id<MTLLibrary> shaderLib = ctx->getDisplay()->getDefaultShadersLib();
+        id<MTLFunction> vertexShader =
+            [[shaderLib newFunctionWithName:@"blitVS"] ANGLE_MTL_AUTORELEASE];
+        MTLFunctionConstantValues *funcConstants =
+            [[[MTLFunctionConstantValues alloc] init] ANGLE_MTL_AUTORELEASE];
 
         NSString *shaderName;
         if (sourceDepthTextureType != -1 && sourceStencilTextureType != -1)
@@ -1548,9 +1557,9 @@ void DepthStencilBlitUtils::ensureRenderPipelineStateInitialized(ContextMtl *ctx
                                    withName:SOURCE_TEXTURE2_TYPE_CONSTANT_NAME];
         }
 
-        auto fragmentShader = [[shaderLib newFunctionWithName:shaderName
-                                               constantValues:funcConstants
-                                                        error:&err] ANGLE_MTL_AUTORELEASE];
+        id<MTLFunction> fragmentShader =
+            [[shaderLib newFunctionWithName:shaderName constantValues:funcConstants
+                                      error:&err] ANGLE_MTL_AUTORELEASE];
         ASSERT(fragmentShader);
 
         cache.setVertexShader(ctx, vertexShader);
@@ -1620,8 +1629,8 @@ id<MTLRenderPipelineState> DepthStencilBlitUtils::getDepthStencilBlitRenderPipel
         pipelineCache = &mStencilBlitRenderPipelineCache[stencilTextureType];
     }
 
-    ensureRenderPipelineStateInitialized(contextMtl, depthTextureType, stencilTextureType,
-                                         pipelineCache);
+    ensureRenderPipelineStateCacheInitialized(contextMtl, depthTextureType, stencilTextureType,
+                                              pipelineCache);
 
     return pipelineCache->getRenderPipelineState(contextMtl, pipelineDesc);
 }
@@ -1637,7 +1646,8 @@ void DepthStencilBlitUtils::setupDepthStencilBlitWithDraw(const gl::Context *con
     SetupCommonBlitWithDrawStates(context, cmdEncoder, params, false);
 
     // Generate render pipeline state
-    auto renderPipelineState = getDepthStencilBlitRenderPipelineState(context, cmdEncoder, params);
+    id<MTLRenderPipelineState> renderPipelineState =
+        getDepthStencilBlitRenderPipelineState(context, cmdEncoder, params);
     ASSERT(renderPipelineState);
     // Setup states
     cmdEncoder->setRenderPipelineState(renderPipelineState);
@@ -1824,7 +1834,8 @@ AutoObjCPtr<id<MTLComputePipelineState>> IndexGeneratorUtils::getIndexConversion
     size_t elementSize = gl::GetDrawElementsTypeSize(srcType);
     BOOL aligned       = (srcOffset % elementSize) == 0;
     int srcTypeKey     = static_cast<int>(srcType);
-    auto &cache        = mIndexConversionPipelineCaches[srcTypeKey][aligned ? 1 : 0];
+    AutoObjCPtr<id<MTLComputePipelineState>> &cache =
+        mIndexConversionPipelineCaches[srcTypeKey][aligned ? 1 : 0];
 
     if (!cache)
     {
@@ -1874,7 +1885,8 @@ IndexGeneratorUtils::getIndicesFromElemArrayGeneratorPipeline(
     BOOL aligned       = (srcOffset % elementSize) == 0;
     int srcTypeKey     = static_cast<int>(srcType);
 
-    auto &cache = (*pipelineCacheArray)[srcTypeKey][aligned ? 1 : 0];
+    AutoObjCPtr<id<MTLComputePipelineState>> &cache =
+        (*pipelineCacheArray)[srcTypeKey][aligned ? 1 : 0];
 
     if (!cache)
     {
@@ -2509,7 +2521,8 @@ AutoObjCPtr<id<MTLComputePipelineState>> CopyPixelsUtils::getPixelsCopyPipeline(
     int shaderTextureType = GetShaderTextureType(texture);
     int index2 = mtl_shader::kTextureTypeCount * (bufferWrite ? 1 : 0) + shaderTextureType;
 
-    auto &cache = mPixelsCopyPipelineCaches[formatIDValue][index2];
+    AutoObjCPtr<id<MTLComputePipelineState>> &cache =
+        mPixelsCopyPipelineCaches[formatIDValue][index2];
 
     if (!cache)
     {
@@ -2801,7 +2814,8 @@ VertexFormatConversionUtils::getFloatConverstionComputePipeline(ContextMtl *cont
 {
     int formatIDValue = static_cast<int>(srcAngleFormat.id);
 
-    auto &cache = mConvertToFloatCompPipelineCaches[formatIDValue];
+    AutoObjCPtr<id<MTLComputePipelineState>> &cache =
+        mConvertToFloatCompPipelineCaches[formatIDValue];
 
     if (!cache)
     {
