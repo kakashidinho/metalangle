@@ -179,7 +179,12 @@ SurfaceImpl *DisplayMtl::createPbufferFromClientBuffer(const egl::SurfaceState &
                                                        const egl::AttributeMap &attribs)
 {
     ASSERT(buftype == EGL_IOSURFACE_ANGLE);
+
+#if defined(ANGLE_DISABLE_IOSURFACE)
+    return nullptr;
+#else
     return new IOSurfaceSurfaceMtl(this, state, clientBuffer, attribs);
+#endif
 }
 
 SurfaceImpl *DisplayMtl::createPixmapSurface(const egl::SurfaceState &state,
@@ -249,7 +254,11 @@ void DisplayMtl::generateExtensions(egl::DisplayExtensions *outExtensions) const
     outExtensions->fenceSync                    = true;
     outExtensions->waitSync                     = true;
     outExtensions->glColorspace                 = true;
-    outExtensions->iosurfaceClientBuffer        = true;
+#if defined(ANGLE_DISABLE_IOSURFACE)
+    outExtensions->iosurfaceClientBuffer = false;
+#else
+    outExtensions->iosurfaceClientBuffer = true;
+#endif
     outExtensions->surfacelessContext           = true;
     outExtensions->robustResourceInitialization = true;
     outExtensions->displayTextureShareGroup     = true;
@@ -371,11 +380,16 @@ egl::Error DisplayMtl::validateClientBuffer(const egl::Config *configuration,
 {
     ASSERT(buftype == EGL_IOSURFACE_ANGLE);
 
+#if defined(ANGLE_DISABLE_IOSURFACE)
+    return egl::EglBadAttribute();
+
+#else
     if (!IOSurfaceSurfaceMtl::ValidateAttributes(clientBuffer, attribs))
     {
         return egl::EglBadAttribute();
     }
     return egl::NoError();
+#endif
 }
 
 std::string DisplayMtl::getRendererDescription() const

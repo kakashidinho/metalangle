@@ -1047,6 +1047,7 @@ void PBufferSurfaceMtl::setFixedHeight(EGLint height)
 }
 
 // IOSurfaceSurfaceMtl implementation.
+#if !defined(ANGLE_DISABLE_IOSURFACE)
 IOSurfaceSurfaceMtl::IOSurfaceSurfaceMtl(DisplayMtl *display,
                                          const egl::SurfaceState &state,
                                          EGLClientBuffer buffer,
@@ -1213,5 +1214,6 @@ bool IOSurfaceSurfaceMtl::ValidateAttributes(EGLClientBuffer buffer,
 
     return true;
 }
+#endif  // #if !defined(ANGLE_DISABLE_IOSURFACE)
 
 }
