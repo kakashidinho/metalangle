@@ -860,8 +860,6 @@
 		0A90FA2B2406831B005BA9A8 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A90FA2A2406831B005BA9A8 /* OpenGL.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		0A90FA2C240683CD005BA9A8 /* IOSurface.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A9A6BE423916BFB006A152A /* IOSurface.framework */; };
 		0A90FA2D2406840B005BA9A8 /* OpenGLES.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AA2014C23474A9000E0B98C /* OpenGLES.framework */; platformFilter = ios; settings = {ATTRIBUTES = (Weak, ); }; };
-		0A90FA2E24068422005BA9A8 /* IOSurface.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A9A6BE423916BFB006A152A /* IOSurface.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
-		0A90FA2F24068466005BA9A8 /* IOSurface.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A9A6BE423916BFB006A152A /* IOSurface.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		0A90FA3024068473005BA9A8 /* OpenGLES.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AA2014C23474A9000E0B98C /* OpenGLES.framework */; platformFilter = ios; settings = {ATTRIBUTES = (Weak, ); }; };
 		0A90FB422406D025005BA9A8 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A90FA2A2406831B005BA9A8 /* OpenGL.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		0A90FB452406D141005BA9A8 /* samples_env_setup.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A97E48C23485F69007CA616 /* samples_env_setup.mm */; };
@@ -2730,7 +2728,6 @@
 		0AF9598F244C7CD700F59740 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AC2A5212346714A0045B949 /* CoreFoundation.framework */; };
 		0AF95990244C7CD700F59740 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AA2015023474D9700E0B98C /* UIKit.framework */; };
 		0AF95991244C7CD700F59740 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A9A6BA8239126DB006A152A /* CoreGraphics.framework */; };
-		0AF95992244C7CD700F59740 /* IOSurface.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A9A6BE423916BFB006A152A /* IOSurface.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		0AF95993244C7CD700F59740 /* OpenGLES.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AA2014C23474A9000E0B98C /* OpenGLES.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		0AF959A5244C7D5800F59740 /* SampleApplication.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA200E82347428200E0B98C /* SampleApplication.cpp */; };
 		0AF959A6244C7D5800F59740 /* samples_env_setup.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A97E48C23485F69007CA616 /* samples_env_setup.mm */; };
@@ -5097,7 +5094,6 @@
 				0AC2A5232346714A0045B949 /* CoreFoundation.framework in Frameworks */,
 				0AAF41102354CE9B000E3CC8 /* UIKit.framework in Frameworks */,
 				0A9A6BA9239126DB006A152A /* CoreGraphics.framework in Frameworks */,
-				0A90FA2E24068422005BA9A8 /* IOSurface.framework in Frameworks */,
 				0A90FA2D2406840B005BA9A8 /* OpenGLES.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -5510,7 +5506,6 @@
 				0AA2FFAE2347273200E0B98C /* QuartzCore.framework in Frameworks */,
 				0AAF41112354CEA7000E3CC8 /* UIKit.framework in Frameworks */,
 				0A9A6BAA239126ED006A152A /* CoreGraphics.framework in Frameworks */,
-				0A90FA2F24068466005BA9A8 /* IOSurface.framework in Frameworks */,
 				0A90FA3024068473005BA9A8 /* OpenGLES.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -5599,7 +5594,6 @@
 				0AF9598F244C7CD700F59740 /* CoreFoundation.framework in Frameworks */,
 				0AF95990244C7CD700F59740 /* UIKit.framework in Frameworks */,
 				0AF95991244C7CD700F59740 /* CoreGraphics.framework in Frameworks */,
-				0AF95992244C7CD700F59740 /* IOSurface.framework in Frameworks */,
 				0AF95993244C7CD700F59740 /* OpenGLES.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -14748,6 +14742,7 @@
 				CLANG_ENABLE_OBJC_ARC = NO;
 				CODE_SIGN_STYLE = Automatic;
 				GCC_PREPROCESSOR_DEFINITIONS = (
+					ANGLE_DISABLE_IOSURFACE,
 					ANGLE_ENABLE_OPENGL_NULL,
 					"${inherited}",
 				);
@@ -14765,6 +14760,7 @@
 				CLANG_ENABLE_OBJC_ARC = NO;
 				CODE_SIGN_STYLE = Automatic;
 				GCC_PREPROCESSOR_DEFINITIONS = (
+					ANGLE_DISABLE_IOSURFACE,
 					ANGLE_ENABLE_OPENGL_NULL,
 					"${inherited}",
 				);
@@ -15319,6 +15315,7 @@
 				CLANG_ENABLE_OBJC_ARC = NO;
 				CODE_SIGN_STYLE = Automatic;
 				GCC_PREPROCESSOR_DEFINITIONS = (
+					ANGLE_DISABLE_IOSURFACE,
 					ANGLE_ENABLE_OPENGL_NULL,
 					"${inherited}",
 				);
@@ -15337,6 +15334,7 @@
 				CLANG_ENABLE_OBJC_ARC = NO;
 				CODE_SIGN_STYLE = Automatic;
 				GCC_PREPROCESSOR_DEFINITIONS = (
+					ANGLE_DISABLE_IOSURFACE,
 					ANGLE_ENABLE_OPENGL_NULL,
 					"${inherited}",
 				);

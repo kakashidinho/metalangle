@@ -156,8 +156,12 @@ SurfaceImpl *DisplayEAGL::createPbufferFromClientBuffer(const egl::SurfaceState 
                                                         EGLClientBuffer clientBuffer,
                                                         const egl::AttributeMap &attribs)
 {
+#if defined(ANGLE_DISABLE_IOSURFACE)
+    return nullptr;
+#else
     ASSERT(buftype == EGL_IOSURFACE_ANGLE);
     return new IOSurfaceSurfaceEAGL(state, mContext, clientBuffer, attribs);
+#endif
 }
 
 SurfaceImpl *DisplayEAGL::createPixmapSurface(const egl::SurfaceState &state,
@@ -272,13 +276,17 @@ egl::Error DisplayEAGL::validateClientBuffer(const egl::Config *configuration,
                                              const egl::AttributeMap &attribs) const
 {
     ASSERT(buftype == EGL_IOSURFACE_ANGLE);
+#if defined(ANGLE_DISABLE_IOSURFACE)
+    return egl::EglBadAttribute();
 
+#else
     if (!IOSurfaceSurfaceEAGL::validateAttributes(clientBuffer, attribs))
     {
         return egl::EglBadAttribute();
     }
 
     return egl::NoError();
+#endif  // ANGLE_DISABLE_IOSURFACE
 }
 
 std::string DisplayEAGL::getVendorString() const
@@ -295,9 +303,13 @@ EAGLContextObj DisplayEAGL::getEAGLContext() const
 void DisplayEAGL::generateExtensions(egl::DisplayExtensions *outExtensions) const
 {
     outExtensions->flexibleSurfaceCompatibility = true;
-    outExtensions->iosurfaceClientBuffer        = true;
     outExtensions->surfacelessContext           = true;
     outExtensions->deviceQuery                  = true;
+#    if defined(ANGLE_DISABLE_IOSURFACE)
+    outExtensions->iosurfaceClientBuffer = false;
+#    else
+    outExtensions->iosurfaceClientBuffer = true;
+#    endif
 
     // Contexts are virtualized so textures can be shared globally
     outExtensions->displayTextureShareGroup = true;
