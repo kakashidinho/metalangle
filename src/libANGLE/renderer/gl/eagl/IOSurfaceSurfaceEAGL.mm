@@ -9,7 +9,8 @@
 
 #import "common/platform.h"
 
-#if defined(ANGLE_PLATFORM_IOS) && !defined(ANGLE_PLATFORM_MACCATALYST)
+#if defined(ANGLE_PLATFORM_IOS) && !defined(ANGLE_PLATFORM_MACCATALYST) && \
+    !defined(ANGLE_DISABLE_IOSURFACE)
 
 #    import "libANGLE/renderer/gl/eagl/IOSurfaceSurfaceEAGL.h"
 

@@ -1161,6 +1161,10 @@ void RenderCommandEncoder::encodeMetalEncoder()
         // Verify that it was created successfully
         ASSERT(metalCmdEncoder);
 
+        // Work-around driver bug on iOS devices: stencil must be explicitly set to zero
+        // even if the doc says the default value is already zero.
+        [metalCmdEncoder setStencilReferenceValue:0];
+
         while (mCommands.good())
         {
             CmdType cmdType            = mCommands.fetch<CmdType>();
