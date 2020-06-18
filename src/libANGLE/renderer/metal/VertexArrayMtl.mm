@@ -354,12 +354,14 @@ angle::Result VertexArrayMtl::setupDraw(const gl::Context *glContext,
             {
                 desc.attributes[v].bufferIndex = mtl::kDefaultAttribsBindingIndex;
                 desc.attributes[v].offset      = v * mtl::kDefaultAttributeSize;
-                auto programInputs             = programState.getProgramInputs();
-                auto attribInfo =
-                    std::find_if(begin(programInputs), end(programInputs),
-                                 [v](const sh::ShaderVariable &sv) { return static_cast<uint32_t>(sv.location) == v; });
-                ASSERT(attribInfo != end(programInputs));
-                switch (attribInfo->type)
+                const std::vector<sh::ShaderVariable> &programInputs =
+                    programState.getProgramInputs();
+                std::vector<sh::ShaderVariable>::const_iterator attribInfoIte = std::find_if(
+                    begin(programInputs), end(programInputs), [v](const sh::ShaderVariable &sv) {
+                        return static_cast<uint32_t>(sv.location) == v;
+                    });
+                ASSERT(attribInfoIte != end(programInputs));
+                switch (attribInfoIte->type)
                 {
                     case GL_INT:
                     case GL_INT_VEC2:
