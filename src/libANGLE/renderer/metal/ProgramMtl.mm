@@ -1006,7 +1006,7 @@ angle::Result ProgramMtl::setupDraw(const gl::Context *glContext,
     ANGLE_TRY(commitUniforms(context, cmdEncoder));
     ANGLE_TRY(updateTextures(glContext, cmdEncoder, forceTexturesSetting));
 
-    if (uniformBuffersDirty)
+    if (uniformBuffersDirty || pipelineDescChanged)
     {
         ANGLE_TRY(updateUniformBuffers(context, cmdEncoder, pipelineDesc));
     }
