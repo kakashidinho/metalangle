@@ -102,7 +102,7 @@ class CommandBuffer final : public WrappedObject<id<MTLCommandBuffer>>, angle::N
 
     // Return true if command buffer can be encoded into. Return false if it has been committed
     // and hasn't been restarted.
-    bool valid() const;
+    bool ready() const;
     void commit();
     // wait for committed command buffer to finish.
     void finish();
@@ -129,7 +129,7 @@ class CommandBuffer final : public WrappedObject<id<MTLCommandBuffer>>, angle::N
     void set(id<MTLCommandBuffer> metalBuffer);
     void cleanup();
 
-    bool validImpl() const;
+    bool readyImpl() const;
     void commitImpl();
     void forceEndingCurrentEncoder();
 

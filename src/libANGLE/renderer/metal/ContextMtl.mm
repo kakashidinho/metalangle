@@ -1382,7 +1382,7 @@ void ContextMtl::endEncoding(bool forceSaveRenderPassContent)
 
 void ContextMtl::flushCommandBufer()
 {
-    if (!mCmdBuffer.valid())
+    if (!mCmdBuffer.ready())
     {
         return;
     }
@@ -1393,7 +1393,7 @@ void ContextMtl::flushCommandBufer()
 
 void ContextMtl::present(const gl::Context *context, id<CAMetalDrawable> presentationDrawable)
 {
-    ensureCommandBufferValid();
+    ensureCommandBufferReady();
 
     FramebufferMtl *currentframebuffer = mtl::GetImpl(getState().getDrawFramebuffer());
     if (currentframebuffer)
@@ -1441,7 +1441,7 @@ mtl::RenderCommandEncoder *ContextMtl::getRenderCommandEncoder(const mtl::Render
 
     endEncoding(false);
 
-    ensureCommandBufferValid();
+    ensureCommandBufferReady();
 
     // Need to re-apply everything on next draw call.
     mDirtyBits.set();
@@ -1486,7 +1486,7 @@ mtl::BlitCommandEncoder *ContextMtl::getBlitCommandEncoder()
 
     endEncoding(true);
 
-    ensureCommandBufferValid();
+    ensureCommandBufferReady();
 
     return &mBlitEncoder.restart();
 }
@@ -1500,19 +1500,19 @@ mtl::ComputeCommandEncoder *ContextMtl::getComputeCommandEncoder()
 
     endEncoding(true);
 
-    ensureCommandBufferValid();
+    ensureCommandBufferReady();
 
     return &mComputeEncoder.restart();
 }
 
-void ContextMtl::ensureCommandBufferValid()
+void ContextMtl::ensureCommandBufferReady()
 {
-    if (!mCmdBuffer.valid())
+    if (!mCmdBuffer.ready())
     {
         mCmdBuffer.restart();
     }
 
-    ASSERT(mCmdBuffer.valid());
+    ASSERT(mCmdBuffer.ready());
 }
 
 void ContextMtl::updateViewport(FramebufferMtl *framebufferMtl,
@@ -1745,13 +1745,13 @@ angle::Result ContextMtl::startOcclusionQueryInRenderPass(QueryMtl *query, bool 
 
 void ContextMtl::queueEventSignal(const mtl::SharedEventRef &event, uint64_t value)
 {
-    ensureCommandBufferValid();
+    ensureCommandBufferReady();
     mCmdBuffer.queueEventSignal(event, value);
 }
 
 void ContextMtl::serverWaitEvent(const mtl::SharedEventRef &event, uint64_t value)
 {
-    ensureCommandBufferValid();
+    ensureCommandBufferReady();
 
     // Event waiting cannot be encoded if there is active encoder.
     endEncoding(true);

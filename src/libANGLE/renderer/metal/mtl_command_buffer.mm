@@ -576,11 +576,11 @@ CommandBuffer::~CommandBuffer()
     cleanup();
 }
 
-bool CommandBuffer::valid() const
+bool CommandBuffer::ready() const
 {
     std::lock_guard<std::mutex> lg(mLock);
 
-    return validImpl();
+    return readyImpl();
 }
 
 void CommandBuffer::commit()
@@ -609,7 +609,7 @@ void CommandBuffer::setWriteDependency(const ResourceRef &resource)
 
     std::lock_guard<std::mutex> lg(mLock);
 
-    if (!validImpl())
+    if (!readyImpl())
     {
         return;
     }
@@ -626,7 +626,7 @@ void CommandBuffer::setReadDependency(const ResourceRef &resource)
 
     std::lock_guard<std::mutex> lg(mLock);
 
-    if (!validImpl())
+    if (!readyImpl())
     {
         return;
     }
@@ -679,7 +679,7 @@ void CommandBuffer::queueEventSignal(const mtl::SharedEventRef &event, uint64_t 
 {
     std::lock_guard<std::mutex> lg(mLock);
 
-    ASSERT(validImpl());
+    ASSERT(readyImpl());
 
     if (mActiveCommandEncoder && mActiveCommandEncoder->getType() == CommandEncoder::RENDER)
     {
@@ -696,7 +696,7 @@ void CommandBuffer::queueEventSignal(const mtl::SharedEventRef &event, uint64_t 
 void CommandBuffer::serverWaitEvent(const mtl::SharedEventRef &event, uint64_t value)
 {
     std::lock_guard<std::mutex> lg(mLock);
-    ASSERT(validImpl());
+    ASSERT(readyImpl());
 
     waitEventImpl(event, value);
 }
@@ -739,7 +739,7 @@ void CommandBuffer::cleanup()
     ParentClass::set(nil);
 }
 
-bool CommandBuffer::validImpl() const
+bool CommandBuffer::readyImpl() const
 {
     if (!ParentClass::valid())
     {
@@ -751,7 +751,7 @@ bool CommandBuffer::validImpl() const
 
 void CommandBuffer::commitImpl()
 {
-    if (!validImpl())
+    if (!readyImpl())
     {
         return;
     }
@@ -1190,7 +1190,7 @@ RenderCommandEncoder &RenderCommandEncoder::restart(const RenderPassDesc &desc)
         endEncoding();
     }
 
-    if (!cmdBuffer().valid())
+    if (!cmdBuffer().ready())
     {
         reset();
         return *this;
@@ -1838,7 +1838,7 @@ BlitCommandEncoder &BlitCommandEncoder::restart()
             return *this;
         }
 
-        if (!cmdBuffer().valid())
+        if (!cmdBuffer().ready())
         {
             reset();
             return *this;
@@ -2113,7 +2113,7 @@ ComputeCommandEncoder &ComputeCommandEncoder::restart()
             return *this;
         }
 
-        if (!cmdBuffer().valid())
+        if (!cmdBuffer().ready())
         {
             reset();
             return *this;
