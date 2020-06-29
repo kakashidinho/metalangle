@@ -12,6 +12,7 @@
 #define LIBANGLE_RENDERER_METAL_MTL_FORMAT_UTILS_H_
 
 #import <Metal/Metal.h>
+#import <CoreGraphics/CoreGraphics.h>
 
 #include <unordered_map>
 
@@ -81,6 +82,7 @@ struct Format : public FormatBase
     bool needConversion(angle::FormatID srcFormatId) const;
 
     MTLPixelFormat metalFormat = MTLPixelFormatInvalid;
+    CGColorSpaceRef metalColorspace = nil;
 
     LoadFunctionMap textureLoadFunctions       = nullptr;
     InitializeTextureDataFunction initFunction = nullptr;

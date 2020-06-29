@@ -206,6 +206,13 @@ SurfaceMtl::SurfaceMtl(DisplayMtl *display,
     {
         mColorFormat = display->getPixelFormat(angle::FormatID::B8G8R8A8_UNORM_SRGB);
     }
+    else if (attribs.get(EGL_GL_COLORSPACE, EGL_GL_COLORSPACE_LINEAR) == EGL_GL_COLORSPACE_BT2020_PQ_EXT)
+    {
+        mColorFormat.intendedFormatId = mColorFormat.actualFormatId =
+            angle::FormatID::R16G16B16A16_FLOAT;
+        mColorFormat.metalFormat = MTLPixelFormatRGBA16Float;
+        mColorFormat.metalColorspace = CGColorSpaceCreateWithName(kCGColorSpaceITUR_2020_PQ);
+    }
     else
     {
         // https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf says that BGRA8Unorm is
@@ -302,6 +309,7 @@ egl::Error SurfaceMtl::initialize(const egl::Display *display)
 
         mMetalLayer.get().device          = metalDevice;
         mMetalLayer.get().pixelFormat     = mColorFormat.metalFormat;
+        mMetalLayer.get().colorspace      = mColorFormat.metalColorspace;
         mMetalLayer.get().framebufferOnly = NO;  // Support blitting and glReadPixels
 
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST

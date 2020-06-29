@@ -238,6 +238,7 @@ void DisplayMtl::generateExtensions(egl::DisplayExtensions *outExtensions) const
     outExtensions->fenceSync                    = true;
     outExtensions->waitSync                     = true;
     outExtensions->glColorspace                 = true;
+    outExtensions->glColorspaceBT2020PQ         = true;
 }
 
 void DisplayMtl::generateCaps(egl::Caps *outCaps) const {}
