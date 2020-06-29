@@ -23,6 +23,7 @@ typedef enum MGLDrawableColorFormat : int
     MGLDrawableColorFormatRGBA8888  = 32,
     MGLDrawableColorFormatSRGBA8888 = -32,
     MGLDrawableColorFormatRGB565    = 16,
+    MGLDrawableColorFormatRGBA16    = 64,
 } MGLDrawableColorFormat;
 
 typedef enum MGLDrawableStencilFormat : int
@@ -44,6 +45,14 @@ typedef enum MGLDrawableMultisample : int
     MGLDrawableMultisample4X   = 4,
 } MGLDrawableMultisample;
 
+typedef enum MGLDrawableColorSpace : int
+{
+    MGLDrawableColorSpaceUnspecified = 0,
+    MGLDrawableColorSpaceLinear      = 1,
+    MGLDrawableColorSpaceSRGB        = 2,
+    MGLDrawableColorSpaceBT2020PQ    = 2020,
+} MGLDrawableColorSpace;
+
 @interface MGLLayer : CALayer
 
 // Return the size of the OpenGL framebuffer.
@@ -57,6 +66,7 @@ typedef enum MGLDrawableMultisample : int
 @property(nonatomic) MGLDrawableStencilFormat drawableStencilFormat;  // Default is StencilNone
 @property(nonatomic)
     MGLDrawableMultisample drawableMultisample;  // Default is MGLDrawableMultisampleNone
+@property(nonatomic) MGLDrawableColorSpace drawableColorSpace; // Default is ColorSpaceUnspecified
 
 // Default value is NO. Setting to YES will keep the framebuffer data after presenting.
 // Doing so will reduce performance and increase memory usage.
