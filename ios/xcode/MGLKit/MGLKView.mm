@@ -47,6 +47,15 @@ void Throw(NSString *msg)
     return self;
 }
 
+- (id)initWithFrame:(CGRect)frame context:(MGLContext *)context
+{
+    if (self = [self initWithFrame:frame])
+    {
+        [self setContext:context];
+    }
+    return self;
+}
+
 - (void)dealloc
 {
     _context = nil;

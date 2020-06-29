@@ -42,6 +42,8 @@
 @property(readonly, strong) UIImage *snapshot;
 #endif
 
+- (id)initWithFrame:(CGRect)frame context:(MGLContext *)context;
+
 // Redraw the view's contents immediately.
 - (void)display;
 
