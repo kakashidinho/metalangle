@@ -129,6 +129,16 @@ void Throw(NSString *msg)
     return self.glLayer.drawableSize;
 }
 
+- (NSInteger)drawableWidth
+{
+    return self.drawableSize.width;
+}
+
+- (NSInteger)drawableHeight
+{
+    return self.drawableSize.height;
+}
+
 #if TARGET_OS_OSX
 - (void)viewDidMoveToWindow
 {
