@@ -961,6 +961,12 @@ struct DisplayExtensions
 
     // EGL_EXT_gl_colorspace_display_p3_passthrough
     bool glColorspaceDisplayP3Passthrough = false;
+
+    // EGL_EXT_gl_colorspace_bt2020_linear
+    bool glColorspaceBT2020 = false;
+
+    // EGL_EXT_gl_colorspace_bt2020_pq
+    bool glColorspaceBT2020PQ = false;
 };
 
 struct DeviceExtensions
