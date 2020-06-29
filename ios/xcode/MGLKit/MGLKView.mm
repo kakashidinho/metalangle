@@ -89,6 +89,14 @@ void Throw(NSString *msg)
     _context = context;
 }
 
+- (void)setEnableSetNeedsDisplay:(BOOL)value
+{
+    if (value)
+    {
+        Throw(@"setNeedsDisplay not implemented");
+    }
+}
+
 - (void)setRetainedBacking:(BOOL)retainedBacking
 {
     self.glLayer.retainedBacking = _retainedBacking = retainedBacking;

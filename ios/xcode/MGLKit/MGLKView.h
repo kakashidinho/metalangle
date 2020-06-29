@@ -25,6 +25,7 @@
 
 @property(nonatomic) MGLContext *context;
 @property(nonatomic, assign) IBOutlet id<MGLKViewDelegate> delegate;
+@property(nonatomic) BOOL enableSetNeedsDisplay;
 
 // Default value is NO. Setting to YES will keep the framebuffer data after presenting.
 // Doing so will reduce performance and increase memory usage.
