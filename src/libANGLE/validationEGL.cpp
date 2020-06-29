@@ -353,6 +353,12 @@ Error ValidateColorspaceAttribute(const DisplayExtensions &displayExtensions, EG
                 return EglBadAttribute() << "EXT_gl_colorspace_scrgb_linear is not available.";
             }
             break;
+        case EGL_GL_COLORSPACE_BT2020_PQ_EXT:
+            if (!displayExtensions.glColorspaceBT2020PQ)
+            {
+                return EglBadAttribute() << "EXT_gl_colorspace_bt2020_pq is not available.";
+            }
+            break;
         default:
             return EglBadAttribute();
     }

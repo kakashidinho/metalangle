@@ -84,6 +84,7 @@ ANGLE_INLINE bool ColorspaceFormatOverride(const EGLenum colorspace, GLenum *ren
         case EGL_GL_COLORSPACE_DISPLAY_P3_PASSTHROUGH_EXT:  // App, not the HW, will specify the
                                                             // transfer function
         case EGL_GL_COLORSPACE_SCRGB_EXT:  // App, not the HW, will specify the transfer function
+        case EGL_GL_COLORSPACE_BT2020_PQ_EXT:
             // No translation
             return true;
         case EGL_GL_COLORSPACE_SRGB_KHR:
