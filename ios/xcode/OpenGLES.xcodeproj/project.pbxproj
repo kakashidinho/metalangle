@@ -5613,7 +5613,7 @@
 		0AF959EB244C7EE900F59740 /* simple_vertex_shader_tvos.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = simple_vertex_shader_tvos.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0AF959ED244C7FF800F59740 /* Info_tvos.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; name = Info_tvos.plist; path = samples/Info_tvos.plist; sourceTree = "<group>"; };
 		2F41094C24AA926F001EB161 /* libangle_gl_backend_tvos_13.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libangle_gl_backend_tvos_13.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		2F410AB424AA92CF001EB161 /* MetalANGLE_tvos13.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MetalANGLE_tvos13.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		2F410AB424AA92CF001EB161 /* MetalANGLE.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MetalANGLE.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		2F410AB524AA92CF001EB161 /* MetalANGLE_tvos copy-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "MetalANGLE_tvos copy-Info.plist"; path = "/Users/tmm1/fancybits/metalangle/ios/xcode/MetalANGLE_tvos copy-Info.plist"; sourceTree = "<absolute>"; };
 		2F410AF024AA92D3001EB161 /* libMetalANGLE_static_tvos13.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libMetalANGLE_static_tvos13.a; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -6314,7 +6314,7 @@
 				0A93703D244CF03700B3497E /* libangle_base_mac.a */,
 				0A937154244CF04900B3497E /* libangle_base_tvos.a */,
 				2F41094C24AA926F001EB161 /* libangle_gl_backend_tvos_13.a */,
-				2F410AB424AA92CF001EB161 /* MetalANGLE_tvos13.framework */,
+				2F410AB424AA92CF001EB161 /* MetalANGLE.framework */,
 				2F410AF024AA92D3001EB161 /* libMetalANGLE_static_tvos13.a */,
 			);
 			name = Products;
@@ -10672,7 +10672,7 @@
 			);
 			name = MetalANGLE_tvos13;
 			productName = OpenGLES;
-			productReference = 2F410AB424AA92CF001EB161 /* MetalANGLE_tvos13.framework */;
+			productReference = 2F410AB424AA92CF001EB161 /* MetalANGLE.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 		2F410AB624AA92D3001EB161 /* MetalANGLE_static_tvos13 */ = {
@@ -16866,7 +16866,7 @@
 				);
 				OTHER_LDFLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = com.google.OpenGLES;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = MetalANGLE;
 				SDKROOT = appletvos;
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = 3;
@@ -16906,7 +16906,7 @@
 				);
 				OTHER_LDFLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = com.google.OpenGLES;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = MetalANGLE;
 				SDKROOT = appletvos;
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = 3;
