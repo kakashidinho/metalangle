@@ -598,11 +598,29 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             this->swizzled = false;
             break;
 
+        case angle::FormatID::R16G16B16_SNORM:
+
+            this->metalFormat    = MTLPixelFormatRGBA16Snorm;
+            this->actualFormatId = angle::FormatID::R16G16B16A16_SNORM;
+            this->initFunction = Initialize4ComponentData<GLushort, 0x0000, 0x0000, 0x0000, 0x7FFF>;
+
+            this->swizzled = false;
+            break;
+
         case angle::FormatID::R16G16B16_UINT:
 
             this->metalFormat    = MTLPixelFormatRGBA16Uint;
             this->actualFormatId = angle::FormatID::R16G16B16A16_UINT;
             this->initFunction = Initialize4ComponentData<GLushort, 0x0000, 0x0000, 0x0000, 0x0001>;
+
+            this->swizzled = false;
+            break;
+
+        case angle::FormatID::R16G16B16_UNORM:
+
+            this->metalFormat    = MTLPixelFormatRGBA16Unorm;
+            this->actualFormatId = angle::FormatID::R16G16B16A16_UNORM;
+            this->initFunction = Initialize4ComponentData<GLubyte, 0x0000, 0x0000, 0x0000, 0xFFFF>;
 
             this->swizzled = false;
             break;

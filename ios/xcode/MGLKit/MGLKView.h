@@ -37,6 +37,9 @@
 
 // Return the size of the OpenGL default framebuffer.
 @property(readonly) CGSize drawableSize;
+// OpenGL id of the underlying default framebuffer object.
+// Might not necessary be zero.
+@property(readonly) uint32_t defaultOpenGLFrameBufferID;
 
 #if TARGET_OS_IOS || TARGET_OS_TV
 @property(readonly, strong) UIImage *snapshot;
@@ -44,6 +47,10 @@
 
 // Redraw the view's contents immediately.
 - (void)display;
+
+// Binds the underlying default framebuffer object to OpenGL ES.
+// Use this after drawing to offscreen FBO.
+- (void)bindDrawable;
 
 @end
 

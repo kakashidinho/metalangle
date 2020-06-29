@@ -110,6 +110,11 @@ void Throw(NSString *msg)
     [self drawRect:self.bounds];
 }
 
+- (void)bindDrawable
+{
+    [self.glLayer bindDefaultFrameBuffer];
+}
+
 - (CGSize)drawableSize
 {
     if (!self.layer)
@@ -118,6 +123,11 @@ void Throw(NSString *msg)
         return zero;
     }
     return self.glLayer.drawableSize;
+}
+
+- (uint32_t)defaultOpenGLFrameBufferID
+{
+    return self.glLayer.defaultOpenGLFrameBufferID;
 }
 
 #if TARGET_OS_OSX

@@ -436,6 +436,11 @@ GLint LinkProgram(GLuint program)
     return YES;
 }
 
+- (void)bindDefaultFrameBuffer
+{
+    gl::BindFramebuffer(GL_FRAMEBUFFER, _defaultOpenGLFrameBufferID);
+}
+
 - (BOOL)present
 {
     if (_useOffscreenFBO)
