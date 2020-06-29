@@ -105,6 +105,11 @@ void Throw(NSString *msg)
     self.glLayer.drawableMultisample = _drawableMultisample = drawableMultisample;
 }
 
+- (void)setDrawableColorSpace:(MGLDrawableColorSpace)drawableColorSpace
+{
+    self.glLayer.drawableColorSpace = _drawableColorSpace = drawableColorSpace;
+}
+
 - (void)display
 {
     [self drawRect:self.bounds];
