@@ -65,6 +65,9 @@ typedef enum MGLDrawableMultisample : int
 // Present the content of OpenGL backed framebuffer on screen as soon as possible.
 - (BOOL)present;
 
+// Bind default framebuffer. Use this after drawing to offscreen FBO.
+- (void)bindDefaultFrameBuffer;
+
 @end
 
 NS_ASSUME_NONNULL_END
