@@ -711,7 +711,12 @@ GLint LinkProgram(GLuint program)
             colorSpace                 = EGL_GL_COLORSPACE_SRGB_KHR;
             break;
         case MGLDrawableColorFormatRGBA16:
-            red = green = blue = alpha = 8;
+            red = green = blue = alpha = 16;
+            colorSpace                 = EGL_GL_COLORSPACE_LINEAR_KHR;
+            break;
+        case MGLDrawableColorFormatRGBA16BT2020PQ:
+            red = green = blue = alpha = 16;
+            colorSpace                 = EGL_GL_COLORSPACE_BT2020_PQ_EXT;
             break;
         default:
             UNREACHABLE();
