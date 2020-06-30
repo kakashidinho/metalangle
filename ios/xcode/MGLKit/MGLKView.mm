@@ -95,6 +95,12 @@ void Throw(NSString *msg)
         [super setNeedsDisplay];
 }
 
+- (void)setNeedsDisplayInRect:(CGRect)invalidRect
+{
+    if (_enableSetNeedsDisplay)
+        [super setNeedsDisplayInRect:invalidRect];
+}
+
 - (void)setRetainedBacking:(BOOL)retainedBacking
 {
     self.glLayer.retainedBacking = _retainedBacking = retainedBacking;
