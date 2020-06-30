@@ -347,7 +347,6 @@ GLint LinkProgram(GLuint program)
     _drawableDepthFormat   = MGLDrawableDepthFormatNone;
     _drawableStencilFormat = MGLDrawableStencilFormatNone;
     _drawableMultisample   = MGLDrawableMultisampleNone;
-    _drawableColorSpace    = MGLDrawableColorSpaceUnspecified;
 
     _display = [MGLDisplay defaultDisplay];
 
@@ -713,15 +712,6 @@ GLint LinkProgram(GLuint program)
             break;
         case MGLDrawableColorFormatRGBA16:
             red = green = blue = alpha = 8;
-            switch (_drawableColorSpace)
-            {
-                case MGLDrawableColorSpaceBT2020PQ:
-                    colorSpace = EGL_GL_COLORSPACE_BT2020_PQ_EXT;
-                    break;
-                default:
-                    colorSpace = EGL_GL_COLORSPACE_LINEAR_KHR;
-                    break;
-            }
             break;
         default:
             UNREACHABLE();
