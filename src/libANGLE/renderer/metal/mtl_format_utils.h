@@ -82,7 +82,6 @@ struct Format : public FormatBase
     bool needConversion(angle::FormatID srcFormatId) const;
 
     MTLPixelFormat metalFormat = MTLPixelFormatInvalid;
-    CGColorSpaceRef metalColorspace = nil;
 
     LoadFunctionMap textureLoadFunctions       = nullptr;
     InitializeTextureDataFunction initFunction = nullptr;

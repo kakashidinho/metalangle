@@ -211,7 +211,7 @@ SurfaceMtl::SurfaceMtl(DisplayMtl *display,
         mColorFormat.intendedFormatId = mColorFormat.actualFormatId =
             angle::FormatID::R16G16B16A16_FLOAT;
         mColorFormat.metalFormat = MTLPixelFormatRGBA16Float;
-        mColorFormat.metalColorspace = CGColorSpaceCreateWithName(kCGColorSpaceITUR_2020_PQ);
+        mMetalLayerColorSpace = CGColorSpaceCreateWithName(kCGColorSpaceITUR_2020_PQ);
     }
     else
     {
@@ -278,6 +278,11 @@ void SurfaceMtl::destroy(const egl::Display *display)
     mDepthRenderTarget.reset();
     mStencilRenderTarget.reset();
 
+    if (mMetalLayerColorSpace) {
+        CGColorSpaceRelease(mMetalLayerColorSpace);
+        mMetalLayerColorSpace = nullptr;
+    }
+
     mCurrentDrawable = nil;
     if (mMetalLayer && mMetalLayer.get() != mLayer)
     {
@@ -309,7 +314,7 @@ egl::Error SurfaceMtl::initialize(const egl::Display *display)
 
         mMetalLayer.get().device          = metalDevice;
         mMetalLayer.get().pixelFormat     = mColorFormat.metalFormat;
-        mMetalLayer.get().colorspace      = mColorFormat.metalColorspace;
+        mMetalLayer.get().colorspace      = mMetalLayerColorSpace;
         mMetalLayer.get().framebufferOnly = NO;  // Support blitting and glReadPixels
 
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
