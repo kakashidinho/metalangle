@@ -89,12 +89,10 @@ void Throw(NSString *msg)
     _context = context;
 }
 
-- (void)setEnableSetNeedsDisplay:(BOOL)value
+- (void)setNeedsDisplay
 {
-    if (value)
-    {
-        Throw(@"setNeedsDisplay not implemented");
-    }
+    if (_enableSetNeedsDisplay)
+        [super setNeedsDisplay];
 }
 
 - (void)setRetainedBacking:(BOOL)retainedBacking
