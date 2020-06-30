@@ -98,7 +98,7 @@ class SurfaceMtl : public SurfaceImpl
                                   const mtl::TextureRef &oldDepthTexture,
                                   const mtl::TextureRef &oldStencilTexture);
 
-    CGColorSpaceRef mMetalLayerColorSpace;
+    CGColorSpaceRef mMetalLayerColorSpace = NULL;
     mtl::AutoObjCObj<CAMetalLayer> mMetalLayer = nil;
     CALayer *mLayer;
     mtl::AutoObjCPtr<id<CAMetalDrawable>> mCurrentDrawable = nil;

@@ -261,7 +261,12 @@ SurfaceMtl::SurfaceMtl(DisplayMtl *display,
     }
 }
 
-SurfaceMtl::~SurfaceMtl() {}
+SurfaceMtl::~SurfaceMtl() {
+    if (mMetalLayerColorSpace) {
+        CGColorSpaceRelease(mMetalLayerColorSpace);
+        mMetalLayerColorSpace = NULL;
+    }
+}
 
 void SurfaceMtl::destroy(const egl::Display *display)
 {
@@ -277,11 +282,6 @@ void SurfaceMtl::destroy(const egl::Display *display)
     mColorManualResolveRenderTarget.reset();
     mDepthRenderTarget.reset();
     mStencilRenderTarget.reset();
-
-    if (mMetalLayerColorSpace) {
-        CGColorSpaceRelease(mMetalLayerColorSpace);
-        mMetalLayerColorSpace = nullptr;
-    }
 
     mCurrentDrawable = nil;
     if (mMetalLayer && mMetalLayer.get() != mLayer)
