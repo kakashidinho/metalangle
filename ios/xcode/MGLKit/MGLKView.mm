@@ -91,19 +91,23 @@ void Throw(NSString *msg)
     _context = context;
 }
 
-#if !TARGET_OS_OSX
+#if TARGET_OS_IOS || TARGET_OS_TV
 - (void)setNeedsDisplay
 {
     if (_enableSetNeedsDisplay)
+    {
         [super setNeedsDisplay];
+    }
 }
 
 - (void)setNeedsDisplayInRect:(CGRect)invalidRect
 {
     if (_enableSetNeedsDisplay)
+    {
         [super setNeedsDisplayInRect:invalidRect];
+    }
 }
-#endif
+#endif  // TARGET_OS_IOS || TARGET_OS_TV
 
 - (void)setRetainedBacking:(BOOL)retainedBacking
 {
