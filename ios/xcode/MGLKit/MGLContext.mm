@@ -106,6 +106,11 @@ void Throw(NSString *msg)
     return self;
 }
 
+- (MGLRenderingAPI)API
+{
+    return _renderingApi;
+}
+
 - (void)dealloc
 {
     [self releaseContext];

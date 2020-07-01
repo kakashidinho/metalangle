@@ -25,6 +25,7 @@
 
 @property(nonatomic) MGLContext *context;
 @property(nonatomic, assign) IBOutlet id<MGLKViewDelegate> delegate;
+@property(nonatomic) BOOL enableSetNeedsDisplay;
 
 // Default value is NO. Setting to YES will keep the framebuffer data after presenting.
 // Doing so will reduce performance and increase memory usage.
@@ -37,6 +38,9 @@
 
 // Return the size of the OpenGL default framebuffer.
 @property(readonly) CGSize drawableSize;
+@property(nonatomic, readonly) NSInteger drawableWidth;
+@property(nonatomic, readonly) NSInteger drawableHeight;
+
 // OpenGL id of the underlying default framebuffer object.
 // Might not necessary be zero.
 @property(readonly) uint32_t defaultOpenGLFrameBufferID;
@@ -44,6 +48,8 @@
 #if TARGET_OS_IOS || TARGET_OS_TV
 @property(readonly, strong) UIImage *snapshot;
 #endif
+
+- (id)initWithFrame:(CGRect)frame context:(MGLContext *)context;
 
 // Redraw the view's contents immediately.
 - (void)display;
