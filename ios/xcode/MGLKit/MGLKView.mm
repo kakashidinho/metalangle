@@ -28,6 +28,7 @@ void Throw(NSString *msg)
         self.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
 #else
         self.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        self.enableSetNeedsDisplay = YES;
 #endif
     }
     return self;
@@ -42,6 +43,7 @@ void Throw(NSString *msg)
         self.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
 #else
         self.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        self.enableSetNeedsDisplay = YES;
 #endif
     }
     return self;
