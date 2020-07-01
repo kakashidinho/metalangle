@@ -91,6 +91,7 @@ void Throw(NSString *msg)
     _context = context;
 }
 
+#if !TARGET_OS_OSX
 - (void)setNeedsDisplay
 {
     if (_enableSetNeedsDisplay)
@@ -102,6 +103,7 @@ void Throw(NSString *msg)
     if (_enableSetNeedsDisplay)
         [super setNeedsDisplayInRect:invalidRect];
 }
+#endif
 
 - (void)setRetainedBacking:(BOOL)retainedBacking
 {
