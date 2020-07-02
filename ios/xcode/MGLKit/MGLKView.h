@@ -37,13 +37,20 @@
 
 // Return the size of the OpenGL default framebuffer.
 @property(readonly) CGSize drawableSize;
+@property(nonatomic, readonly) NSInteger drawableWidth;
+@property(nonatomic, readonly) NSInteger drawableHeight;
+
 // OpenGL id of the underlying default framebuffer object.
 // Might not necessary be zero.
 @property(readonly) uint32_t defaultOpenGLFrameBufferID;
 
 #if TARGET_OS_IOS || TARGET_OS_TV
+// Enable setNeedsDisplay method.
+@property(nonatomic) BOOL enableSetNeedsDisplay;
 @property(readonly, strong) UIImage *snapshot;
 #endif
+
+- (id)initWithFrame:(CGRect)frame context:(MGLContext *)context;
 
 // Redraw the view's contents immediately.
 - (void)display;

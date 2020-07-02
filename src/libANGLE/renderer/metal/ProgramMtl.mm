@@ -240,7 +240,7 @@ void ProgramMtl::reset(ContextMtl *context)
         block.uniformLayout.clear();
     }
 
-    for (gl::ShaderType shaderType : gl::AllGLES2ShaderTypes())
+    for (gl::ShaderType shaderType : gl::AllShaderTypes())
     {
         mMslShaderLibrary[shaderType] = nil;
 

@@ -27,6 +27,8 @@ typedef enum MGLRenderingAPI : int
 // contexts.
 - (id)initWithAPI:(MGLRenderingAPI)api sharegroup:(MGLSharegroup *_Nullable)sharegroup;
 
+- (MGLRenderingAPI)API;
+
 @property(readonly) MGLSharegroup *sharegroup;
 
 // Present the content of layer on screen as soon as possible.

@@ -68,6 +68,9 @@
     if ([view isKindOfClass:MGLKView.class])
     {
         _glView = (MGLKView *)view;
+#if TARGET_OS_IOS || TARGET_OS_TV
+        _glView.enableSetNeedsDisplay = NO;
+#endif
         if (!_glView.delegate)
         {
             // If view has no delegate, set this controller as its delegate
