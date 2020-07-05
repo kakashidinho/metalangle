@@ -16,7 +16,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "platform/Platform.h"
+#include "platform/PlatformMethods.h"
 #include "test_utils/angle_test_configs.h"
 #include "test_utils/angle_test_instantiate.h"
 #include "test_utils/angle_test_platform.h"
@@ -69,6 +69,7 @@ class ANGLEPerfTest : public testing::Test, angle::NonCopyable
     virtual void startTest() {}
     // Called right before timer is stopped to let the test wait for asynchronous operations.
     virtual void finishTest() {}
+    virtual void flush() {}
 
   protected:
     void run();
@@ -83,6 +84,9 @@ class ANGLEPerfTest : public testing::Test, angle::NonCopyable
 
     unsigned int getNumStepsPerformed() const { return mNumStepsPerformed; }
     void doRunLoop(double maxRunTime);
+
+    // Overriden in trace perf tests.
+    virtual void saveScreenshot(const std::string &screenshotName) {}
 
     std::string mName;
     std::string mBackend;
@@ -151,6 +155,8 @@ class ANGLERenderTest : public ANGLEPerfTest
     void beginGLTraceEvent(const char *name, double hostTimeSec);
     void endGLTraceEvent(const char *name, double hostTimeSec);
 
+    void disableTestHarnessSwap() { mSwapEnabled = false; }
+
     bool mIsTimestampQueryAvailable;
 
   private:
@@ -168,6 +174,7 @@ class ANGLERenderTest : public ANGLEPerfTest
     std::vector<const char *> mExtensionPrerequisites;
     angle::PlatformMethods mPlatformMethods;
     ConfigParameters mConfigParams;
+    bool mSwapEnabled;
 
     GLuint mTimestampQuery;
 

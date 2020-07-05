@@ -58,18 +58,15 @@ void RenderTargetVk::reset()
     mContentDefined = false;
 }
 
-vk::AttachmentSerial RenderTargetVk::getAssignSerial(ContextVk *contextVk)
+Serial RenderTargetVk::getAssignImageViewSerial(ContextVk *contextVk)
 {
-    ASSERT(mImage && mImage->valid());
-    vk::AttachmentSerial attachmentSerial;
+    ASSERT(mImageViews);
     ASSERT(mLayerIndex < std::numeric_limits<uint16_t>::max());
     ASSERT(mLevelIndex < std::numeric_limits<uint16_t>::max());
-    Serial imageSerial = mImage->getAssignSerial(contextVk);
-    ASSERT(imageSerial.getValue() < std::numeric_limits<uint32_t>::max());
-    SetBitField(attachmentSerial.layer, mLayerIndex);
-    SetBitField(attachmentSerial.level, mLevelIndex);
-    SetBitField(attachmentSerial.imageSerial, imageSerial.getValue());
-    return attachmentSerial;
+
+    Serial imageViewSerial = mImageViews->getAssignSerial(contextVk, mLevelIndex, mLayerIndex);
+    ASSERT(imageViewSerial.getValue() < std::numeric_limits<uint32_t>::max());
+    return imageViewSerial;
 }
 
 angle::Result RenderTargetVk::onColorDraw(ContextVk *contextVk)
@@ -118,6 +115,27 @@ angle::Result RenderTargetVk::getImageView(ContextVk *contextVk,
                                                    imageViewOut);
 }
 
+angle::Result RenderTargetVk::getAndRetainCopyImageView(ContextVk *contextVk,
+                                                        const vk::ImageView **imageViewOut) const
+{
+    retainImageViews(contextVk);
+
+    const vk::ImageViewHelper *imageViews = mImageViews;
+    const vk::ImageView &copyView         = imageViews->getCopyImageView();
+
+    // If the source of render target is the texture, this will always be valid.  This is also where
+    // 3D or 2DArray images could be the source of the render target.
+    if (copyView.valid())
+    {
+        *imageViewOut = &copyView;
+        return angle::Result::Continue;
+    }
+
+    // Otherwise, this must come from the surface, in which case the image is 2D, so the image view
+    // used to draw is just as good for fetching.
+    return getImageView(contextVk, imageViewOut);
+}
+
 const vk::Format &RenderTargetVk::getImageFormat() const
 {
     ASSERT(mImage && mImage->valid());
@@ -144,20 +162,47 @@ vk::ImageHelper *RenderTargetVk::getImageForWrite(ContextVk *contextVk) const
     return mImage;
 }
 
-angle::Result RenderTargetVk::flushStagedUpdates(ContextVk *contextVk)
+angle::Result RenderTargetVk::flushStagedUpdates(ContextVk *contextVk,
+                                                 vk::ClearValuesArray *deferredClears,
+                                                 uint32_t deferredClearIndex) const
 {
+    // Note that the layer index for 3D textures is always zero according to Vulkan.
+    uint32_t layerIndex = mLayerIndex;
+    if (mImage->getType() == VK_IMAGE_TYPE_3D)
+    {
+        layerIndex = 0;
+    }
+
     ASSERT(mImage->valid());
-    if (!mImage->hasStagedUpdates())
+    if (!mImage->isUpdateStaged(mLevelIndex, layerIndex))
         return angle::Result::Continue;
 
     vk::CommandBuffer *commandBuffer;
     ANGLE_TRY(contextVk->endRenderPassAndGetCommandBuffer(&commandBuffer));
-    return mImage->flushStagedUpdates(contextVk, mLevelIndex, mLevelIndex + 1, mLayerIndex,
-                                      mLayerIndex + 1, commandBuffer);
+    return mImage->flushSingleSubresourceStagedUpdates(
+        contextVk, mLevelIndex, layerIndex, commandBuffer, deferredClears, deferredClearIndex);
 }
 
 void RenderTargetVk::retainImageViews(ContextVk *contextVk) const
 {
     mImageViews->retain(&contextVk->getResourceUseList());
+}
+
+gl::ImageIndex RenderTargetVk::getImageIndex() const
+{
+    // Determine the GL type from the Vk Image properties.
+    if (mImage->getType() == VK_IMAGE_TYPE_3D)
+    {
+        return gl::ImageIndex::Make3D(mLevelIndex, mLayerIndex);
+    }
+
+    // We don't need to distinguish 2D array and cube.
+    if (mImage->getLayerCount() > 1)
+    {
+        return gl::ImageIndex::Make2DArray(mLevelIndex, mLayerIndex);
+    }
+
+    ASSERT(mLayerIndex == 0);
+    return gl::ImageIndex::Make2D(mLevelIndex);
 }
 }  // namespace rx

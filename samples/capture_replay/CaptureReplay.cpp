@@ -9,12 +9,7 @@
 
 #include <functional>
 
-#include "util/frame_capture_utils.h"
-
-#define ANGLE_MACRO_STRINGIZE_AUX(a) #a
-#define ANGLE_MACRO_STRINGIZE(a) ANGLE_MACRO_STRINGIZE_AUX(a)
-#define ANGLE_MACRO_CONCAT_AUX(a, b) a##b
-#define ANGLE_MACRO_CONCAT(a, b) ANGLE_MACRO_CONCAT_AUX(a, b)
+#include "util/frame_capture_test_utils.h"
 
 // Build the right context header based on replay ID
 // This will expand to "angle_capture_context<#>.h"
@@ -27,6 +22,9 @@ std::function<void()> SetupContextReplay = reinterpret_cast<void (*)()>(
 std::function<void(int)> ReplayContextFrame = reinterpret_cast<void (*)(int)>(
     ANGLE_MACRO_CONCAT(ReplayContext,
                        ANGLE_MACRO_CONCAT(ANGLE_CAPTURE_REPLAY_SAMPLE_CONTEXT_ID, Frame)));
+std::function<void()> ResetContextReplay = reinterpret_cast<void (*)()>(
+    ANGLE_MACRO_CONCAT(ResetContext,
+                       ANGLE_MACRO_CONCAT(ANGLE_CAPTURE_REPLAY_SAMPLE_CONTEXT_ID, Replay)));
 
 class CaptureReplaySample : public SampleApplication
 {
@@ -58,13 +56,19 @@ class CaptureReplaySample : public SampleApplication
     {
         // Compute the current frame, looping from kReplayFrameStart to kReplayFrameEnd.
         uint32_t frame =
-            kReplayFrameStart + (mCurrentFrame % (kReplayFrameEnd - kReplayFrameStart));
+            kReplayFrameStart + (mCurrentFrame % ((kReplayFrameEnd - kReplayFrameStart) + 1));
+        if (mPreviousFrame > frame)
+        {
+            ResetContextReplay();
+        }
         ReplayContextFrame(frame);
+        mPreviousFrame = frame;
         mCurrentFrame++;
     }
 
   private:
-    uint32_t mCurrentFrame = 0;
+    uint32_t mCurrentFrame  = 0;
+    uint32_t mPreviousFrame = 0;
 };
 
 int main(int argc, char **argv)

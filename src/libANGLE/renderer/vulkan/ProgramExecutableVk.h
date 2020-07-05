@@ -36,7 +36,6 @@ class ShaderInfo final : angle::NonCopyable
     ANGLE_INLINE bool valid() const { return mIsInitialized; }
 
     const gl::ShaderMap<SpirvBlob> &getSpirvBlobs() const { return mSpirvBlobs; }
-    gl::ShaderMap<SpirvBlob> &getSpirvBlobs() { return mSpirvBlobs; }
 
     // Save and load implementation for GLES Program Binary support.
     void load(gl::BinaryInputStream *stream);
@@ -65,8 +64,8 @@ class ProgramInfo final : angle::NonCopyable
     angle::Result initProgram(ContextVk *contextVk,
                               const gl::ShaderType shaderType,
                               const ShaderInfo &shaderInfo,
-                              const ShaderMapInterfaceVariableInfoMap &variableInfoMap,
-                              ProgramTransformOptionBits optionBits);
+                              ProgramTransformOptionBits optionBits,
+                              ProgramExecutableVk *executableVk);
     void release(ContextVk *contextVk);
 
     ANGLE_INLINE bool valid(const gl::ShaderType shaderType) const
@@ -142,7 +141,7 @@ class ProgramExecutableVk
     angle::Result updateTexturesDescriptorSet(ContextVk *contextVk);
     angle::Result updateShaderResourcesDescriptorSet(ContextVk *contextVk,
                                                      vk::ResourceUseList *resourceUseList,
-                                                     CommandBufferHelper *commandBufferHelper);
+                                                     vk::CommandBufferHelper *commandBufferHelper);
     angle::Result updateTransformFeedbackDescriptorSet(
         const gl::ProgramState &programState,
         gl::ShaderMap<DefaultUniformBlock> &defaultUniformBlocks,
@@ -179,7 +178,7 @@ class ProgramExecutableVk
         const std::vector<gl::AtomicCounterBuffer> &atomicCounterBuffers,
         const gl::ShaderType shaderType,
         vk::DescriptorSetLayoutDesc *descOut);
-    void addImageDescriptorSetDesc(const gl::ProgramState &programState,
+    void addImageDescriptorSetDesc(const gl::ProgramExecutable &executable,
                                    vk::DescriptorSetLayoutDesc *descOut);
     void addTextureDescriptorSetDesc(const gl::ProgramState &programState,
                                      bool useOldRewriteStructSamplers,
@@ -194,15 +193,15 @@ class ProgramExecutableVk
     void updateBuffersDescriptorSet(ContextVk *contextVk,
                                     const gl::ShaderType shaderType,
                                     vk::ResourceUseList *resourceUseList,
-                                    CommandBufferHelper *commandBufferHelper,
+                                    vk::CommandBufferHelper *commandBufferHelper,
                                     const std::vector<gl::InterfaceBlock> &blocks,
                                     VkDescriptorType descriptorType);
     void updateAtomicCounterBuffersDescriptorSet(const gl::ProgramState &programState,
                                                  const gl::ShaderType shaderType,
                                                  ContextVk *contextVk,
                                                  vk::ResourceUseList *resourceUseList,
-                                                 CommandBufferHelper *commandBufferHelper);
-    angle::Result updateImagesDescriptorSet(const gl::ProgramState &programState,
+                                                 vk::CommandBufferHelper *commandBufferHelper);
+    angle::Result updateImagesDescriptorSet(const gl::ProgramExecutable &executable,
                                             const gl::ShaderType shaderType,
                                             ContextVk *contextVk);
 

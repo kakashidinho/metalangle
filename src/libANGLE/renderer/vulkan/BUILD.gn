@@ -20,6 +20,8 @@ declare_args() {
 _vulkan_backend_sources = [
   "BufferVk.cpp",
   "BufferVk.h",
+  "CommandProcessor.cpp",
+  "CommandProcessor.h",
   "CompilerVk.cpp",
   "CompilerVk.h",
   "ContextVk.cpp",
@@ -83,7 +85,6 @@ _vulkan_backend_sources = [
   "vk_cache_utils.h",
   "vk_caps_utils.cpp",
   "vk_caps_utils.h",
-  "vk_ext_provoking_vertex.h",
   "vk_format_table_autogen.cpp",
   "vk_format_utils.cpp",
   "vk_format_utils.h",
@@ -155,26 +156,6 @@ if (is_mac) {
   ]
 }
 
-config("angle_vulkan_lib_android") {
-  if (is_android) {
-    libs = [ "vulkan" ]
-  }
-}
-
-group("angle_vulkan_entry_points") {
-  public_configs = [ ":angle_vulkan_lib_android" ]
-  public_deps = [ "$angle_root/src/third_party/volk" ]
-  if (is_fuchsia) {
-    public_deps += [
-      "$angle_root/src/common/fuchsia_egl",
-      "//third_party/fuchsia-sdk:vulkan_base",
-      "//third_party/fuchsia-sdk/sdk/pkg/vulkan",
-    ]
-  } else if (!is_android && !is_ggp) {
-    data_deps = [ "$angle_root/third_party/vulkan-loader/src:libvulkan" ]
-  }
-}
-
 config("angle_vulkan_backend_config") {
   defines = [ "ANGLE_ENABLE_VULKAN" ]
   if (angle_enable_swiftshader) {
@@ -183,7 +164,6 @@ config("angle_vulkan_backend_config") {
   if (angle_enable_custom_vulkan_cmd_buffers) {
     defines += [ "ANGLE_USE_CUSTOM_VULKAN_CMD_BUFFERS=1" ]
   }
-
   if (angle_enable_vulkan_gpu_trace_events) {
     defines += [ "ANGLE_ENABLE_VULKAN_GPU_TRACE_EVENTS=1" ]
   }
@@ -191,7 +171,8 @@ config("angle_vulkan_backend_config") {
 
 angle_source_set("angle_vk_mem_alloc_wrapper") {
   deps = [
-    "$angle_root/third_party/VulkanMemoryAllocator:vulkan_memory_allocator",
+    "$angle_root/src/common/vulkan:angle_vulkan_headers",
+    "$angle_vulkan_memory_allocator_dir",
   ]
   sources = [
     "vk_mem_alloc_wrapper.cpp",
@@ -211,64 +192,37 @@ angle_source_set("angle_vulkan_backend") {
   libs = []
   deps = [
     ":angle_vk_mem_alloc_wrapper",
-    ":angle_vulkan_entry_points",
     "$angle_root:angle_gpu_info_util",
     "$angle_root:angle_image_util",
-    "$angle_root/third_party/vulkan-headers/src:vulkan_headers",
     "$angle_spirv_tools_dir:spvtools_val",
   ]
   public_deps = [
     "$angle_root:angle_glslang_wrapper",
     "$angle_root:libANGLE_headers",
+    "$angle_root/src/common/vulkan",
+    "$angle_root/src/common/vulkan:angle_vulkan_entry_points",
+    "$angle_root/src/common/vulkan:angle_vulkan_headers",
   ]
   public_configs = [ ":angle_vulkan_backend_config" ]
 
   data_deps = []
 
-  defines = [
-    "ANGLE_VK_LAYERS_DIR=\"$angle_data_dir\"",
-    "ANGLE_VK_MOCK_ICD_JSON=\"$angle_data_dir/VkICD_mock_icd.json\"",
-  ]
+  defines = []
+
+  if (angle_enable_vulkan_validation_layers) {
+    defines += [ "ANGLE_ENABLE_VULKAN_VALIDATION_LAYERS_BY_DEFAULT" ]
+    data_deps += [ "$angle_root/src/common/vulkan:vulkan_validation_layers" ]
+  }
 
   if (is_android) {
     libs += [ "vulkan" ]
   }
 
+  if (is_fuchsia) {
+    public_deps += [ "$angle_root/src/common/fuchsia_egl:backend" ]
+  }
+
   # Include generated shaders.
   import("vk_internal_shaders_autogen.gni")
   sources += angle_vulkan_internal_shaders
-
-  if (!is_android && !is_fuchsia && !is_ggp) {
-    data_deps += [
-      "$angle_root/third_party/vulkan-loader/src:libvulkan",
-      "$angle_root/third_party/vulkan-tools/src:VkICD_mock_icd",
-    ]
-  }
-
-  if (angle_enable_vulkan_validation_layers) {
-    defines += [ "ANGLE_ENABLE_VULKAN_VALIDATION_LAYERS_BY_DEFAULT" ]
-    if (is_fuchsia) {
-      data_deps += [ "//third_party/fuchsia-sdk:vulkan_validation" ]
-    } else {
-      data_deps += [ "$angle_root/third_party/vulkan-validation-layers/src:vulkan_validation_layers" ]
-      if (!is_android) {
-        data_deps += [ "$angle_root/third_party/vulkan-validation-layers/src:vulkan_gen_json_files" ]
-      }
-    }
-  }
-
-  if (angle_enable_swiftshader) {
-    import("$swiftshader_dir/src/Vulkan/vulkan.gni")
-    _sws_icd = "./$swiftshader_icd_file_name"
-    if (is_win) {
-      _sws_icd = ".\\\\$swiftshader_icd_file_name"
-    }
-
-    defines += [ "ANGLE_VK_SWIFTSHADER_ICD_JSON=\"${_sws_icd}\"" ]
-
-    data_deps += [
-      "$swiftshader_dir/src/Vulkan:icd_file",
-      "$swiftshader_dir/src/Vulkan:swiftshader_libvulkan",
-    ]
-  }
 }

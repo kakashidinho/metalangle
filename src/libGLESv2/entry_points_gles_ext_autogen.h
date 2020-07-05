@@ -605,6 +605,8 @@ ANGLE_EXPORT void GL_APIENTRY CoverageModulationCHROMIUM(GLenum components);
 // GL_CHROMIUM_lose_context
 ANGLE_EXPORT void GL_APIENTRY LoseContextCHROMIUM(GLenum current, GLenum other);
 
+// GL_EXT_EGL_image_array
+
 // GL_EXT_blend_func_extended
 ANGLE_EXPORT void GL_APIENTRY BindFragDataLocationEXT(GLuint program,
                                                       GLuint color,
@@ -840,6 +842,8 @@ ANGLE_EXPORT void GL_APIENTRY ImportSemaphoreFdEXT(GLuint semaphore, GLenum hand
 // GL_EXT_texture_compression_s3tc
 
 // GL_EXT_texture_compression_s3tc_srgb
+
+// GL_EXT_texture_cube_map_array
 
 // GL_EXT_texture_filter_anisotropic
 
@@ -1129,6 +1133,8 @@ ANGLE_EXPORT void GL_APIENTRY TexGeniOES(GLenum coord, GLenum pname, GLint param
 ANGLE_EXPORT void GL_APIENTRY TexGenivOES(GLenum coord, GLenum pname, const GLint *params);
 ANGLE_EXPORT void GL_APIENTRY TexGenxOES(GLenum coord, GLenum pname, GLfixed param);
 ANGLE_EXPORT void GL_APIENTRY TexGenxvOES(GLenum coord, GLenum pname, const GLfixed *params);
+
+// GL_OES_texture_cube_map_array
 
 // GL_OES_texture_half_float
 

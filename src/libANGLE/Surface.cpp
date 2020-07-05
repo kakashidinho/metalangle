@@ -91,6 +91,11 @@ Surface::Surface(EGLint surfaceType,
         mLargestPbuffer = (attributes.get(EGL_LARGEST_PBUFFER, EGL_FALSE) == EGL_TRUE);
     }
 
+    if (mType == EGL_PIXMAP_BIT)
+    {
+        mRenderBuffer = EGL_SINGLE_BUFFER;
+    }
+
     mGLColorspace =
         static_cast<EGLenum>(attributes.get(EGL_GL_COLORSPACE, EGL_GL_COLORSPACE_LINEAR));
     mVGAlphaFormat =
@@ -119,6 +124,9 @@ Surface::Surface(EGLint surfaceType,
     }
 
     mOrientation = static_cast<EGLint>(attributes.get(EGL_SURFACE_ORIENTATION_ANGLE, 0));
+
+    mTextureOffset.x = static_cast<int>(mState.attributes.get(EGL_TEXTURE_OFFSET_X_ANGLE, 0));
+    mTextureOffset.y = static_cast<int>(mState.attributes.get(EGL_TEXTURE_OFFSET_Y_ANGLE, 0));
 }
 
 Surface::~Surface() {}
@@ -150,8 +158,6 @@ void Surface::postSwap(const gl::Context *context)
         mInitState = gl::InitState::MayNeedInit;
         onStateChange(angle::SubjectMessage::SubjectChanged);
     }
-
-    context->onPostSwap();
 }
 
 Error Surface::initialize(const Display *display)
@@ -270,6 +276,7 @@ EGLint Surface::getType() const
 Error Surface::swap(const gl::Context *context)
 {
     ANGLE_TRACE_EVENT0("gpu.angle", "egl::Surface::swap");
+    context->onPreSwap();
 
     context->getState().getOverlay()->onSwap();
 
@@ -454,6 +461,32 @@ EGLint Surface::getWidth() const
 EGLint Surface::getHeight() const
 {
     return mFixedSize ? static_cast<EGLint>(mFixedHeight) : mImplementation->getHeight();
+}
+
+egl::Error Surface::getUserWidth(const egl::Display *display, EGLint *value) const
+{
+    if (mFixedSize)
+    {
+        *value = static_cast<EGLint>(mFixedWidth);
+        return NoError();
+    }
+    else
+    {
+        return mImplementation->getUserWidth(display, value);
+    }
+}
+
+egl::Error Surface::getUserHeight(const egl::Display *display, EGLint *value) const
+{
+    if (mFixedSize)
+    {
+        *value = static_cast<EGLint>(mFixedHeight);
+        return NoError();
+    }
+    else
+    {
+        return mImplementation->getUserHeight(display, value);
+    }
 }
 
 Error Surface::bindTexImage(gl::Context *context, gl::Texture *texture, EGLint buffer)

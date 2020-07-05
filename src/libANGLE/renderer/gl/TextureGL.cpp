@@ -713,7 +713,17 @@ angle::Result TextureGL::copyImage(const gl::Context *context,
             ASSERT(nativegl::UseTexImage2D(getType()));
             stateManager->bindFramebuffer(GL_READ_FRAMEBUFFER,
                                           sourceFramebufferGL->getFramebufferID());
-            if (requiresInitialization)
+            if (features.emulateCopyTexImage2DFromRenderbuffers.enabled && readBuffer &&
+                readBuffer->type() == GL_RENDERBUFFER)
+            {
+                BlitGL *blitter = GetBlitGL(context);
+                ANGLE_TRY(blitter->blitColorBufferWithShader(
+                    context, source, mTextureID, target, level, clippedArea,
+                    gl::Rectangle(destOffset.x, destOffset.y, clippedArea.width,
+                                  clippedArea.height),
+                    GL_NEAREST, true));
+            }
+            else if (requiresInitialization)
             {
                 ANGLE_GL_TRY(context, functions->copyTexSubImage2D(
                                           ToGLenum(target), static_cast<GLint>(level), destOffset.x,
@@ -781,10 +791,24 @@ angle::Result TextureGL::copySubImage(const gl::Context *context,
         if (nativegl::UseTexImage2D(getType()))
         {
             ASSERT(clippedOffset.z == 0);
-            ANGLE_GL_TRY(context, functions->copyTexSubImage2D(
-                                      ToGLenum(target), static_cast<GLint>(level), clippedOffset.x,
-                                      clippedOffset.y, clippedArea.x, clippedArea.y,
-                                      clippedArea.width, clippedArea.height));
+            if (features.emulateCopyTexImage2DFromRenderbuffers.enabled &&
+                source->getReadColorAttachment() &&
+                source->getReadColorAttachment()->type() == GL_RENDERBUFFER)
+            {
+                BlitGL *blitter = GetBlitGL(context);
+                ANGLE_TRY(blitter->blitColorBufferWithShader(
+                    context, source, mTextureID, target, level, clippedArea,
+                    gl::Rectangle(clippedOffset.x, clippedOffset.y, clippedArea.width,
+                                  clippedArea.height),
+                    GL_NEAREST, true));
+            }
+            else
+            {
+                ANGLE_GL_TRY(context, functions->copyTexSubImage2D(
+                                          ToGLenum(target), static_cast<GLint>(level),
+                                          clippedOffset.x, clippedOffset.y, clippedArea.x,
+                                          clippedArea.y, clippedArea.width, clippedArea.height));
+            }
         }
         else
         {
@@ -1240,14 +1264,56 @@ angle::Result TextureGL::setImageExternal(const gl::Context *context,
 
 angle::Result TextureGL::generateMipmap(const gl::Context *context)
 {
-    const FunctionsGL *functions = GetFunctionsGL(context);
-    StateManagerGL *stateManager = GetStateManagerGL(context);
-
-    stateManager->bindTexture(getType(), mTextureID);
-    ANGLE_GL_TRY_ALWAYS_CHECK(context, functions->generateMipmap(ToGLenum(getType())));
+    const FunctionsGL *functions      = GetFunctionsGL(context);
+    StateManagerGL *stateManager      = GetStateManagerGL(context);
+    const angle::FeaturesGL &features = GetFeaturesGL(context);
 
     const GLuint effectiveBaseLevel = mState.getEffectiveBaseLevel();
     const GLuint maxLevel           = mState.getMipmapMaxLevel();
+
+    const gl::ImageDesc &baseLevelDesc                = mState.getBaseLevelDesc();
+    const gl::InternalFormat &baseLevelInternalFormat = *baseLevelDesc.format.info;
+
+    stateManager->bindTexture(getType(), mTextureID);
+    if (baseLevelInternalFormat.colorEncoding == GL_SRGB &&
+        features.encodeAndDecodeSRGBForGenerateMipmap.enabled && getType() == gl::TextureType::_2D)
+    {
+        nativegl::TexImageFormat texImageFormat = nativegl::GetTexImageFormat(
+            functions, features, baseLevelInternalFormat.internalFormat,
+            baseLevelInternalFormat.format, baseLevelInternalFormat.type);
+
+        // Manually allocate the mip levels of this texture if they don't exist
+        GLuint levelCount = maxLevel - effectiveBaseLevel + 1;
+        for (GLuint levelIdx = 1; levelIdx < levelCount; levelIdx++)
+        {
+            gl::Extents levelSize(std::max(baseLevelDesc.size.width >> levelIdx, 1),
+                                  std::max(baseLevelDesc.size.height >> levelIdx, 1), 1);
+
+            const gl::ImageDesc &levelDesc =
+                mState.getImageDesc(gl::TextureTarget::_2D, effectiveBaseLevel + levelIdx);
+
+            // Make sure no pixel unpack buffer is bound
+            stateManager->bindBuffer(gl::BufferBinding::PixelUnpack, 0);
+
+            if (levelDesc.size != levelSize || *levelDesc.format.info != baseLevelInternalFormat)
+            {
+                ANGLE_GL_TRY_ALWAYS_CHECK(
+                    context, functions->texImage2D(
+                                 ToGLenum(getType()), effectiveBaseLevel + levelIdx,
+                                 texImageFormat.internalFormat, levelSize.width, levelSize.height,
+                                 0, texImageFormat.format, texImageFormat.type, nullptr));
+            }
+        }
+
+        // Use the blitter to generate the mips
+        BlitGL *blitter = GetBlitGL(context);
+        ANGLE_TRY(blitter->generateSRGBMipmap(context, this, effectiveBaseLevel, levelCount,
+                                              baseLevelDesc.size));
+    }
+    else
+    {
+        ANGLE_GL_TRY_ALWAYS_CHECK(context, functions->generateMipmap(ToGLenum(getType())));
+    }
 
     setLevelInfo(context, getType(), effectiveBaseLevel, maxLevel - effectiveBaseLevel,
                  getBaseLevelInfo());
@@ -1316,7 +1382,8 @@ GLint TextureGL::getNativeID() const
 }
 
 angle::Result TextureGL::syncState(const gl::Context *context,
-                                   const gl::Texture::DirtyBits &dirtyBits)
+                                   const gl::Texture::DirtyBits &dirtyBits,
+                                   gl::TextureCommand source)
 {
     if (dirtyBits.none() && mLocalDirtyBits.none())
     {
@@ -1607,8 +1674,22 @@ angle::Result TextureGL::setSwizzle(const gl::Context *context, GLint swizzle[4]
         onStateChange(angle::SubjectMessage::DirtyBitsFlagged);
 
         stateManager->bindTexture(getType(), mTextureID);
-        ANGLE_GL_TRY(context, functions->texParameteriv(ToGLenum(getType()),
-                                                        GL_TEXTURE_SWIZZLE_RGBA, swizzle));
+        if (functions->standard == STANDARD_GL_ES)
+        {
+            ANGLE_GL_TRY(context, functions->texParameteri(ToGLenum(getType()),
+                                                           GL_TEXTURE_SWIZZLE_R, swizzle[0]));
+            ANGLE_GL_TRY(context, functions->texParameteri(ToGLenum(getType()),
+                                                           GL_TEXTURE_SWIZZLE_G, swizzle[1]));
+            ANGLE_GL_TRY(context, functions->texParameteri(ToGLenum(getType()),
+                                                           GL_TEXTURE_SWIZZLE_B, swizzle[2]));
+            ANGLE_GL_TRY(context, functions->texParameteri(ToGLenum(getType()),
+                                                           GL_TEXTURE_SWIZZLE_A, swizzle[3]));
+        }
+        else
+        {
+            ANGLE_GL_TRY(context, functions->texParameteriv(ToGLenum(getType()),
+                                                            GL_TEXTURE_SWIZZLE_RGBA, swizzle));
+        }
     }
     return angle::Result::Continue;
 }

@@ -25,6 +25,8 @@
 #ifndef EGL_ANGLE_d3d_texture_client_buffer
 #define EGL_ANGLE_d3d_texture_client_buffer 1
 #define EGL_D3D_TEXTURE_ANGLE             0x33A3
+#define EGL_TEXTURE_OFFSET_X_ANGLE        0x3490
+#define EGL_TEXTURE_OFFSET_Y_ANGLE        0x3491
 #endif /* EGL_ANGLE_d3d_texture_client_buffer */
 
 #ifndef EGL_ANGLE_software_display
@@ -54,6 +56,7 @@
 #define EGL_PLATFORM_ANGLE_DEVICE_TYPE_ANGLE 0x3209
 #define EGL_PLATFORM_ANGLE_DEVICE_TYPE_HARDWARE_ANGLE 0x320A
 #define EGL_PLATFORM_ANGLE_DEVICE_TYPE_NULL_ANGLE 0x345E
+#define EGL_PLATFORM_ANGLE_NATIVE_PLATFORM_TYPE_ANGLE 0x348F
 #endif /* EGL_ANGLE_platform_angle */
 
 #ifndef EGL_ANGLE_platform_angle_d3d
@@ -64,6 +67,12 @@
 #define EGL_PLATFORM_ANGLE_DEVICE_TYPE_D3D_REFERENCE_ANGLE 0x320C
 #define EGL_PLATFORM_ANGLE_ENABLE_AUTOMATIC_TRIM_ANGLE 0x320F
 #endif /* EGL_ANGLE_platform_angle_d3d */
+
+#ifndef EGL_ANGLE_platform_angle_d3d_luid
+#define EGL_ANGLE_platform_angle_d3d_luid 1
+#define EGL_PLATFORM_ANGLE_D3D_LUID_HIGH_ANGLE 0x34A0
+#define EGL_PLATFORM_ANGLE_D3D_LUID_LOW_ANGLE 0x34A1
+#endif /* EGL_ANGLE_platform_angle_d3d_luid */
 
 #ifndef EGL_ANGLE_platform_angle_d3d11on12
 #define EGL_ANGLE_platform_angle_d3d11on12 1
@@ -245,6 +254,14 @@ EGLAPI EGLBoolean EGLAPIENTRY eglGetMscRateANGLE(EGLDisplay dpy,
 #define EGL_POWER_PREFERENCE_ANGLE 0x3482
 #define EGL_LOW_POWER_ANGLE 0x0001
 #define EGL_HIGH_POWER_ANGLE 0x0002
+typedef void(EGLAPIENTRYP PFNEGLRELEASEHIGHPOWERGPUANGLEPROC) (EGLDisplay dpy, EGLContext ctx);
+typedef void(EGLAPIENTRYP PFNEGLREACQUIREHIGHPOWERGPUANGLEPROC) (EGLDisplay dpy, EGLContext ctx);
+typedef void(EGLAPIENTRYP PFNEGLHANDLEGPUSWITCHANGLEPROC) (EGLDisplay dpy);
+#ifdef EGL_EGLEXT_PROTOTYPES
+EGLAPI void EGLAPIENTRY eglReleaseHighPowerGPUANGLE(EGLDisplay dpy, EGLContext ctx);
+EGLAPI void EGLAPIENTRY eglReacquireHighPowerGPUANGLE(EGLDisplay dpy, EGLContext ctx);
+EGLAPI void EGLAPIENTRY eglHandleGPUSwitchANGLE(EGLDisplay dpy);
+#endif
 #endif /* EGL_ANGLE_power_preference */
 
 #ifndef EGL_ANGLE_feature_control

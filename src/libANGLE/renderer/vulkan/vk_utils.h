@@ -117,17 +117,6 @@ void AddToPNextChain(VulkanStruct1 *chainStart, VulkanStruct2 *ptr)
     localPtr->pNext              = reinterpret_cast<VkBaseOutStructure *>(ptr);
 }
 
-extern const char *gLoaderLayersPathEnv;
-extern const char *gLoaderICDFilenamesEnv;
-extern const char *gANGLEPreferredDevice;
-
-enum class ICD
-{
-    Default,
-    Mock,
-    SwiftShader,
-};
-
 // Abstracts error handling. Implemented by both ContextVk for GL and DisplayVk for EGL errors.
 class Context : angle::NonCopyable
 {
@@ -303,6 +292,12 @@ class MemoryProperties final : angle::NonCopyable
                                             uint32_t *indexOut) const;
     void destroy();
 
+    VkDeviceSize getHeapSizeForMemoryType(uint32_t memoryType) const
+    {
+        uint32_t heapIndex = mMemoryProperties.memoryTypes[memoryType].heapIndex;
+        return mMemoryProperties.memoryHeaps[heapIndex].size;
+    }
+
   private:
     VkPhysicalDeviceMemoryProperties mMemoryProperties;
 };
@@ -328,13 +323,14 @@ class StagingBuffer final : angle::NonCopyable
     size_t mSize;
 };
 
-angle::Result InitMappableAllocation(VmaAllocator allocator,
-                                     Allocation *allcation,
+angle::Result InitMappableAllocation(Context *context,
+                                     const vk::Allocator &allocator,
+                                     Allocation *allocation,
                                      VkDeviceSize size,
                                      int value,
                                      VkMemoryPropertyFlags memoryPropertyFlags);
 
-angle::Result InitMappableDeviceMemory(vk::Context *context,
+angle::Result InitMappableDeviceMemory(Context *context,
                                        vk::DeviceMemory *deviceMemory,
                                        VkDeviceSize size,
                                        int value,
@@ -350,6 +346,7 @@ angle::Result AllocateBufferMemory(Context *context,
 
 angle::Result AllocateImageMemory(Context *context,
                                   VkMemoryPropertyFlags memoryPropertyFlags,
+                                  VkMemoryPropertyFlags *memoryPropertyFlagsOut,
                                   const void *extraAllocationInfo,
                                   Image *image,
                                   DeviceMemory *deviceMemoryOut,
@@ -635,7 +632,91 @@ template <typename T>
 using SpecializationConstantMap = angle::PackedEnumMap<sh::vk::SpecializationConstantId, T>;
 
 void MakeDebugUtilsLabel(GLenum source, const char *marker, VkDebugUtilsLabelEXT *label);
+
+constexpr size_t kClearValueDepthIndex   = gl::IMPLEMENTATION_MAX_DRAW_BUFFERS;
+constexpr size_t kClearValueStencilIndex = gl::IMPLEMENTATION_MAX_DRAW_BUFFERS + 1;
+
+class ClearValuesArray final
+{
+  public:
+    ClearValuesArray();
+    ~ClearValuesArray();
+
+    ClearValuesArray(const ClearValuesArray &other);
+    ClearValuesArray &operator=(const ClearValuesArray &rhs);
+
+    void store(uint32_t index, VkImageAspectFlags aspectFlags, const VkClearValue &clearValue);
+
+    void reset(size_t index)
+    {
+        mValues[index] = {};
+        mEnabled.reset(index);
+    }
+
+    bool test(size_t index) const { return mEnabled.test(index); }
+    bool testDepth() const { return mEnabled.test(kClearValueDepthIndex); }
+    bool testStencil() const { return mEnabled.test(kClearValueStencilIndex); }
+
+    const VkClearValue &operator[](size_t index) const { return mValues[index]; }
+
+    float getDepthValue() const { return mValues[kClearValueDepthIndex].depthStencil.depth; }
+    uint32_t getStencilValue() const
+    {
+        return mValues[kClearValueStencilIndex].depthStencil.stencil;
+    }
+
+    const VkClearValue *data() const { return mValues.data(); }
+    bool empty() const { return mEnabled.none(); }
+
+    gl::DrawBufferMask getEnabledColorAttachmentsMask() const
+    {
+        return gl::DrawBufferMask(mEnabled.to_ulong());
+    }
+
+  private:
+    gl::AttachmentArray<VkClearValue> mValues;
+    gl::AttachmentsMask mEnabled;
+};
 }  // namespace vk
+
+#if !defined(ANGLE_SHARED_LIBVULKAN)
+// Lazily load entry points for each extension as necessary.
+void InitDebugUtilsEXTFunctions(VkInstance instance);
+void InitDebugReportEXTFunctions(VkInstance instance);
+void InitGetPhysicalDeviceProperties2KHRFunctions(VkInstance instance);
+void InitTransformFeedbackEXTFunctions(VkDevice device);
+
+#    if defined(ANGLE_PLATFORM_FUCHSIA)
+// VK_FUCHSIA_imagepipe_surface
+void InitImagePipeSurfaceFUCHSIAFunctions(VkInstance instance);
+#    endif
+
+#    if defined(ANGLE_PLATFORM_ANDROID)
+// VK_ANDROID_external_memory_android_hardware_buffer
+void InitExternalMemoryHardwareBufferANDROIDFunctions(VkInstance instance);
+#    endif
+
+#    if defined(ANGLE_PLATFORM_GGP)
+// VK_GGP_stream_descriptor_surface
+void InitGGPStreamDescriptorSurfaceFunctions(VkInstance instance);
+#    endif  // defined(ANGLE_PLATFORM_GGP)
+
+// VK_KHR_external_semaphore_fd
+void InitExternalSemaphoreFdFunctions(VkInstance instance);
+
+// VK_EXT_external_memory_host
+void InitExternalMemoryHostFunctions(VkInstance instance);
+
+// VK_KHR_external_fence_capabilities
+void InitExternalFenceCapabilitiesFunctions(VkInstance instance);
+
+// VK_KHR_external_fence_fd
+void InitExternalFenceFdFunctions(VkInstance instance);
+
+// VK_KHR_external_semaphore_capabilities
+void InitExternalSemaphoreCapabilitiesFunctions(VkInstance instance);
+
+#endif  // !defined(ANGLE_SHARED_LIBVULKAN)
 
 namespace gl_vk
 {

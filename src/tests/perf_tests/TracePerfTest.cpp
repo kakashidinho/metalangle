@@ -13,10 +13,10 @@
 #include "tests/perf_tests/ANGLEPerfTest.h"
 #include "tests/perf_tests/DrawCallPerfParams.h"
 #include "util/egl_loader_autogen.h"
-#include "util/frame_capture_utils.h"
+#include "util/frame_capture_test_utils.h"
+#include "util/png_utils.h"
 
-#include "restricted_traces/manhattan_10/manhattan_10_capture_context1.h"
-#include "restricted_traces/trex_200/trex_200_capture_context1.h"
+#include "restricted_traces/restricted_traces_autogen.h"
 
 #include <cassert>
 #include <functional>
@@ -29,13 +29,6 @@ namespace
 {
 void FramebufferChangeCallback(void *userData, GLenum target, GLuint framebuffer);
 
-enum class TracePerfTestID
-{
-    Manhattan10,
-    TRex200,
-    InvalidEnum,
-};
-
 struct TracePerfParams final : public RenderTestParams
 {
     // Common default options
@@ -43,8 +36,6 @@ struct TracePerfParams final : public RenderTestParams
     {
         majorVersion = 3;
         minorVersion = 0;
-        windowWidth  = 1920;
-        windowHeight = 1080;
         trackGpuTime = true;
 
         // Display the frame after every drawBenchmark invocation
@@ -54,26 +45,11 @@ struct TracePerfParams final : public RenderTestParams
     std::string story() const override
     {
         std::stringstream strstr;
-
-        strstr << RenderTestParams::story();
-
-        switch (testID)
-        {
-            case TracePerfTestID::Manhattan10:
-                strstr << "_manhattan_10";
-                break;
-            case TracePerfTestID::TRex200:
-                strstr << "_trex_200";
-                break;
-            default:
-                assert(0);
-                break;
-        }
-
+        strstr << RenderTestParams::story() << "_" << kTraceInfos[testID].name;
         return strstr.str();
     }
 
-    TracePerfTestID testID;
+    RestrictedTraceID testID;
 };
 
 std::ostream &operator<<(std::ostream &os, const TracePerfParams &params)
@@ -95,7 +71,6 @@ class TracePerfTest : public ANGLERenderTest, public ::testing::WithParamInterfa
 
     uint32_t mStartFrame;
     uint32_t mEndFrame;
-    std::function<void(uint32_t)> mReplayFunc;
 
     double getHostTimeFromGLTime(GLint64 glTime);
 
@@ -114,6 +89,7 @@ class TracePerfTest : public ANGLERenderTest, public ::testing::WithParamInterfa
     };
 
     void sampleTime();
+    void saveScreenshot(const std::string &screenshotName) override;
 
     // For tracking RenderPass/FBO change timing.
     QueryInfo mCurrentQuery = {};
@@ -126,23 +102,25 @@ class TracePerfTest : public ANGLERenderTest, public ::testing::WithParamInterfa
 TracePerfTest::TracePerfTest()
     : ANGLERenderTest("TracePerf", GetParam()), mStartFrame(0), mEndFrame(0)
 {
-    // TODO(anglebug.com/4533) This fails after the upgrade to the 26.20.100.7870 driver.
-    if (IsWindows() && IsIntel() &&
-        GetParam().getRenderer() == EGL_PLATFORM_ANGLE_TYPE_VULKAN_ANGLE &&
-        GetParam().testID == TracePerfTestID::Manhattan10)
+    const TracePerfParams &param = GetParam();
+
+    // TODO: http://anglebug.com/4533 This fails after the upgrade to the 26.20.100.7870 driver.
+    if (IsWindows() && IsIntel() && param.getRenderer() == EGL_PLATFORM_ANGLE_TYPE_VULKAN_ANGLE &&
+        param.testID == RestrictedTraceID::manhattan_10)
     {
         mSkipTest = true;
     }
-}
 
-// TODO(jmadill/cnorthrop): Use decompression path. http://anglebug.com/3630
-#define TRACE_TEST_CASE(NAME)                                    \
-    mStartFrame = NAME::kReplayFrameStart;                       \
-    mEndFrame   = NAME::kReplayFrameEnd;                         \
-    mReplayFunc = NAME::ReplayContext1Frame;                     \
-    NAME::SetBinaryDataDecompressCallback(DecompressBinaryData); \
-    NAME::SetBinaryDataDir(ANGLE_TRACE_DATA_DIR_##NAME);         \
-    NAME::SetupContext1Replay()
+    // TODO: http://anglebug.com/4731 Fails on older Intel drivers. Passes in newer.
+    if (IsWindows() && IsIntel() && param.driver != GLESDriverType::AngleEGL &&
+        param.testID == RestrictedTraceID::angry_birds_2_1500)
+    {
+        mSkipTest = true;
+    }
+
+    // We already swap in TracePerfTest::drawBenchmark, no need to swap again in the harness.
+    disableTestHarnessSwap();
+}
 
 void TracePerfTest::initializeBenchmark()
 {
@@ -157,18 +135,19 @@ void TracePerfTest::initializeBenchmark()
         angle::SetCWD(exeDir.c_str());
     }
 
-    switch (params.testID)
-    {
-        case TracePerfTestID::Manhattan10:
-            TRACE_TEST_CASE(manhattan_10);
-            break;
-        case TracePerfTestID::TRex200:
-            TRACE_TEST_CASE(trex_200);
-            break;
-        default:
-            assert(0);
-            break;
-    }
+    const TraceInfo &traceInfo = kTraceInfos[params.testID];
+    mStartFrame                = traceInfo.startFrame;
+    mEndFrame                  = traceInfo.endFrame;
+    SetBinaryDataDecompressCallback(params.testID, DecompressBinaryData);
+
+    std::stringstream testDataDirStr;
+    testDataDirStr << ANGLE_TRACE_DATA_DIR << "/" << traceInfo.name;
+    std::string testDataDir = testDataDirStr.str();
+    SetBinaryDataDir(params.testID, testDataDir.c_str());
+
+    // Potentially slow. Can load a lot of resources.
+    SetupReplay(params.testID);
+    glFinish();
 
     ASSERT_TRUE(mEndFrame > mStartFrame);
 
@@ -209,17 +188,19 @@ void TracePerfTest::drawBenchmark()
 
     startGpuTimer();
 
-    for (uint32_t frame = mStartFrame; frame < mEndFrame; ++frame)
+    for (uint32_t frame = mStartFrame; frame <= mEndFrame; ++frame)
     {
         char frameName[32];
         sprintf(frameName, "Frame %u", frame);
         beginInternalTraceEvent(frameName);
 
-        mReplayFunc(frame);
+        ReplayFrame(GetParam().testID, frame);
         getGLWindow()->swap();
 
         endInternalTraceEvent(frameName);
     }
+
+    ResetReplay(GetParam().testID);
 
     // Process any running queries once per iteration.
     for (size_t queryIndex = 0; queryIndex < mRunningQueries.size();)
@@ -325,6 +306,45 @@ void TracePerfTest::onFramebufferChange(GLenum target, GLuint framebuffer)
     mCurrentQuery.framebuffer = framebuffer;
 }
 
+void TracePerfTest::saveScreenshot(const std::string &screenshotName)
+{
+    // Render a single frame.
+    RestrictedTraceID testID   = GetParam().testID;
+    const TraceInfo &traceInfo = kTraceInfos[testID];
+    ReplayFrame(testID, traceInfo.startFrame);
+
+    // RGBA 4-byte data.
+    uint32_t pixelCount = mTestParams.windowWidth * mTestParams.windowHeight;
+    std::vector<uint8_t> pixelData(pixelCount * 4);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glReadPixels(0, 0, mTestParams.windowWidth, mTestParams.windowHeight, GL_RGBA, GL_UNSIGNED_BYTE,
+                 pixelData.data());
+
+    // Convert to RGB and flip y.
+    std::vector<uint8_t> rgbData(pixelCount * 3);
+    for (EGLint y = 0; y < mTestParams.windowHeight; ++y)
+    {
+        for (EGLint x = 0; x < mTestParams.windowWidth; ++x)
+        {
+            EGLint srcPixel = x + y * mTestParams.windowWidth;
+            EGLint dstPixel = x + (mTestParams.windowHeight - y - 1) * mTestParams.windowWidth;
+            memcpy(&rgbData[dstPixel * 3], &pixelData[srcPixel * 4], 3);
+        }
+    }
+
+    angle::SavePNGRGB(screenshotName.c_str(), "ANGLE Screenshot", mTestParams.windowWidth,
+                      mTestParams.windowHeight, rgbData);
+
+    // Finish the frame loop.
+    for (uint32_t nextFrame = traceInfo.startFrame + 1; nextFrame < traceInfo.endFrame; ++nextFrame)
+    {
+        ReplayFrame(testID, nextFrame);
+    }
+    getGLWindow()->swap();
+    glFinish();
+}
+
 ANGLE_MAYBE_UNUSED void FramebufferChangeCallback(void *userData, GLenum target, GLuint framebuffer)
 {
     reinterpret_cast<TracePerfTest *>(userData)->onFramebufferChange(target, framebuffer);
@@ -335,18 +355,21 @@ TEST_P(TracePerfTest, Run)
     run();
 }
 
-TracePerfParams CombineTestID(const TracePerfParams &in, TracePerfTestID id)
+TracePerfParams CombineTestID(const TracePerfParams &in, RestrictedTraceID id)
 {
     TracePerfParams out = in;
     out.testID          = id;
+    out.windowWidth     = kTraceInfos[id].drawSurfaceWidth;
+    out.windowHeight    = kTraceInfos[id].drawSurfaceHeight;
     return out;
 }
 
 using namespace params;
 using P = TracePerfParams;
 
-std::vector<P> gTestsWithID = CombineWithValues({P()}, AllEnums<TracePerfTestID>(), CombineTestID);
-std::vector<P> gTestsWithRenderer = CombineWithFuncs(gTestsWithID, {Vulkan<P>});
+std::vector<P> gTestsWithID =
+    CombineWithValues({P()}, AllEnums<RestrictedTraceID>(), CombineTestID);
+std::vector<P> gTestsWithRenderer = CombineWithFuncs(gTestsWithID, {Vulkan<P>, Native<P>});
 ANGLE_INSTANTIATE_TEST_ARRAY(TracePerfTest, gTestsWithRenderer);
 
 }  // anonymous namespace

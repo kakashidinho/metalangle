@@ -2,32 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// This file contains a list of defective dEQP conformance tests. The expected
-// format is:
-//  {BUG#} {MODIFIERS} : {TEST_NAME} = {PASS,FAIL,FLAKY,TIMEOUT,SKIP}
-//
-// MODIFIERS can be a combination of the below list, combined with a logical AND:
-//  WIN XP VISTA WIN7 WIN8 WIN10
-//  MAC LEOPARD SNOWLEOPARD LION MOUNTAINLION MAVERICKS YOSEMITE ELCAPITAN SIERRA HIGHSIERRA MOJAVE
-//  LINUX CHROMEOS ANDROID
-//  NVIDIA AMD INTEL
-//  DEBUG RELEASE
-//  D3D9 D3D11 OPENGL GLES VULKAN
-//  NEXUS5X PIXEL2ORXL
-//  QUADROP400
-//
-//
-// TEST_NAME can be a specific test name, or have a '*' in the end, which
-// indicates a prefix matching.
-//
-// Examples:
-// fails on both windows and mac (crash)
-//  91530 WIN : context_lost_restored = SKIP
-//  91530 MAC : context_lost_restored = SKIP
-// fails on windows using NVIDIA GPUs
-//  91533 WIN NVIDIA : gl_min_uniforms = FAIL
-// fails on Nexus5X with GLES backend (hangs)
-//  91531 NEXUS5X GLES : conformance_more_* = SKIP
+// See README.md for format.
 
 // Don't run these tests for faster turnover
 1101 : dEQP-GLES3.functional.flush_finish.* = SKIP
@@ -551,8 +526,19 @@
 3970 VULKAN NVIDIA : dEQP-GLES3.functional.polygon_offset.float32_result_depth_clamp = FAIL
 3970 VULKAN NVIDIA : dEQP-GLES3.functional.polygon_offset.float32_factor_1_slope = FAIL
 
+// Transform Feedback
+4666 VULKAN NVIDIA : dEQP-GLES3.functional.transform_feedback.array_element.interleaved.* = SKIP
+4666 VULKAN NVIDIA : dEQP-GLES3.functional.transform_feedback.array_element.separate.* = SKIP
+4666 VULKAN NVIDIA : dEQP-GLES3.functional.transform_feedback.array.interleaved.* = SKIP
+4666 VULKAN NVIDIA : dEQP-GLES3.functional.transform_feedback.array.separate.* = SKIP
+4666 VULKAN NVIDIA : dEQP-GLES3.functional.transform_feedback.random.* = SKIP
+
 // Flat shading:
 3430 VULKAN : dEQP-GLES3.functional.rasterization.flatshading.* = FAIL
+
+// Vertex attribute aliasing generates invalid SPIRV
+4249 VULKAN : dEQP-GLES3.functional.attribute_location.bind_aliasing.cond* = SKIP
+4249 VULKAN : dEQP-GLES3.functional.attribute_location.bind_aliasing.max_cond* = SKIP
 
 // Misc unimplemented:
 
@@ -582,11 +568,15 @@
 3816 VULKAN PIXEL2ORXL : dEQP-GLES3.functional.texture.specification.texstorage3d.format.rg32* = FAIL
 
 // Failing on the Pixel 2 due to Qualcomm Vulkan driver
-4344 VULKAN ANDROID : dEQP-GLES3.functional.fragment_ops.interaction.basic_shader.54 = FAIL
-4344 VULKAN ANDROID : dEQP-GLES3.functional.fragment_ops.random.35 = FAIL
 4344 VULKAN ANDROID : dEQP-GLES3.functional.fragment_ops.random.56 = FAIL
 4344 VULKAN ANDROID : dEQP-GLES3.functional.fragment_ops.random.62 = FAIL
 4344 VULKAN ANDROID : dEQP-GLES3.functional.fragment_ops.random.68 = FAIL
+// Pixel 4 XL update (6/30/20): The previous 3 tests pass on Pixel 4 XL.  The following only fail
+// when the device is rotated 90 or 270 degrees, due to the same Qualcomm driver bug.  As before,
+// the driver bug can be worked around by immediately ending a render pass that does a clear.
+4344 VULKAN ANDROID : dEQP-GLES3.functional.fragment_ops.interaction.basic_shader.54 = FAIL
+4344 VULKAN ANDROID : dEQP-GLES3.functional.fragment_ops.random.35 = FAIL
+4344 VULKAN ANDROID : dEQP-GLES3.functional.fragment_ops.random.73 = FAIL
 
 
 // Fails only with SwiftShader:

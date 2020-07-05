@@ -232,6 +232,13 @@ Error ValidateConfigAttribute(const Display *display, EGLAttrib attribute)
             }
             break;
 
+        case EGL_Y_INVERTED_NOK:
+            if (!display->getExtensions().textureFromPixmapNOK)
+            {
+                return EglBadAttribute() << "EGL_NOK_texture_from_pixmap is not enabled.";
+            }
+            break;
+
         default:
             return EglBadAttribute() << "Unknown attribute.";
     }
@@ -467,6 +474,7 @@ Error ValidateGetPlatformDisplayCommon(EGLenum platform,
         bool enableAutoTrimSpecified = false;
         bool enableD3D11on12         = false;
         bool presentPathSpecified    = false;
+        bool luidSpecified           = false;
 
         Optional<EGLAttrib> majorVersion;
         Optional<EGLAttrib> minorVersion;
@@ -631,6 +639,10 @@ Error ValidateGetPlatformDisplayCommon(EGLenum platform,
                     }
                     break;
 
+                case EGL_PLATFORM_ANGLE_D3D_LUID_HIGH_ANGLE:
+                case EGL_PLATFORM_ANGLE_D3D_LUID_LOW_ANGLE:
+                    luidSpecified = true;
+                    break;
                 default:
                     break;
             }
@@ -678,6 +690,25 @@ Error ValidateGetPlatformDisplayCommon(EGLenum platform,
         {
             return EglBadAttribute() << "EGL_EXPERIMENTAL_PRESENT_PATH_ANGLE requires a "
                                         "device type of EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE.";
+        }
+
+        if (luidSpecified)
+        {
+            if (platformType != EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE)
+            {
+                return EglBadAttribute() << "EGL_PLATFORM_ANGLE_D3D_LUID_HIGH_ANGLE and "
+                                            "EGL_PLATFORM_ANGLE_D3D_LUID_LOW_ANGLE "
+                                            "require a platform type of "
+                                            "EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE.";
+            }
+
+            if (attribMap.get(EGL_PLATFORM_ANGLE_D3D_LUID_HIGH_ANGLE, 0) == 0 &&
+                attribMap.get(EGL_PLATFORM_ANGLE_D3D_LUID_LOW_ANGLE, 0) == 0)
+            {
+                return EglBadAttribute() << "If either EGL_PLATFORM_ANGLE_D3D_LUID_HIGH_ANGLE "
+                                            "and/or EGL_PLATFORM_ANGLE_D3D_LUID_LOW_ANGLE are "
+                                            "specified, at least one must non-zero.";
+            }
         }
 
         if (deviceType.valid())
@@ -1817,12 +1848,14 @@ Error ValidateCreatePbufferFromClientBuffer(Display *display,
                     return EglBadAttribute() << "<buftype> doesn't support texture internal format";
                 }
                 break;
+
             case EGL_GL_COLORSPACE:
                 if (buftype != EGL_D3D_TEXTURE_ANGLE)
                 {
                     return EglBadAttribute() << "<buftype> doesn't support setting GL colorspace";
                 }
                 break;
+
             case EGL_IOSURFACE_USAGE_HINT_ANGLE:
                 if (value & ~(EGL_IOSURFACE_READ_HINT_ANGLE | EGL_IOSURFACE_WRITE_HINT_ANGLE))
                 {
@@ -1830,6 +1863,19 @@ Error ValidateCreatePbufferFromClientBuffer(Display *display,
                            << "IOSurface usage hint must only contain READ or WRITE";
                 }
                 break;
+
+            case EGL_TEXTURE_OFFSET_X_ANGLE:
+            case EGL_TEXTURE_OFFSET_Y_ANGLE:
+                if (buftype != EGL_D3D_TEXTURE_ANGLE)
+                {
+                    return EglBadAttribute() << "<buftype> doesn't support setting texture offset";
+                }
+                if (value < 0)
+                {
+                    return EglBadAttribute() << "Texture offset cannot be negative";
+                }
+                break;
+
             default:
                 return EglBadAttribute();
         }
@@ -1910,6 +1956,85 @@ Error ValidateCreatePbufferFromClientBuffer(Display *display,
     }
 
     ANGLE_TRY(display->validateClientBuffer(config, buftype, buffer, attributes));
+
+    return NoError();
+}
+
+Error ValidateCreatePixmapSurface(Display *display,
+                                  Config *config,
+                                  EGLNativePixmapType pixmap,
+                                  const AttributeMap &attributes)
+{
+    ANGLE_TRY(ValidateConfig(display, config));
+
+    const DisplayExtensions &displayExtensions = display->getExtensions();
+
+    for (AttributeMap::const_iterator attributeIter = attributes.begin();
+         attributeIter != attributes.end(); attributeIter++)
+    {
+        EGLAttrib attribute = attributeIter->first;
+        EGLAttrib value     = attributeIter->second;
+
+        switch (attribute)
+        {
+            case EGL_GL_COLORSPACE:
+                ANGLE_TRY(ValidateColorspaceAttribute(displayExtensions, value));
+                break;
+
+            case EGL_VG_COLORSPACE:
+                break;
+            case EGL_VG_ALPHA_FORMAT:
+                break;
+
+            case EGL_TEXTURE_FORMAT:
+                if (!displayExtensions.textureFromPixmapNOK)
+                {
+                    return EglBadAttribute() << "EGL_NOK_texture_from_pixmap is not enabled.";
+                }
+                switch (value)
+                {
+                    case EGL_NO_TEXTURE:
+                    case EGL_TEXTURE_RGB:
+                    case EGL_TEXTURE_RGBA:
+                        break;
+                    default:
+                        return EglBadAttribute();
+                }
+                break;
+
+            case EGL_TEXTURE_TARGET:
+                if (!displayExtensions.textureFromPixmapNOK)
+                {
+                    return EglBadAttribute() << "EGL_NOK_texture_from_pixmap is not enabled.";
+                }
+                switch (value)
+                {
+                    case EGL_NO_TEXTURE:
+                    case EGL_TEXTURE_2D:
+                        break;
+                    default:
+                        return EglBadAttribute();
+                }
+                break;
+
+            case EGL_MIPMAP_TEXTURE:
+                if (!displayExtensions.textureFromPixmapNOK)
+                {
+                    return EglBadAttribute() << "EGL_NOK_texture_from_pixmap is not enabled.";
+                }
+                break;
+
+            default:
+                return EglBadAttribute() << "Unknown attribute";
+        }
+    }
+
+    if (!(config->surfaceType & EGL_PIXMAP_BIT))
+    {
+        return EglBadMatch() << "Congfig does not suport pixmaps.";
+    }
+
+    ANGLE_TRY(display->valdiatePixmap(config, pixmap, attributes));
 
     return NoError();
 }
@@ -2165,6 +2290,109 @@ Error ValidateCreateImage(const Display *display,
                 }
                 break;
 
+            case EGL_WIDTH:
+            case EGL_HEIGHT:
+                if (target != EGL_LINUX_DMA_BUF_EXT)
+                {
+                    return EglBadParameter()
+                           << "Parameter cannot be used if target is not EGL_LINUX_DMA_BUF_EXT";
+                }
+                break;
+
+            case EGL_LINUX_DRM_FOURCC_EXT:
+            case EGL_DMA_BUF_PLANE0_FD_EXT:
+            case EGL_DMA_BUF_PLANE0_OFFSET_EXT:
+            case EGL_DMA_BUF_PLANE0_PITCH_EXT:
+            case EGL_DMA_BUF_PLANE1_FD_EXT:
+            case EGL_DMA_BUF_PLANE1_OFFSET_EXT:
+            case EGL_DMA_BUF_PLANE1_PITCH_EXT:
+            case EGL_DMA_BUF_PLANE2_FD_EXT:
+            case EGL_DMA_BUF_PLANE2_OFFSET_EXT:
+            case EGL_DMA_BUF_PLANE2_PITCH_EXT:
+                if (!displayExtensions.imageDmaBufImportEXT)
+                {
+                    return EglBadParameter() << "Parameter cannot be used without "
+                                                "EGL_EXT_image_dma_buf_import support.";
+                }
+                break;
+
+            case EGL_YUV_COLOR_SPACE_HINT_EXT:
+                if (!displayExtensions.imageDmaBufImportEXT)
+                {
+                    return EglBadParameter() << "Parameter cannot be used without "
+                                                "EGL_EXT_image_dma_buf_import support.";
+                }
+
+                switch (value)
+                {
+                    case EGL_ITU_REC601_EXT:
+                    case EGL_ITU_REC709_EXT:
+                    case EGL_ITU_REC2020_EXT:
+                        break;
+
+                    default:
+                        return EglBadParameter()
+                               << "Invalid value for EGL_YUV_COLOR_SPACE_HINT_EXT.";
+                }
+                break;
+
+            case EGL_SAMPLE_RANGE_HINT_EXT:
+                if (!displayExtensions.imageDmaBufImportEXT)
+                {
+                    return EglBadParameter() << "Parameter cannot be used without "
+                                                "EGL_EXT_image_dma_buf_import support.";
+                }
+
+                switch (value)
+                {
+                    case EGL_YUV_FULL_RANGE_EXT:
+                    case EGL_YUV_NARROW_RANGE_EXT:
+                        break;
+
+                    default:
+                        return EglBadParameter() << "Invalid value for EGL_SAMPLE_RANGE_HINT_EXT.";
+                }
+                break;
+
+            case EGL_YUV_CHROMA_HORIZONTAL_SITING_HINT_EXT:
+            case EGL_YUV_CHROMA_VERTICAL_SITING_HINT_EXT:
+                if (!displayExtensions.imageDmaBufImportEXT)
+                {
+                    return EglBadParameter() << "Parameter cannot be used without "
+                                                "EGL_EXT_image_dma_buf_import support.";
+                }
+
+                switch (value)
+                {
+                    case EGL_YUV_CHROMA_SITING_0_EXT:
+                    case EGL_YUV_CHROMA_SITING_0_5_EXT:
+                        break;
+
+                    default:
+                        return EglBadParameter()
+                               << "Invalid value for EGL_YUV_CHROMA_HORIZONTAL_SITING_HINT_EXT or "
+                                  "EGL_YUV_CHROMA_VERTICAL_SITING_HINT_EXT.";
+                }
+                break;
+
+            case EGL_DMA_BUF_PLANE0_MODIFIER_LO_EXT:
+            case EGL_DMA_BUF_PLANE0_MODIFIER_HI_EXT:
+            case EGL_DMA_BUF_PLANE1_MODIFIER_LO_EXT:
+            case EGL_DMA_BUF_PLANE1_MODIFIER_HI_EXT:
+            case EGL_DMA_BUF_PLANE2_MODIFIER_LO_EXT:
+            case EGL_DMA_BUF_PLANE2_MODIFIER_HI_EXT:
+            case EGL_DMA_BUF_PLANE3_FD_EXT:
+            case EGL_DMA_BUF_PLANE3_OFFSET_EXT:
+            case EGL_DMA_BUF_PLANE3_PITCH_EXT:
+            case EGL_DMA_BUF_PLANE3_MODIFIER_LO_EXT:
+            case EGL_DMA_BUF_PLANE3_MODIFIER_HI_EXT:
+                if (!displayExtensions.imageDmaBufImportModifiersEXT)
+                {
+                    return EglBadParameter() << "Parameter cannot be used without "
+                                                "EGL_EXT_image_dma_buf_import_modifiers support.";
+                }
+                break;
+
             default:
                 return EglBadParameter()
                        << "invalid attribute: 0x" << std::hex << std::uppercase << attribute;
@@ -2371,6 +2599,67 @@ Error ValidateCreateImage(const Display *display,
             }
 
             ANGLE_TRY(display->validateImageClientBuffer(context, target, buffer, attributes));
+            break;
+
+        case EGL_LINUX_DMA_BUF_EXT:
+            if (!displayExtensions.imageDmaBufImportEXT)
+            {
+                return EglBadParameter() << "EGL_EXT_image_dma_buf_import not supported.";
+            }
+
+            if (context != nullptr)
+            {
+                return EglBadContext() << "ctx must be EGL_NO_CONTEXT.";
+            }
+
+            if (buffer != nullptr)
+            {
+                return EglBadParameter() << "buffer must be NULL.";
+            }
+
+            {
+                EGLenum kRequiredParameters[] = {EGL_WIDTH,
+                                                 EGL_HEIGHT,
+                                                 EGL_LINUX_DRM_FOURCC_EXT,
+                                                 EGL_DMA_BUF_PLANE0_FD_EXT,
+                                                 EGL_DMA_BUF_PLANE0_OFFSET_EXT,
+                                                 EGL_DMA_BUF_PLANE0_PITCH_EXT};
+                for (EGLenum requiredParameter : kRequiredParameters)
+                {
+                    if (!attributes.contains(requiredParameter))
+                    {
+                        return EglBadParameter()
+                               << "Missing required parameter " << gl::FmtHex(requiredParameter)
+                               << " for image target EGL_LINUX_DMA_BUF_EXT.";
+                    }
+                }
+
+                bool containPlane0ModifierLo =
+                    attributes.contains(EGL_DMA_BUF_PLANE0_MODIFIER_LO_EXT);
+                bool containPlane0ModifierHi =
+                    attributes.contains(EGL_DMA_BUF_PLANE0_MODIFIER_HI_EXT);
+                bool containPlane1ModifierLo =
+                    attributes.contains(EGL_DMA_BUF_PLANE1_MODIFIER_LO_EXT);
+                bool containPlane1ModifierHi =
+                    attributes.contains(EGL_DMA_BUF_PLANE1_MODIFIER_HI_EXT);
+                bool containPlane2ModifierLo =
+                    attributes.contains(EGL_DMA_BUF_PLANE2_MODIFIER_LO_EXT);
+                bool containPlane2ModifierHi =
+                    attributes.contains(EGL_DMA_BUF_PLANE2_MODIFIER_HI_EXT);
+                bool containPlane3ModifierLo =
+                    attributes.contains(EGL_DMA_BUF_PLANE3_MODIFIER_LO_EXT);
+                bool containPlane3ModifierHi =
+                    attributes.contains(EGL_DMA_BUF_PLANE3_MODIFIER_HI_EXT);
+                if ((containPlane0ModifierLo ^ containPlane0ModifierHi) ||
+                    (containPlane1ModifierLo ^ containPlane1ModifierHi) ||
+                    (containPlane2ModifierLo ^ containPlane2ModifierHi) ||
+                    (containPlane3ModifierLo ^ containPlane3ModifierHi))
+                {
+                    return EglBadParameter()
+                           << "the list of attributes contains EGL_DMA_BUF_PLANE*_MODIFIER_LO_EXT "
+                              "but not EGL_DMA_BUF_PLANE*_MODIFIER_HI_EXT or vice versa.";
+                }
+            }
             break;
 
         default:

@@ -164,6 +164,25 @@ GLuint CheckLinkStatusAndReturnProgram(GLuint program, bool outputErrorMessages)
     return program;
 }
 
+GLuint GetProgramShader(GLuint program, GLint requestedType)
+{
+    static constexpr GLsizei kMaxShaderCount = 16;
+    GLuint attachedShaders[kMaxShaderCount]  = {0u};
+    GLsizei count                            = 0;
+    glGetAttachedShaders(program, kMaxShaderCount, &count, attachedShaders);
+    for (int i = 0; i < count; ++i)
+    {
+        GLint type = 0;
+        glGetShaderiv(attachedShaders[i], GL_SHADER_TYPE, &type);
+        if (type == requestedType)
+        {
+            return attachedShaders[i];
+        }
+    }
+
+    return 0;
+}
+
 GLuint CompileProgramWithTransformFeedback(
     const char *vsSource,
     const char *fsSource,
@@ -428,6 +447,14 @@ const char *PositionAttrib()
 {
     return "a_position";
 }
+const char *Texture2DUniform()
+{
+    return "u_tex2D";
+}
+const char *LodUniform()
+{
+    return "u_lod";
+}
 
 namespace vs
 {
@@ -464,6 +491,21 @@ void main()
 {
     gl_Position = a_position;
     v_position = a_position;
+})";
+}
+
+// A shader that simply passes through attribute a_position, setting it to gl_Position and varying
+// texcoord.
+const char *Texture2DLod()
+{
+    return R"(#version 300 es
+in vec4 a_position;
+out vec2 v_texCoord;
+
+void main()
+{
+    gl_Position = vec4(a_position.xy, 0.0, 1.0);
+    v_texCoord = a_position.xy * 0.5 + vec2(0.5);
 })";
 }
 
@@ -505,6 +547,22 @@ out vec4 my_FragColor;
 void main()
 {
     my_FragColor = vec4(0.0, 0.0, 1.0, 1.0);
+})";
+}
+
+// A shader that samples the texture at a given lod.
+const char *Texture2DLod()
+{
+    return R"(#version 300 es
+precision mediump float;
+uniform sampler2D u_tex2D;
+uniform float u_lod;
+in vec2 v_texCoord;
+out vec4 my_FragColor;
+
+void main()
+{
+    my_FragColor = textureLod(u_tex2D, v_texCoord, u_lod);
 })";
 }
 
@@ -571,6 +629,18 @@ out vec4 my_FragColor;
 void main()
 {
     my_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+})";
+}
+
+// A shader that fills with 100% opaque green.
+const char *Green()
+{
+    return R"(#version 310 es
+precision highp float;
+out vec4 my_FragColor;
+void main()
+{
+    my_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
 })";
 }
 

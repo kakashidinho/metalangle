@@ -1249,7 +1249,8 @@ angle::Result TextureMtl::getAttachmentRenderTarget(const gl::Context *context,
 }
 
 angle::Result TextureMtl::syncState(const gl::Context *context,
-                                    const gl::Texture::DirtyBits &dirtyBits)
+                                    const gl::Texture::DirtyBits &dirtyBits,
+                                    gl::TextureCommand source)
 {
     ContextMtl *contextMtl = mtl::GetImpl(context);
     for (size_t dirtyBit : dirtyBits)

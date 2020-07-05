@@ -7,7 +7,6 @@
 //    Defines the UtilsVk class, a helper for various internal draw/dispatch utilities such as
 //    buffer clear and copy, image clear and copy, texture mip map generation, etc.
 //
-//    - Buffer clear: Implemented, but no current users
 //    - Convert index buffer:
 //      * Used by VertexArrayVk::convertIndexBufferGPU() to convert a ubyte element array to ushort
 //    - Convert vertex buffer:
@@ -114,6 +113,8 @@ class UtilsVk : angle::NonCopyable
         // flipped.
         int srcOffset[2];
         int destOffset[2];
+        // Amount to add to x and y axis for certain rotations
+        int rotatedOffsetFactor[2];
         // |stretch| is SourceDimension / DestDimension used to transfer dest coordinates to source.
         float stretch[2];
         // |srcExtents| is used to normalize source coordinates for sampling.
@@ -126,6 +127,7 @@ class UtilsVk : angle::NonCopyable
         bool linear;
         bool flipX;
         bool flipY;
+        SurfaceRotation rotation;
     };
 
     struct CopyImageParameters
@@ -140,6 +142,7 @@ class UtilsVk : angle::NonCopyable
         bool srcUnmultiplyAlpha;
         bool srcFlipY;
         bool destFlipY;
+        SurfaceRotation srcRotation;
     };
 
     struct OverlayCullParameters
@@ -154,9 +157,6 @@ class UtilsVk : angle::NonCopyable
         uint32_t subgroupSize[2];
     };
 
-    angle::Result clearBuffer(ContextVk *contextVk,
-                              vk::BufferHelper *dest,
-                              const ClearParameters &params);
     angle::Result convertIndexBuffer(ContextVk *contextVk,
                                      vk::BufferHelper *dest,
                                      vk::BufferHelper *src,
@@ -238,16 +238,6 @@ class UtilsVk : angle::NonCopyable
   private:
     ANGLE_ENABLE_STRUCT_PADDING_WARNINGS
 
-    struct BufferUtilsShaderParams
-    {
-        // Structure matching PushConstants in BufferUtils.comp
-        uint32_t destOffset          = 0;
-        uint32_t size                = 0;
-        uint32_t srcOffset           = 0;
-        uint32_t padding             = 0;
-        VkClearColorValue clearValue = {};
-    };
-
     struct ConvertIndexShaderParams
     {
         uint32_t srcOffset     = 0;
@@ -296,6 +286,9 @@ class UtilsVk : angle::NonCopyable
         uint32_t Bd             = 0;
         uint32_t Sd             = 0;
         uint32_t Ed             = 0;
+        uint32_t isSrcHDR       = 0;
+        uint32_t isSrcA2BGR10   = 0;
+        uint32_t _padding[2]    = {};
     };
 
     struct ImageClearShaderParams
@@ -313,12 +306,16 @@ class UtilsVk : angle::NonCopyable
         int32_t destOffset[2]            = {};
         int32_t srcMip                   = 0;
         int32_t srcLayer                 = 0;
+        uint32_t flipX                   = 0;
         uint32_t flipY                   = 0;
         uint32_t premultiplyAlpha        = 0;
         uint32_t unmultiplyAlpha         = 0;
         uint32_t destHasLuminance        = 0;
         uint32_t destIsAlpha             = 0;
+        uint32_t srcIsSRGB               = 0;
+        uint32_t destIsSRGB              = 0;
         uint32_t destDefaultChannelsMask = 0;
+        uint32_t rotateXY                = 0;
     };
 
     union BlitResolveOffset
@@ -339,6 +336,7 @@ class UtilsVk : angle::NonCopyable
         uint32_t outputMask      = 0;
         uint32_t flipX           = 0;
         uint32_t flipY           = 0;
+        uint32_t rotateXY        = 0;
     };
 
     struct BlitResolveStencilNoExportShaderParams
@@ -353,6 +351,7 @@ class UtilsVk : angle::NonCopyable
         int32_t destPitch        = 0;
         uint32_t flipX           = 0;
         uint32_t flipY           = 0;
+        uint32_t rotateXY        = 0;
     };
 
     struct OverlayDrawShaderParams
@@ -373,18 +372,17 @@ class UtilsVk : angle::NonCopyable
 
         // Functions implemented in compute
         ComputeStartIndex          = 3,  // Special value to separate draw and dispatch functions.
-        BufferClear                = 3,
-        ConvertIndexBuffer         = 4,
-        ConvertVertexBuffer        = 5,
-        BlitResolveStencilNoExport = 6,
-        OverlayCull                = 7,
-        OverlayDraw                = 8,
-        ConvertIndexIndirectBuffer = 9,
-        ConvertIndexIndirectLineLoopBuffer = 10,
-        ConvertIndirectLineLoopBuffer      = 11,
+        ConvertIndexBuffer         = 3,
+        ConvertVertexBuffer        = 4,
+        BlitResolveStencilNoExport = 5,
+        OverlayCull                = 6,
+        OverlayDraw                = 7,
+        ConvertIndexIndirectBuffer = 8,
+        ConvertIndexIndirectLineLoopBuffer = 9,
+        ConvertIndirectLineLoopBuffer      = 10,
 
-        InvalidEnum = 12,
-        EnumCount   = 12,
+        InvalidEnum = 11,
+        EnumCount   = 11,
     };
 
     // Common function that creates the pipeline for the specified function, binds it and prepares
@@ -416,7 +414,6 @@ class UtilsVk : angle::NonCopyable
 
     // Initializers corresponding to functions, calling into ensureResourcesInitialized with the
     // appropriate parameters.
-    angle::Result ensureBufferClearResourcesInitialized(ContextVk *contextVk);
     angle::Result ensureConvertIndexResourcesInitialized(ContextVk *contextVk);
     angle::Result ensureConvertIndexIndirectResourcesInitialized(ContextVk *contextVk);
     angle::Result ensureConvertIndexIndirectLineLoopResourcesInitialized(ContextVk *contextVk);
@@ -457,7 +454,6 @@ class UtilsVk : angle::NonCopyable
     angle::PackedEnumMap<Function, vk::BindingPointer<vk::PipelineLayout>> mPipelineLayouts;
     angle::PackedEnumMap<Function, vk::DynamicDescriptorPool> mDescriptorPools;
 
-    vk::ShaderProgramHelper mBufferUtilsPrograms[vk::InternalShader::BufferUtils_comp::kArrayLen];
     vk::ShaderProgramHelper mConvertIndexPrograms[vk::InternalShader::ConvertIndex_comp::kArrayLen];
     vk::ShaderProgramHelper mConvertIndexIndirectLineLoopPrograms
         [vk::InternalShader::ConvertIndexIndirectLineLoop_comp::kArrayLen];

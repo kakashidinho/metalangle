@@ -304,6 +304,9 @@ void QueryTexParameterBase(const Context *context,
         case GL_TEXTURE_SRGB_DECODE_EXT:
             *params = CastFromGLintStateValue<ParamType>(pname, texture->getSRGBDecode());
             break;
+        case GL_TEXTURE_FORMAT_SRGB_OVERRIDE_EXT:
+            *params = CastFromGLintStateValue<ParamType>(pname, texture->getSRGBOverride());
+            break;
         case GL_DEPTH_STENCIL_TEXTURE_MODE:
             *params =
                 CastFromGLintStateValue<ParamType>(pname, texture->getDepthStencilTextureMode());
@@ -431,6 +434,9 @@ void SetTexParameterBase(Context *context, Texture *texture, GLenum pname, const
             break;
         case GL_TEXTURE_SRGB_DECODE_EXT:
             texture->setSRGBDecode(context, ConvertToGLenum(pname, params[0]));
+            break;
+        case GL_TEXTURE_FORMAT_SRGB_OVERRIDE_EXT:
+            texture->setSRGBOverride(context, ConvertToGLenum(pname, params[0]));
             break;
         case GL_TEXTURE_CROP_RECT_OES:
             texture->setCrop(gl::Rectangle(ConvertTexParam<isGLfixed, GLint>(pname, params[0]),
@@ -2973,6 +2979,7 @@ bool GetQueryParameterInfo(const State &glState,
         case GL_PACK_ALIGNMENT:
         case GL_UNPACK_ALIGNMENT:
         case GL_GENERATE_MIPMAP_HINT:
+        case GL_TEXTURE_FILTERING_HINT_CHROMIUM:
         case GL_RED_BITS:
         case GL_GREEN_BITS:
         case GL_BLUE_BITS:
@@ -3595,6 +3602,17 @@ bool GetQueryParameterInfo(const State &glState,
         }
     }
 
+    if (extensions.textureCubeMapArrayAny())
+    {
+        switch (pname)
+        {
+            case GL_TEXTURE_BINDING_CUBE_MAP_ARRAY:
+                *type      = GL_INT;
+                *numParams = 1;
+                return true;
+        }
+    }
+
     if (glState.getClientVersion() < Version(3, 1))
     {
         return false;
@@ -3964,7 +3982,10 @@ void QueryContextAttrib(const gl::Context *context, EGLint attribute, EGLint *va
     }
 }
 
-void QuerySurfaceAttrib(const Surface *surface, EGLint attribute, EGLint *value)
+egl::Error QuerySurfaceAttrib(const Display *display,
+                              const Surface *surface,
+                              EGLint attribute,
+                              EGLint *value)
 {
     switch (attribute)
     {
@@ -3981,7 +4002,7 @@ void QuerySurfaceAttrib(const Surface *surface, EGLint attribute, EGLint *value)
             *value = surface->getConfig()->configID;
             break;
         case EGL_HEIGHT:
-            *value = surface->getHeight();
+            ANGLE_TRY(surface->getUserHeight(display, value));
             break;
         case EGL_HORIZONTAL_RESOLUTION:
             *value = surface->getHorizontalResolution();
@@ -4037,7 +4058,7 @@ void QuerySurfaceAttrib(const Surface *surface, EGLint attribute, EGLint *value)
             *value = surface->getVerticalResolution();
             break;
         case EGL_WIDTH:
-            *value = surface->getWidth();
+            ANGLE_TRY(surface->getUserWidth(display, value));
             break;
         case EGL_POST_SUB_BUFFER_SUPPORTED_NV:
             *value = surface->isPostSubBufferSupported();
@@ -4064,6 +4085,7 @@ void QuerySurfaceAttrib(const Surface *surface, EGLint attribute, EGLint *value)
             UNREACHABLE();
             break;
     }
+    return NoError();
 }
 
 void SetSurfaceAttrib(Surface *surface, EGLint attribute, EGLint value)

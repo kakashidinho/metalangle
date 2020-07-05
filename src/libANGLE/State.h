@@ -30,6 +30,11 @@
 #include "libANGLE/VertexArray.h"
 #include "libANGLE/angletypes.h"
 
+namespace egl
+{
+class ShareGroup;
+}  // namespace egl
+
 namespace gl
 {
 class BufferManager;
@@ -85,6 +90,7 @@ class State : angle::NonCopyable
 {
   public:
     State(const State *shareContextState,
+          egl::ShareGroup *shareGroup,
           TextureManager *shareTextures,
           const OverlayType *overlay,
           const EGLenum clientType,
@@ -111,6 +117,7 @@ class State : angle::NonCopyable
     const TextureCapsMap &getTextureCaps() const { return mTextureCaps; }
     const Extensions &getExtensions() const { return mExtensions; }
     const Limitations &getLimitations() const { return mLimitations; }
+    egl::ShareGroup *getShareGroup() const { return mShareGroup; }
 
     bool isWebGL() const { return mExtensions.webglCompatibility; }
 
@@ -172,7 +179,7 @@ class State : angle::NonCopyable
         ASSERT(index < mBlendStateArray.size());
         return mBlendStateArray[index].blend;
     }
-    DrawBufferMask getBlendEnabledDrawBufferMask() const { return mBlendEnabledDrawBuffers; }
+    DrawBufferMask getBlendEnabledDrawBufferMask() const { return mBlendStateExt.mEnabledMask; }
     void setBlend(bool enabled);
     void setBlendIndexed(bool enabled, GLuint index);
     void setBlendFactors(GLenum sourceRGB, GLenum destRGB, GLenum sourceAlpha, GLenum destAlpha);
@@ -255,6 +262,9 @@ class State : angle::NonCopyable
 
     // Hint setters
     void setGenerateMipmapHint(GLenum hint);
+    GLenum getGenerateMipmapHint() const;
+    void setTextureFilteringHint(GLenum hint);
+    GLenum getTextureFilteringHint() const;
     void setFragmentShaderDerivativeHint(GLenum hint);
 
     // GL_CHROMIUM_bind_generates_resource
@@ -723,7 +733,8 @@ class State : angle::NonCopyable
 
     ANGLE_INLINE bool validateSamplerFormats() const
     {
-        return (mTexturesIncompatibleWithSamplers & mExecutable->getActiveSamplersMask()).none();
+        return (!mExecutable ||
+                (mTexturesIncompatibleWithSamplers & mExecutable->getActiveSamplersMask()).none());
     }
 
     ProvokingVertexConvention getProvokingVertex() const { return mProvokingVertex; }
@@ -764,12 +775,12 @@ class State : angle::NonCopyable
 
     bool hasConstantAlphaBlendFunc() const
     {
-        return (mBlendFuncConstantAlphaDrawBuffers & mBlendEnabledDrawBuffers).any();
+        return (mBlendFuncConstantAlphaDrawBuffers & mBlendStateExt.mEnabledMask).any();
     }
 
     bool hasSimultaneousConstantColorAndAlphaBlendFunc() const
     {
-        return (mBlendFuncConstantColorDrawBuffers & mBlendEnabledDrawBuffers).any() &&
+        return (mBlendFuncConstantColorDrawBuffers & mBlendStateExt.mEnabledMask).any() &&
                hasConstantAlphaBlendFunc();
     }
 
@@ -779,6 +790,8 @@ class State : angle::NonCopyable
     }
 
     bool isEarlyFragmentTestsOptimizationAllowed() const { return isSampleCoverageEnabled(); }
+
+    const BlendStateExt &getBlendStateExt() const { return mBlendStateExt; }
 
   private:
     friend class Context;
@@ -807,6 +820,8 @@ class State : angle::NonCopyable
     angle::Result syncSamplers(const Context *context);
     angle::Result syncProgram(const Context *context);
     angle::Result syncProgramPipeline(const Context *context);
+
+    void updatePPOActiveTextures();
 
     using DirtyObjectHandler = angle::Result (State::*)(const Context *context);
     static constexpr DirtyObjectHandler kDirtyObjectHandlers[DIRTY_OBJECT_MAX] = {
@@ -850,6 +865,8 @@ class State : angle::NonCopyable
     Extensions mExtensions;
     Limitations mLimitations;
 
+    egl::ShareGroup *mShareGroup;
+
     // Resource managers.
     BufferManager *mBufferManager;
     ShaderProgramManager *mShaderProgramManager;
@@ -875,6 +892,7 @@ class State : angle::NonCopyable
     Rectangle mScissor;
 
     BlendStateArray mBlendStateArray;
+    BlendStateExt mBlendStateExt;
     ColorF mBlendColor;
     bool mSampleAlphaToCoverage;
     bool mSampleCoverage;
@@ -891,6 +909,7 @@ class State : angle::NonCopyable
     GLfloat mLineWidth;
 
     GLenum mGenerateMipmapHint;
+    GLenum mTextureFilteringHint;
     GLenum mFragmentShaderDerivativeHint;
 
     const bool mBindGeneratesResource;
@@ -1002,7 +1021,6 @@ class State : angle::NonCopyable
     const OverlayType *mOverlay;
 
     // OES_draw_buffers_indexed
-    DrawBufferMask mBlendEnabledDrawBuffers;
     DrawBufferMask mBlendFuncConstantAlphaDrawBuffers;
     DrawBufferMask mBlendFuncConstantColorDrawBuffers;
     bool mNoSimultaneousConstantColorAndAlphaBlendFunc;

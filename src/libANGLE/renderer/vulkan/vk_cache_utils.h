@@ -153,13 +153,12 @@ class AttachmentOpsArray final
     const PackedAttachmentOpsDesc &operator[](size_t index) const;
     PackedAttachmentOpsDesc &operator[](size_t index);
 
-    // Initializes an attachment op with whatever values. Used for compatible RenderPass checks.
-    void initDummyOp(size_t index, ImageLayout initialLayout, ImageLayout finalLayout);
-    // Initialize an attachment op with store operations.
-    void initWithStore(size_t index,
-                       VkAttachmentLoadOp loadOp,
-                       ImageLayout initialLayout,
-                       ImageLayout finalLayout);
+    // Initialize an attachment op with all load and store operations.
+    void initWithLoadStore(size_t index, ImageLayout initialLayout, ImageLayout finalLayout);
+
+    void setLayouts(size_t index, ImageLayout initialLayout, ImageLayout finalLayout);
+    void setOps(size_t index, VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOp);
+    void setStencilOps(size_t index, VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOp);
 
     size_t hash() const;
 
@@ -526,19 +525,27 @@ class DescriptorSetLayoutDesc final
     void update(uint32_t bindingIndex,
                 VkDescriptorType type,
                 uint32_t count,
-                VkShaderStageFlags stages);
+                VkShaderStageFlags stages,
+                const vk::Sampler *immutableSampler);
 
-    void unpackBindings(DescriptorSetLayoutBindingVector *bindings) const;
+    void unpackBindings(DescriptorSetLayoutBindingVector *bindings,
+                        std::vector<VkSampler> *immutableSamplers) const;
 
   private:
+    // There is a small risk of an issue if the sampler cache is evicted but not the descriptor
+    // cache we would have an invalid handle here. Thus propose follow-up work:
+    // TODO: https://issuetracker.google.com/issues/159156775: Have immutable sampler use serial
     struct PackedDescriptorSetBinding
     {
         uint8_t type;    // Stores a packed VkDescriptorType descriptorType.
         uint8_t stages;  // Stores a packed VkShaderStageFlags.
         uint16_t count;  // Stores a packed uint32_t descriptorCount.
+        uint32_t pad;
+        VkSampler immutableSampler;
     };
 
-    static_assert(sizeof(PackedDescriptorSetBinding) == sizeof(uint32_t), "Unexpected size");
+    // 4x 32bit
+    static_assert(sizeof(PackedDescriptorSetBinding) == 16, "Unexpected size");
 
     // This is a compact representation of a descriptor set layout.
     std::array<PackedDescriptorSetBinding, kMaxDescriptorSetLayoutBindings>
@@ -610,7 +617,7 @@ class SamplerDesc final
 
     void update(const gl::SamplerState &samplerState, bool stencilMode);
     void reset();
-    VkSamplerCreateInfo unpack(ContextVk *contextVk) const;
+    angle::Result init(ContextVk *contextVk, vk::Sampler *sampler) const;
 
     size_t hash() const;
     bool operator==(const SamplerDesc &other) const;
@@ -783,15 +790,7 @@ constexpr size_t kMaxFramebufferAttachments = gl::IMPLEMENTATION_MAX_FRAMEBUFFER
 // Color serials are at index [0:gl::IMPLEMENTATION_MAX_DRAW_BUFFERS-1]
 // Depth/stencil index is at gl::IMPLEMENTATION_MAX_DRAW_BUFFERS
 constexpr size_t kFramebufferDescDepthStencilIndex = gl::IMPLEMENTATION_MAX_DRAW_BUFFERS;
-// Struct for AttachmentSerial cache signatures. Includes level/layer for imageView as
-//  well as a unique Serial value for the underlying image
-struct AttachmentSerial
-{
-    uint16_t level;
-    uint16_t layer;
-    uint32_t imageSerial;
-};
-constexpr AttachmentSerial kZeroAttachmentSerial = {0, 0, 0};
+
 class FramebufferDesc
 {
   public:
@@ -801,7 +800,7 @@ class FramebufferDesc
     FramebufferDesc(const FramebufferDesc &other);
     FramebufferDesc &operator=(const FramebufferDesc &other);
 
-    void update(uint32_t index, AttachmentSerial serial);
+    void update(uint32_t index, Serial serial);
     size_t hash() const;
     void reset();
 
@@ -810,7 +809,19 @@ class FramebufferDesc
     uint32_t attachmentCount() const;
 
   private:
-    gl::AttachmentArray<AttachmentSerial> mSerials;
+    gl::AttachmentArray<Serial> mSerials;
+};
+
+// Layer/level pair type used to index into Serial Cache in ImageViewHelper
+struct LayerLevel
+{
+    uint32_t layer;
+    uint32_t level;
+
+    bool operator==(const LayerLevel &other) const
+    {
+        return layer == other.layer && level == other.level;
+    }
 };
 }  // namespace vk
 }  // namespace rx
@@ -864,6 +875,20 @@ template <>
 struct hash<rx::vk::SamplerDesc>
 {
     size_t operator()(const rx::vk::SamplerDesc &key) const { return key.hash(); }
+};
+
+template <>
+struct hash<rx::vk::LayerLevel>
+{
+    size_t operator()(const rx::vk::LayerLevel &layerLevel) const
+    {
+        // The left-shift by 11 was found to produce unique hash values
+        // in a [0..1000][0..2048] space for layer/level
+        // Make sure that layer/level hash bits don't overlap or overflow
+        ASSERT((layerLevel.layer & 0x000007FF) == layerLevel.layer);
+        ASSERT((layerLevel.level & 0xFFE00000) == 0);
+        return layerLevel.layer | (layerLevel.level << 11);
+    }
 };
 }  // namespace std
 

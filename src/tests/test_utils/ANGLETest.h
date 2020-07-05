@@ -19,7 +19,7 @@
 #include "common/angleutils.h"
 #include "common/system_utils.h"
 #include "common/vector_utils.h"
-#include "platform/Platform.h"
+#include "platform/PlatformMethods.h"
 #include "util/EGLWindow.h"
 #include "util/shader_utils.h"
 #include "util/util_gl.h"
@@ -27,6 +27,7 @@
 namespace angle
 {
 struct SystemInfo;
+class RNG;
 }  // namespace angle
 
 #define ASSERT_GL_TRUE(a) ASSERT_EQ(static_cast<GLboolean>(GL_TRUE), (a))
@@ -141,6 +142,7 @@ struct GLColor32F
     GLfloat R, G, B, A;
 };
 
+static constexpr GLColor32F kFloatBlack = {0.0f, 0.0f, 0.0f, 1.0f};
 static constexpr GLColor32F kFloatRed   = {1.0f, 0.0f, 0.0f, 1.0f};
 static constexpr GLColor32F kFloatGreen = {0.0f, 1.0f, 0.0f, 1.0f};
 static constexpr GLColor32F kFloatBlue  = {0.0f, 0.0f, 1.0f, 1.0f};
@@ -160,6 +162,8 @@ GLColor MakeGLColor(TR r, TG g, TB b, TA a)
     return GLColor(static_cast<GLubyte>(r), static_cast<GLubyte>(g), static_cast<GLubyte>(b),
                    static_cast<GLubyte>(a));
 }
+
+GLColor RandomColor(angle::RNG *rng);
 
 bool operator==(const GLColor &a, const GLColor &b);
 bool operator!=(const GLColor &a, const GLColor &b);
@@ -183,7 +187,7 @@ constexpr std::array<GLenum, 6> kCubeFaces = {
      GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
      GL_TEXTURE_CUBE_MAP_NEGATIVE_Z}};
 
-void LoadEntryPointsWithUtilLoader();
+void LoadEntryPointsWithUtilLoader(angle::GLESDriverType driver);
 
 }  // namespace angle
 
@@ -332,8 +336,13 @@ class ANGLETestBase
 
     bool isSwiftshader() const
     {
-        return mCurrentParams->eglParameters.deviceType ==
-               EGL_PLATFORM_ANGLE_DEVICE_TYPE_SWIFTSHADER_ANGLE;
+        // Renderer might be swiftshader even if local swiftshader not used.
+        return mCurrentParams->isSwiftshader() || angle::IsSwiftshaderDevice();
+    }
+
+    bool enableDebugLayers() const
+    {
+        return mCurrentParams->eglParameters.debugLayersEnabled != EGL_FALSE;
     }
 
   protected:
@@ -543,6 +552,7 @@ class ANGLETestBase
 
     // Workaround for NVIDIA not being able to share a window with OpenGL and Vulkan.
     static Optional<EGLint> mLastRendererType;
+    static Optional<angle::GLESDriverType> mLastLoadedDriver;
 };
 
 template <typename Params = angle::PlatformParameters>
@@ -594,13 +604,17 @@ class ANGLETestEnvironment : public testing::Environment
     void SetUp() override;
     void TearDown() override;
 
-    static angle::Library *GetEGLLibrary();
-    static angle::Library *GetWGLLibrary();
+    static angle::Library *GetDriverLibrary(angle::GLESDriverType driver);
 
   private:
+    static angle::Library *GetAngleEGLLibrary();
+    static angle::Library *GetSystemEGLLibrary();
+    static angle::Library *GetSystemWGLLibrary();
+
     // For loading entry points.
-    static std::unique_ptr<angle::Library> gEGLLibrary;
-    static std::unique_ptr<angle::Library> gWGLLibrary;
+    static std::unique_ptr<angle::Library> gAngleEGLLibrary;
+    static std::unique_ptr<angle::Library> gSystemEGLLibrary;
+    static std::unique_ptr<angle::Library> gSystemWGLLibrary;
 };
 
 extern angle::PlatformMethods gDefaultPlatformMethods;

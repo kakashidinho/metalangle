@@ -66,12 +66,6 @@ std::string StripLastArrayIndex(const std::string &name);
 
 bool SamplerNameContainsNonZeroArrayElement(const std::string &name);
 
-// Find the child field which matches 'fullName' == var.name + "." + field.name.
-// Return nullptr if not found.
-const sh::ShaderVariable *FindShaderVarField(const sh::ShaderVariable &var,
-                                             const std::string &fullName,
-                                             GLuint *fieldIndexOut);
-
 // Find the range of index values in the provided indices pointer.  Primitive restart indices are
 // only counted in the range if primitive restart is disabled.
 IndexRange ComputeIndexRange(DrawElementsType indexType,
@@ -227,6 +221,15 @@ PipelineType GetPipelineType(ShaderType shaderType);
 const char *GetDebugMessageSourceString(GLenum source);
 const char *GetDebugMessageTypeString(GLenum type);
 const char *GetDebugMessageSeverityString(GLenum severity);
+
+// For use with EXT_texture_format_sRGB_override and EXT_texture_sRGB_decode
+// A texture may either have SRGB decoding forced on, or use whatever decode state is default for
+// the texture format.
+enum class SrgbOverride
+{
+    Default = 0,
+    Enabled
+};
 
 }  // namespace gl
 

@@ -221,6 +221,11 @@ StreamProducerImpl *DisplayMtl::createStreamProducerD3DTexture(
     return nullptr;
 }
 
+ShareGroupImpl *DisplayMtl::createShareGroup()
+{
+    return new ShareGroupMtl();
+}
+
 gl::Version DisplayMtl::getMaxSupportedESVersion() const
 {
     return gl::Version(3, 0);

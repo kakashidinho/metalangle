@@ -18,9 +18,12 @@ namespace angle
 CallCapture::~CallCapture() {}
 ParamBuffer::~ParamBuffer() {}
 ParamCapture::~ParamCapture() {}
+ResourceTracker::ResourceTracker() {}
+ResourceTracker::~ResourceTracker() {}
 
 FrameCapture::FrameCapture() {}
 FrameCapture::~FrameCapture() {}
 void FrameCapture::onEndFrame(const gl::Context *context) {}
+void FrameCapture::onMakeCurrent(const egl::Surface *drawSurface) {}
 void FrameCapture::replay(gl::Context *context) {}
 }  // namespace angle

@@ -273,6 +273,7 @@
     /* GL_ANGLE_translated_shader_source */                                                        \
     void getTranslatedShaderSource(ShaderProgramID shaderPacked, GLsizei bufsize, GLsizei *length, \
                                    GLchar *source);                                                \
+    /* GL_EXT_EGL_image_array */                                                                   \
     /* GL_EXT_blend_func_extended */                                                               \
     void bindFragDataLocation(ShaderProgramID programPacked, GLuint color, const GLchar *name);    \
     void bindFragDataLocationIndexed(ShaderProgramID programPacked, GLuint colorNumber,            \
@@ -357,6 +358,7 @@
     /* GL_EXT_texture_compression_rgtc */                                                          \
     /* GL_EXT_texture_compression_s3tc */                                                          \
     /* GL_EXT_texture_compression_s3tc_srgb */                                                     \
+    /* GL_EXT_texture_cube_map_array */                                                            \
     /* GL_EXT_texture_filter_anisotropic */                                                        \
     /* GL_EXT_texture_format_BGRA8888 */                                                           \
     /* GL_EXT_texture_sRGB_R8 */                                                                   \
@@ -387,6 +389,7 @@
     void framebufferTexture3D(GLenum target, GLenum attachment, TextureTarget textargetPacked,     \
                               TextureID texturePacked, GLint level, GLint zoffset);                \
     /* GL_OES_texture_border_clamp */                                                              \
+    /* GL_OES_texture_cube_map_array */                                                            \
     /* GL_OES_texture_half_float */                                                                \
     /* GL_OES_texture_storage_multisample_2d_array */                                              \
     /* GL_OES_vertex_array_object */                                                               \

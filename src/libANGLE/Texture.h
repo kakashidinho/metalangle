@@ -99,6 +99,14 @@ struct ContextBindingCount
     uint32_t imageBindingCount;
 };
 
+// The source of the syncState call.  Knowing why syncState is being called can help the back-end
+// make more-informed decisions.
+enum class TextureCommand
+{
+    GenerateMipmap,
+    Other,
+};
+
 // State from Table 6.9 (state per texture object) in the OpenGL ES 3.0.2 spec.
 class TextureState final : private angle::NonCopyable
 {
@@ -150,6 +158,8 @@ class TextureState final : private angle::NonCopyable
     {
         return getBindingCount(contextID).imageBindingCount > 0;
     }
+
+    gl::SrgbOverride getSRGBOverride() const { return mSrgbOverride; }
 
     // Returns the desc of the base level. Only valid for cube-complete/mip-complete textures.
     const ImageDesc &getBaseLevelDesc() const;
@@ -215,6 +225,8 @@ class TextureState final : private angle::NonCopyable
     SwizzleState mSwizzleState;
 
     SamplerState mSamplerState;
+
+    SrgbOverride mSrgbOverride;
 
     GLuint mBaseLevel;
     GLuint mMaxLevel;
@@ -307,6 +319,9 @@ class Texture final : public RefCountObject<TextureID>,
 
     void setSRGBDecode(const Context *context, GLenum sRGBDecode);
     GLenum getSRGBDecode() const;
+
+    void setSRGBOverride(const Context *context, GLenum sRGBOverride);
+    GLenum getSRGBOverride() const;
 
     const SamplerState &getSamplerState() const;
 
@@ -501,7 +516,7 @@ class Texture final : public RefCountObject<TextureID>,
                               GLint level,
                               GLenum format,
                               GLenum type,
-                              void *pixels) const;
+                              void *pixels);
 
     rx::TextureImpl *getImplementation() const { return mTexture; }
 
@@ -549,6 +564,7 @@ class Texture final : public RefCountObject<TextureID>,
         DIRTY_BIT_COMPARE_MODE,
         DIRTY_BIT_COMPARE_FUNC,
         DIRTY_BIT_SRGB_DECODE,
+        DIRTY_BIT_SRGB_OVERRIDE,
         DIRTY_BIT_BORDER_COLOR,
 
         // Texture state
@@ -572,7 +588,7 @@ class Texture final : public RefCountObject<TextureID>,
     };
     using DirtyBits = angle::BitSet<DIRTY_BIT_COUNT>;
 
-    angle::Result syncState(const Context *context);
+    angle::Result syncState(const Context *context, TextureCommand source);
     bool hasAnyDirtyBit() const { return mDirtyBits.any(); }
 
     // ObserverInterface implementation.

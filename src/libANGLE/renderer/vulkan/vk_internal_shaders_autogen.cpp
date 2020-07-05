@@ -44,18 +44,6 @@ namespace
 #include "libANGLE/renderer/vulkan/shaders/gen/BlitResolveStencilNoExport.comp.00000001.inc"
 #include "libANGLE/renderer/vulkan/shaders/gen/BlitResolveStencilNoExport.comp.00000002.inc"
 #include "libANGLE/renderer/vulkan/shaders/gen/BlitResolveStencilNoExport.comp.00000003.inc"
-#include "libANGLE/renderer/vulkan/shaders/gen/BufferUtils.comp.00000000.inc"
-#include "libANGLE/renderer/vulkan/shaders/gen/BufferUtils.comp.00000001.inc"
-#include "libANGLE/renderer/vulkan/shaders/gen/BufferUtils.comp.00000002.inc"
-#include "libANGLE/renderer/vulkan/shaders/gen/BufferUtils.comp.00000003.inc"
-#include "libANGLE/renderer/vulkan/shaders/gen/BufferUtils.comp.00000004.inc"
-#include "libANGLE/renderer/vulkan/shaders/gen/BufferUtils.comp.00000005.inc"
-#include "libANGLE/renderer/vulkan/shaders/gen/BufferUtils.comp.00000006.inc"
-#include "libANGLE/renderer/vulkan/shaders/gen/BufferUtils.comp.00000007.inc"
-#include "libANGLE/renderer/vulkan/shaders/gen/BufferUtils.comp.00000008.inc"
-#include "libANGLE/renderer/vulkan/shaders/gen/BufferUtils.comp.00000009.inc"
-#include "libANGLE/renderer/vulkan/shaders/gen/BufferUtils.comp.0000000A.inc"
-#include "libANGLE/renderer/vulkan/shaders/gen/BufferUtils.comp.0000000B.inc"
 #include "libANGLE/renderer/vulkan/shaders/gen/ConvertIndex.comp.00000000.inc"
 #include "libANGLE/renderer/vulkan/shaders/gen/ConvertIndex.comp.00000001.inc"
 #include "libANGLE/renderer/vulkan/shaders/gen/ConvertIndex.comp.00000002.inc"
@@ -72,15 +60,6 @@ namespace
 #include "libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.00000005.inc"
 #include "libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.00000006.inc"
 #include "libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.00000007.inc"
-#include "libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.00000008.inc"
-#include "libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.00000009.inc"
-#include "libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.0000000A.inc"
-#include "libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.0000000B.inc"
-#include "libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.0000000C.inc"
-#include "libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.0000000D.inc"
-#include "libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.0000000E.inc"
-#include "libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.0000000F.inc"
-#include "libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.00000010.inc"
 #include "libANGLE/renderer/vulkan/shaders/gen/FullScreenQuad.vert.00000000.inc"
 #include "libANGLE/renderer/vulkan/shaders/gen/ImageClear.frag.00000000.inc"
 #include "libANGLE/renderer/vulkan/shaders/gen/ImageClear.frag.00000001.inc"
@@ -109,21 +88,30 @@ namespace
 #include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.00000000.inc"
 #include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.00000001.inc"
 #include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.00000002.inc"
-#include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.00000003.inc"
 #include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.00000004.inc"
 #include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.00000005.inc"
+#include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.00000006.inc"
 #include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.00000008.inc"
 #include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.00000009.inc"
 #include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.0000000A.inc"
-#include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.0000000B.inc"
-#include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.0000000C.inc"
-#include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.0000000D.inc"
 #include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.00000010.inc"
 #include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.00000011.inc"
 #include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.00000012.inc"
-#include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.00000013.inc"
 #include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.00000014.inc"
 #include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.00000015.inc"
+#include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.00000016.inc"
+#include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.00000018.inc"
+#include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.00000019.inc"
+#include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.0000001A.inc"
+#include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.00000020.inc"
+#include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.00000021.inc"
+#include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.00000022.inc"
+#include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.00000024.inc"
+#include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.00000025.inc"
+#include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.00000026.inc"
+#include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.00000028.inc"
+#include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.00000029.inc"
+#include "libANGLE/renderer/vulkan/shaders/gen/ImageCopy.frag.0000002A.inc"
 #include "libANGLE/renderer/vulkan/shaders/gen/OverlayCull.comp.00000000.inc"
 #include "libANGLE/renderer/vulkan/shaders/gen/OverlayCull.comp.00000001.inc"
 #include "libANGLE/renderer/vulkan/shaders/gen/OverlayCull.comp.00000002.inc"
@@ -172,20 +160,6 @@ constexpr ShaderBlob kBlitResolveStencilNoExport_comp_shaders[] = {
     {kBlitResolveStencilNoExport_comp_00000002, sizeof(kBlitResolveStencilNoExport_comp_00000002)},
     {kBlitResolveStencilNoExport_comp_00000003, sizeof(kBlitResolveStencilNoExport_comp_00000003)},
 };
-constexpr ShaderBlob kBufferUtils_comp_shaders[] = {
-    {kBufferUtils_comp_00000000, sizeof(kBufferUtils_comp_00000000)},
-    {kBufferUtils_comp_00000001, sizeof(kBufferUtils_comp_00000001)},
-    {kBufferUtils_comp_00000002, sizeof(kBufferUtils_comp_00000002)},
-    {kBufferUtils_comp_00000003, sizeof(kBufferUtils_comp_00000003)},
-    {kBufferUtils_comp_00000004, sizeof(kBufferUtils_comp_00000004)},
-    {kBufferUtils_comp_00000005, sizeof(kBufferUtils_comp_00000005)},
-    {kBufferUtils_comp_00000006, sizeof(kBufferUtils_comp_00000006)},
-    {kBufferUtils_comp_00000007, sizeof(kBufferUtils_comp_00000007)},
-    {kBufferUtils_comp_00000008, sizeof(kBufferUtils_comp_00000008)},
-    {kBufferUtils_comp_00000009, sizeof(kBufferUtils_comp_00000009)},
-    {kBufferUtils_comp_0000000A, sizeof(kBufferUtils_comp_0000000A)},
-    {kBufferUtils_comp_0000000B, sizeof(kBufferUtils_comp_0000000B)},
-};
 constexpr ShaderBlob kConvertIndex_comp_shaders[] = {
     {kConvertIndex_comp_00000000, sizeof(kConvertIndex_comp_00000000)},
     {kConvertIndex_comp_00000001, sizeof(kConvertIndex_comp_00000001)},
@@ -212,15 +186,6 @@ constexpr ShaderBlob kConvertVertex_comp_shaders[] = {
     {kConvertVertex_comp_00000005, sizeof(kConvertVertex_comp_00000005)},
     {kConvertVertex_comp_00000006, sizeof(kConvertVertex_comp_00000006)},
     {kConvertVertex_comp_00000007, sizeof(kConvertVertex_comp_00000007)},
-    {kConvertVertex_comp_00000008, sizeof(kConvertVertex_comp_00000008)},
-    {kConvertVertex_comp_00000009, sizeof(kConvertVertex_comp_00000009)},
-    {kConvertVertex_comp_0000000A, sizeof(kConvertVertex_comp_0000000A)},
-    {kConvertVertex_comp_0000000B, sizeof(kConvertVertex_comp_0000000B)},
-    {kConvertVertex_comp_0000000C, sizeof(kConvertVertex_comp_0000000C)},
-    {kConvertVertex_comp_0000000D, sizeof(kConvertVertex_comp_0000000D)},
-    {kConvertVertex_comp_0000000E, sizeof(kConvertVertex_comp_0000000E)},
-    {kConvertVertex_comp_0000000F, sizeof(kConvertVertex_comp_0000000F)},
-    {kConvertVertex_comp_00000010, sizeof(kConvertVertex_comp_00000010)},
 };
 constexpr ShaderBlob kFullScreenQuad_vert_shaders[] = {
     {kFullScreenQuad_vert_00000000, sizeof(kFullScreenQuad_vert_00000000)},
@@ -255,25 +220,46 @@ constexpr ShaderBlob kImageCopy_frag_shaders[] = {
     {kImageCopy_frag_00000000, sizeof(kImageCopy_frag_00000000)},
     {kImageCopy_frag_00000001, sizeof(kImageCopy_frag_00000001)},
     {kImageCopy_frag_00000002, sizeof(kImageCopy_frag_00000002)},
-    {kImageCopy_frag_00000003, sizeof(kImageCopy_frag_00000003)},
+    {nullptr, 0},  // 0x00000003
     {kImageCopy_frag_00000004, sizeof(kImageCopy_frag_00000004)},
     {kImageCopy_frag_00000005, sizeof(kImageCopy_frag_00000005)},
-    {nullptr, 0},  // 0x00000006
+    {kImageCopy_frag_00000006, sizeof(kImageCopy_frag_00000006)},
     {nullptr, 0},  // 0x00000007
     {kImageCopy_frag_00000008, sizeof(kImageCopy_frag_00000008)},
     {kImageCopy_frag_00000009, sizeof(kImageCopy_frag_00000009)},
     {kImageCopy_frag_0000000A, sizeof(kImageCopy_frag_0000000A)},
-    {kImageCopy_frag_0000000B, sizeof(kImageCopy_frag_0000000B)},
-    {kImageCopy_frag_0000000C, sizeof(kImageCopy_frag_0000000C)},
-    {kImageCopy_frag_0000000D, sizeof(kImageCopy_frag_0000000D)},
+    {nullptr, 0},  // 0x0000000B
+    {nullptr, 0},  // 0x0000000C
+    {nullptr, 0},  // 0x0000000D
     {nullptr, 0},  // 0x0000000E
     {nullptr, 0},  // 0x0000000F
     {kImageCopy_frag_00000010, sizeof(kImageCopy_frag_00000010)},
     {kImageCopy_frag_00000011, sizeof(kImageCopy_frag_00000011)},
     {kImageCopy_frag_00000012, sizeof(kImageCopy_frag_00000012)},
-    {kImageCopy_frag_00000013, sizeof(kImageCopy_frag_00000013)},
+    {nullptr, 0},  // 0x00000013
     {kImageCopy_frag_00000014, sizeof(kImageCopy_frag_00000014)},
     {kImageCopy_frag_00000015, sizeof(kImageCopy_frag_00000015)},
+    {kImageCopy_frag_00000016, sizeof(kImageCopy_frag_00000016)},
+    {nullptr, 0},  // 0x00000017
+    {kImageCopy_frag_00000018, sizeof(kImageCopy_frag_00000018)},
+    {kImageCopy_frag_00000019, sizeof(kImageCopy_frag_00000019)},
+    {kImageCopy_frag_0000001A, sizeof(kImageCopy_frag_0000001A)},
+    {nullptr, 0},  // 0x0000001B
+    {nullptr, 0},  // 0x0000001C
+    {nullptr, 0},  // 0x0000001D
+    {nullptr, 0},  // 0x0000001E
+    {nullptr, 0},  // 0x0000001F
+    {kImageCopy_frag_00000020, sizeof(kImageCopy_frag_00000020)},
+    {kImageCopy_frag_00000021, sizeof(kImageCopy_frag_00000021)},
+    {kImageCopy_frag_00000022, sizeof(kImageCopy_frag_00000022)},
+    {nullptr, 0},  // 0x00000023
+    {kImageCopy_frag_00000024, sizeof(kImageCopy_frag_00000024)},
+    {kImageCopy_frag_00000025, sizeof(kImageCopy_frag_00000025)},
+    {kImageCopy_frag_00000026, sizeof(kImageCopy_frag_00000026)},
+    {nullptr, 0},  // 0x00000027
+    {kImageCopy_frag_00000028, sizeof(kImageCopy_frag_00000028)},
+    {kImageCopy_frag_00000029, sizeof(kImageCopy_frag_00000029)},
+    {kImageCopy_frag_0000002A, sizeof(kImageCopy_frag_0000002A)},
 };
 constexpr ShaderBlob kOverlayCull_comp_shaders[] = {
     {kOverlayCull_comp_00000000, sizeof(kOverlayCull_comp_00000000)},
@@ -323,10 +309,6 @@ void ShaderLibrary::destroy(VkDevice device)
         shader.get().destroy(device);
     }
     for (RefCounted<ShaderAndSerial> &shader : mBlitResolveStencilNoExport_comp_shaders)
-    {
-        shader.get().destroy(device);
-    }
-    for (RefCounted<ShaderAndSerial> &shader : mBufferUtils_comp_shaders)
     {
         shader.get().destroy(device);
     }
@@ -384,14 +366,6 @@ angle::Result ShaderLibrary::getBlitResolveStencilNoExport_comp(
     return GetShader(context, mBlitResolveStencilNoExport_comp_shaders,
                      kBlitResolveStencilNoExport_comp_shaders,
                      ArraySize(kBlitResolveStencilNoExport_comp_shaders), shaderFlags, shaderOut);
-}
-
-angle::Result ShaderLibrary::getBufferUtils_comp(Context *context,
-                                                 uint32_t shaderFlags,
-                                                 RefCounted<ShaderAndSerial> **shaderOut)
-{
-    return GetShader(context, mBufferUtils_comp_shaders, kBufferUtils_comp_shaders,
-                     ArraySize(kBufferUtils_comp_shaders), shaderFlags, shaderOut);
 }
 
 angle::Result ShaderLibrary::getConvertIndex_comp(Context *context,

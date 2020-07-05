@@ -112,7 +112,7 @@ std::ostream &operator<<(std::ostream &stream, const PlatformParameters &pp)
             stream << "WGL";
             break;
         case GLESDriverType::SystemEGL:
-            stream << "GLES";
+            stream << "EGL";
             break;
         default:
             stream << "Error";
@@ -202,6 +202,11 @@ std::ostream &operator<<(std::ostream &stream, const PlatformParameters &pp)
     else if (pp.eglParameters.allocateNonZeroMemoryFeature == EGL_TRUE)
     {
         stream << "_AllocateNonZeroMemory";
+    }
+
+    if (pp.eglParameters.emulateCopyTexImage2DFromRenderbuffers == EGL_TRUE)
+    {
+        stream << "_EmulateCopyTexImage2DFromRenderbuffers";
     }
 
     return stream;
@@ -774,5 +779,15 @@ PlatformParameters ES2_WGL()
 PlatformParameters ES3_WGL()
 {
     return PlatformParameters(3, 0, GLESDriverType::SystemWGL);
+}
+
+PlatformParameters ES2_EGL()
+{
+    return PlatformParameters(2, 0, GLESDriverType::SystemEGL);
+}
+
+PlatformParameters ES3_EGL()
+{
+    return PlatformParameters(3, 0, GLESDriverType::SystemEGL);
 }
 }  // namespace angle

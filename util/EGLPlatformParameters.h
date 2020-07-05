@@ -15,6 +15,17 @@
 namespace angle
 {
 struct PlatformMethods;
+
+// The GLES driver type determines what shared object we use to load the GLES entry points.
+// AngleEGL loads from ANGLE's version of libEGL, libGLESv2, and libGLESv1_CM.
+// SystemEGL uses the system copies of libEGL, libGLESv2, and libGLESv1_CM.
+// SystemWGL loads Windows GL with the GLES compatiblity extensions. See util/WGLWindow.h.
+enum class GLESDriverType
+{
+    AngleEGL,
+    SystemEGL,
+    SystemWGL,
+};
 }  // namespace angle
 
 struct EGLPlatformParameters
@@ -49,20 +60,22 @@ struct EGLPlatformParameters
     {
         return std::tie(renderer, majorVersion, minorVersion, deviceType, presentPath,
                         debugLayersEnabled, contextVirtualization, transformFeedbackFeature,
-                        allocateNonZeroMemoryFeature, platformMethods, robustness);
+                        allocateNonZeroMemoryFeature, emulateCopyTexImage2DFromRenderbuffers,
+                        platformMethods, robustness);
     }
 
-    EGLint renderer                         = EGL_PLATFORM_ANGLE_TYPE_DEFAULT_ANGLE;
-    EGLint majorVersion                     = EGL_DONT_CARE;
-    EGLint minorVersion                     = EGL_DONT_CARE;
-    EGLint deviceType                       = EGL_PLATFORM_ANGLE_DEVICE_TYPE_HARDWARE_ANGLE;
-    EGLint presentPath                      = EGL_DONT_CARE;
-    EGLint debugLayersEnabled               = EGL_DONT_CARE;
-    EGLint contextVirtualization            = EGL_DONT_CARE;
-    EGLint robustness                       = EGL_DONT_CARE;
-    EGLint transformFeedbackFeature         = EGL_DONT_CARE;
-    EGLint allocateNonZeroMemoryFeature     = EGL_DONT_CARE;
-    angle::PlatformMethods *platformMethods = nullptr;
+    EGLint renderer                               = EGL_PLATFORM_ANGLE_TYPE_DEFAULT_ANGLE;
+    EGLint majorVersion                           = EGL_DONT_CARE;
+    EGLint minorVersion                           = EGL_DONT_CARE;
+    EGLint deviceType                             = EGL_PLATFORM_ANGLE_DEVICE_TYPE_HARDWARE_ANGLE;
+    EGLint presentPath                            = EGL_DONT_CARE;
+    EGLint debugLayersEnabled                     = EGL_DONT_CARE;
+    EGLint contextVirtualization                  = EGL_DONT_CARE;
+    EGLint robustness                             = EGL_DONT_CARE;
+    EGLint transformFeedbackFeature               = EGL_DONT_CARE;
+    EGLint allocateNonZeroMemoryFeature           = EGL_DONT_CARE;
+    EGLint emulateCopyTexImage2DFromRenderbuffers = EGL_DONT_CARE;
+    angle::PlatformMethods *platformMethods       = nullptr;
 };
 
 inline bool operator<(const EGLPlatformParameters &a, const EGLPlatformParameters &b)

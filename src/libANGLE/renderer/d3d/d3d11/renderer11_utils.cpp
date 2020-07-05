@@ -30,7 +30,7 @@
 #include "libANGLE/renderer/d3d/d3d11/texture_format_table.h"
 #include "libANGLE/renderer/driver_utils.h"
 #include "platform/FeaturesD3D.h"
-#include "platform/Platform.h"
+#include "platform/PlatformMethods.h"
 
 namespace rx
 {
@@ -2223,6 +2223,7 @@ void SetPositionLayerTexCoord3DVertex(PositionLayerTexCoord3DVertex *vertex,
 BlendStateKey::BlendStateKey()
 {
     memset(this, 0, sizeof(BlendStateKey));
+    blendStateExt = gl::BlendStateExt();
 }
 
 BlendStateKey::BlendStateKey(const BlendStateKey &other)
@@ -2465,9 +2466,10 @@ void InitializeFeatures(const Renderer11DeviceCaps &deviceCaps,
     ANGLE_FEATURE_CONDITION(features, selectViewInGeometryShader,
                             !deviceCaps.supportsVpRtIndexWriteFromVertexShader);
 
-    // NVidia drivers have no trouble clearing textures without showing corruption. AMD ones do.
-    // Intel drivers that have trouble have been blocklisted to the DX9 runtime by Chromium.
-    ANGLE_FEATURE_CONDITION(features, allowClearForRobustResourceInit, isNvidia || isIntel);
+    // NVidia drivers have no trouble clearing textures without showing corruption.
+    // Intel and AMD drivers that have trouble have been blocklisted by Chromium. In the case of
+    // Intel, they've been blocklisted to the DX9 runtime.
+    ANGLE_FEATURE_CONDITION(features, allowClearForRobustResourceInit, true);
 
     // Don't translate uniform block to StructuredBuffer on Windows 7 and earlier. This is targeted
     // to work around a bug that fails to allocate ShaderResourceView for StructuredBuffer.

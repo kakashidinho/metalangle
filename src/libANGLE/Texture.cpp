@@ -95,6 +95,7 @@ bool SwizzleState::operator!=(const SwizzleState &other) const
 TextureState::TextureState(TextureType type)
     : mType(type),
       mSamplerState(SamplerState::CreateDefaultForTarget(type)),
+      mSrgbOverride(SrgbOverride::Default),
       mBaseLevel(0),
       mMaxLevel(1000),
       mDepthStencilTextureMode(GL_DEPTH_COMPONENT),
@@ -484,7 +485,7 @@ bool TextureState::computeLevelCompleteness(TextureTarget target, size_t level) 
             return false;
         }
     }
-    else if (mType == TextureType::_2DArray)
+    else if (IsArrayTextureType(mType))
     {
         if (levelImageDesc.size.depth != baseImageDesc.size.depth)
         {
@@ -599,7 +600,7 @@ void TextureState::setImageDescChain(GLuint baseLevel,
         int relativeLevel = (level - baseLevel);
         Extents levelSize(std::max<int>(baseSize.width >> relativeLevel, 1),
                           std::max<int>(baseSize.height >> relativeLevel, 1),
-                          (mType == TextureType::_2DArray)
+                          (IsArrayTextureType(mType))
                               ? baseSize.depth
                               : std::max<int>(baseSize.depth >> relativeLevel, 1));
         ImageDesc levelInfo(levelSize, format, initState);
@@ -857,6 +858,22 @@ void Texture::setSRGBDecode(const Context *context, GLenum sRGBDecode)
 GLenum Texture::getSRGBDecode() const
 {
     return mState.mSamplerState.getSRGBDecode();
+}
+
+void Texture::setSRGBOverride(const Context *context, GLenum sRGBOverride)
+{
+    SrgbOverride oldOverride = mState.mSrgbOverride;
+    mState.mSrgbOverride =
+        (sRGBOverride == GL_SRGB) ? SrgbOverride::Enabled : SrgbOverride::Default;
+    if (mState.mSrgbOverride != oldOverride)
+    {
+        signalDirtyState(DIRTY_BIT_SRGB_OVERRIDE);
+    }
+}
+
+GLenum Texture::getSRGBOverride() const
+{
+    return (mState.mSrgbOverride == SrgbOverride::Enabled) ? GL_SRGB : GL_NONE;
 }
 
 const SamplerState &Texture::getSamplerState() const
@@ -1280,7 +1297,7 @@ angle::Result Texture::copyTexture(Context *context,
                                     unpackPremultiplyAlpha, unpackUnmultiplyAlpha, source));
 
     const auto &sourceDesc =
-        source->mState.getImageDesc(NonCubeTextureTypeToTarget(source->getType()), 0);
+        source->mState.getImageDesc(NonCubeTextureTypeToTarget(source->getType()), sourceLevel);
     const InternalFormat &internalFormatInfo = GetInternalFormatInfo(internalFormat, type);
     mState.setImageDesc(
         target, level,
@@ -1484,10 +1501,7 @@ angle::Result Texture::generateMipmap(Context *context)
         return angle::Result::Continue;
     }
 
-    if (hasAnyDirtyBit())
-    {
-        ANGLE_TRY(syncState(context));
-    }
+    ANGLE_TRY(syncState(context, TextureCommand::GenerateMipmap));
 
     // Clear the base image(s) immediately if needed
     if (context->isRobustResourceInitEnabled())
@@ -1509,7 +1523,7 @@ angle::Result Texture::generateMipmap(Context *context)
 
     ANGLE_TRY(mTexture->generateMipmap(context));
 
-    // Propagate the format and size of the bsae mip to the smaller ones. Cube maps are guaranteed
+    // Propagate the format and size of the base mip to the smaller ones. Cube maps are guaranteed
     // to have faces of the same size and format so any faces can be picked.
     const ImageDesc &baseImageInfo = mState.getImageDesc(mState.getBaseImageTarget(), baseLevel);
     mState.setImageDescChain(baseLevel, maxLevel, baseImageInfo.size, baseImageInfo.format,
@@ -1621,7 +1635,8 @@ angle::Result Texture::setEGLImageTarget(Context *context,
                                          egl::Image *imageTarget)
 {
     ASSERT(type == mState.mType);
-    ASSERT(type == TextureType::_2D || type == TextureType::External);
+    ASSERT(type == TextureType::_2D || type == TextureType::External ||
+           type == TextureType::_2DArray);
 
     // Release from previous calls to eglBindTexImage, to avoid calling the Impl after
     ANGLE_TRY(releaseTexImageInternal(context));
@@ -1769,10 +1784,10 @@ GLuint Texture::getNativeID() const
     return mTexture->getNativeID();
 }
 
-angle::Result Texture::syncState(const Context *context)
+angle::Result Texture::syncState(const Context *context, TextureCommand source)
 {
-    ASSERT(hasAnyDirtyBit());
-    ANGLE_TRY(mTexture->syncState(context, mDirtyBits));
+    ASSERT(hasAnyDirtyBit() || source == TextureCommand::GenerateMipmap);
+    ANGLE_TRY(mTexture->syncState(context, mDirtyBits, source));
     mDirtyBits.reset();
     return angle::Result::Continue;
 }
@@ -1900,10 +1915,7 @@ bool Texture::doesSubImageNeedInit(const Context *context,
     }
 
     ASSERT(mState.mInitState == InitState::MayNeedInit);
-    bool coversWholeImage = area.x == 0 && area.y == 0 && area.z == 0 &&
-                            area.width == desc.size.width && area.height == desc.size.height &&
-                            area.depth == desc.size.depth;
-    return !coversWholeImage;
+    return !area.coversSameExtent(desc.size);
 }
 
 angle::Result Texture::ensureSubImageInitialized(const Context *context,
@@ -1984,8 +1996,13 @@ angle::Result Texture::getTexImage(const Context *context,
                                    GLint level,
                                    GLenum format,
                                    GLenum type,
-                                   void *pixels) const
+                                   void *pixels)
 {
+    if (hasAnyDirtyBit())
+    {
+        ANGLE_TRY(syncState(context, TextureCommand::Other));
+    }
+
     return mTexture->getTexImage(context, packState, packBuffer, target, level, format, type,
                                  pixels);
 }

@@ -300,6 +300,11 @@ bool IsClearBufferMaskedOut(const Context *context, GLenum buffer, GLint drawbuf
     }
 }
 
+bool IsClearBufferDisabled(const FramebufferState &mState, GLenum buffer, GLint drawbuffer)
+{
+    return buffer == GL_COLOR && !mState.getEnabledDrawBuffers()[drawbuffer];
+}
+
 }  // anonymous namespace
 
 // This constructor is only used for default framebuffers.
@@ -352,7 +357,7 @@ FramebufferState::FramebufferState(const Caps &caps, FramebufferID id, ContextID
 
 FramebufferState::~FramebufferState() {}
 
-const std::string &FramebufferState::getLabel()
+const std::string &FramebufferState::getLabel() const
 {
     return mLabel;
 }
@@ -799,6 +804,8 @@ Framebuffer::Framebuffer(const Context *context, egl::Surface *surface, egl::Sur
                           FramebufferAttachment::kDefaultRenderToTextureSamples);
     }
     SetComponentTypeMask(getDrawbufferWriteType(0), 0, &mState.mDrawBufferTypeMask);
+
+    mState.mSurfaceTextureOffset = surface->getTextureOffset();
 
     // Ensure the backend has a chance to synchronize its content for a new backbuffer.
     mDirtyBits.set(DIRTY_BIT_COLOR_BUFFER_CONTENTS_0);
@@ -1534,7 +1541,8 @@ angle::Result Framebuffer::clearBufferfv(const Context *context,
                                          GLint drawbuffer,
                                          const GLfloat *values)
 {
-    if (context->getState().isRasterizerDiscardEnabled() ||
+    if (IsClearBufferDisabled(mState, buffer, drawbuffer) ||
+        context->getState().isRasterizerDiscardEnabled() ||
         IsClearBufferMaskedOut(context, buffer, drawbuffer))
     {
         return angle::Result::Continue;
@@ -1550,7 +1558,8 @@ angle::Result Framebuffer::clearBufferuiv(const Context *context,
                                           GLint drawbuffer,
                                           const GLuint *values)
 {
-    if (context->getState().isRasterizerDiscardEnabled() ||
+    if (IsClearBufferDisabled(mState, buffer, drawbuffer) ||
+        context->getState().isRasterizerDiscardEnabled() ||
         IsClearBufferMaskedOut(context, buffer, drawbuffer))
     {
         return angle::Result::Continue;
@@ -1566,7 +1575,8 @@ angle::Result Framebuffer::clearBufferiv(const Context *context,
                                          GLint drawbuffer,
                                          const GLint *values)
 {
-    if (context->getState().isRasterizerDiscardEnabled() ||
+    if (IsClearBufferDisabled(mState, buffer, drawbuffer) ||
+        context->getState().isRasterizerDiscardEnabled() ||
         IsClearBufferMaskedOut(context, buffer, drawbuffer))
     {
         return angle::Result::Continue;
@@ -1625,14 +1635,15 @@ angle::Result Framebuffer::readPixels(const Context *context,
                                       const Rectangle &area,
                                       GLenum format,
                                       GLenum type,
+                                      const PixelPackState &pack,
+                                      Buffer *packBuffer,
                                       void *pixels)
 {
-    ANGLE_TRY(mImpl->readPixels(context, area, format, type, pixels));
+    ANGLE_TRY(mImpl->readPixels(context, area, format, type, pack, packBuffer, pixels));
 
-    Buffer *unpackBuffer = context->getState().getTargetBuffer(BufferBinding::PixelUnpack);
-    if (unpackBuffer)
+    if (packBuffer)
     {
-        unpackBuffer->onDataChanged();
+        packBuffer->onDataChanged();
     }
 
     return angle::Result::Continue;
@@ -1717,6 +1728,11 @@ angle::Result Framebuffer::getSamplePosition(const Context *context,
 bool Framebuffer::hasValidDepthStencil() const
 {
     return mState.getDepthStencilAttachment() != nullptr;
+}
+
+const gl::Offset &Framebuffer::getSurfaceTextureOffset() const
+{
+    return mState.getSurfaceTextureOffset();
 }
 
 void Framebuffer::setAttachment(const Context *context,

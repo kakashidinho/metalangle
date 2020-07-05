@@ -104,6 +104,41 @@ void OutputUniformIndexArrayInitializer(TInfoSinkBase &out,
     out << "}";
 }
 
+// Check whether all fields match std140 storage layout, and do not need to add paddings
+// when translating std140 uniform block to StructuredBuffer.
+static bool ShouldPadUniformBlockMemberForStructuredBuffer(const TType &type)
+{
+    const TStructure *structure = type.getStruct();
+    if (structure)
+    {
+        const TFieldList &fields = structure->fields();
+        for (size_t i = 0; i < fields.size(); i++)
+        {
+            if (ShouldPadUniformBlockMemberForStructuredBuffer(*fields[i]->type()))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    else if (type.isMatrix())
+    {
+        if ((type.getLayoutQualifier().matrixPacking != EmpRowMajor && type.getRows() == 4) ||
+            (type.getLayoutQualifier().matrixPacking == EmpRowMajor && type.getCols() == 4))
+        {
+            return false;
+        }
+    }
+    else
+    {
+        if (type.isVector() && type.getNominalSize() == 4)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
 }  // anonymous namespace
 
 ResourcesHLSL::ResourcesHLSL(StructureHLSL *structureHLSL,
@@ -779,7 +814,17 @@ TString ResourcesHLSL::uniformBlockWithOneLargeArrayMemberString(
 
     const TField &field                    = *interfaceBlock.fields()[0];
     const TLayoutBlockStorage blockStorage = interfaceBlock.blockStorage();
-    typeString = InterfaceBlockFieldTypeString(field, blockStorage, true);
+    typeString             = InterfaceBlockFieldTypeString(field, blockStorage, true);
+    const TType &fieldType = *field.type();
+    if (fieldType.isMatrix())
+    {
+        if (arrayIndex == GL_INVALID_INDEX || arrayIndex == 0)
+        {
+            hlsl += "struct matrix" + Decorate(field.name()) + " { " + typeString + " _matrix_" +
+                    Decorate(field.name()) + "; };\n";
+        }
+        typeString = "matrix" + Decorate(field.name());
+    }
 
     if (instanceVariable != nullptr)
     {
@@ -878,12 +923,13 @@ bool ResourcesHLSL::shouldTranslateUniformBlockToStructuredBuffer(
     const TInterfaceBlock &interfaceBlock)
 {
     const TType &fieldType = *interfaceBlock.fields()[0]->type();
+    // Restrict field and sub-fields types match std140 storage layout rules, even the uniform
+    // does not use std140 qualifier.
+    bool shouldPadUniformBlockMember = ShouldPadUniformBlockMemberForStructuredBuffer(fieldType);
 
-    // TODO(anglebug.com/4206): Support uniform block contains only a matrix array member,
-    // and fix row-major/column-major conversion issue.
     return (mCompileOptions & SH_DONT_TRANSLATE_UNIFORM_BLOCK_TO_STRUCTUREDBUFFER) == 0 &&
            mSRVRegister < kMaxInputResourceSlotCount && interfaceBlock.fields().size() == 1u &&
-           fieldType.getStruct() != nullptr && fieldType.getNumArraySizes() == 1u &&
+           !shouldPadUniformBlockMember && fieldType.getNumArraySizes() == 1u &&
            fieldType.getOutermostArraySize() >= kMinArraySizeUseStructuredBuffer;
 }
 }  // namespace sh

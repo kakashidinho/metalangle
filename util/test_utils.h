@@ -16,6 +16,10 @@
 #include "common/angleutils.h"
 #include "util/Timer.h"
 
+// DeleteFile is defined in the Windows headers to either DeleteFileA or DeleteFileW. Make sure
+// there are no conflicts.
+#undef DeleteFile
+
 namespace angle
 {
 // Cross platform equivalent of the Windows Sleep function
@@ -116,6 +120,7 @@ Process *LaunchProcess(const std::vector<const char *> &args,
 
 int NumberOfProcessors();
 
+const char *GetNativeEGLLibraryNameWithExtension();
 }  // namespace angle
 
 #endif  // UTIL_TEST_UTILS_H_

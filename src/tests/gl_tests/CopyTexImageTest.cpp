@@ -485,9 +485,6 @@ TEST_P(CopyTexImageTest, CopyTexSubImageToNonCubeCompleteDestination)
 // Deleting textures after copying to them. http://anglebug.com/4267
 TEST_P(CopyTexImageTest, DeleteAfterCopyingToTextures)
 {
-    // Asserts on Vulkan backend. http://anglebug.com/4274
-    ANGLE_SKIP_TEST_IF(IsVulkan());
-
     GLTexture texture;
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
@@ -676,7 +673,50 @@ TEST_P(CopyTexImageTestES3, 2DArraySubImage)
     glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex, 0, 0);
     EXPECT_PIXEL_COLOR_EQ(0, 0, GLColor::red);
     glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex, 0, 1);
-    EXPECT_PIXEL_COLOR_EQ(0, 0, GLColor::green);
+    for (int x = 0; x < kTexSize; x++)
+    {
+        for (int y = 0; y < kTexSize; y++)
+        {
+            EXPECT_PIXEL_COLOR_EQ(x, y, GLColor::green);
+        }
+    }
+    ASSERT_GL_NO_ERROR();
+}
+
+// Test if glCopyTexImage2D() implementation performs conversions well from GL_TEXTURE_3D to
+// GL_TEXTURE_2D.
+TEST_P(CopyTexImageTestES3, CopyTexSubImageFromTexture3D)
+{
+    // TODO(anglebug.com/3801)
+    // Seems to fail on D3D11 Windows.
+    ANGLE_SKIP_TEST_IF(IsD3D11() & IsWindows());
+
+    constexpr GLsizei kTexSize = 4;
+    constexpr GLsizei kLayers  = 2;
+    std::vector<GLColor> red(kTexSize * kTexSize * kLayers, GLColor::red);
+
+    GLFramebuffer fbo;
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // We will be reading from zeroth color attachment.
+    glReadBuffer(GL_COLOR_ATTACHMENT0);
+
+    GLTexture src_object_id;
+    glBindTexture(GL_TEXTURE_3D, src_object_id);
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA8, kTexSize, kTexSize, kLayers, 0, GL_RGBA,
+                 GL_UNSIGNED_BYTE, NULL);
+    glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 1, kTexSize, kTexSize, 1, GL_RGBA, GL_UNSIGNED_BYTE,
+                    red.data());
+    glFramebufferTextureLayer(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, src_object_id, 0, 1);
+    ASSERT_GL_NO_ERROR();
+
+    GLTexture dst_object_id;
+    glBindTexture(GL_TEXTURE_2D, dst_object_id);
+    glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 0, 0, kTexSize, kTexSize, 0);
+    glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, dst_object_id,
+                           0);
+    EXPECT_PIXEL_COLOR_EQ(0, 0, GLColor::red);
     ASSERT_GL_NO_ERROR();
 }
 
@@ -908,7 +948,12 @@ ANGLE_INSTANTIATE_TEST(CopyTexImageTest,
                        ES2_OPENGL(),
                        ES2_OPENGLES(),
                        ES2_VULKAN(),
-                       ES3_VULKAN());
+                       ES3_VULKAN(),
+                       WithEmulateCopyTexImage2DFromRenderbuffers(ES2_OPENGL()),
+                       WithEmulateCopyTexImage2DFromRenderbuffers(ES2_OPENGLES()));
 
-ANGLE_INSTANTIATE_TEST_ES3(CopyTexImageTestES3);
+ANGLE_INSTANTIATE_TEST(CopyTexImageTestES3,
+                       ANGLE_ALL_TEST_PLATFORMS_ES3,
+                       WithEmulateCopyTexImage2DFromRenderbuffers(ES3_OPENGL()),
+                       WithEmulateCopyTexImage2DFromRenderbuffers(ES3_OPENGLES()));
 }  // namespace angle

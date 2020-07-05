@@ -19,13 +19,13 @@ vars = {
   'checkout_angle_internal': False,
 
   # Version of Chromium our Chromium-based DEPS are mirrored from.
-  'chromium_revision': 'fa9d5805c421133e9d13cf698c4502d13398b2ce',
+  'chromium_revision': 'b0410bba028cf153be2d02e36b6e99b59fdcb000',
 
   # Current revision of VK-GL-CTS (a.k.a dEQP).
-  'vk_gl_cts_revision': 'a6b249819f7177821d4b7eefff36af07fef71825',
+  'vk_gl_cts_revision': '44ef9e08c4592207c0f3d81ed385bac078f1925a',
 
   # Current revision of glslang, the Khronos SPIRV compiler.
-  'glslang_revision': '7d65f09b83112c1ec9e29313cb9913ed2b850aa0',
+  'glslang_revision': '4728509962e673ed06fefc27632baeca20f1158a',
 
   # Current revision of googletest.
   # Note: this dep cannot be auto-rolled b/c of nesting.
@@ -35,6 +35,17 @@ vars = {
   # Note: this dep cannot be auto-rolled b/c of nesting.
   'jsoncpp_revision': '645250b6690785be60ab6780ce4b58698d884d11',
 
+  # Current revision of Chrome's third_party jsoncpp directory. This repository
+  # is mirrored as a separate repository, with separate git hashes that
+  # don't match the external JsonCpp repository or Chrome. Mirrored patches
+  # will have a different git hash associated with them.
+  # To roll, first get the new hash for chromium_jsoncpp_revision from the
+  # mirror of third_party/jsoncpp located here:
+  # https://chromium.googlesource.com/chromium/src/third_party/jsoncpp/
+  # Then get the new hash for jsoncpp_revision from the root Chrome DEPS file:
+  # https://source.chromium.org/chromium/chromium/src/+/master:DEPS
+  'chromium_jsoncpp_revision': 'ec647b85b61f525a1a74e4da7477b0c5371c50f4',
+
   # Current revision of patched-yasm.
   # Note: this dep cannot be auto-rolled b/c of nesting.
   'patched_yasm_revision': '720b70524a4424b15fc57e82263568c8ba0496ad',
@@ -43,22 +54,22 @@ vars = {
   'spirv_cross_revision': 'f38cbeb814c73510b85697adbe5e894f9eac978f',
 
   # Current revision fo the SPIRV-Headers Vulkan support library.
-  'spirv_headers_revision': 'f8bf11a0253a32375c32cad92c841237b96696c0',
+  'spirv_headers_revision': 'ac638f1815425403e946d0ab78bac71d2bdbf3be',
 
   # Current revision of SPIRV-Tools for Vulkan.
-  'spirv_tools_revision': '67f4838659f475d618c120e13d1a196d7e00ba4b',
+  'spirv_tools_revision': '2c1ff230c26d67655e5b0ef27ca3c4371d7d5b3e',
 
   # Current revision of Khronos Vulkan-Headers.
-  'vulkan_headers_revision': '382bf3de06fc8c8961055afc37957fe65846c33b',
+  'vulkan_headers_revision': '8188e3fbbc105591064093440f88081fb957d4f0',
 
   # Current revision of Khronos Vulkan-Loader.
-  'vulkan_loader_revision': '4fb0e0374a3912263606d9ed0243bbef22e23597',
+  'vulkan_loader_revision': 'a173c025f8fea41d5d5e6bbd78c84647ce67fd21',
 
   # Current revision of Khronos Vulkan-Tools.
-  'vulkan_tools_revision': '7774c964d3df8b127e8d1814526f4447a27446c2',
+  'vulkan_tools_revision': 'abc9dff824c3f612a53e4fd3c484579fa80d27a5',
 
   # Current revision of Khronos Vulkan-ValidationLayers.
-  'vulkan_validation_revision': '260a7c82e98850c5e19bfb75e1cca2b67b11a20e',
+  'vulkan_validation_revision': '5c38b18ab4600465dc324b5c30a193eb20c557f9',
 
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling catapult
@@ -69,17 +80,17 @@ vars = {
 deps = {
 
   'build': {
-    'url': '{chromium_git}/chromium/src/build.git@a1cbf6469a5400f2b455ffba2e95ea47a1b47c94',
+    'url': '{chromium_git}/chromium/src/build.git@45ab3c89af6fc3126b0ca5a7836f0db85ad1ba0e',
     'condition': 'not build_with_chromium',
   },
 
   'buildtools': {
-    'url': '{chromium_git}/chromium/src/buildtools.git@4164a305626786b1912d467003acf4c4995bec7d',
+    'url': '{chromium_git}/chromium/src/buildtools.git@204a35a2a64f7179f8b76d7a0385653690839e21',
     'condition': 'not build_with_chromium',
   },
 
   'testing': {
-    'url': '{chromium_git}/chromium/src/testing@3e21eec53c1688302ebc26e975d0163256bd1a15',
+    'url': '{chromium_git}/chromium/src/testing@3993ef1f527b206d8d3bf3f9824f4fe0e4bbdb0e',
     'condition': 'not build_with_chromium',
   },
 
@@ -89,8 +100,9 @@ deps = {
     'condition': 'not build_with_chromium',
   },
 
-  'third_party/VulkanMemoryAllocator': {
-    'url': '{chromium_git}/external/github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator@ec44c3121c73ae243fe59acfcc0ce1ba19e43947',
+  'third_party/vulkan_memory_allocator': {
+    'url': '{chromium_git}/external/github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator@431d6e57284aeb08118ff428dfbd51c94342faa1',
+    'condition': 'not build_with_chromium',
   },
 
   'third_party/VK-GL-CTS/src': {
@@ -119,13 +131,13 @@ deps = {
   },
 
   'third_party/googletest': {
-    'url': '{chromium_git}/chromium/src/third_party/googletest@c96dc321101e7c9f5ba16d957afd49ee4db30548',
+    'url': '{chromium_git}/chromium/src/third_party/googletest@217407c4787f361aa5814ec609379bfc9b21d307',
     'condition': 'not build_with_chromium',
   },
 
   # libjpeg_turbo is used by glmark2.
   'third_party/libjpeg_turbo': {
-    'url': '{chromium_git}/chromium/deps/libjpeg_turbo.git@ce0e57e8e636f5132fe6f0590a4dba91f92fd935',
+    'url': '{chromium_git}/chromium/deps/libjpeg_turbo.git@7e3ad79800a7945fb37173149842b494ab8982b2',
     'condition': 'not build_with_chromium',
   },
 
@@ -135,9 +147,14 @@ deps = {
   },
 
   'third_party/jsoncpp': {
-    'url': '{chromium_git}/chromium/src/third_party/jsoncpp@493c9385c91023c3819b51ee0de552d52229a1e5',
+    'url': '{chromium_git}/chromium/src/third_party/jsoncpp@{chromium_jsoncpp_revision}',
     'condition': 'not build_with_chromium',
    },
+
+  'third_party/nasm': {
+    'url': '{chromium_git}/chromium/deps/nasm@4fa54ca5f7fc3a15a8c78ac94688e64d3e4e4fa1',
+    'condition': 'not build_with_chromium',
+  },
 
   'third_party/Python-Markdown': {
     'url': '{chromium_git}/chromium/src/third_party/Python-Markdown@36657c103ce5964733bbbb29377085e9cc1a9472',
@@ -186,7 +203,7 @@ deps = {
   },
 
   'third_party/SwiftShader': {
-    'url': '{swiftshader_git}/SwiftShader@5ab1f36a38aa987d25271a6a58523ef7866ea1c5',
+    'url': '{swiftshader_git}/SwiftShader@3121585acce20f5cc2074088563e3c1a076b8e48',
     'condition': 'not build_with_chromium',
   },
 
@@ -206,18 +223,13 @@ deps = {
     'url': '{chromium_git}/external/github.com/KhronosGroup/Vulkan-ValidationLayers@{vulkan_validation_revision}',
   },
 
-  'third_party/yasm': {
-    'url': '{chromium_git}/chromium/src/third_party/yasm@8e4e548d0b199df58740336024c1b3baf7c0abd7',
-    'condition': 'not build_with_chromium',
-  },
-
   'third_party/zlib': {
-    'url': '{chromium_git}/chromium/src/third_party/zlib@156be8c52f80cde343088b4a69a80579101b6e67',
+    'url': '{chromium_git}/chromium/src/third_party/zlib@ae385786edb15f57e992c5e9dd9464e376d69399',
     'condition': 'not build_with_chromium',
   },
 
   'tools/clang': {
-    'url': '{chromium_git}/chromium/src/tools/clang.git@d60a6a8084300eb8de99e56b559369dcde4cffa4',
+    'url': '{chromium_git}/chromium/src/tools/clang.git@04b99e7bf9160d551c3a5562f583014b6afc90f9',
     'condition': 'not build_with_chromium',
   },
 
@@ -233,7 +245,7 @@ deps = {
   },
 
   'tools/md_browser': {
-    'url': '{chromium_git}/chromium/src/tools/md_browser@0bfd826f8566a99923e64a782908faca72bc457c',
+    'url': '{chromium_git}/chromium/src/tools/md_browser@aae45d8d82400e90483d4fee2ca3e648f2313cb2',
     'condition': 'not build_with_chromium',
   },
 
@@ -244,7 +256,7 @@ deps = {
 
   'third_party/catapult': {
     'url': '{chromium_git}/catapult.git@{catapult_revision}',
-    'condition': 'not build_with_chromium',
+    'condition': 'checkout_android and not build_with_chromium',
   },
 
   'third_party/android_ndk': {
@@ -421,11 +433,8 @@ hooks = [
     'name': 'restricted_traces',
     'pattern': '\\.sha1',
     'condition': 'checkout_angle_internal',
-    'action': [ 'download_from_google_storage',
-                '--directory',
-                '--recursive',
-                '--extract',
-                '--bucket', 'chrome-angle-capture-binaries',
+    'action': [ 'python',
+                'src/tests/perf_tests/restricted_traces/download_restricted_traces.py',
                 'src/tests/perf_tests/restricted_traces',
     ]
   }
@@ -436,5 +445,4 @@ recursedeps = [
   'buildtools',
   'third_party/googletest',
   'third_party/jsoncpp',
-  'third_party/yasm',
 ]

@@ -9,6 +9,7 @@
 
 #include "libANGLE/renderer/vulkan/xcb/DisplayVkXcb.h"
 
+#include <X11/Xutil.h>
 #include <xcb/xcb.h>
 
 #include "libANGLE/Display.h"
@@ -85,7 +86,7 @@ SurfaceImpl *DisplayVkXcb::createWindowSurfaceVk(const egl::SurfaceState &state,
 
 egl::ConfigSet DisplayVkXcb::generateConfigs()
 {
-    constexpr GLenum kColorFormats[] = {GL_BGRA8_EXT, GL_BGRX8_ANGLEX};
+    constexpr GLenum kColorFormats[] = {GL_BGRA8_EXT};
     return egl_vk::GenerateConfigs(kColorFormats, egl_vk::kConfigDepthStencilFormats, this);
 }
 
@@ -125,7 +126,7 @@ DisplayImpl *CreateVulkanXcbDisplay(const egl::DisplayState &state)
 
 angle::Result DisplayVkXcb::waitNativeImpl()
 {
-    XSync(mState.displayId, False);
+    XSync(reinterpret_cast<Display *>(mState.displayId), False);
     return angle::Result::Continue;
 }
 }  // namespace rx

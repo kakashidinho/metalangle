@@ -38,14 +38,16 @@ class ProgramPipelineState final : angle::NonCopyable
 
     const std::string &getLabel() const;
 
-    // A PPO can have both graphics and compute programs attached, so
-    // we don't know if the PPO is a 'graphics' or 'compute' PPO until the
-    // actual draw/dispatch call.
-    bool isCompute() const { return mIsCompute; }
-    void setIsCompute(bool isCompute) { mIsCompute = isCompute; }
-
-    const ProgramExecutable &getProgramExecutable() const { return mExecutable; }
-    ProgramExecutable &getProgramExecutable() { return mExecutable; }
+    const ProgramExecutable &getProgramExecutable() const
+    {
+        ASSERT(mExecutable);
+        return *mExecutable;
+    }
+    ProgramExecutable &getProgramExecutable()
+    {
+        ASSERT(mExecutable);
+        return *mExecutable;
+    }
 
     void activeShaderProgram(Program *shaderProgram);
     void useProgramStages(const Context *context, GLbitfield stages, Program *shaderProgram);
@@ -58,22 +60,12 @@ class ProgramPipelineState final : angle::NonCopyable
 
     bool usesShaderProgram(ShaderProgramID program) const;
 
-    bool hasDefaultUniforms() const;
-    bool hasTextures() const;
-    bool hasUniformBuffers() const;
-    bool hasStorageBuffers() const;
-    bool hasAtomicCounterBuffers() const;
-    bool hasImages() const;
-    bool hasTransformFeedbackOutput() const;
-
   private:
     void useProgramStage(const Context *context, ShaderType shaderType, Program *shaderProgram);
 
     friend class ProgramPipeline;
 
     std::string mLabel;
-
-    bool mIsCompute;
 
     // The active shader program
     Program *mActiveShaderProgram;
@@ -84,7 +76,7 @@ class ProgramPipelineState final : angle::NonCopyable
 
     GLboolean mHasBeenBound;
 
-    ProgramExecutable mExecutable;
+    ProgramExecutable *mExecutable;
 };
 
 class ProgramPipeline final : public RefCountObject<ProgramPipelineID>, public LabeledObject
@@ -118,10 +110,6 @@ class ProgramPipeline final : public RefCountObject<ProgramPipelineID>, public L
     }
 
     void useProgramStages(const Context *context, GLbitfield stages, Program *shaderProgram);
-
-    void updateExecutableAttributes();
-    void updateExecutableTextures();
-    void updateExecutable();
 
     Program *getShaderProgram(ShaderType shaderType) const { return mState.mPrograms[shaderType]; }
 
@@ -158,8 +146,16 @@ class ProgramPipeline final : public RefCountObject<ProgramPipelineID>, public L
     angle::Result syncState(const Context *context);
     void setDirtyBit(DirtyBitType dirtyBitType) { mDirtyBits.set(dirtyBitType); }
 
+    void updateExecutableTextures();
+
+    void fillProgramStateMap(gl::ShaderMap<const gl::ProgramState *> *programStatesOut);
+
   private:
     void updateLinkedShaderStages();
+    void updateExecutableAttributes();
+    void updateTransformFeedbackMembers();
+    void updateHasBooleans();
+    void updateExecutable();
 
     std::unique_ptr<rx::ProgramPipelineImpl> mProgramPipelineImpl;
 

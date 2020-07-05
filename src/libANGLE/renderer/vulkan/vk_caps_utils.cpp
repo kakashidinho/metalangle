@@ -84,6 +84,7 @@ void RendererVk::ensureCapsInitialized() const
     mNativeExtensions.framebufferBlit        = true;
     mNativeExtensions.framebufferMultisample = true;
     mNativeExtensions.copyTexture            = true;
+    mNativeExtensions.copyTexture3d          = true;
     mNativeExtensions.copyCompressedTexture  = true;
     mNativeExtensions.debugMarker            = true;
     mNativeExtensions.robustness =
@@ -109,9 +110,9 @@ void RendererVk::ensureCapsInitialized() const
     mNativeExtensions.eglImageExternalOES          = true;
     mNativeExtensions.eglImageExternalWrapModesEXT = true;
     mNativeExtensions.eglImageExternalEssl3OES     = true;
-
-    mNativeExtensions.memoryObject   = true;
-    mNativeExtensions.memoryObjectFd = getFeatures().supportsExternalMemoryFd.enabled;
+    mNativeExtensions.eglImageArray                = true;
+    mNativeExtensions.memoryObject                 = true;
+    mNativeExtensions.memoryObjectFd               = getFeatures().supportsExternalMemoryFd.enabled;
     mNativeExtensions.memoryObjectFuchsiaANGLE =
         getFeatures().supportsExternalMemoryFuchsia.enabled;
 
@@ -181,7 +182,12 @@ void RendererVk::ensureCapsInitialized() const
     mNativeExtensions.depthTextureCubeMapOES =
         mNativeExtensions.depthTextureOES && mNativeExtensions.packedDepthStencilOES;
 
+    // Vulkan natively supports format reinterpretation
+    mNativeExtensions.textureSRGBOverride = mNativeExtensions.sRGB;
+
     mNativeExtensions.gpuShader5EXT = vk::CanSupportGPUShader5EXT(mPhysicalDeviceFeatures);
+
+    mNativeExtensions.textureFilteringCHROMIUM = getFeatures().supportsFilteringPrecision.enabled;
 
     // https://vulkan.lunarg.com/doc/view/1.0.30.0/linux/vkspec.chunked/ch31s02.html
     mNativeCaps.maxElementIndex  = std::numeric_limits<GLuint>::max() - 1;
@@ -212,11 +218,8 @@ void RendererVk::ensureCapsInitialized() const
         limitsVk.sampledImageColorSampleCounts & vk_gl::kSupportedSampleCounts;
     mNativeCaps.maxDepthTextureSamples =
         limitsVk.sampledImageDepthSampleCounts & vk_gl::kSupportedSampleCounts;
-    // TODO (ianelliott): Should mask this with vk_gl::kSupportedSampleCounts, but it causes
-    // end2end test failures with SwiftShader because SwiftShader returns a sample count of 1 in
-    // sampledImageIntegerSampleCounts.
-    // See: http://anglebug.com/4197
-    mNativeCaps.maxIntegerSamples = limitsVk.sampledImageIntegerSampleCounts;
+    mNativeCaps.maxIntegerSamples =
+        limitsVk.sampledImageIntegerSampleCounts & vk_gl::kSupportedSampleCounts;
 
     mNativeCaps.maxVertexAttributes     = LimitToInt(limitsVk.maxVertexInputAttributes);
     mNativeCaps.maxVertexAttribBindings = LimitToInt(limitsVk.maxVertexInputBindings);
@@ -423,10 +426,15 @@ void RendererVk::ensureCapsInitialized() const
     // GL Images correspond to Vulkan Storage Images.
     const int32_t maxPerStageImages = LimitToInt(limitsVk.maxPerStageDescriptorStorageImages);
     const int32_t maxCombinedImages = LimitToInt(limitsVk.maxDescriptorSetStorageImages);
-    for (gl::ShaderType shaderType : gl::AllShaderTypes())
-    {
-        mNativeCaps.maxShaderImageUniforms[shaderType] = maxPerStageImages;
-    }
+
+    mNativeCaps.maxShaderImageUniforms[gl::ShaderType::Vertex] =
+        mPhysicalDeviceFeatures.vertexPipelineStoresAndAtomics ? maxPerStageImages : 0;
+    mNativeCaps.maxShaderImageUniforms[gl::ShaderType::Fragment] =
+        mPhysicalDeviceFeatures.fragmentStoresAndAtomics ? maxPerStageImages : 0;
+    mNativeCaps.maxShaderImageUniforms[gl::ShaderType::Geometry] =
+        mPhysicalDeviceFeatures.vertexPipelineStoresAndAtomics ? maxPerStageImages : 0;
+    mNativeCaps.maxShaderImageUniforms[gl::ShaderType::Compute] = maxPerStageImages;
+
     mNativeCaps.maxCombinedImageUniforms = maxCombinedImages;
     mNativeCaps.maxImageUnits            = maxCombinedImages;
 
@@ -438,8 +446,9 @@ void RendererVk::ensureCapsInitialized() const
     // There is no additional limit to the combined number of components.  We can have up to a
     // maximum number of uniform buffers, each having the maximum number of components.  Note that
     // this limit includes both components in and out of uniform buffers.
-    const uint32_t maxCombinedUniformComponents =
-        (maxPerStageUniformBuffers + kReservedPerStageDefaultUniformBindingCount) *
+    const uint64_t maxCombinedUniformComponents =
+        static_cast<uint64_t>(maxPerStageUniformBuffers +
+                              kReservedPerStageDefaultUniformBindingCount) *
         maxUniformComponents;
     for (gl::ShaderType shaderType : gl::AllShaderTypes())
     {
@@ -614,6 +623,8 @@ egl::Config GenerateDefaultConfig(const RendererVk *renderer,
         renderer->getPhysicalDeviceProperties();
     gl::Version maxSupportedESVersion = renderer->getMaxSupportedESVersion();
 
+    // ES3 features are required to emulate ES1
+    EGLint es1Support = (maxSupportedESVersion.major >= 3 ? EGL_OPENGL_ES_BIT : 0);
     EGLint es2Support = (maxSupportedESVersion.major >= 2 ? EGL_OPENGL_ES2_BIT : 0);
     EGLint es3Support = (maxSupportedESVersion.major >= 3 ? EGL_OPENGL_ES3_BIT : 0);
 
@@ -631,7 +642,7 @@ egl::Config GenerateDefaultConfig(const RendererVk *renderer,
     config.bindToTextureRGBA  = colorFormat.format == GL_RGBA || colorFormat.format == GL_BGRA_EXT;
     config.colorBufferType    = EGL_RGB_BUFFER;
     config.configCaveat       = GetConfigCaveat(colorFormat.internalFormat);
-    config.conformant         = es2Support | es3Support;
+    config.conformant         = es1Support | es2Support | es3Support;
     config.depthSize          = depthStencilFormat.depthBits;
     config.stencilSize        = depthStencilFormat.stencilBits;
     config.level              = 0;
@@ -644,7 +655,7 @@ egl::Config GenerateDefaultConfig(const RendererVk *renderer,
     config.nativeRenderable   = EGL_TRUE;
     config.nativeVisualID     = static_cast<EGLint>(GetNativeVisualID(colorFormat));
     config.nativeVisualType   = EGL_NONE;
-    config.renderableType     = es2Support | es3Support;
+    config.renderableType     = es1Support | es2Support | es3Support;
     config.sampleBuffers      = (sampleCount > 0) ? 1 : 0;
     config.samples            = sampleCount;
     config.surfaceType        = EGL_WINDOW_BIT | EGL_PBUFFER_BIT;

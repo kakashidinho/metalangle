@@ -29,6 +29,10 @@ namespace
 {
 angle::SubjectIndex kAnySurfaceImageSubjectIndex = 0;
 
+// Special value for currentExtent if surface size is determined by the
+// swapchain's extent. See VkSurfaceCapabilitiesKHR spec for more details.
+constexpr uint32_t kSurfaceSizedBySwapchain = 0xFFFFFFFFu;
+
 GLint GetSampleCount(const egl::Config *config)
 {
     GLint samples = 1;
@@ -122,17 +126,13 @@ angle::Result SurfaceVk::getAttachmentRenderTarget(const gl::Context *context,
                                                    GLsizei samples,
                                                    FramebufferAttachmentRenderTarget **rtOut)
 {
-    ContextVk *contextVk = vk::GetImpl(context);
-
     if (binding == GL_BACK)
     {
-        ANGLE_TRY(mColorRenderTarget.flushStagedUpdates(contextVk));
         *rtOut = &mColorRenderTarget;
     }
     else
     {
         ASSERT(binding == GL_DEPTH || binding == GL_STENCIL || binding == GL_DEPTH_STENCIL);
-        ANGLE_TRY(mDepthStencilRenderTarget.flushStagedUpdates(contextVk));
         *rtOut = &mDepthStencilRenderTarget;
     }
 
@@ -365,13 +365,13 @@ angle::Result OffscreenSurfaceVk::initializeContents(const gl::Context *context,
 
     if (mColorAttachment.image.valid())
     {
-        mColorAttachment.image.stageSubresourceClear(imageIndex);
+        mColorAttachment.image.stageRobustResourceClear(imageIndex);
         ANGLE_TRY(mColorAttachment.image.flushAllStagedUpdates(contextVk));
     }
 
     if (mDepthStencilAttachment.image.valid())
     {
-        mDepthStencilAttachment.image.stageSubresourceClear(imageIndex);
+        mDepthStencilAttachment.image.stageRobustResourceClear(imageIndex);
         ANGLE_TRY(mDepthStencilAttachment.image.flushAllStagedUpdates(contextVk));
     }
     return angle::Result::Continue;
@@ -567,9 +567,9 @@ angle::Result WindowSurfaceVk::initializeImpl(DisplayVk *displayVk)
     EGLAttrib attribWidth  = mState.attributes.get(EGL_WIDTH, 0);
     EGLAttrib attribHeight = mState.attributes.get(EGL_HEIGHT, 0);
 
-    if (mSurfaceCaps.currentExtent.width == 0xFFFFFFFFu)
+    if (mSurfaceCaps.currentExtent.width == kSurfaceSizedBySwapchain)
     {
-        ASSERT(mSurfaceCaps.currentExtent.height == 0xFFFFFFFFu);
+        ASSERT(mSurfaceCaps.currentExtent.height == kSurfaceSizedBySwapchain);
 
         width  = (attribWidth != 0) ? static_cast<uint32_t>(attribWidth) : windowSize.width;
         height = (attribHeight != 0) ? static_cast<uint32_t>(attribHeight) : windowSize.height;
@@ -864,6 +864,7 @@ angle::Result WindowSurfaceVk::createSwapChain(vk::Context *context,
     // We need transfer src for reading back from the backbuffer.
     VkImageUsageFlags imageUsageFlags = kSurfaceVKColorImageUsageFlags;
 
+#if ANGLE_ENABLE_OVERLAY
     // We need storage image for compute writes (debug overlay output).
     VkFormatFeatureFlags featureBits =
         renderer->getImageFormatFeatureBits(nativeFormat, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT);
@@ -871,6 +872,7 @@ angle::Result WindowSurfaceVk::createSwapChain(vk::Context *context,
     {
         imageUsageFlags |= VK_IMAGE_USAGE_STORAGE_BIT;
     }
+#endif
 
     VkSwapchainCreateInfoKHR swapchainInfo = {};
     swapchainInfo.sType                    = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -896,7 +898,9 @@ angle::Result WindowSurfaceVk::createSwapChain(vk::Context *context,
 
     // TODO(syoussefi): Once EGL_SWAP_BEHAVIOR_PRESERVED_BIT is supported, the contents of the old
     // swapchain need to carry over to the new one.  http://anglebug.com/2942
-    ANGLE_VK_TRY(context, vkCreateSwapchainKHR(device, &swapchainInfo, nullptr, &mSwapchain));
+    VkSwapchainKHR newSwapChain = VK_NULL_HANDLE;
+    ANGLE_VK_TRY(context, vkCreateSwapchainKHR(device, &swapchainInfo, nullptr, &newSwapChain));
+    mSwapchain            = newSwapChain;
     mSwapchainPresentMode = mDesiredSwapchainPresentMode;
 
     // Intialize the swapchain image views.
@@ -994,9 +998,9 @@ angle::Result WindowSurfaceVk::checkForOutOfDateSwapchain(ContextVk *contextVk,
             uint32_t width  = mSurfaceCaps.currentExtent.width;
             uint32_t height = mSurfaceCaps.currentExtent.height;
 
-            if (width != 0xFFFFFFFFu)
+            if (width != kSurfaceSizedBySwapchain)
             {
-                ASSERT(height != 0xFFFFFFFFu);
+                ASSERT(height != kSurfaceSizedBySwapchain);
                 currentExtents.width  = width;
                 currentExtents.height = height;
             }
@@ -1353,6 +1357,12 @@ VkResult WindowSurfaceVk::nextSwapchainImage(vk::Context *context)
         mColorRenderTarget.updateSwapchainImage(&image.image, &image.imageViews);
     }
 
+    // Notify the owning framebuffer there may be staged updates.
+    if (image.image.hasStagedUpdates())
+    {
+        onStateChange(angle::SubjectMessage::SubjectChanged);
+    }
+
     return VK_SUCCESS;
 }
 
@@ -1439,6 +1449,61 @@ EGLint WindowSurfaceVk::getWidth() const
 EGLint WindowSurfaceVk::getHeight() const
 {
     return static_cast<EGLint>(mColorRenderTarget.getExtents().height);
+}
+
+egl::Error WindowSurfaceVk::getUserWidth(const egl::Display *display, EGLint *value) const
+{
+    DisplayVk *displayVk = vk::GetImpl(display);
+
+    if (mSurfaceCaps.currentExtent.width == kSurfaceSizedBySwapchain)
+    {
+        // Surface has no intrinsic size; use current size.
+        *value = getWidth();
+        return egl::NoError();
+    }
+
+    VkSurfaceCapabilitiesKHR surfaceCaps;
+    angle::Result result = getUserExtentsImpl(displayVk, &surfaceCaps);
+    if (result == angle::Result::Continue)
+    {
+        // The EGL spec states that value is not written if there is an error
+        ASSERT(surfaceCaps.currentExtent.width != kSurfaceSizedBySwapchain);
+        *value = static_cast<EGLint>(surfaceCaps.currentExtent.width);
+    }
+    return angle::ToEGL(result, displayVk, EGL_BAD_SURFACE);
+}
+
+egl::Error WindowSurfaceVk::getUserHeight(const egl::Display *display, EGLint *value) const
+{
+    DisplayVk *displayVk = vk::GetImpl(display);
+
+    if (mSurfaceCaps.currentExtent.height == kSurfaceSizedBySwapchain)
+    {
+        // Surface has no intrinsic size; use current size.
+        *value = getHeight();
+        return egl::NoError();
+    }
+
+    VkSurfaceCapabilitiesKHR surfaceCaps;
+    angle::Result result = getUserExtentsImpl(displayVk, &surfaceCaps);
+    if (result == angle::Result::Continue)
+    {
+        // The EGL spec states that value is not written if there is an error
+        ASSERT(surfaceCaps.currentExtent.height != kSurfaceSizedBySwapchain);
+        *value = static_cast<EGLint>(surfaceCaps.currentExtent.height);
+    }
+    return angle::ToEGL(result, displayVk, EGL_BAD_SURFACE);
+}
+
+angle::Result WindowSurfaceVk::getUserExtentsImpl(DisplayVk *displayVk,
+                                                  VkSurfaceCapabilitiesKHR *surfaceCaps) const
+{
+    const VkPhysicalDevice &physicalDevice = displayVk->getRenderer()->getPhysicalDevice();
+
+    ANGLE_VK_TRY(displayVk,
+                 vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, mSurface, surfaceCaps));
+
+    return angle::Result::Continue;
 }
 
 EGLint WindowSurfaceVk::isPostSubBufferSupported() const
@@ -1535,12 +1600,12 @@ angle::Result WindowSurfaceVk::initializeContents(const gl::Context *context,
 
     vk::ImageHelper *image =
         isMultiSampled() ? &mColorImageMS : &mSwapchainImages[mCurrentSwapchainImageIndex].image;
-    image->stageSubresourceClear(imageIndex);
+    image->stageRobustResourceClear(imageIndex);
     ANGLE_TRY(image->flushAllStagedUpdates(contextVk));
 
     if (mDepthStencilImage.valid())
     {
-        mDepthStencilImage.stageSubresourceClear(gl::ImageIndex::Make2D(0));
+        mDepthStencilImage.stageRobustResourceClear(gl::ImageIndex::Make2D(0));
         ANGLE_TRY(mDepthStencilImage.flushAllStagedUpdates(contextVk));
     }
 
@@ -1570,6 +1635,8 @@ void WindowSurfaceVk::updateOverlay(ContextVk *contextVk) const
         overlay->getCountWidget(gl::WidgetId::VulkanValidationMessageCount)
             ->add(validationMessageCount);
     }
+
+    contextVk->updateOverlayOnPresent();
 }
 
 ANGLE_INLINE bool WindowSurfaceVk::overlayHasEnabledWidget(ContextVk *contextVk) const

@@ -128,20 +128,16 @@ void DumpTraceEventsToJSONFile(const std::vector<TraceEvent> &traceEvents,
     {
         Json::Value value(Json::objectValue);
 
-        std::stringstream phaseName;
-        phaseName << traceEvent.phase;
-
-        const auto microseconds =
-            static_cast<Json::LargestInt>(traceEvent.timestamp * 1000.0 * 1000.0);
+        const auto microseconds = static_cast<Json::LargestInt>(traceEvent.timestamp) * 1000 * 1000;
 
         value["name"] = traceEvent.name;
         value["cat"]  = traceEvent.categoryName;
-        value["ph"]   = phaseName.str();
+        value["ph"]   = std::string(1, traceEvent.phase);
         value["ts"]   = microseconds;
         value["pid"]  = strcmp(traceEvent.categoryName, "gpu.angle.gpu") == 0 ? "GPU" : "ANGLE";
         value["tid"]  = 1;
 
-        eventsValue.append(value);
+        eventsValue.append(std::move(value));
     }
 
     Json::Value root(Json::objectValue);
@@ -150,8 +146,10 @@ void DumpTraceEventsToJSONFile(const std::vector<TraceEvent> &traceEvents,
     std::ofstream outFile;
     outFile.open(outputFileName);
 
-    Json::StyledWriter styledWrite;
-    outFile << styledWrite.write(root);
+    Json::StreamWriterBuilder factory;
+    std::unique_ptr<Json::StreamWriter> const writer(factory.newStreamWriter());
+    std::ostringstream stream;
+    writer->write(root, &outFile);
 
     outFile.close();
 }
@@ -237,6 +235,12 @@ void ANGLEPerfTest::run()
     else
     {
         mStepsToRun = gStepsToRunOverride;
+    }
+
+    // Check again for early exit.
+    if (mSkipTest)
+    {
+        return;
     }
 
     // Do another warmup run. Seems to consistently improve results.
@@ -342,11 +346,9 @@ std::string RenderTestParams::backend() const
     {
         case angle::GLESDriverType::AngleEGL:
             break;
+        case angle::GLESDriverType::SystemWGL:
         case angle::GLESDriverType::SystemEGL:
             strstr << "_native";
-            break;
-        case angle::GLESDriverType::SystemWGL:
-            strstr << "_wgl";
             break;
         default:
             assert(0);
@@ -403,7 +405,8 @@ ANGLERenderTest::ANGLERenderTest(const std::string &name, const RenderTestParams
       mTestParams(testParams),
       mIsTimestampQueryAvailable(false),
       mGLWindow(nullptr),
-      mOSWindow(nullptr)
+      mOSWindow(nullptr),
+      mSwapEnabled(true)
 {
     // Force fast tests to make sure our slowest bots don't time out.
     if (OneFrame())
@@ -422,8 +425,14 @@ ANGLERenderTest::ANGLERenderTest(const std::string &name, const RenderTestParams
                                                            angle::SearchType::ApplicationDir));
             break;
         case angle::GLESDriverType::SystemEGL:
+#if defined(ANGLE_USE_UTIL_LOADER) && !defined(ANGLE_PLATFORM_WINDOWS)
+            mGLWindow = EGLWindow::New(testParams.majorVersion, testParams.minorVersion);
+            mEntryPointsLib.reset(
+                angle::OpenSharedLibraryWithExtension(GetNativeEGLLibraryNameWithExtension()));
+#else
             std::cerr << "Not implemented." << std::endl;
             mSkipTest = true;
+#endif  // defined(ANGLE_USE_UTIL_LOADER) && !defined(ANGLE_PLATFORM_WINDOWS)
             break;
         case angle::GLESDriverType::SystemWGL:
 #if defined(ANGLE_USE_UTIL_LOADER) && defined(ANGLE_PLATFORM_WINDOWS)
@@ -494,7 +503,16 @@ void ANGLERenderTest::SetUp()
     EGLPlatformParameters withMethods = mTestParams.eglParameters;
     withMethods.platformMethods       = &mPlatformMethods;
 
-    if (!mGLWindow->initializeGL(mOSWindow, mEntryPointsLib.get(), withMethods, mConfigParams))
+    // Request a common framebuffer config
+    mConfigParams.redBits     = 8;
+    mConfigParams.greenBits   = 8;
+    mConfigParams.blueBits    = 8;
+    mConfigParams.alphaBits   = 8;
+    mConfigParams.depthBits   = 24;
+    mConfigParams.stencilBits = 8;
+
+    if (!mGLWindow->initializeGL(mOSWindow, mEntryPointsLib.get(), mTestParams.driver, withMethods,
+                                 mConfigParams))
     {
         mSkipTest = true;
         FAIL() << "Failed initializing GL Window";
@@ -550,6 +568,16 @@ void ANGLERenderTest::SetUp()
         mSkipTest = true;
         FAIL() << "Please initialize 'iterationsPerStep'.";
         // FAIL returns.
+    }
+
+    // Capture a screenshot if enabled.
+    if (gScreenShotDir != nullptr)
+    {
+        std::stringstream screenshotNameStr;
+        screenshotNameStr << gScreenShotDir << GetPathSeparator() << "angle" << mBackend << "_"
+                          << mStory << ".png";
+        std::string screenshotName = screenshotNameStr.str();
+        saveScreenshot(screenshotName);
     }
 }
 
@@ -640,11 +668,15 @@ void ANGLERenderTest::step()
     else
     {
         drawBenchmark();
+
         // Swap is needed so that the GPU driver will occasionally flush its
         // internal command queue to the GPU. This is enabled for null back-end
         // devices because some back-ends (e.g. Vulkan) also accumulate internal
         // command queues.
-        mGLWindow->swap();
+        if (mSwapEnabled)
+        {
+            mGLWindow->swap();
+        }
         mOSWindow->messageLoop();
 
 #if defined(ANGLE_ENABLE_ASSERTS)

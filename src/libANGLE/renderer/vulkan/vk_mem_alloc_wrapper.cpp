@@ -16,9 +16,10 @@ namespace vma
 VkResult InitAllocator(VkPhysicalDevice physicalDevice,
                        VkDevice device,
                        VkInstance instance,
+                       uint32_t apiVersion,
                        VmaAllocator *pAllocator)
 {
-    VmaVulkanFunctions funcs;
+    VmaVulkanFunctions funcs                  = {};
     funcs.vkGetPhysicalDeviceProperties       = vkGetPhysicalDeviceProperties;
     funcs.vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties;
     funcs.vkAllocateMemory                    = vkAllocateMemory;
@@ -36,14 +37,24 @@ VkResult InitAllocator(VkPhysicalDevice physicalDevice,
     funcs.vkCreateImage                       = vkCreateImage;
     funcs.vkDestroyImage                      = vkDestroyImage;
     funcs.vkCmdCopyBuffer                     = vkCmdCopyBuffer;
-    funcs.vkGetBufferMemoryRequirements2KHR   = vkGetBufferMemoryRequirements2KHR;
-    funcs.vkGetImageMemoryRequirements2KHR    = vkGetImageMemoryRequirements2KHR;
+    {
+#if !defined(ANGLE_SHARED_LIBVULKAN)
+        // When the vulkan-loader is statically linked, we need to use the extension
+        // functions defined in ANGLE's rx namespace. When it's dynamically linked
+        // with volk, this will default to the function definitions with no namespace
+        using rx::vkGetBufferMemoryRequirements2KHR;
+        using rx::vkGetImageMemoryRequirements2KHR;
+#endif  // !defined(ANGLE_SHARED_LIBVULKAN)
+        funcs.vkGetBufferMemoryRequirements2KHR = vkGetBufferMemoryRequirements2KHR;
+        funcs.vkGetImageMemoryRequirements2KHR  = vkGetImageMemoryRequirements2KHR;
+    }
 
     VmaAllocatorCreateInfo allocatorInfo = {};
     allocatorInfo.physicalDevice         = physicalDevice;
     allocatorInfo.device                 = device;
     allocatorInfo.instance               = instance;
     allocatorInfo.pVulkanFunctions       = &funcs;
+    allocatorInfo.vulkanApiVersion       = apiVersion;
 
     return vmaCreateAllocator(&allocatorInfo, pAllocator);
 }
@@ -79,6 +90,22 @@ VkResult CreateBuffer(VmaAllocator allocator,
     *pMemoryTypeIndexOut = allocationInfo.memoryType;
 
     return result;
+}
+
+VkResult FindMemoryTypeIndexForBufferInfo(VmaAllocator allocator,
+                                          const VkBufferCreateInfo *pBufferCreateInfo,
+                                          VkMemoryPropertyFlags requiredFlags,
+                                          VkMemoryPropertyFlags preferredFlags,
+                                          bool persistentlyMappedBuffers,
+                                          uint32_t *pMemoryTypeIndexOut)
+{
+    VmaAllocationCreateInfo allocationCreateInfo = {};
+    allocationCreateInfo.requiredFlags           = requiredFlags;
+    allocationCreateInfo.preferredFlags          = preferredFlags;
+    allocationCreateInfo.flags = (persistentlyMappedBuffers) ? VMA_ALLOCATION_CREATE_MAPPED_BIT : 0;
+
+    return vmaFindMemoryTypeIndexForBufferInfo(allocator, pBufferCreateInfo, &allocationCreateInfo,
+                                               pMemoryTypeIndexOut);
 }
 
 void GetMemoryTypeProperties(VmaAllocator allocator,
