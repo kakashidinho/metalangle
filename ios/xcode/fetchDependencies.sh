@@ -33,13 +33,13 @@ git_pull()
     echo
 }
 
-glslang_revision="7d65f09b83112c1ec9e29313cb9913ed2b850aa0"
-spirv_headers_revision="f8bf11a0253a32375c32cad92c841237b96696c0"
-spirv_tools_revision="67f4838659f475d618c120e13d1a196d7e00ba4b"
+glslang_revision="4728509962e673ed06fefc27632baeca20f1158a"
+spirv_headers_revision="ac638f1815425403e946d0ab78bac71d2bdbf3be"
+spirv_tools_revision="2c1ff230c26d67655e5b0ef27ca3c4371d7d5b3e"
 spirv_cross_revision="f38cbeb814c73510b85697adbe5e894f9eac978f"
-jsoncpp_revision="493c9385c91023c3819b51ee0de552d52229a1e5"
+jsoncpp_revision="ec647b85b61f525a1a74e4da7477b0c5371c50f4"
 jsoncpp_src_revision="645250b6690785be60ab6780ce4b58698d884d11"
-zlib_revision="156be8c52f80cde343088b4a69a80579101b6e67"
+zlib_revision="ae385786edb15f57e992c5e9dd9464e376d69399"
 
 # Fetch source code
 git_pull third_party/glslang/src ${glslang_revision} https://chromium.googlesource.com/external/github.com/KhronosGroup/glslang
