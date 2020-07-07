@@ -733,6 +733,10 @@ bool WindowSurfaceMtl::checkIfLayerResized(const gl::Context *context)
     CGSize currentLayerDrawableSize = mMetalLayer.get().drawableSize;
     CGSize expectedDrawableSize     = calcExpectedDrawableSize();
 
+    // NOTE(hqle): We need to compare the size against mCurrentKnownDrawableSize also.
+    // That is because metal framework might internally change the drawableSize property of
+    // metal layer, and it might become equal to expectedDrawableSize. If that happens, we cannot
+    // know whether the layer has been resized or not.
     if (currentLayerDrawableSize.width != expectedDrawableSize.width ||
         currentLayerDrawableSize.height != expectedDrawableSize.height ||
         mCurrentKnownDrawableSize.width != expectedDrawableSize.width ||

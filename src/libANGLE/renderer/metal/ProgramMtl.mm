@@ -33,7 +33,7 @@ namespace
 
 #define SHADER_ENTRY_NAME @"main0"
 constexpr char kSpirvCrossSpecConstSuffix[] = "_tmp";
-constexpr uint32_t kBinaryShaderMagic        = 0xcac8e63f;
+constexpr uint32_t kBinaryShaderMagic       = 0xcac8e63f;
 
 template <typename T>
 class ScopedAutoClearVector
@@ -178,9 +178,9 @@ angle::Result CreateMslShader(mtl::Context *context,
 {
     NSError *nsErr = nil;
 
-    auto mtlShader = [shaderLib newFunctionWithName:SHADER_ENTRY_NAME
-                                     constantValues:funcConstants
-                                              error:&nsErr];
+    id<MTLFunction> mtlShader = [shaderLib newFunctionWithName:SHADER_ENTRY_NAME
+                                                constantValues:funcConstants
+                                                         error:&nsErr];
     [mtlShader ANGLE_MTL_AUTORELEASE];
     if (nsErr && !mtlShader)
     {
@@ -356,7 +356,7 @@ angle::Result ProgramMtl::linkImpl(const gl::Context *glContext,
     {
         // Create actual Metal shader
         ANGLE_TRY(
-            createMslShader(glContext, shaderType, infoLog, mTranslatedMslShader[shaderType]));
+            createMslShaderLib(glContext, shaderType, infoLog, mTranslatedMslShader[shaderType]));
     }
 
     return angle::Result::Continue;
@@ -381,10 +381,10 @@ angle::Result ProgramMtl::linkTranslatedShaders(const gl::Context *glContext,
     loadShaderInternalInfo(stream);
     ANGLE_TRY(loadDefaultUniformBlocksInfo(glContext, stream));
 
-    ANGLE_TRY(createMslShader(glContext, gl::ShaderType::Vertex, infoLog,
-                              mTranslatedMslShader[gl::ShaderType::Vertex]));
-    ANGLE_TRY(createMslShader(glContext, gl::ShaderType::Fragment, infoLog,
-                              mTranslatedMslShader[gl::ShaderType::Fragment]));
+    ANGLE_TRY(createMslShaderLib(glContext, gl::ShaderType::Vertex, infoLog,
+                                 mTranslatedMslShader[gl::ShaderType::Vertex]));
+    ANGLE_TRY(createMslShaderLib(glContext, gl::ShaderType::Fragment, infoLog,
+                                 mTranslatedMslShader[gl::ShaderType::Fragment]));
 
     return angle::Result::Continue;
 }
@@ -667,10 +667,10 @@ bool ProgramMtl::hasSpecializedShader(gl::ShaderType shaderType,
     return true;
 }
 
-angle::Result ProgramMtl::createMslShader(const gl::Context *glContext,
-                                          gl::ShaderType shaderType,
-                                          gl::InfoLog &infoLog,
-                                          const std::string &translatedMsl)
+angle::Result ProgramMtl::createMslShaderLib(const gl::Context *glContext,
+                                             gl::ShaderType shaderType,
+                                             gl::InfoLog &infoLog,
+                                             const std::string &translatedMsl)
 {
     ANGLE_MTL_OBJC_SCOPE
     {

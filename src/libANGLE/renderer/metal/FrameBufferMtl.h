@@ -145,10 +145,15 @@ class FramebufferMtl : public FramebufferImpl
                                 gl::DrawBufferMask clearColorBuffers,
                                 const mtl::ClearRectParams &clearOpts);
 
-    void initLoadStoreActionOnRenderPassFirstStart(mtl::RenderPassAttachmentDesc *attachmentOut);
+    // Initialize load store options for a render pass's first start (i.e. not render pass resuming
+    // from interruptions such as those caused by a conversion compute pass)
+    void setLoadStoreActionOnRenderPassFirstStart(mtl::RenderPassAttachmentDesc *attachmentOut);
 
+    // Fill RenderPassDesc with relevant attachment's info from GL front end.
     angle::Result prepareRenderPass(const gl::Context *context, mtl::RenderPassDesc *descOut);
 
+    // Check if a render pass specified by the given RenderPassDesc has started or not, if not this
+    // method will start the render pass and return its render encoder.
     mtl::RenderCommandEncoder *ensureRenderPassStarted(const gl::Context *context,
                                                        const mtl::RenderPassDesc &desc);
 

@@ -36,7 +36,8 @@ struct ProgramArgumentBufferEncoderMtl
     mtl::BufferPool bufferPool;
 };
 
-// Store info specific to a specialized metal shader variant.
+// Represents a specialized shader variant. For example, a shader variant with fragment coverage
+// mask enabled and a shader variant without.
 struct ProgramShaderVariantMtl
 {
     void reset(ContextMtl *contextMtl);
@@ -193,10 +194,10 @@ class ProgramMtl : public ProgramImpl, public mtl::RenderPipelineCacheSpecialize
                                         gl::BinaryInputStream *stream,
                                         gl::InfoLog &infoLog);
 
-    angle::Result createMslShader(const gl::Context *glContext,
-                                  gl::ShaderType shaderType,
-                                  gl::InfoLog &infoLog,
-                                  const std::string &translatedSource);
+    angle::Result createMslShaderLib(const gl::Context *glContext,
+                                     gl::ShaderType shaderType,
+                                     gl::InfoLog &infoLog,
+                                     const std::string &translatedSource);
 
     // State for the default uniform blocks.
     struct DefaultUniformBlock final : private angle::NonCopyable
@@ -226,7 +227,7 @@ class ProgramMtl : public ProgramImpl, public mtl::RenderPipelineCacheSpecialize
     // Shader variants:
     // - Vertex shader: One with emulated rasterization discard, one without.
     std::array<ProgramShaderVariantMtl, 2> mVertexShaderVariants;
-    // - Fragment shader: One for sample coverage mask enabled, one with it disabled.
+    // - Fragment shader: One with sample coverage mask enabled, one with it disabled.
     std::array<ProgramShaderVariantMtl, 2> mFragmentShaderVariants;
 
     gl::ShaderMap<ProgramShaderVariantMtl *> mCurrentShaderVariants;

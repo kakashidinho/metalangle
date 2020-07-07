@@ -1000,7 +1000,7 @@ void RenderCommandEncoder::finalizeLoadStoreAction(
             // NOTE(hqle): Currently if the store action with implicit MS texture is
             // MTLStoreActionStore, it is automatically convert to store and resolve action. It
             // might introduce unnecessary overhead. Consider an improvement such as only store the
-            // MS texture, and resolve only at the end of real render pass (not render pass the was
+            // MS texture, and resolve only at the end of real render pass (not render pass the is
             // interrupted by compute pass) or before glBlitFramebuffer operation starts.
             objCRenderPassAttachment.storeAction = MTLStoreActionStoreAndMultisampleResolve;
         }

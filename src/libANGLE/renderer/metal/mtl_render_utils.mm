@@ -963,21 +963,6 @@ angle::Result RenderUtils::blitColorWithDraw(const gl::Context *context,
     return mColorBlitUtils[index].blitColorWithDraw(context, cmdEncoder, params);
 }
 
-angle::Result RenderUtils::copyTextureWithDraw(const gl::Context *context,
-                                               RenderCommandEncoder *cmdEncoder,
-                                               const angle::Format &srcAngleFormat,
-                                               const angle::Format &dstAngleFormat,
-                                               const ColorBlitParams &params)
-{
-    if (!srcAngleFormat.isInt() && dstAngleFormat.isUint())
-    {
-        return mCopyTextureFloatToUIntUtils.blitColorWithDraw(context, cmdEncoder, params);
-    }
-    ASSERT(srcAngleFormat.isSint() == dstAngleFormat.isSint() &&
-           srcAngleFormat.isUint() == dstAngleFormat.isUint());
-    return blitColorWithDraw(context, cmdEncoder, srcAngleFormat, params);
-}
-
 angle::Result RenderUtils::blitColorWithDraw(const gl::Context *context,
                                              RenderCommandEncoder *cmdEncoder,
                                              const angle::Format &srcAngleFormat,
@@ -996,6 +981,21 @@ angle::Result RenderUtils::blitColorWithDraw(const gl::Context *context,
     params.dstRect = params.dstScissorRect = params.srcRect =
         gl::Rectangle(0, 0, params.dstTextureSize.width, params.dstTextureSize.height);
 
+    return blitColorWithDraw(context, cmdEncoder, srcAngleFormat, params);
+}
+
+angle::Result RenderUtils::copyTextureWithDraw(const gl::Context *context,
+                                               RenderCommandEncoder *cmdEncoder,
+                                               const angle::Format &srcAngleFormat,
+                                               const angle::Format &dstAngleFormat,
+                                               const ColorBlitParams &params)
+{
+    if (!srcAngleFormat.isInt() && dstAngleFormat.isUint())
+    {
+        return mCopyTextureFloatToUIntUtils.blitColorWithDraw(context, cmdEncoder, params);
+    }
+    ASSERT(srcAngleFormat.isSint() == dstAngleFormat.isSint() &&
+           srcAngleFormat.isUint() == dstAngleFormat.isUint());
     return blitColorWithDraw(context, cmdEncoder, srcAngleFormat, params);
 }
 
@@ -1393,6 +1393,7 @@ void ColorBlitUtils::ensureRenderPipelineStateCacheInitialized(ContextMtl *ctx,
                  constantValues:funcConstants
                           error:&err] ANGLE_MTL_AUTORELEASE];
 
+        ASSERT(vertexShader);
         ASSERT(fragmentShader);
         pipelineCache.setVertexShader(ctx, vertexShader);
         pipelineCache.setFragmentShader(ctx, fragmentShader);

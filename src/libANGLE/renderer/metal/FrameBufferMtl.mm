@@ -671,7 +671,8 @@ mtl::RenderCommandEncoder *FramebufferMtl::ensureRenderPassStarted(const gl::Con
 
     if (mRenderPassCleanStart)
     {
-        // After a clean start we should reset the loadOp to MTLLoadActionLoad.
+        // After a clean start we should reset the loadOp to MTLLoadActionLoad in case this render
+        // pass could be interrupted by a conversion compute shader pass then being resumed later.
         mRenderPassCleanStart = false;
         for (mtl::RenderPassColorAttachmentDesc &colorAttachment : mRenderPassDesc.colorAttachments)
         {
@@ -684,7 +685,7 @@ mtl::RenderCommandEncoder *FramebufferMtl::ensureRenderPassStarted(const gl::Con
     return encoder;
 }
 
-void FramebufferMtl::initLoadStoreActionOnRenderPassFirstStart(
+void FramebufferMtl::setLoadStoreActionOnRenderPassFirstStart(
     mtl::RenderPassAttachmentDesc *attachmentOut)
 {
     ASSERT(mRenderPassCleanStart);
@@ -729,13 +730,13 @@ void FramebufferMtl::onStartedDrawingToFrameBuffer(const gl::Context *context)
     // Compute loadOp based on previous storeOp and reset storeOp flags:
     for (mtl::RenderPassColorAttachmentDesc &colorAttachment : mRenderPassDesc.colorAttachments)
     {
-        initLoadStoreActionOnRenderPassFirstStart(&colorAttachment);
+        setLoadStoreActionOnRenderPassFirstStart(&colorAttachment);
     }
     // Depth load/store
-    initLoadStoreActionOnRenderPassFirstStart(&mRenderPassDesc.depthAttachment);
+    setLoadStoreActionOnRenderPassFirstStart(&mRenderPassDesc.depthAttachment);
 
     // Stencil load/store
-    initLoadStoreActionOnRenderPassFirstStart(&mRenderPassDesc.stencilAttachment);
+    setLoadStoreActionOnRenderPassFirstStart(&mRenderPassDesc.stencilAttachment);
 
     // This pixel read buffer is not needed anymore
     mReadPixelBuffer = nullptr;
@@ -918,7 +919,7 @@ angle::Result FramebufferMtl::prepareRenderPass(const gl::Context *context,
         enabledBuffer.reset();
     }
 
-    auto &desc = *pDescOut;
+    mtl::RenderPassDesc &desc = *pDescOut;
 
     mRenderPassFirstColorAttachmentFormat = nullptr;
     mRenderPassAttachmentsSameColorType   = true;
