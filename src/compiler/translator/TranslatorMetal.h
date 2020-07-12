@@ -25,9 +25,6 @@ class TranslatorMetal : public TranslatorVulkan
   public:
     TranslatorMetal(sh::GLenum type, ShShaderSpec spec);
 
-    static const char *GetCoverageMaskEnabledConstName();
-    static const char *GetRasterizationDiscardEnabledConstName();
-
     void enableEmulatedInstanceID(bool e) { mEmulatedInstanceID = e; }
 
   protected:
@@ -38,7 +35,7 @@ class TranslatorMetal : public TranslatorVulkan
     ANGLE_NO_DISCARD bool transformDepthBeforeCorrection(TIntermBlock *root,
                                                          const TVariable *driverUniforms) override;
 
-    void createGraphicsDriverUniformAdditionFields(std::vector<TField *> *fieldsOut) override;
+    void createAdditionalGraphicsDriverUniformFields(std::vector<TField *> *fieldsOut) override;
 
     ANGLE_NO_DISCARD bool insertSampleMaskWritingLogic(TIntermBlock *root,
                                                        const TVariable *driverUniforms);

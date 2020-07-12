@@ -13,7 +13,6 @@
 #include <spirv_msl.hpp>
 
 #include "common/apple_platform_utils.h"
-#include "compiler/translator/TranslatorMetal.h"
 #include "libANGLE/renderer/glslang_wrapper_utils.h"
 #include "libANGLE/renderer/metal/DisplayMtl.h"
 
@@ -270,8 +269,7 @@ std::string PostProcessTranslatedMsl(bool hasDepthSampler, const std::string &tr
     // the spirv-cross doesn't assign function_constant attribute to it. Thus it won't be dead-code
     // removed when ANGLECoverageMaskEnabled=false.
     std::string sampleMaskReplaceStr = std::string("[[sample_mask, function_constant(") +
-                                       sh::TranslatorMetal::GetCoverageMaskEnabledConstName() +
-                                       ")]]";
+                                       sh::mtl::kCoverageMaskEnabledConstName + ")]]";
 
     // This replaces "gl_SampleMask [[sample_mask]]"
     //          with "gl_SampleMask [[sample_mask, function_constant(ANGLECoverageMaskEnabled)]]"

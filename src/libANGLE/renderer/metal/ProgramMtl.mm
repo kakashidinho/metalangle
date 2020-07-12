@@ -599,10 +599,9 @@ angle::Result ProgramMtl::getSpecializedShader(mtl::Context *context,
 
         ANGLE_MTL_OBJC_SCOPE
         {
-            NSString *discardEnabledStr = [NSString
-                stringWithFormat:@"%s%s",
-                                 sh::TranslatorMetal::GetRasterizationDiscardEnabledConstName(),
-                                 kSpirvCrossSpecConstSuffix];
+            NSString *discardEnabledStr =
+                [NSString stringWithFormat:@"%s%s", sh::mtl::kRasterizationDiscardEnabledConstName,
+                                           kSpirvCrossSpecConstSuffix];
 
             auto funcConstants = [[[MTLFunctionConstantValues alloc] init] ANGLE_MTL_AUTORELEASE];
             [funcConstants setConstantValue:&rasterDiscardEnable
@@ -637,9 +636,9 @@ angle::Result ProgramMtl::getSpecializedShader(mtl::Context *context,
 
         ANGLE_MTL_OBJC_SCOPE
         {
-            NSString *coverageMaskEnabledStr = [NSString
-                stringWithFormat:@"%s%s", sh::TranslatorMetal::GetCoverageMaskEnabledConstName(),
-                                 kSpirvCrossSpecConstSuffix];
+            NSString *coverageMaskEnabledStr =
+                [NSString stringWithFormat:@"%s%s", sh::mtl::kCoverageMaskEnabledConstName,
+                                           kSpirvCrossSpecConstSuffix];
 
             auto funcConstants = [[[MTLFunctionConstantValues alloc] init] ANGLE_MTL_AUTORELEASE];
             [funcConstants setConstantValue:&emulateCoverageMask

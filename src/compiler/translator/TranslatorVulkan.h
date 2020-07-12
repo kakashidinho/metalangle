@@ -50,7 +50,7 @@ class TranslatorVulkan : public TCompiler
     }
 
     // Back-end specific fields to be added to driver uniform. See TranslatorMetal.cpp.
-    virtual void createGraphicsDriverUniformAdditionFields(std::vector<TField *> *fieldsOut) {}
+    virtual void createAdditionalGraphicsDriverUniformFields(std::vector<TField *> *fieldsOut) {}
 };
 
 }  // namespace sh

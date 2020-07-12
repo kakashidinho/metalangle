@@ -187,8 +187,8 @@ def get_vertex_copy_function_and_default_alpha(src_format, dst_format):
                                                          default_alpha), default_alpha, "true"
 
     if src_format.startswith('R10G10B10A2'):
-        assert 'FLOAT' in dst_format, (
-            'get_vertex_copy_function: can only convert to float,' + ' not to ' + dst_format)
+        assert 'FLOAT' in dst_format, ('get_vertex_copy_function: can only convert to float,' +
+                                       ' not to ' + dst_format)
         is_signed = 'true' if 'SINT' in src_format or 'SNORM' in src_format or 'SSCALED' in src_format else 'false'
         is_normal = 'true' if 'NORM' in src_format else 'false'
         return 'CopyXYZ10W2ToXYZW32FVertexData<%s, %s, true>' % (is_signed, is_normal), 0, "false"

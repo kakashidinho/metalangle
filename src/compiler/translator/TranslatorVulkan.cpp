@@ -859,7 +859,7 @@ bool TranslatorVulkan::translateImpl(TIntermBlock *root,
     else
     {
         std::vector<TField *> additionalFields;
-        createGraphicsDriverUniformAdditionFields(&additionalFields);
+        createAdditionalGraphicsDriverUniformFields(&additionalFields);
         driverUniforms =
             AddGraphicsDriverUniformsToShader(root, &getSymbolTable(), additionalFields);
     }

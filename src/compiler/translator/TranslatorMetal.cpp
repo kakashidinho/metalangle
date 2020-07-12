@@ -29,14 +29,16 @@
 
 namespace sh
 {
+namespace mtl
+{
+/** extern */
+const char kRasterizationDiscardEnabledConstName[] = "ANGLERasterizationDisabled";
+const char kCoverageMaskEnabledConstName[]         = "ANGLECoverageMaskEnabled";
+}  // namespace mtl
 
 namespace
 {
 
-constexpr ImmutableString kRasterizationDiscardEnabledConstName =
-    ImmutableString("ANGLERasterizationDisabled");
-constexpr ImmutableString kCoverageMaskEnabledConstName =
-    ImmutableString("ANGLECoverageMaskEnabled");
 constexpr ImmutableString kCoverageMaskField       = ImmutableString("coverageMask");
 constexpr ImmutableString kEmuInstanceIDField      = ImmutableString("emulatedInstanceID");
 constexpr ImmutableString kSampleMaskWriteFuncName = ImmutableString("ANGLEWriteSampleMask");
@@ -99,9 +101,9 @@ ANGLE_NO_DISCARD bool EmulateInstanceID(TCompiler *compiler,
 }
 
 // Initialize unused varying outputs.
-ANGLE_NO_DISCARD bool InitializedUnusedOutputs(TIntermBlock *root,
-                                               TSymbolTable *symbolTable,
-                                               const InitVariableList &unusedVars)
+ANGLE_NO_DISCARD bool InitializeUnusedOutputs(TIntermBlock *root,
+                                              TSymbolTable *symbolTable,
+                                              const InitVariableList &unusedVars)
 {
     if (unusedVars.empty())
     {
@@ -134,18 +136,6 @@ ANGLE_NO_DISCARD bool InitializedUnusedOutputs(TIntermBlock *root,
 }
 
 }  // anonymous namespace
-
-/** static */
-const char *TranslatorMetal::GetCoverageMaskEnabledConstName()
-{
-    return kCoverageMaskEnabledConstName.data();
-}
-
-/** static */
-const char *TranslatorMetal::GetRasterizationDiscardEnabledConstName()
-{
-    return kRasterizationDiscardEnabledConstName.data();
-}
 
 TranslatorMetal::TranslatorMetal(sh::GLenum type, ShShaderSpec spec) : TranslatorVulkan(type, spec)
 {}
@@ -217,7 +207,7 @@ bool TranslatorMetal::translate(TIntermBlock *root,
             }
         }
 
-        if (!InitializedUnusedOutputs(root, &getSymbolTable(), list))
+        if (!InitializeUnusedOutputs(root, &getSymbolTable(), list))
         {
             return false;
         }
@@ -257,7 +247,7 @@ bool TranslatorMetal::transformDepthBeforeCorrection(TIntermBlock *root,
     return RunAtTheEndOfShader(this, root, assignment, &getSymbolTable());
 }
 
-void TranslatorMetal::createGraphicsDriverUniformAdditionFields(std::vector<TField *> *fieldsOut)
+void TranslatorMetal::createAdditionalGraphicsDriverUniformFields(std::vector<TField *> *fieldsOut)
 {
     // Add coverage mask to driver uniform. Metal doesn't have built-in GL_SAMPLE_COVERAGE_VALUE
     // equivalent functionality, needs to emulate it using fragment shader's [[sample_mask]] output
@@ -283,11 +273,11 @@ ANGLE_NO_DISCARD bool TranslatorMetal::insertSampleMaskWritingLogic(TIntermBlock
     TSymbolTable *symbolTable = &getSymbolTable();
 
     // Insert coverageMaskEnabled specialization constant and sample_mask writing function.
-    sink << "layout (constant_id=0) const bool " << kCoverageMaskEnabledConstName;
+    sink << "layout (constant_id=0) const bool " << mtl::kCoverageMaskEnabledConstName;
     sink << " = false;\n";
     sink << "void " << kSampleMaskWriteFuncName << "(uint mask)\n";
     sink << "{\n";
-    sink << "   if (" << kCoverageMaskEnabledConstName << ")\n";
+    sink << "   if (" << mtl::kCoverageMaskEnabledConstName << ")\n";
     sink << "   {\n";
     sink << "       gl_SampleMask[0] = int(mask);\n";
     sink << "   }\n";
@@ -296,8 +286,9 @@ ANGLE_NO_DISCARD bool TranslatorMetal::insertSampleMaskWritingLogic(TIntermBlock
     // Create kCoverageMaskEnabledConstName and kSampleMaskWriteFuncName variable references.
     TType *boolType = new TType(EbtBool);
     boolType->setQualifier(EvqConst);
-    TVariable *coverageMaskEnabledVar = new TVariable(symbolTable, kCoverageMaskEnabledConstName,
-                                                      boolType, SymbolType::AngleInternal);
+    TVariable *coverageMaskEnabledVar =
+        new TVariable(symbolTable, ImmutableString(mtl::kCoverageMaskEnabledConstName), boolType,
+                      SymbolType::AngleInternal);
 
     TFunction *sampleMaskWriteFunc =
         new TFunction(symbolTable, kSampleMaskWriteFuncName, SymbolType::AngleInternal,
@@ -335,14 +326,15 @@ ANGLE_NO_DISCARD bool TranslatorMetal::insertRasterizationDiscardLogic(TIntermBl
     TSymbolTable *symbolTable = &getSymbolTable();
 
     // Insert rasterizationDisabled specialization constant.
-    sink << "layout (constant_id=0) const bool " << kRasterizationDiscardEnabledConstName;
+    sink << "layout (constant_id=0) const bool " << mtl::kRasterizationDiscardEnabledConstName;
     sink << " = false;\n";
 
     // Create kRasterizationDiscardEnabledConstName variable reference.
     TType *boolType = new TType(EbtBool);
     boolType->setQualifier(EvqConst);
-    TVariable *discardEnabledVar = new TVariable(symbolTable, kRasterizationDiscardEnabledConstName,
-                                                 boolType, SymbolType::AngleInternal);
+    TVariable *discardEnabledVar =
+        new TVariable(symbolTable, ImmutableString(mtl::kRasterizationDiscardEnabledConstName),
+                      boolType, SymbolType::AngleInternal);
 
     // Insert this code to the end of main()
     // if (ANGLERasterizationDisabled)

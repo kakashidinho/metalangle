@@ -790,6 +790,15 @@ extern const char kAtomicCountersBlockName[];
 extern const char kLineRasterEmulationPosition[];
 
 }  // namespace vk
+
+namespace mtl
+{
+// Specialization constant to enable GL_SAMPLE_COVERAGE_VALUE emulation.
+extern const char kCoverageMaskEnabledConstName[];
+
+// Specialization constant to emulate rasterization discard.
+extern const char kRasterizationDiscardEnabledConstName[];
+}  // namespace mtl
 }  // namespace sh
 
 #endif  // GLSLANG_SHADERLANG_H_

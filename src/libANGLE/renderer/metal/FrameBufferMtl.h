@@ -28,9 +28,7 @@ class WindowSurfaceMtl;
 class FramebufferMtl : public FramebufferImpl
 {
   public:
-    explicit FramebufferMtl(const gl::FramebufferState &state,
-                            bool flipY,
-                            WindowSurfaceMtl *backbuffer);
+    FramebufferMtl(const gl::FramebufferState &state, bool flipY, WindowSurfaceMtl *backbuffer);
     ~FramebufferMtl() override;
     void destroy(const gl::Context *context) override;
 
