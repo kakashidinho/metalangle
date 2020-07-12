@@ -31,20 +31,10 @@ template_header_boilerplate = """// GENERATED FILE - DO NOT EDIT.
 # dest_src_file: destination header file that will contain the byte array.
 def append_file_as_byte_array_string(variable_name, filename, dest_src_file):
     string = '// Generated from {0}:\n'.format(filename)
-    string += 'constexpr\nunsigned char {0}[] = {{\n'.format(variable_name)
+    string += 'constexpr uint8_t {0}[]={{\n'.format(variable_name)
     bytes_ = open(filename, "rb").read()
-    byteCounter = 0
     for byte in bytes_:
-        if byteCounter == 0:
-            string += "  "
-        string += '0x{:02x}'.format(ord(byte)) + ","
-        byteCounter += 1
-        if byteCounter == 12:
-            byteCounter = 0
-            string += "\n"
-        else:
-            string += " "
-
+        string += '0x{:02x}'.format(ord(byte)) + ", "
     string += "\n};\n"
     with open(dest_src_file, "a") as out_file:
         out_file.write(string)
@@ -127,7 +117,7 @@ def gen_precompiled_shaders(mac_version, ios_version, variable_name, additional_
     append_file_as_byte_array_string(variable_name,
                                      'compiled/default.{0}.metallib'.format(mac_version),
                                      'compiled/mtl_default_shaders.inc')
-    os.system('echo "constexpr\nsize_t {0}_len = sizeof({0});" >> compiled/mtl_default_shaders.inc'
+    os.system('echo "constexpr size_t {0}_len=sizeof({0});" >> compiled/mtl_default_shaders.inc'
               .format(variable_name))
 
     # iOS simulator version's byte array string
@@ -138,7 +128,7 @@ def gen_precompiled_shaders(mac_version, ios_version, variable_name, additional_
     append_file_as_byte_array_string(variable_name,
                                      'compiled/default.ios_sim.{0}.metallib'.format(ios_version),
                                      'compiled/mtl_default_shaders.inc')
-    os.system('echo "constexpr\nsize_t {0}_len = sizeof({0});" >> compiled/mtl_default_shaders.inc'
+    os.system('echo "constexpr size_t {0}_len=sizeof({0});" >> compiled/mtl_default_shaders.inc'
               .format(variable_name))
 
     # iOS version's byte array string
@@ -149,7 +139,7 @@ def gen_precompiled_shaders(mac_version, ios_version, variable_name, additional_
     append_file_as_byte_array_string(variable_name,
                                      'compiled/default.ios.{0}.metallib'.format(ios_version),
                                      'compiled/mtl_default_shaders.inc')
-    os.system('echo "constexpr\nsize_t {0}_len = sizeof({0});" >> compiled/mtl_default_shaders.inc'
+    os.system('echo "constexpr size_t {0}_len=sizeof({0});" >> compiled/mtl_default_shaders.inc'
               .format(variable_name))
 
     # tvOS simulator version's byte array string
@@ -160,7 +150,7 @@ def gen_precompiled_shaders(mac_version, ios_version, variable_name, additional_
     append_file_as_byte_array_string(variable_name,
                                      'compiled/default.tvos_sim.{0}.metallib'.format(ios_version),
                                      'compiled/mtl_default_shaders.inc')
-    os.system('echo "constexpr\nsize_t {0}_len = sizeof({0});" >> compiled/mtl_default_shaders.inc'
+    os.system('echo "constexpr size_t {0}_len=sizeof({0});" >> compiled/mtl_default_shaders.inc'
               .format(variable_name))
 
     # tvOS version's byte array string
@@ -171,7 +161,7 @@ def gen_precompiled_shaders(mac_version, ios_version, variable_name, additional_
     append_file_as_byte_array_string(variable_name,
                                      'compiled/default.tvos.{0}.metallib'.format(ios_version),
                                      'compiled/mtl_default_shaders.inc')
-    os.system('echo "constexpr\nsize_t {0}_len = sizeof({0});" >> compiled/mtl_default_shaders.inc'
+    os.system('echo "constexpr size_t {0}_len=sizeof({0});" >> compiled/mtl_default_shaders.inc'
               .format(variable_name))
 
     os.system(
