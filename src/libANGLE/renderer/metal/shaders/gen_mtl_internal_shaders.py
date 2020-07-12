@@ -113,59 +113,65 @@ def gen_precompiled_shaders(mac_version, ios_version, variable_name, additional_
 
     # Mac version's byte array string
     os.system(
-        'echo "#if TARGET_OS_OSX || TARGET_OS_MACCATALYST\n" >> compiled/mtl_default_shaders.inc')
+        'echo "#if TARGET_OS_OSX || TARGET_OS_MACCATALYST\n" >> compiled/mtl_default_shaders_autogen.inc'
+    )
     append_file_as_byte_array_string(variable_name,
                                      'compiled/default.{0}.metallib'.format(mac_version),
-                                     'compiled/mtl_default_shaders.inc')
-    os.system('echo "constexpr size_t {0}_len=sizeof({0});" >> compiled/mtl_default_shaders.inc'
-              .format(variable_name))
+                                     'compiled/mtl_default_shaders_autogen.inc')
+    os.system(
+        'echo "constexpr size_t {0}_len=sizeof({0});" >> compiled/mtl_default_shaders_autogen.inc'
+        .format(variable_name))
 
     # iOS simulator version's byte array string
     os.system(
-        'echo "\n#elif TARGET_OS_IOS && TARGET_OS_SIMULATOR  // TARGET_OS_OSX || TARGET_OS_MACCATALYST\n" >> compiled/mtl_default_shaders.inc'
+        'echo "\n#elif TARGET_OS_IOS && TARGET_OS_SIMULATOR  // TARGET_OS_OSX || TARGET_OS_MACCATALYST\n" >> compiled/mtl_default_shaders_autogen.inc'
     )
 
     append_file_as_byte_array_string(variable_name,
                                      'compiled/default.ios_sim.{0}.metallib'.format(ios_version),
-                                     'compiled/mtl_default_shaders.inc')
-    os.system('echo "constexpr size_t {0}_len=sizeof({0});" >> compiled/mtl_default_shaders.inc'
-              .format(variable_name))
+                                     'compiled/mtl_default_shaders_autogen.inc')
+    os.system(
+        'echo "constexpr size_t {0}_len=sizeof({0});" >> compiled/mtl_default_shaders_autogen.inc'
+        .format(variable_name))
 
     # iOS version's byte array string
     os.system(
-        'echo "\n#elif TARGET_OS_IOS  // TARGET_OS_OSX || TARGET_OS_MACCATALYST\n" >> compiled/mtl_default_shaders.inc'
+        'echo "\n#elif TARGET_OS_IOS  // TARGET_OS_OSX || TARGET_OS_MACCATALYST\n" >> compiled/mtl_default_shaders_autogen.inc'
     )
 
     append_file_as_byte_array_string(variable_name,
                                      'compiled/default.ios.{0}.metallib'.format(ios_version),
-                                     'compiled/mtl_default_shaders.inc')
-    os.system('echo "constexpr size_t {0}_len=sizeof({0});" >> compiled/mtl_default_shaders.inc'
-              .format(variable_name))
+                                     'compiled/mtl_default_shaders_autogen.inc')
+    os.system(
+        'echo "constexpr size_t {0}_len=sizeof({0});" >> compiled/mtl_default_shaders_autogen.inc'
+        .format(variable_name))
 
     # tvOS simulator version's byte array string
     os.system(
-        'echo "\n#elif TARGET_OS_TV && TARGET_OS_SIMULATOR  // TARGET_OS_OSX || TARGET_OS_MACCATALYST\n" >> compiled/mtl_default_shaders.inc'
+        'echo "\n#elif TARGET_OS_TV && TARGET_OS_SIMULATOR  // TARGET_OS_OSX || TARGET_OS_MACCATALYST\n" >> compiled/mtl_default_shaders_autogen.inc'
     )
 
     append_file_as_byte_array_string(variable_name,
                                      'compiled/default.tvos_sim.{0}.metallib'.format(ios_version),
-                                     'compiled/mtl_default_shaders.inc')
-    os.system('echo "constexpr size_t {0}_len=sizeof({0});" >> compiled/mtl_default_shaders.inc'
-              .format(variable_name))
+                                     'compiled/mtl_default_shaders_autogen.inc')
+    os.system(
+        'echo "constexpr size_t {0}_len=sizeof({0});" >> compiled/mtl_default_shaders_autogen.inc'
+        .format(variable_name))
 
     # tvOS version's byte array string
     os.system(
-        'echo "\n#elif TARGET_OS_TV  // TARGET_OS_OSX || TARGET_OS_MACCATALYST\n" >> compiled/mtl_default_shaders.inc'
+        'echo "\n#elif TARGET_OS_TV  // TARGET_OS_OSX || TARGET_OS_MACCATALYST\n" >> compiled/mtl_default_shaders_autogen.inc'
     )
 
     append_file_as_byte_array_string(variable_name,
                                      'compiled/default.tvos.{0}.metallib'.format(ios_version),
-                                     'compiled/mtl_default_shaders.inc')
-    os.system('echo "constexpr size_t {0}_len=sizeof({0});" >> compiled/mtl_default_shaders.inc'
-              .format(variable_name))
+                                     'compiled/mtl_default_shaders_autogen.inc')
+    os.system(
+        'echo "constexpr size_t {0}_len=sizeof({0});" >> compiled/mtl_default_shaders_autogen.inc'
+        .format(variable_name))
 
     os.system(
-        'echo "#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST\n" >> compiled/mtl_default_shaders.inc'
+        'echo "#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST\n" >> compiled/mtl_default_shaders_autogen.inc'
     )
 
     os.system('rm -rfv compiled/default.*')
@@ -204,7 +210,7 @@ def main():
     # auto_script parameters.
     if len(sys.argv) > 1:
         inputs = ['../../angle_format_map.json'] + src_files + ['common.h', 'constants.h']
-        outputs = ['format_autogen.h', 'compiled/mtl_default_shaders.inc']
+        outputs = ['format_autogen.h', 'compiled/mtl_default_shaders_autogen.inc']
 
         if sys.argv[1] == 'inputs':
             print ','.join(inputs)
@@ -231,13 +237,14 @@ def main():
 
     # -------- Compile shaders -----------
     # boilder plate code
-    os.system("echo \"{0}\" > compiled/mtl_default_shaders.inc".format(boilerplate_code))
+    os.system("echo \"{0}\" > compiled/mtl_default_shaders_autogen.inc".format(boilerplate_code))
     os.system(
-        'echo "// Compiled binary for Metal default shaders.\n\n" >> compiled/mtl_default_shaders.inc'
+        'echo "// Compiled binary for Metal default shaders.\n\n" >> compiled/mtl_default_shaders_autogen.inc'
     )
-    os.system('echo "#include <TargetConditionals.h>\n\n" >> compiled/mtl_default_shaders.inc')
+    os.system(
+        'echo "#include <TargetConditionals.h>\n\n" >> compiled/mtl_default_shaders_autogen.inc')
 
-    os.system('echo "// clang-format off" >> compiled/mtl_default_shaders.inc')
+    os.system('echo "// clang-format off" >> compiled/mtl_default_shaders_autogen.inc')
 
     # pre-compiled shaders
     gen_precompiled_shaders(10.13, 11.0, 'compiled_default_metallib', '', src_files)
@@ -247,7 +254,7 @@ def main():
     gen_precompiled_shaders(10.14, 12.0, 'compiled_default_metallib_2_1_debug',
                             '-gline-tables-only -MO', src_files)
 
-    os.system('echo "// clang-format on" >> compiled/mtl_default_shaders.inc')
+    os.system('echo "// clang-format on" >> compiled/mtl_default_shaders_autogen.inc')
 
 
 if __name__ == '__main__':

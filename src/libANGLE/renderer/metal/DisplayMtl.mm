@@ -16,7 +16,7 @@
 #include "libANGLE/renderer/metal/SurfaceMtl.h"
 #include "libANGLE/renderer/metal/SyncMtl.h"
 #include "libANGLE/renderer/metal/mtl_common.h"
-#include "libANGLE/renderer/metal/shaders/compiled/mtl_default_shaders.inc"
+#include "libANGLE/renderer/metal/shaders/compiled/mtl_default_shaders_autogen.inc"
 #include "platform/Platform.h"
 
 #include "EGL/eglext.h"

@@ -4712,7 +4712,7 @@
 		0A6055E1234655FC005CEA98 /* mtl_format_table_autogen.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = mtl_format_table_autogen.mm; path = ../../src/libANGLE/renderer/metal/mtl_format_table_autogen.mm; sourceTree = "<group>"; };
 		0A6055E4234655FD005CEA98 /* BufferMtl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BufferMtl.h; path = ../../src/libANGLE/renderer/metal/BufferMtl.h; sourceTree = "<group>"; };
 		0A6055E5234655FD005CEA98 /* ShaderMtl.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = ShaderMtl.mm; path = ../../src/libANGLE/renderer/metal/ShaderMtl.mm; sourceTree = "<group>"; };
-		0A6055EE234655FD005CEA98 /* mtl_default_shaders.inc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.pascal; path = mtl_default_shaders.inc; sourceTree = "<group>"; };
+		0A6055EE234655FD005CEA98 /* mtl_default_shaders_autogen.inc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.pascal; path = mtl_default_shaders_autogen.inc; sourceTree = "<group>"; };
 		0A6055F1234655FD005CEA98 /* ProgramMtl.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = ProgramMtl.mm; path = ../../src/libANGLE/renderer/metal/ProgramMtl.mm; sourceTree = "<group>"; };
 		0A6055F2234655FD005CEA98 /* mtl_state_cache.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = mtl_state_cache.mm; path = ../../src/libANGLE/renderer/metal/mtl_state_cache.mm; sourceTree = "<group>"; };
 		0A6055F3234655FD005CEA98 /* TextureMtl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TextureMtl.h; path = ../../src/libANGLE/renderer/metal/TextureMtl.h; sourceTree = "<group>"; };
@@ -6797,7 +6797,7 @@
 		0A6055E7234655FD005CEA98 /* compiled */ = {
 			isa = PBXGroup;
 			children = (
-				0A6055EE234655FD005CEA98 /* mtl_default_shaders.inc */,
+				0A6055EE234655FD005CEA98 /* mtl_default_shaders_autogen.inc */,
 			);
 			path = compiled;
 			sourceTree = "<group>";
