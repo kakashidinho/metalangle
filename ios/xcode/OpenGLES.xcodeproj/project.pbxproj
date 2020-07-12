@@ -60,6 +60,10 @@
 		0A0546D0242C1DD200FC05D0 /* TransformFeedbackMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A0546CE242C1DD200FC05D0 /* TransformFeedbackMtl.mm */; };
 		0A0546D1242C1DD200FC05D0 /* TransformFeedbackMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A0546CE242C1DD200FC05D0 /* TransformFeedbackMtl.mm */; };
 		0A117E302347B3FE00211C71 /* MetalANGLE.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0A60525323464F51005CEA98 /* MetalANGLE.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		0A13249E24BBA13800020D00 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A13249D24BBA13700020D00 /* libz.tbd */; };
+		0A13249F24BBA14500020D00 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A13249D24BBA13700020D00 /* libz.tbd */; };
+		0A1324A124BBA15200020D00 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A1324A024BBA15100020D00 /* libz.tbd */; };
+		0A1324A224BBA16100020D00 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A13249D24BBA13700020D00 /* libz.tbd */; };
 		0A4B692C2456752F009D5842 /* EarlyFragmentTestsOptimization.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A4B69282456752E009D5842 /* EarlyFragmentTestsOptimization.cpp */; };
 		0A4B692D2456752F009D5842 /* EarlyFragmentTestsOptimization.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A4B69282456752E009D5842 /* EarlyFragmentTestsOptimization.cpp */; };
 		0A4B692E2456752F009D5842 /* EarlyFragmentTestsOptimization.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A4B69282456752E009D5842 /* EarlyFragmentTestsOptimization.cpp */; };
@@ -4258,6 +4262,8 @@
 		0A03A9E5244C850000E5E114 /* libangle_common_tvos.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libangle_common_tvos.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A0546CD242C1DD200FC05D0 /* TransformFeedbackMtl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TransformFeedbackMtl.h; path = ../../src/libANGLE/renderer/metal/TransformFeedbackMtl.h; sourceTree = "<group>"; };
 		0A0546CE242C1DD200FC05D0 /* TransformFeedbackMtl.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = TransformFeedbackMtl.mm; path = ../../src/libANGLE/renderer/metal/TransformFeedbackMtl.mm; sourceTree = "<group>"; };
+		0A13249D24BBA13700020D00 /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk/usr/lib/libz.tbd; sourceTree = DEVELOPER_DIR; };
+		0A1324A024BBA15100020D00 /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = Platforms/AppleTVOS.platform/Developer/SDKs/AppleTVOS13.4.sdk/usr/lib/libz.tbd; sourceTree = DEVELOPER_DIR; };
 		0A28CCD0235717C30081BB84 /* MGLContext+Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MGLContext+Private.h"; sourceTree = "<group>"; };
 		0A28CCD1235719CC0081BB84 /* MGLLayer+Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MGLLayer+Private.h"; sourceTree = "<group>"; };
 		0A4B69262456752E009D5842 /* EarlyFragmentTestsOptimization.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EarlyFragmentTestsOptimization.h; sourceTree = "<group>"; };
@@ -5534,6 +5540,7 @@
 				0A60604823466FB8005CEA98 /* libangle_image_util.a in Frameworks */,
 				0A9A6AB523911C23006A152A /* libangle_gl_backend.a in Frameworks */,
 				0A60604923466FB8005CEA98 /* libangle_metal_backend.a in Frameworks */,
+				0A13249E24BBA13800020D00 /* libz.tbd in Frameworks */,
 				0AA2FFAF2347274900E0B98C /* QuartzCore.framework in Frameworks */,
 				0AC2A524234671670045B949 /* Metal.framework in Frameworks */,
 				0AC2A5222346714A0045B949 /* Foundation.framework in Frameworks */,
@@ -5629,6 +5636,7 @@
 				0A90F9D524065DC9005BA9A8 /* libspirv-cross_mac.a in Frameworks */,
 				0A4B6CC52456A1ED009D5842 /* libspirv-tools_mac.a in Frameworks */,
 				0A4B6CDC2456A98C009D5842 /* libjsoncpp_mac.a in Frameworks */,
+				0A13249F24BBA14500020D00 /* libz.tbd in Frameworks */,
 				0A90FA1E24067E9A005BA9A8 /* AppKit.framework in Frameworks */,
 				0A90FA1324067CCD005BA9A8 /* Cocoa.framework in Frameworks */,
 				0A90FA292406808F005BA9A8 /* IOKit.framework in Frameworks */,
@@ -5950,6 +5958,7 @@
 				0AA2FF9F2347260000E0B98C /* libjsoncpp.a in Frameworks */,
 				0AA2FFA02347260000E0B98C /* libspirv-cross.a in Frameworks */,
 				0AA2FFA42347260000E0B98C /* libangle_image_util.a in Frameworks */,
+				0A1324A224BBA16100020D00 /* libz.tbd in Frameworks */,
 				0AA2FFA12347260000E0B98C /* Metal.framework in Frameworks */,
 				0AA2FFA22347260000E0B98C /* Foundation.framework in Frameworks */,
 				0AA2FFA32347260000E0B98C /* CoreFoundation.framework in Frameworks */,
@@ -6039,6 +6048,7 @@
 				0AFDDB92244C9DE1000B60B1 /* libjsoncpp_tvos.a in Frameworks */,
 				0AFDDB93244C9DE1000B60B1 /* libspirv-cross_tvos.a in Frameworks */,
 				0A4B6CCB2456A220009D5842 /* libspirv-tools_tvos.a in Frameworks */,
+				0A1324A124BBA15200020D00 /* libz.tbd in Frameworks */,
 				0AF9598C244C7CD700F59740 /* QuartzCore.framework in Frameworks */,
 				0AF9598D244C7CD700F59740 /* Metal.framework in Frameworks */,
 				0AF9598E244C7CD700F59740 /* Foundation.framework in Frameworks */,
@@ -6805,6 +6815,8 @@
 		0A60565F23465AED005CEA98 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				0A13249D24BBA13700020D00 /* libz.tbd */,
+				0A1324A024BBA15100020D00 /* libz.tbd */,
 				0A90FA2A2406831B005BA9A8 /* OpenGL.framework */,
 				0A90FA2724068083005BA9A8 /* IOKit.framework */,
 				0A90FA1D24067E9A005BA9A8 /* AppKit.framework */,
@@ -15216,6 +15228,7 @@
 					LIBEGL_IMPLEMENTATION,
 					LIBGLESV2_IMPLEMENTATION,
 					LIBANGLE_IMPLEMENTATION,
+					USE_SYSTEM_ZLIB,
 					ANGLE_ENABLE_DEBUG_ANNOTATIONS,
 					SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS,
 					"GL_GLES_PROTOTYPES=1",
@@ -15256,6 +15269,7 @@
 					LIBEGL_IMPLEMENTATION,
 					LIBGLESV2_IMPLEMENTATION,
 					LIBANGLE_IMPLEMENTATION,
+					USE_SYSTEM_ZLIB,
 					SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS,
 					"GL_GLES_PROTOTYPES=1",
 					"EGL_EGL_PROTOTYPES=1",
@@ -15295,6 +15309,7 @@
 					LIBEGL_IMPLEMENTATION,
 					LIBGLESV2_IMPLEMENTATION,
 					LIBANGLE_IMPLEMENTATION,
+					USE_SYSTEM_ZLIB,
 					ANGLE_ENABLE_DEBUG_ANNOTATIONS,
 					SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS,
 					"GL_GLES_PROTOTYPES=1",
@@ -15336,6 +15351,7 @@
 					LIBEGL_IMPLEMENTATION,
 					LIBGLESV2_IMPLEMENTATION,
 					LIBANGLE_IMPLEMENTATION,
+					USE_SYSTEM_ZLIB,
 					SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS,
 					"GL_GLES_PROTOTYPES=1",
 					"EGL_EGL_PROTOTYPES=1",
@@ -15376,6 +15392,7 @@
 					LIBEGL_IMPLEMENTATION,
 					LIBGLESV2_IMPLEMENTATION,
 					LIBANGLE_IMPLEMENTATION,
+					USE_SYSTEM_ZLIB,
 					ANGLE_ENABLE_DEBUG_ANNOTATIONS,
 					SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS,
 					"GL_GLES_PROTOTYPES=1",
@@ -15416,6 +15433,7 @@
 					LIBEGL_IMPLEMENTATION,
 					LIBGLESV2_IMPLEMENTATION,
 					LIBANGLE_IMPLEMENTATION,
+					USE_SYSTEM_ZLIB,
 					SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS,
 					"GL_GLES_PROTOTYPES=1",
 					"EGL_EGL_PROTOTYPES=1",
