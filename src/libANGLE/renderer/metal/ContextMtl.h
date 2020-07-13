@@ -450,6 +450,7 @@ class ContextMtl : public ContextImpl, public mtl::Context
 
         // Used to pre-rotate gl_Position for Vulkan swapchain images on Android (a mat2, which is
         // padded to the size of two vec4's).
+        // Unused in Metal back-end.
         float preRotation[8];
 
         uint32_t coverageMask;
