@@ -129,7 +129,7 @@ angle::Result RenderbufferMtl::setStorageImpl(const gl::Context *context,
                 ANGLE_TRY(mtl::InitializeTextureContents(context, mImplicitMSTexture, mFormat,
                                                          gl::ImageIndex::Make2DMultisample()));
             }
-        }  // if (emulatedChannels)
+        }
     }
 
     return angle::Result::Continue;

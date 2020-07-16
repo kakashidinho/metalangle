@@ -116,9 +116,8 @@ MTLTextureSwizzle GetTextureSwizzle(GLenum swizzle);
 
 // Get color write mask for a specified format. Some formats such as RGB565 doesn't have alpha
 // channel but is emulated by a RGBA8 format, we need to disable alpha write for this format.
-// - emulatedChannelsOut: if the format is emulated, this pointer will store a true value.
-MTLColorWriteMask GetEmulatedColorWriteMask(const mtl::Format &mtlFormat,
-                                            bool *emulatedChannelsOut);
+// - isFormatEmulated: if the format is emulated, this pointer will store a true value.
+MTLColorWriteMask GetEmulatedColorWriteMask(const mtl::Format &mtlFormat, bool *isFormatEmulated);
 MTLColorWriteMask GetEmulatedColorWriteMask(const mtl::Format &mtlFormat);
 bool IsFormatEmulated(const mtl::Format &mtlFormat);
 
