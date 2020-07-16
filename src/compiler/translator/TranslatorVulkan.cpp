@@ -1047,7 +1047,8 @@ bool TranslatorVulkan::translateImpl(TIntermBlock *root,
         {
             return false;
         }
-        if (!AppendPreRotation(this, root, &getSymbolTable(), driverUniforms))
+        if ((compileOptions & SH_ADD_PRE_ROTATION) &&
+            !AppendPreRotation(this, root, &getSymbolTable(), driverUniforms))
         {
             return false;
         }

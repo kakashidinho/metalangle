@@ -848,9 +848,10 @@ angle::Result TextureMtl::setImage(const gl::Context *context,
                                    gl::Buffer *unpackBuffer,
                                    const uint8_t *pixels)
 {
-    const gl::InternalFormat &formatInfo = gl::GetInternalFormatInfo(internalFormat, type);
+    const gl::InternalFormat &dstFormatInfo = gl::GetInternalFormatInfo(internalFormat, type);
 
-    return setImageImpl(context, index, formatInfo, size, type, unpack, unpackBuffer, pixels);
+    return setImageImpl(context, index, dstFormatInfo, size, format, type, unpack, unpackBuffer,
+                        pixels);
 }
 
 angle::Result TextureMtl::setSubImage(const gl::Context *context,
@@ -879,8 +880,8 @@ angle::Result TextureMtl::setCompressedImage(const gl::Context *context,
     const gl::State &glState             = context->getState();
     gl::Buffer *unpackBuffer             = glState.getTargetBuffer(gl::BufferBinding::PixelUnpack);
 
-    return setImageImpl(context, index, formatInfo, size, GL_UNSIGNED_BYTE, unpack, unpackBuffer,
-                        pixels);
+    return setImageImpl(context, index, formatInfo, size, internalFormat, GL_UNSIGNED_BYTE, unpack,
+                        unpackBuffer, pixels);
 }
 
 angle::Result TextureMtl::setCompressedSubImage(const gl::Context *context,
@@ -1479,16 +1480,17 @@ angle::Result TextureMtl::setStorageImpl(const gl::Context *context,
 
 angle::Result TextureMtl::setImageImpl(const gl::Context *context,
                                        const gl::ImageIndex &index,
-                                       const gl::InternalFormat &formatInfo,
+                                       const gl::InternalFormat &dstFormatInfo,
                                        const gl::Extents &size,
-                                       GLenum type,
+                                       GLenum srcFormat,
+                                       GLenum srcType,
                                        const gl::PixelUnpackState &unpack,
                                        gl::Buffer *unpackBuffer,
                                        const uint8_t *pixels)
 {
     ContextMtl *contextMtl = mtl::GetImpl(context);
     angle::FormatID angleFormatId =
-        angle::Format::InternalFormatToID(formatInfo.sizedInternalFormat);
+        angle::Format::InternalFormatToID(dstFormatInfo.sizedInternalFormat);
     const mtl::Format &mtlFormat = contextMtl->getPixelFormat(angleFormatId);
 
     ANGLE_TRY(redefineImage(context, index, mtlFormat, size));
@@ -1505,10 +1507,17 @@ angle::Result TextureMtl::setImageImpl(const gl::Context *context,
     }
 
     // Format of the supplied pixels.
-    const gl::InternalFormat &srcFormatInfo = gl::GetInternalFormatInfo(formatInfo.format, type);
-
+    const gl::InternalFormat *srcFormatInfo;
+    if (srcFormat != dstFormatInfo.format || srcType != dstFormatInfo.type)
+    {
+        srcFormatInfo = &gl::GetInternalFormatInfo(srcFormat, srcType);
+    }
+    else
+    {
+        srcFormatInfo = &dstFormatInfo;
+    }
     return setSubImageImpl(context, index, gl::Box(0, 0, 0, size.width, size.height, size.depth),
-                           srcFormatInfo, type, unpack, unpackBuffer, pixels);
+                           *srcFormatInfo, srcType, unpack, unpackBuffer, pixels);
 }
 
 angle::Result TextureMtl::setSubImageImpl(const gl::Context *context,

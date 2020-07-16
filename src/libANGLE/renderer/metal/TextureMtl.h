@@ -206,9 +206,10 @@ class TextureMtl : public TextureImpl
 
     angle::Result setImageImpl(const gl::Context *context,
                                const gl::ImageIndex &index,
-                               const gl::InternalFormat &formatInfo,
+                               const gl::InternalFormat &dstFormatInfo,
                                const gl::Extents &size,
-                               GLenum type,
+                               GLenum srcFormat,
+                               GLenum srcType,
                                const gl::PixelUnpackState &unpack,
                                gl::Buffer *unpackBuffer,
                                const uint8_t *pixels);
