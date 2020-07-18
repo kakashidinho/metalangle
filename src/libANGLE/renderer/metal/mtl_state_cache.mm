@@ -719,8 +719,8 @@ bool RenderPassAttachmentDesc::equalIgnoreLoadStoreOptions(
     const RenderPassAttachmentDesc &other) const
 {
     return renderTarget == other.renderTarget ||
-           (texture() == other.texture() && level() == other.level() &&
-            sliceOrDepth() == other.sliceOrDepth());
+           (texture() == other.texture() && implicitMSTexture() == other.implicitMSTexture() &&
+            level() == other.level() && sliceOrDepth() == other.sliceOrDepth());
 }
 
 bool RenderPassAttachmentDesc::operator==(const RenderPassAttachmentDesc &other) const
