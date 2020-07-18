@@ -409,7 +409,7 @@ void Texture::syncContent(ContextMtl *context, mtl::BlitCommandEncoder *blitEnco
     SyncContent(context, blitEncoder, shared_from_this());
 }
 
-void Texture::syncContent(ContextMtl *context)
+void Texture::syncContentIfNeeded(ContextMtl *context)
 {
     EnsureContentSynced(context, shared_from_this());
 }
@@ -462,7 +462,7 @@ void Texture::replaceRegion(ContextMtl *context,
 
     CommandQueue &cmdQueue = context->cmdQueue();
 
-    syncContent(context);
+    syncContentIfNeeded(context);
 
     // NOTE(hqle): what if multiple contexts on multiple threads are using this texture?
     if (this->isBeingUsedByGPU(context))
@@ -497,7 +497,7 @@ void Texture::getBytes(ContextMtl *context,
 
     CommandQueue &cmdQueue = context->cmdQueue();
 
-    syncContent(context);
+    syncContentIfNeeded(context);
 
     // NOTE(hqle): what if multiple contexts on multiple threads are using this texture?
     if (this->isBeingUsedByGPU(context))

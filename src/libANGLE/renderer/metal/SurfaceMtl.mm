@@ -46,38 +46,72 @@ constexpr angle::FormatID kDefaultFrameBufferStencilFormatId = angle::FormatID::
 constexpr angle::FormatID kDefaultFrameBufferDepthStencilFormatId =
     angle::FormatID::D24_UNORM_S8_UINT;
 
-struct IOSurfaceFormatInfo
+struct BaseFormatInfo
 {
+    constexpr BaseFormatInfo(GLenum internalFormatIn, GLenum typeIn, angle::FormatID angleFormatID)
+        : internalFormat(internalFormatIn), type(typeIn), nativeAngleFormatId(angleFormatID)
+    {}
+
     GLenum internalFormat;
     GLenum type;
-
-    size_t componentBytes;
 
     angle::FormatID nativeAngleFormatId;
 };
 
+struct IOSurfaceFormatInfo : public BaseFormatInfo
+{
+    constexpr IOSurfaceFormatInfo(GLenum internalFormatIn,
+                                  GLenum typeIn,
+                                  angle::FormatID angleFormatID,
+                                  size_t bytes)
+        : BaseFormatInfo(internalFormatIn, typeIn, angleFormatID), componentBytes(bytes)
+    {}
+    size_t componentBytes;
+};
+
 // clang-format off
 constexpr std::array<IOSurfaceFormatInfo, 6> kIOSurfaceFormats = {{
-    {GL_RED,      GL_UNSIGNED_BYTE,  1, angle::FormatID::R8_UNORM },
-    {GL_R16UI,    GL_UNSIGNED_SHORT, 2, angle::FormatID::R16_UINT  },
-    {GL_RG,       GL_UNSIGNED_BYTE,  2, angle::FormatID::R8G8_UNORM },
-    {GL_RGB,      GL_UNSIGNED_BYTE,  4, angle::FormatID::B8G8R8A8_UNORM},
-    {GL_BGRA_EXT, GL_UNSIGNED_BYTE,  4, angle::FormatID::B8G8R8A8_UNORM},
-    {GL_RGBA,     GL_HALF_FLOAT,     8, angle::FormatID::R16G16B16A16_FLOAT },
+    {GL_RED,      GL_UNSIGNED_BYTE,  angle::FormatID::R8_UNORM,           1  },
+    {GL_R16UI,    GL_UNSIGNED_SHORT, angle::FormatID::R16_UINT,           2  },
+    {GL_RG,       GL_UNSIGNED_BYTE,  angle::FormatID::R8G8_UNORM,         2 },
+    {GL_RGB,      GL_UNSIGNED_BYTE,  angle::FormatID::B8G8R8A8_UNORM,     4},
+    {GL_BGRA_EXT, GL_UNSIGNED_BYTE,  angle::FormatID::B8G8R8A8_UNORM,     4},
+    {GL_RGBA,     GL_HALF_FLOAT,     angle::FormatID::R16G16B16A16_FLOAT, 8 },
+}};
+
+constexpr std::array<BaseFormatInfo, 4> kExternalTextureFormats = {{
+
+    {GL_RED,      GL_UNSIGNED_BYTE,  angle::FormatID::R8_UNORM },
+    {GL_RG,       GL_UNSIGNED_BYTE,  angle::FormatID::R8G8_UNORM },
+    {GL_RGBA,     GL_UNSIGNED_BYTE,  angle::FormatID::R8G8B8A8_UNORM},
+    {GL_BGRA_EXT, GL_UNSIGNED_BYTE,  angle::FormatID::B8G8R8A8_UNORM},
 }};
 // clang-format on
 
-int FindIOSurfaceFormatIndex(GLenum internalFormat, GLenum type)
+template <typename FormatType, size_t arraySize>
+int FindFormatIndex(const std::array<FormatType, arraySize> &formatArray,
+                    GLenum internalFormat,
+                    GLenum type)
 {
-    for (int i = 0; i < static_cast<int>(kIOSurfaceFormats.size()); ++i)
+    for (int i = 0; i < static_cast<int>(formatArray.size()); ++i)
     {
-        const auto &formatInfo = kIOSurfaceFormats[i];
+        const auto &formatInfo = formatArray[i];
         if (formatInfo.internalFormat == internalFormat && formatInfo.type == type)
         {
             return i;
         }
     }
     return -1;
+}
+
+int FindIOSurfaceFormatIndex(GLenum internalFormat, GLenum type)
+{
+    return FindFormatIndex(kIOSurfaceFormats, internalFormat, type);
+}
+
+int FindExternalTextureFormatIndex(GLenum internalFormat, GLenum type)
+{
+    return FindFormatIndex(kExternalTextureFormats, internalFormat, type);
 }
 
 void CopyTextureNoScale(ContextMtl *contextMtl,
@@ -1215,5 +1249,88 @@ bool IOSurfaceSurfaceMtl::ValidateAttributes(EGLClientBuffer buffer,
     return true;
 }
 #endif  // #if !defined(ANGLE_DISABLE_IOSURFACE)
+
+// ExternalTextureSurfaceMtl implementation.
+ExternalTextureSurfaceMtl::ExternalTextureSurfaceMtl(DisplayMtl *display,
+                                                     const egl::SurfaceState &state,
+                                                     EGLClientBuffer buffer,
+                                                     const egl::AttributeMap &attribs)
+    : OffscreenSurfaceMtl(display, state, attribs)
+{
+    mColorTexture = mtl::Texture::MakeFromMetal((__bridge id<MTLTexture>)(buffer));
+
+    EGLAttrib internalFormat = attribs.get(EGL_TEXTURE_INTERNAL_FORMAT_ANGLE);
+    EGLAttrib type           = attribs.get(EGL_TEXTURE_TYPE_ANGLE);
+    int formatIdx            = FindExternalTextureFormatIndex(static_cast<GLenum>(internalFormat),
+                                                   static_cast<GLenum>(type));
+    ASSERT(formatIdx >= 0);
+
+    mColorFormat = display->getPixelFormat(kExternalTextureFormats[formatIdx].nativeAngleFormatId);
+}
+ExternalTextureSurfaceMtl::~ExternalTextureSurfaceMtl() {}
+
+egl::Error ExternalTextureSurfaceMtl::bindTexImage(const gl::Context *context,
+                                                   gl::Texture *texture,
+                                                   EGLint buffer)
+{
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+    StartFrameCapture(contextMtl);
+
+    return OffscreenSurfaceMtl::bindTexImage(context, texture, buffer);
+}
+
+egl::Error ExternalTextureSurfaceMtl::releaseTexImage(const gl::Context *context, EGLint buffer)
+{
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+    if (mColorTexture)
+    {
+        // If texture has been modified by GPU, synchtonize its CPU cache so that external layer
+        // can read its CPU cache data.
+        mColorTexture->syncContentIfNeeded(contextMtl);
+    }
+    egl::Error re = OffscreenSurfaceMtl::releaseTexImage(context, buffer);
+    StopFrameCapture();
+    return re;
+}
+
+// static
+bool ExternalTextureSurfaceMtl::ValidateAttributes(const DisplayMtl *display,
+                                                   EGLClientBuffer buffer,
+                                                   const egl::AttributeMap &attribs)
+{
+    id<MTLTexture> colorTexture = (__bridge id<MTLTexture>)(buffer);
+    if (!colorTexture || colorTexture.device != display->getMetalDevice())
+    {
+        return false;
+    }
+
+    // Texture type must be 2D
+    if (colorTexture.textureType != MTLTextureType2D)
+    {
+        return false;
+    }
+
+    // Find this external texture format specified in the attribute
+    EGLAttrib internalFormat = attribs.get(EGL_TEXTURE_INTERNAL_FORMAT_ANGLE);
+    EGLAttrib type           = attribs.get(EGL_TEXTURE_TYPE_ANGLE);
+
+    int formatIdx = FindExternalTextureFormatIndex(static_cast<GLenum>(internalFormat),
+                                                   static_cast<GLenum>(type));
+
+    if (formatIdx < 0)
+    {
+        return false;
+    }
+
+    // Verify that the format is compatible with the specified external texture
+    const mtl::Format &format =
+        display->getPixelFormat(kExternalTextureFormats[formatIdx].nativeAngleFormatId);
+    if (format.metalFormat != colorTexture.pixelFormat)
+    {
+        return false;
+    }
+
+    return true;
+}
 
 }

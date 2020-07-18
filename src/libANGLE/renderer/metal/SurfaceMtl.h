@@ -249,6 +249,28 @@ class IOSurfaceSurfaceMtl : public OffscreenSurfaceMtl
     int mIOSurfaceFormatIdx;
 };
 
+// Surface created from external Metal texture
+class ExternalTextureSurfaceMtl : public OffscreenSurfaceMtl
+{
+  public:
+    ExternalTextureSurfaceMtl(DisplayMtl *display,
+                              const egl::SurfaceState &state,
+                              EGLClientBuffer buffer,
+                              const egl::AttributeMap &attribs);
+    ~ExternalTextureSurfaceMtl() override;
+
+    egl::Error bindTexImage(const gl::Context *context,
+                            gl::Texture *texture,
+                            EGLint buffer) override;
+    egl::Error releaseTexImage(const gl::Context *context, EGLint buffer) override;
+
+    static bool ValidateAttributes(const DisplayMtl *display,
+                                   EGLClientBuffer buffer,
+                                   const egl::AttributeMap &attribs);
+
+  private:
+};
+
 }  // namespace rx
 
 #endif /* LIBANGLE_RENDERER_METAL_SURFACEMTL_H_ */

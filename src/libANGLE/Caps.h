@@ -989,6 +989,12 @@ struct DisplayExtensions
     // EGL_ANGLE_iosurface_client_buffer
     bool iosurfaceClientBuffer = false;
 
+    // EGL_mtl_texture_client_buffer
+    bool mtlTextureClientBuffer = false;
+
+    // EGL_gl_texture_client_buffer
+    bool glTextureClientBuffer = false;
+
     // EGL_ANGLE_create_context_extensions_enabled
     bool createContextExtensionsEnabled = false;
 

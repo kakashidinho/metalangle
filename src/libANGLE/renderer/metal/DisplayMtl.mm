@@ -209,13 +209,19 @@ SurfaceImpl *DisplayMtl::createPbufferFromClientBuffer(const egl::SurfaceState &
                                                        EGLClientBuffer clientBuffer,
                                                        const egl::AttributeMap &attribs)
 {
-    ASSERT(buftype == EGL_IOSURFACE_ANGLE);
-
-#if defined(ANGLE_DISABLE_IOSURFACE)
-    return nullptr;
-#else
-    return new IOSurfaceSurfaceMtl(this, state, clientBuffer, attribs);
+    switch (buftype)
+    {
+        case EGL_IOSURFACE_ANGLE:
+#if !defined(ANGLE_DISABLE_IOSURFACE)
+            return new IOSurfaceSurfaceMtl(this, state, clientBuffer, attribs);
 #endif
+            break;
+        case EGL_MTL_TEXTURE_MGL:
+            return new ExternalTextureSurfaceMtl(this, state, clientBuffer, attribs);
+        default:
+            UNREACHABLE();
+    }
+    return nullptr;
 }
 
 SurfaceImpl *DisplayMtl::createPixmapSurface(const egl::SurfaceState &state,
@@ -290,6 +296,8 @@ void DisplayMtl::generateExtensions(egl::DisplayExtensions *outExtensions) const
 #else
     outExtensions->iosurfaceClientBuffer = true;
 #endif
+    outExtensions->mtlTextureClientBuffer = true;
+
     outExtensions->surfacelessContext           = true;
     outExtensions->robustResourceInitialization = true;
     outExtensions->displayTextureShareGroup     = true;
@@ -410,18 +418,30 @@ egl::Error DisplayMtl::validateClientBuffer(const egl::Config *configuration,
                                             EGLClientBuffer clientBuffer,
                                             const egl::AttributeMap &attribs) const
 {
-    ASSERT(buftype == EGL_IOSURFACE_ANGLE);
-
+    switch (buftype)
+    {
+        case EGL_IOSURFACE_ANGLE:
 #if defined(ANGLE_DISABLE_IOSURFACE)
-    return egl::EglBadAttribute();
+            return egl::EglBadAttribute();
 
 #else
-    if (!IOSurfaceSurfaceMtl::ValidateAttributes(clientBuffer, attribs))
-    {
-        return egl::EglBadAttribute();
+            if (!IOSurfaceSurfaceMtl::ValidateAttributes(clientBuffer, attribs))
+            {
+                return egl::EglBadAttribute();
+            }
+#endif
+            break;
+        case EGL_MTL_TEXTURE_MGL:
+            if (!ExternalTextureSurfaceMtl::ValidateAttributes(this, clientBuffer, attribs))
+            {
+                return egl::EglBadAttribute();
+            }
+            break;
+        default:
+            UNREACHABLE();
+            return egl::EglBadAttribute();
     }
     return egl::NoError();
-#endif
 }
 
 std::string DisplayMtl::getRendererDescription() const
