@@ -73,7 +73,7 @@ jobs:
       - python scripts/bootstrap.py
       - gclient sync
       - gn gen out/release --args="angle_enable_gl=false is_debug=false strip_absolute_paths_from_debug_symbols=true"
-      - ninja -j 2 -C out/release angle_end2end_tests angle_deqp_gles2_tests hello_triangle
+      - ninja -j 2 -C out/release angle_end2end_tests hello_triangle
       - cp -v out/release/*.dylib ./
       - zip --symlinks -r MetalANGLE.dylib.mac.zip include libGLESv2.dylib libGLESv1_CM.dylib libEGL.dylib
       - rm -v *.dylib
