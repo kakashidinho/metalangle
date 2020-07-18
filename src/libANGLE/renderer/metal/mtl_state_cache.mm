@@ -188,6 +188,7 @@ void BaseRenderPassAttachmentDescToObjC(MTLRenderPassAttachmentDescriptor *dst,
         dst.texture        = ToObjC(implicitMsTexture);
         dst.level          = 0;
         dst.slice          = 0;
+        dst.depthPlane     = 0;
         dst.resolveTexture = ToObjC(src.texture());
         dst.resolveLevel   = src.level();
         if (dst.resolveTexture.textureType == MTLTextureType3D)
@@ -215,9 +216,10 @@ void BaseRenderPassAttachmentDescToObjC(MTLRenderPassAttachmentDescriptor *dst,
             dst.slice      = src.sliceOrDepth();
             dst.depthPlane = 0;
         }
-        dst.resolveTexture = nil;
-        dst.resolveLevel   = 0;
-        dst.resolveSlice   = 0;
+        dst.resolveTexture    = nil;
+        dst.resolveLevel      = 0;
+        dst.resolveSlice      = 0;
+        dst.resolveDepthPlane = 0;
     }
 
     ANGLE_OBJC_CP_PROPERTY(dst, src, loadAction);
