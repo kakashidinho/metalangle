@@ -204,6 +204,7 @@ void BaseRenderPassAttachmentDescToObjC(const RenderPassAttachmentDesc &src,
         dst.texture        = ToObjC(implicitMsTexture);
         dst.level          = 0;
         dst.slice          = 0;
+        dst.depthPlane     = 0;
         dst.resolveTexture = ToObjC(src.texture());
         dst.resolveLevel   = src.level();
         if (dst.resolveTexture.textureType == MTLTextureType3D)
@@ -231,9 +232,10 @@ void BaseRenderPassAttachmentDescToObjC(const RenderPassAttachmentDesc &src,
             dst.slice      = src.sliceOrDepth();
             dst.depthPlane = 0;
         }
-        dst.resolveTexture = nil;
-        dst.resolveLevel   = 0;
-        dst.resolveSlice   = 0;
+        dst.resolveTexture    = nil;
+        dst.resolveLevel      = 0;
+        dst.resolveSlice      = 0;
+        dst.resolveDepthPlane = 0;
     }
 
     ANGLE_OBJC_CP_PROPERTY(dst, src, loadAction);
@@ -719,8 +721,8 @@ bool RenderPassAttachmentDesc::equalIgnoreLoadStoreOptions(
     const RenderPassAttachmentDesc &other) const
 {
     return renderTarget == other.renderTarget ||
-           (texture() == other.texture() && level() == other.level() &&
-            sliceOrDepth() == other.sliceOrDepth());
+           (texture() == other.texture() && implicitMSTexture() == other.implicitMSTexture() &&
+            level() == other.level() && sliceOrDepth() == other.sliceOrDepth());
 }
 
 bool RenderPassAttachmentDesc::operator==(const RenderPassAttachmentDesc &other) const

@@ -1759,6 +1759,30 @@ Error ValidateCreatePbufferFromClientBuffer(Display *display,
             }
             break;
 
+        case EGL_MTL_TEXTURE_MGL:
+            if (!displayExtensions.mtlTextureClientBuffer)
+            {
+                return EglBadParameter() << "<buftype> EGL_MTL_TEXTURE_MGL requires the "
+                                            "EGL_MGL_mtl_texture_client_buffer extension.";
+            }
+            if (buffer == nullptr)
+            {
+                return EglBadParameter() << "<buffer> must be non null";
+            }
+            break;
+
+        case EGL_GL_TEXTURE_MGL:
+            if (!displayExtensions.glTextureClientBuffer)
+            {
+                return EglBadParameter() << "<buftype> EGL_GL_TEXTURE_MGL requires the "
+                                            "EGL_MGL_gl_texture_client_buffer extension.";
+            }
+            if (buffer == nullptr)
+            {
+                return EglBadParameter() << "<buffer> must be non null";
+            }
+            break;
+
         default:
             return EglBadParameter();
     }
@@ -1774,7 +1798,8 @@ Error ValidateCreatePbufferFromClientBuffer(Display *display,
             case EGL_WIDTH:
             case EGL_HEIGHT:
                 if (buftype != EGL_D3D_TEXTURE_2D_SHARE_HANDLE_ANGLE &&
-                    buftype != EGL_D3D_TEXTURE_ANGLE && buftype != EGL_IOSURFACE_ANGLE)
+                    buftype != EGL_D3D_TEXTURE_ANGLE && buftype != EGL_IOSURFACE_ANGLE &&
+                    buftype != EGL_MTL_TEXTURE_MGL && buftype != EGL_GL_TEXTURE_MGL)
                 {
                     return EglBadParameter()
                            << "Width and Height are not supported for thie <buftype>";
@@ -1804,7 +1829,8 @@ Error ValidateCreatePbufferFromClientBuffer(Display *display,
                     case EGL_TEXTURE_2D:
                         break;
                     case EGL_TEXTURE_RECTANGLE_ANGLE:
-                        if (buftype != EGL_IOSURFACE_ANGLE)
+                        if (buftype != EGL_IOSURFACE_ANGLE && buftype != EGL_MTL_TEXTURE_MGL &&
+                            buftype != EGL_GL_TEXTURE_MGL)
                         {
                             return EglBadParameter()
                                    << "<buftype> doesn't support rectangle texture targets";
@@ -1836,14 +1862,16 @@ Error ValidateCreatePbufferFromClientBuffer(Display *display,
                 break;
 
             case EGL_TEXTURE_TYPE_ANGLE:
-                if (buftype != EGL_IOSURFACE_ANGLE)
+                if (buftype != EGL_IOSURFACE_ANGLE && buftype != EGL_MTL_TEXTURE_MGL &&
+                    buftype != EGL_GL_TEXTURE_MGL)
                 {
                     return EglBadAttribute() << "<buftype> doesn't support texture type";
                 }
                 break;
 
             case EGL_TEXTURE_INTERNAL_FORMAT_ANGLE:
-                if (buftype != EGL_IOSURFACE_ANGLE && buftype != EGL_D3D_TEXTURE_ANGLE)
+                if (buftype != EGL_IOSURFACE_ANGLE && buftype != EGL_D3D_TEXTURE_ANGLE &&
+                    buftype != EGL_MTL_TEXTURE_MGL && buftype != EGL_GL_TEXTURE_MGL)
                 {
                     return EglBadAttribute() << "<buftype> doesn't support texture internal format";
                 }
@@ -1950,6 +1978,22 @@ Error ValidateCreatePbufferFromClientBuffer(Display *display,
             !attributes.contains(EGL_TEXTURE_TYPE_ANGLE) ||
             !attributes.contains(EGL_TEXTURE_INTERNAL_FORMAT_ANGLE) ||
             !attributes.contains(EGL_IOSURFACE_PLANE_ANGLE))
+        {
+            return EglBadParameter() << "Missing required attribute for EGL_IOSURFACE";
+        }
+    }
+
+    if (buftype == EGL_MTL_TEXTURE_MGL || buftype == EGL_GL_TEXTURE_MGL)
+    {
+        if (textureFormat != EGL_TEXTURE_RGBA)
+        {
+            return EglBadAttribute()
+                   << "EGL_MTL_TEXTURE_MGL/EGL_GL_TEXTURE_MGL requires the EGL_TEXTURE_RGBA format";
+        }
+
+        if (!attributes.contains(EGL_TEXTURE_FORMAT) ||
+            !attributes.contains(EGL_TEXTURE_TYPE_ANGLE) ||
+            !attributes.contains(EGL_TEXTURE_INTERNAL_FORMAT_ANGLE))
         {
             return EglBadParameter() << "Missing required attribute for EGL_IOSURFACE";
         }

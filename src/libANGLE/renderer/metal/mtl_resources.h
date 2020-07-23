@@ -240,6 +240,9 @@ class Texture final : public Resource,
     // Explicitly sync content between CPU and GPU
     void syncContent(ContextMtl *context, mtl::BlitCommandEncoder *encoder);
 
+    // Sync content between CPU and GPU if texture has been being modified by GPU.
+    void syncContentIfNeeded(ContextMtl *context);
+
   private:
     using ParentClass = WrappedObject<id<MTLTexture>>;
 
@@ -277,8 +280,6 @@ class Texture final : public Resource,
     Texture(Texture *original, MTLPixelFormat format);
     Texture(Texture *original, MTLTextureType type, NSRange mipmapLevelRange, NSRange slices);
     Texture(Texture *original, const TextureSwizzleChannels &swizzle);
-
-    void syncContent(ContextMtl *context);
 
     // This property is shared between this object and its views:
     std::shared_ptr<MTLColorWriteMask> mColorWritableMask;

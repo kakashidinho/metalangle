@@ -1,0 +1,89 @@
+Name
+
+    MGL_texture_client_buffer
+
+Name Strings
+
+    EGL_MGL_mtl_texture_client_buffer
+    EGL_MGL_gl_texture_client_buffer
+
+Contributors
+
+    Le Hoang Quyen
+
+Contacts
+
+    Le Hoang Quyen (lehoangq 'at' gmail.com)
+
+Status
+
+    Draft
+
+Version
+    Version 1, Jul 19, 2020
+
+Number
+
+    EGL Extension #??
+
+Dependencies
+
+    This extension is written against the wording of the EGL 1.4
+    Specification.
+
+Overview
+
+    This extension allows creating EGL surfaces from external metal/native OpenGL texture objects.
+
+New Types
+
+    None
+
+New Procedures and Functions
+
+    None
+
+New Tokens
+
+    Accepted in the <buftype> parameter of eglCreatePbufferFromClientBuffer:
+
+        EGL_MTL_TEXTURE_MGL               0x3456
+        EGL_GL_TEXTURE_MGL                0x3457
+
+    Accepted in the <attrib_list> parameter of eglCreatePbufferFromClientBuffer:
+
+        EGL_TEXTURE_TYPE_ANGLE            0x345C
+        EGL_TEXTURE_INTERNAL_FORMAT_ANGLE 0x345D
+
+Additions to Chapter 3 of the EGL 1.4 Specification (EGL Functions and Errors)
+
+    Replace the last sentence of paragraph 1 of Section 3.5.3 with the
+    following text.
+    "Currently, the only client API resources which may be bound in this
+    fashion are OpenVG VGImage objects and metal/native OpenGL texture objects."
+
+    Replace the third paragraph of Section 3.5.3 with the following text.
+    "<buftype> specifies the type of buffer to be bound. The only allowed values
+    of <buftype> are EGL_OPENVG_IMAGE, EGL_MTL_TEXTURE_MGL and EGL_OPENGL_TEXTURE_MGL".
+
+    Append the following text to the fourth paragraph of Section 3.5.3.
+    "When <buftype> is EGL_MTL_TEXTURE_MGL, <buffer> must be a valid MTLTexture
+    object casted into the type EGLClientBuffer.
+    When <buftype> is EGL_GL_TEXTURE_MGL, <buffer> must be a valid OpenGL texture (GLuint)
+    object casted into the type EGLClientBuffer."
+
+    Append to the end of Section 3.5.3.
+    "When <buftype> is EGL_MTL_TEXTURE_MGL/EGL_GL_TEXTURE_MGL, <attrib_list> must contain all the
+    following attributes otherwise EGL_BAD_PARAMETER is generated. The
+    attributes must satisfy the following constraints otherwise
+    EGL_BAD_ATTRIBUTE is generated:
+      - EGL_TEXTURE_TYPE_ANGLE, and EGL_TEXTURE_INTERNAL_FORMAT_ANGLE followed
+    by OpenGL enums for texture types, and texture internal format
+    respectively. Internal format must be GL_BGRA_EXT, GL_RGBA, GL_RED_EXT or GL_RG_EXT.
+    The only supported type currently is GL_UNSIGNED_BYTE.
+      - EGL_TEXTURE_FORMAT with a value being EGL_TEXTURE_RGBA.
+      - EGL_TEXTURE_TARGET with a value being EGL_TEXTURE_2D.
+
+Revision History
+
+    Version 1, 2020/19/07 - First draft

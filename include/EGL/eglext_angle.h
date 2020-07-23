@@ -214,6 +214,21 @@ EGLAPI EGLint EGLAPIENTRY eglProgramCacheResizeANGLE(EGLDisplay dpy, EGLint limi
 #define EGL_BIND_TO_TEXTURE_TARGET_ANGLE 0x348D
 #endif /* EGL_ANGLE_iosurface_client_buffer */
 
+#ifndef MGL_texture_client_buffer
+#define MGL_texture_client_buffer 1
+#define EGL_MTL_TEXTURE_MGL 0x3456
+#define EGL_GL_TEXTURE_MGL 0x3457
+#ifndef EGL_TEXTURE_RECTANGLE_ANGLE
+#define EGL_TEXTURE_RECTANGLE_ANGLE 0x345B
+#endif
+#ifndef EGL_TEXTURE_TYPE_ANGLE
+#define EGL_TEXTURE_TYPE_ANGLE 0x345C
+#endif
+#ifndef EGL_TEXTURE_INTERNAL_FORMAT_ANGLE
+#define EGL_TEXTURE_INTERNAL_FORMAT_ANGLE 0x345D
+#endif
+#endif /* MGL_texture_client_buffer */
+
 #ifndef EGL_ANGLE_create_context_extensions_enabled
 #define EGL_ANGLE_create_context_extensions_enabled 1
 #define EGL_EXTENSIONS_ENABLED_ANGLE 0x345F
@@ -318,6 +333,11 @@ EGLAPI EGLBoolean EGLAPIENTRY eglSwapBuffersWithFrameTokenANGLE(EGLDisplay dpy, 
 #define EGL_ANGLE_device_eagl 1
 #define EGL_EAGL_CONTEXT_ANGLE 0x348C
 #endif
+
+#ifndef EGL_ANGLE_device_mtl
+#define EGL_ANGLE_device_mtl 1
+#define EGL_MTL_DEVICE_ANGLE 0x33A2
+#endif /* EGL_ANGLE_device_mtl */
 
 // clang-format on
 
