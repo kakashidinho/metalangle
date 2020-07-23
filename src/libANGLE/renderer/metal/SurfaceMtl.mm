@@ -308,16 +308,7 @@ SurfaceMtl::SurfaceMtl(DisplayMtl *display,
     }
     else
     {
-        // https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf says that BGRA8Unorm is
-        // only supported if depth24Stencil8PixelFormatSupported capabilitiy is YES. Yet
-        // CAMetalLayer can be created with pixelFormat MTLPixelFormatBGRA8Unorm. So the mtl::Format
-        // used for SurfaceMtl is initialized a bit differently from normal TextureMtl's
-        // mtl::Format. It won't use format table, instead we initialize its values here to use
-        // BGRA8Unorm directly:
-        mColorFormat.intendedFormatId = mColorFormat.actualFormatId =
-            angle::FormatID::B8G8R8A8_UNORM;
-        mColorFormat.metalFormat = MTLPixelFormatBGRA8Unorm;
-        mColorFormat.caps        = &display->getNativeFormatCaps(MTLPixelFormatBGRA8Unorm);
+        mColorFormat = display->getPixelFormat(angle::FormatID::B8G8R8A8_UNORM);
     }
 
     mSamples = state.config->samples;
