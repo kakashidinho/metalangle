@@ -968,7 +968,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
         case angle::FormatID::EAC_R11G11_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatEAC_R11Unorm;
+            this->metalFormat    = MTLPixelFormatEAC_RG11Unorm;
             this->actualFormatId = angle::FormatID::EAC_R11G11_UNORM_BLOCK;
             this->initFunction   = nullptr;
 
@@ -988,15 +988,6 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatEAC_R11Unorm;
             this->actualFormatId = angle::FormatID::EAC_R11_UNORM_BLOCK;
-            this->initFunction   = nullptr;
-
-            this->swizzled = false;
-            break;
-
-        case angle::FormatID::ETC1_R8G8B8_UNORM_BLOCK:
-
-            this->metalFormat    = MTLPixelFormatETC2_RGB8;
-            this->actualFormatId = angle::FormatID::ETC1_R8G8B8_UNORM_BLOCK;
             this->initFunction   = nullptr;
 
             this->swizzled = false;
@@ -1168,6 +1159,15 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
             this->metalFormat    = MTLPixelFormatDepth32Float_Stencil8;
             this->actualFormatId = angle::FormatID::D32_FLOAT_S8X24_UINT;
+            this->initFunction   = nullptr;
+
+            this->swizzled = false;
+            break;
+
+        case angle::FormatID::ETC1_R8G8B8_UNORM_BLOCK:
+
+            this->metalFormat    = MTLPixelFormatETC2_RGB8;
+            this->actualFormatId = angle::FormatID::ETC2_R8G8B8_UNORM_BLOCK;
             this->initFunction   = nullptr;
 
             this->swizzled = false;
