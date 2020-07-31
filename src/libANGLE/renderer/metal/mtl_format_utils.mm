@@ -143,6 +143,12 @@ bool Format::needConversion(angle::FormatID srcFormatId) const
         ASSERT(swizzled);
         return false;
     }
+    if (srcFormatId == angle::FormatID::ETC1_R8G8B8_UNORM_BLOCK &&
+        actualFormatId == angle::FormatID::ETC2_R8G8B8_UNORM_BLOCK)
+    {
+        // ETC1 RGB & ETC2 RGB are technically the same.
+        return false;
+    }
     return srcFormatId != actualFormatId;
 }
 
