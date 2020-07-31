@@ -14,6 +14,7 @@
 #include "libANGLE/renderer/DeviceImpl.h"
 #include "libANGLE/renderer/glslang_wrapper_utils.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
+#include "libANGLE/renderer/metal/ImageMtl.h"
 #include "libANGLE/renderer/metal/SurfaceMtl.h"
 #include "libANGLE/renderer/metal/SyncMtl.h"
 #include "libANGLE/renderer/metal/mtl_common.h"
@@ -214,8 +215,7 @@ ImageImpl *DisplayMtl::createImage(const egl::ImageState &state,
                                    EGLenum target,
                                    const egl::AttributeMap &attribs)
 {
-    UNIMPLEMENTED();
-    return nullptr;
+    return new ImageMtl(state, context);
 }
 
 rx::ContextImpl *DisplayMtl::createContext(const gl::State &state,
@@ -233,6 +233,22 @@ StreamProducerImpl *DisplayMtl::createStreamProducerD3DTexture(
 {
     UNIMPLEMENTED();
     return nullptr;
+}
+
+ExternalImageSiblingImpl *DisplayMtl::createExternalImageSibling(const gl::Context *context,
+                                                                 EGLenum target,
+                                                                 EGLClientBuffer buffer,
+                                                                 const egl::AttributeMap &attribs)
+{
+    switch (target)
+    {
+        case EGL_MTL_TEXTURE_MGL:
+            return new TextureImageSiblingMtl(buffer);
+
+        default:
+            UNREACHABLE();
+            return nullptr;
+    }
 }
 
 gl::Version DisplayMtl::getMaxSupportedESVersion() const
@@ -268,7 +284,12 @@ void DisplayMtl::generateExtensions(egl::DisplayExtensions *outExtensions) const
     outExtensions->fenceSync                    = true;
     outExtensions->waitSync                     = true;
     outExtensions->glColorspace                 = true;
+    outExtensions->mtlTextureClientBuffer       = true;
     outExtensions->deviceQuery                  = true;
+
+    // EGL_KHR_image
+    outExtensions->image     = true;
+    outExtensions->imageBase = true;
 }
 
 void DisplayMtl::generateCaps(egl::Caps *outCaps) const {}
@@ -374,6 +395,26 @@ bool DisplayMtl::isValidNativeWindow(EGLNativeWindowType window) const
 {
     NSObject *layer = (__bridge NSObject *)(window);
     return [layer isKindOfClass:[CALayer class]];
+}
+
+egl::Error DisplayMtl::validateImageClientBuffer(const gl::Context *context,
+                                                 EGLenum target,
+                                                 EGLClientBuffer clientBuffer,
+                                                 const egl::AttributeMap &attribs) const
+{
+    switch (target)
+    {
+        case EGL_MTL_TEXTURE_MGL:
+            if (!TextureImageSiblingMtl::ValidateClientBuffer(this, clientBuffer))
+            {
+                return egl::EglBadAttribute();
+            }
+            break;
+        default:
+            UNREACHABLE();
+            return egl::EglBadAttribute();
+    }
+    return egl::NoError();
 }
 
 std::string DisplayMtl::getRendererDescription() const
@@ -598,10 +639,13 @@ void DisplayMtl::initializeExtensions() const
     // Enable EXT_blend_minmax
     mNativeExtensions.blendMinMax = true;
 
-    mNativeExtensions.eglImage         = false;
+    mNativeExtensions.eglImage         = true;
     mNativeExtensions.eglImageExternal = false;
     // NOTE(hqle): Support GL_OES_EGL_image_external_essl3.
     mNativeExtensions.eglImageExternalEssl3 = false;
+
+    // MGL_EGL_image_cube
+    mNativeExtensions.eglImageCubeMGL = true;
 
     mNativeExtensions.memoryObject   = false;
     mNativeExtensions.memoryObjectFd = false;

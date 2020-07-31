@@ -2749,6 +2749,10 @@
 		0AFDDB91244C9DE1000B60B1 /* libglslang_tvos.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AF956F8244C7C8700F59740 /* libglslang_tvos.a */; };
 		0AFDDB92244C9DE1000B60B1 /* libjsoncpp_tvos.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AF956B5244C7BF300F59740 /* libjsoncpp_tvos.a */; };
 		0AFDDB93244C9DE1000B60B1 /* libspirv-cross_tvos.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AF956C6244C7C5100F59740 /* libspirv-cross_tvos.a */; };
+		0AFFDCB624D42F7F0015E16A /* ImageMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AFFDCB524D42F760015E16A /* ImageMtl.mm */; };
+		0AFFDCB724D42F820015E16A /* ImageMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AFFDCB524D42F760015E16A /* ImageMtl.mm */; };
+		0AFFDCB824D42F860015E16A /* ImageMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AFFDCB524D42F760015E16A /* ImageMtl.mm */; };
+		0AFFDCB924D42F880015E16A /* ImageMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AFFDCB524D42F760015E16A /* ImageMtl.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -5059,6 +5063,8 @@
 		0AF959B3244C7D5800F59740 /* sample_util_tvos.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = sample_util_tvos.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		0AF959EB244C7EE900F59740 /* simple_vertex_shader_tvos.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = simple_vertex_shader_tvos.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0AF959ED244C7FF800F59740 /* Info_tvos.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; name = Info_tvos.plist; path = samples/Info_tvos.plist; sourceTree = "<group>"; };
+		0AFFDCB424D42F760015E16A /* ImageMtl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ImageMtl.h; path = ../../src/libANGLE/renderer/metal/ImageMtl.h; sourceTree = "<group>"; };
+		0AFFDCB524D42F760015E16A /* ImageMtl.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = ImageMtl.mm; path = ../../src/libANGLE/renderer/metal/ImageMtl.mm; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -6089,6 +6095,8 @@
 				0A605609234655FF005CEA98 /* DisplayMtl.mm */,
 				0A6055D1234655FC005CEA98 /* FrameBufferMtl.h */,
 				0A605603234655FE005CEA98 /* FrameBufferMtl.mm */,
+				0AFFDCB424D42F760015E16A /* ImageMtl.h */,
+				0AFFDCB524D42F760015E16A /* ImageMtl.mm */,
 				0A605601234655FE005CEA98 /* mtl_glslang_utils.h */,
 				0A6055D5234655FC005CEA98 /* mtl_glslang_utils.mm */,
 				0A6055D0234655FC005CEA98 /* mtl_buffer_pool.h */,
@@ -10288,6 +10296,7 @@
 				0A60564923465667005CEA98 /* ContextMtl.mm in Sources */,
 				0A60564C23465667005CEA98 /* mtl_glslang_utils.mm in Sources */,
 				0A60564823465667005CEA98 /* CompilerMtl.mm in Sources */,
+				0AFFDCB624D42F7F0015E16A /* ImageMtl.mm in Sources */,
 				0A60565C23465667005CEA98 /* TextureMtl.mm in Sources */,
 				0A60565A23465667005CEA98 /* mtl_state_cache.mm in Sources */,
 				0A60565D23465667005CEA98 /* mtl_render_utils.mm in Sources */,
@@ -10514,6 +10523,7 @@
 				0A90F76724065B06005BA9A8 /* ContextMtl.mm in Sources */,
 				0A90F76824065B06005BA9A8 /* mtl_glslang_utils.mm in Sources */,
 				0A90F76924065B06005BA9A8 /* CompilerMtl.mm in Sources */,
+				0AFFDCB724D42F820015E16A /* ImageMtl.mm in Sources */,
 				0A90F76A24065B06005BA9A8 /* TextureMtl.mm in Sources */,
 				0A90F76B24065B06005BA9A8 /* mtl_state_cache.mm in Sources */,
 				0A90F76C24065B06005BA9A8 /* mtl_render_utils.mm in Sources */,
@@ -11677,6 +11687,7 @@
 				0AA2FFBE234727A400E0B98C /* ContextMtl.mm in Sources */,
 				0AA2FFBF234727A400E0B98C /* mtl_glslang_utils.mm in Sources */,
 				0AA2FFC0234727A400E0B98C /* CompilerMtl.mm in Sources */,
+				0AFFDCB924D42F880015E16A /* ImageMtl.mm in Sources */,
 				0AA2FFC1234727A400E0B98C /* TextureMtl.mm in Sources */,
 				0AA2FFC2234727A400E0B98C /* mtl_state_cache.mm in Sources */,
 				0AA2FFC4234727A400E0B98C /* mtl_render_utils.mm in Sources */,
@@ -11869,6 +11880,7 @@
 				0AF95740244C7CC300F59740 /* ContextMtl.mm in Sources */,
 				0AF95741244C7CC300F59740 /* mtl_glslang_utils.mm in Sources */,
 				0AF95742244C7CC300F59740 /* CompilerMtl.mm in Sources */,
+				0AFFDCB824D42F860015E16A /* ImageMtl.mm in Sources */,
 				0AF95743244C7CC300F59740 /* TextureMtl.mm in Sources */,
 				0AF95744244C7CC300F59740 /* mtl_state_cache.mm in Sources */,
 				0AF95745244C7CC300F59740 /* mtl_render_utils.mm in Sources */,

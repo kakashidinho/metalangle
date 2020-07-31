@@ -1534,7 +1534,8 @@ angle::Result Texture::setEGLImageTarget(Context *context,
                                          egl::Image *imageTarget)
 {
     ASSERT(type == mState.mType);
-    ASSERT(type == TextureType::_2D || type == TextureType::External);
+    ASSERT(type == TextureType::_2D || type == TextureType::External ||
+           type == TextureType::CubeMap);
 
     // Release from previous calls to eglBindTexImage, to avoid calling the Impl after
     ANGLE_TRY(releaseTexImageInternal(context));
@@ -1550,8 +1551,19 @@ angle::Result Texture::setEGLImageTarget(Context *context,
     auto initState = imageTarget->sourceInitState();
 
     mState.clearImageDescs();
-    mState.setImageDesc(NonCubeTextureTypeToTarget(type), 0,
-                        ImageDesc(size, imageTarget->getFormat(), initState));
+    if (type == TextureType::CubeMap)
+    {
+        for (int face = 0; face < 6; ++face)
+        {
+            mState.setImageDesc(FromGLenum<TextureTarget>(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face), 0,
+                                ImageDesc(size, imageTarget->getFormat(), initState));
+        }
+    }
+    else
+    {
+        mState.setImageDesc(NonCubeTextureTypeToTarget(type), 0,
+                            ImageDesc(size, imageTarget->getFormat(), initState));
+    }
     signalDirtyStorage(initState);
 
     return angle::Result::Continue;

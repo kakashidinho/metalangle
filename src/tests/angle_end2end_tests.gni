@@ -165,6 +165,7 @@ angle_end2end_tests_mac_sources = [
   "egl_tests/EGLIOSurfaceClientBufferTest.cpp",
   "test_utils/angle_test_instantiate_apple.mm",
   "test_utils/angle_test_instantiate_apple.h",
+  "gl_tests/ImageTestMetal.mm",
 ]
 angle_end2end_tests_win_sources = [
   "gl_tests/D3DImageFormatConversionTest.cpp",

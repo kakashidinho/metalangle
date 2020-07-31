@@ -20,6 +20,8 @@ _metal_backend_sources = [
   "DisplayMtl.mm",
   "FrameBufferMtl.h",
   "FrameBufferMtl.mm",
+  "ImageMtl.h",
+  "ImageMtl.mm",
   "ProgramMtl.h",
   "ProgramMtl.mm",
   "QueryMtl.h",

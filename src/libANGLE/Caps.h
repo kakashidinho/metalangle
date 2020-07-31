@@ -361,6 +361,9 @@ struct Extensions
     // GL_OES_EGL_image_external_essl3
     bool eglImageExternalEssl3 = false;
 
+    // GL_MGL_EGL_image_cube
+    bool eglImageCubeMGL = false;
+
     // GL_OES_EGL_sync
     bool eglSync = false;
 
@@ -907,6 +910,9 @@ struct DisplayExtensions
 
     // EGL_ANGLE_iosurface_client_buffer
     bool iosurfaceClientBuffer = false;
+
+    // EGL_mtl_texture_client_buffer
+    bool mtlTextureClientBuffer = false;
 
     // EGL_ANGLE_create_context_extensions_enabled
     bool createContextExtensionsEnabled = false;
