@@ -109,7 +109,7 @@ class DisplayMtl : public DisplayImpl
     mtl::RenderUtils &getUtils() { return mUtils; }
     mtl::StateCache &getStateCache() { return mStateCache; }
 
-    id<MTLLibrary> getDefaultShadersLib() const { return mDefaultShaders; }
+    id<MTLLibrary> getDefaultShadersLib();
 
     id<MTLDepthStencilState> getDepthStencilState(const mtl::DepthStencilDesc &desc)
     {

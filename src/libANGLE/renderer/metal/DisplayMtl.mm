@@ -79,7 +79,6 @@ angle::Result DisplayMtl::initializeImpl(egl::Display *display)
         initializeFeatures();
 
         ANGLE_TRY(mFormatTable.initialize(this));
-        ANGLE_TRY(initializeShaderLibrary());
 
         return mUtils.initialize();
     }
@@ -742,6 +741,18 @@ angle::Result DisplayMtl::initializeShaderLibrary()
     }
 
     return angle::Result::Continue;
+}
+
+id<MTLLibrary> DisplayMtl::getDefaultShadersLib()
+{
+    if (!mDefaultShaders)
+    {
+        if (initializeShaderLibrary() != angle::Result::Continue)
+        {
+            return nil;
+        }
+    }
+    return mDefaultShaders;
 }
 
 bool DisplayMtl::supportiOSGPUFamily(uint8_t iOSFamily) const
