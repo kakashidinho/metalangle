@@ -33,7 +33,8 @@ Dependencies
 
 Overview
 
-    This extension allows creating EGL surfaces from external metal/native OpenGL texture objects.
+    This extension allows creating EGL surfaces/images from external metal/native OpenGL texture
+    objects.
 
 New Types
 
@@ -49,6 +50,10 @@ New Tokens
 
         EGL_MTL_TEXTURE_MGL               0x3456
         EGL_GL_TEXTURE_MGL                0x3457
+
+    Accepted in the <target> parameter of eglCreateImageKHR:
+
+        EGL_MTL_TEXTURE_MGL               0x3456
 
     Accepted in the <attrib_list> parameter of eglCreatePbufferFromClientBuffer:
 
