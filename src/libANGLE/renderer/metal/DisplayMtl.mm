@@ -11,6 +11,7 @@
 #include "libANGLE/Context.h"
 #include "libANGLE/Display.h"
 #include "libANGLE/Surface.h"
+#include "libANGLE/renderer/DeviceImpl.h"
 #include "libANGLE/renderer/glslang_wrapper_utils.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
 #include "libANGLE/renderer/metal/SurfaceMtl.h"
@@ -43,6 +44,37 @@ DisplayImpl *CreateMetalDisplay(const egl::DisplayState &state)
     return new DisplayMtl(state);
 }
 
+// DeviceMTL implementation, implements DeviceImpl
+class DeviceMTL : public DeviceImpl
+{
+  public:
+    DeviceMTL() {}
+    ~DeviceMTL() override {}
+
+    egl::Error initialize() override { return egl::NoError(); }
+    egl::Error getAttribute(const egl::Display *display, EGLint attribute, void **outValue) override
+    {
+        DisplayMtl *displayImpl = mtl::GetImpl(display);
+
+        switch (attribute)
+        {
+            case EGL_MTL_DEVICE_ANGLE:
+                *outValue = displayImpl->getMetalDevice();
+                break;
+            default:
+                return egl::EglBadAttribute();
+        }
+
+        return egl::NoError();
+    }
+    EGLint getType() override { return 0; }
+    void generateExtensions(egl::DeviceExtensions *outExtensions) const override
+    {
+        outExtensions->deviceMTL = true;
+    }
+};
+
+// DisplayMtl implementation
 DisplayMtl::DisplayMtl(const egl::DisplayState &state)
     : DisplayImpl(state), mStateCache(mFeatures), mUtils(this)
 {}
@@ -125,8 +157,7 @@ std::string DisplayMtl::getVendorString() const
 
 DeviceImpl *DisplayMtl::createDevice()
 {
-    UNIMPLEMENTED();
-    return nullptr;
+    return new DeviceMTL();
 }
 
 egl::Error DisplayMtl::waitClient(const gl::Context *context)
@@ -237,6 +268,7 @@ void DisplayMtl::generateExtensions(egl::DisplayExtensions *outExtensions) const
     outExtensions->fenceSync                    = true;
     outExtensions->waitSync                     = true;
     outExtensions->glColorspace                 = true;
+    outExtensions->deviceQuery                  = true;
 }
 
 void DisplayMtl::generateCaps(egl::Caps *outCaps) const {}

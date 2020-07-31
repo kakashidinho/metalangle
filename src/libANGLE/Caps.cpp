@@ -1274,6 +1274,7 @@ std::vector<std::string> DeviceExtensions::getStrings() const
     //                   | Extension name                                 | Supported flag                | Output vector   |
     InsertExtensionString("EGL_ANGLE_device_d3d",                          deviceD3D,                      &extensionStrings);
     InsertExtensionString("EGL_ANGLE_device_cgl",                          deviceCGL,                      &extensionStrings);
+    InsertExtensionString("EGL_ANGLE_device_mtl",                          deviceMTL,                      &extensionStrings);
     // clang-format on
 
     return extensionStrings;
