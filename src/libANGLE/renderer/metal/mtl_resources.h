@@ -203,6 +203,7 @@ class Texture final : public Resource,
     uint32_t mipmapLevels() const;
     uint32_t arrayLength() const;
     uint32_t cubeFacesOrArrayLength() const;
+    uint32_t cubeFacesOrArrayLengthOrDepth() const;
 
     uint32_t width(uint32_t level = 0) const;
     uint32_t height(uint32_t level = 0) const;

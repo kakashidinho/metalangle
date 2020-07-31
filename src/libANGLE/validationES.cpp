@@ -3611,6 +3611,13 @@ bool ValidateEGLImageTargetTexture2DOES(const Context *context,
             }
             break;
 
+        case TextureType::CubeMap:
+            if (!context->getExtensions().eglImageCubeMGL)
+            {
+                context->validationError(GL_INVALID_ENUM, kEnumNotSupported);
+            }
+            break;
+
         default:
             context->validationError(GL_INVALID_ENUM, kInvalidTextureTarget);
             return false;

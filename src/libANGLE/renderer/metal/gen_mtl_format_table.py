@@ -45,6 +45,15 @@ namespace rx
 namespace mtl
 {{
 
+angle::FormatID Format::MetalToAngleFormatID(MTLPixelFormat formatMtl)
+{{
+    // Actual conversion
+    switch (formatMtl)
+    {{
+{mtl_pixel_format_switch}
+    }}
+}}
+
 void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 {{
     this->intendedFormatId = intendedFormatId_;
@@ -117,6 +126,10 @@ case_image_format_template2 = """        case angle::FormatID::{angle_format}:
             }}
             break;
 
+"""
+
+case_image_mtl_to_angle_template = """        case {mtl_format}:
+            return angle::FormatID::{angle_format};
 """
 
 case_vertex_format_template1 = """        case angle::FormatID::{angle_format}:
@@ -355,6 +368,36 @@ def gen_image_map_switch_string(image_table, angle_to_gl):
     return switch_data
 
 
+def gen_image_mtl_to_angle_switch_string(image_table):
+    angle_to_mtl = image_table["map"]
+    mac_specific_map = image_table["map_mac"]
+    ios_specific_map = image_table["map_ios"]
+
+    switch_data = ''
+
+    # Common case
+    for angle_format in sorted(angle_to_mtl.keys()):
+        switch_data += case_image_mtl_to_angle_template.format(
+            mtl_format=angle_to_mtl[angle_format], angle_format=angle_format)
+
+    # Mac specific
+    switch_data += "#if TARGET_OS_OSX || TARGET_OS_MACCATALYST\n"
+    for angle_format in sorted(mac_specific_map.keys()):
+        switch_data += case_image_mtl_to_angle_template.format(
+            mtl_format=mac_specific_map[angle_format], angle_format=angle_format)
+
+    # iOS specific
+    switch_data += "#elif TARGET_OS_IOS || TARGET_OS_TV // TARGET_OS_OSX || TARGET_OS_MACCATALYST\n"
+    for angle_format in sorted(ios_specific_map.keys()):
+        switch_data += case_image_mtl_to_angle_template.format(
+            mtl_format=ios_specific_map[angle_format], angle_format=angle_format)
+    switch_data += "#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST\n"
+
+    switch_data += "        default:\n"
+    switch_data += "            return angle::FormatID::NONE;\n"
+    return switch_data
+
+
 def gen_vertex_map_switch_case(angle_fmt, actual_angle_fmt, angle_to_mtl_map, override_packed_map):
     mtl_format = angle_to_mtl_map[actual_angle_fmt]
     copy_function, default_alpha, same_gl_type = get_vertex_copy_function_and_default_alpha(
@@ -413,7 +456,6 @@ def gen_vertex_map_switch_string(vertex_table):
     switch_data += "            this->actualSameGLType = false;"
     return switch_data
 
-
 def main():
     data_source_name = 'mtl_format_map.json'
     # auto_script parameters.
@@ -437,6 +479,7 @@ def main():
     map_vertex = map_json["vertex"]
 
     image_switch_data = gen_image_map_switch_string(map_image, angle_to_gl)
+    image_mtl_to_angle_switch_data = gen_image_mtl_to_angle_switch_string(map_image)
 
     vertex_switch_data = gen_vertex_map_switch_string(map_vertex)
 
@@ -445,6 +488,7 @@ def main():
         copyright_year=date.today().year,
         data_source_name=data_source_name,
         angle_image_format_switch=image_switch_data,
+        mtl_pixel_format_switch=image_mtl_to_angle_switch_data,
         angle_vertex_format_switch=vertex_switch_data)
     with open('mtl_format_table_autogen.mm', 'wt') as out_file:
         out_file.write(output_cpp)

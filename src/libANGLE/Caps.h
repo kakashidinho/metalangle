@@ -404,6 +404,9 @@ struct Extensions
     // GL_EXT_EGL_image_external_wrap_modes
     bool eglImageExternalWrapModesEXT = false;
 
+    // GL_MGL_EGL_image_cube
+    bool eglImageCubeMGL = false;
+
     // GL_OES_EGL_sync
     bool eglSyncOES = false;
 

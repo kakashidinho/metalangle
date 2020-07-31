@@ -509,6 +509,8 @@ TEST_P(ImageTest, ANGLEExtensionAvailability)
     ANGLE_SKIP_TEST_IF(IsOpenGLES() && IsAndroid());
     ANGLE_SKIP_TEST_IF(IsOpenGLES() && IsOzone());
 
+    ANGLE_SKIP_TEST_IF(IsMetal());
+
     if (IsD3D11() || IsD3D9())
     {
         EXPECT_TRUE(hasOESExt());
