@@ -23,6 +23,9 @@ typedef enum MGLDrawableColorFormat : int
     MGLDrawableColorFormatRGBA8888  = 32,
     MGLDrawableColorFormatSRGBA8888 = -32,
     MGLDrawableColorFormatRGB565    = 16,
+
+    MGLDrawableColorFormatRGBA16         = 64,
+    MGLDrawableColorFormatRGBA16BT2020PQ = 65,
 } MGLDrawableColorFormat;
 
 typedef enum MGLDrawableStencilFormat : int

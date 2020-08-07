@@ -237,6 +237,7 @@ void DisplayMtl::generateExtensions(egl::DisplayExtensions *outExtensions) const
     outExtensions->fenceSync                    = true;
     outExtensions->waitSync                     = true;
     outExtensions->glColorspace                 = true;
+    outExtensions->glColorspaceBT2020PQ         = true;
 }
 
 void DisplayMtl::generateCaps(egl::Caps *outCaps) const {}
@@ -300,17 +301,19 @@ egl::ConfigSet DisplayMtl::generateConfigs()
     config.colorComponentType = EGL_COLOR_COMPONENT_TYPE_FIXED_EXT;
 
     constexpr int samplesSupported[] = {0, 4};
+    constexpr int sizesSupported[] = {8, 16};
 
+    for (int size : sizesSupported)
     for (int samples : samplesSupported)
     {
         config.samples       = samples;
         config.sampleBuffers = (samples == 0) ? 0 : 1;
 
         // Buffer sizes
-        config.redSize    = 8;
-        config.greenSize  = 8;
-        config.blueSize   = 8;
-        config.alphaSize  = 8;
+        config.redSize    = size;
+        config.greenSize  = size;
+        config.blueSize   = size;
+        config.alphaSize  = size;
         config.bufferSize = config.redSize + config.greenSize + config.blueSize + config.alphaSize;
 
         // With DS

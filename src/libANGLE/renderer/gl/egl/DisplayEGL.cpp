@@ -149,6 +149,10 @@ void DisplayEGL::generateExtensions(egl::DisplayExtensions *outExtensions) const
             mEGL->hasExtension("EGL_EXT_gl_colorspace_scrgb_linear");
         outExtensions->glColorspaceDisplayP3Passthrough =
             mEGL->hasExtension("EGL_EXT_gl_colorspace_display_p3_passthrough");
+        outExtensions->glColorspaceBT2020 =
+            mEGL->hasExtension("EGL_EXT_gl_colorspace_bt2020_linear");
+        outExtensions->glColorspaceBT2020PQ =
+            mEGL->hasExtension("EGL_EXT_gl_colorspace_bt2020_pq");
     }
 
     outExtensions->imageNativeBuffer = mEGL->hasExtension("EGL_ANDROID_image_native_buffer");
