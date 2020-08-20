@@ -308,6 +308,11 @@ const ShCompileOptions SH_USE_OLD_REWRITE_STRUCT_SAMPLERS = UINT64_C(1) << 47;
 // when angle_BaseVertex is available.
 const ShCompileOptions SH_ADD_BASE_VERTEX_TO_VERTEX_ID = UINT64_C(1) << 48;
 
+// This flag adds linear depth range mapping to shader on Metal back-end. It is used when Metal's
+// auto MTLViewport's depth range mapping on old GPUs is simply a clamp instead of linear map. Thus,
+// an emulation in shader is needed.
+const ShCompileOptions SH_METAL_EMULATE_LINEAR_DEPTH_RANGE_MAP = UINT64_C(1) << 49;
+
 // Defines alternate strategies for implementing array index clamping.
 enum ShArrayIndexClampingStrategy
 {

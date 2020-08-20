@@ -43,6 +43,11 @@ std::shared_ptr<WaitableCompileEvent> ShaderMtl::compile(const gl::Context *cont
         compileOptions |= SH_INIT_OUTPUT_VARIABLES;
     }
 
+    if (contextMtl->getDisplay()->getFeatures().emulateDepthRangeMappingInShader.enabled)
+    {
+        compileOptions |= SH_METAL_EMULATE_LINEAR_DEPTH_RANGE_MAP;
+    }
+
     compileOptions |= SH_CLAMP_POINT_SIZE;
 
     return compileImpl(context, compilerInstance, mData.getSource(), compileOptions | options);

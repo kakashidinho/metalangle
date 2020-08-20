@@ -428,6 +428,10 @@ class ContextMtl : public ContextImpl, public mtl::Context
         int32_t emulatedInstanceID;
 
         float padding;
+
+        // Adjusted depth range used for depth range mapping emulation.
+        // x, y, z is near / far / diff
+        float adjustedDepthRange[4];
     };
 
     struct DefaultAttribute

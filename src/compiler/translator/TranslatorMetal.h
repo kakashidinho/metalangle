@@ -38,6 +38,9 @@ class TranslatorMetal : public TranslatorVulkan
     ANGLE_NO_DISCARD bool transformDepthBeforeCorrection(TIntermBlock *root,
                                                          const TVariable *driverUniforms) override;
 
+    // Do a linear map of depth from [0-1] to [znear-zfar]
+    ANGLE_NO_DISCARD bool linearMapDepth(TIntermBlock *root, const TVariable *driverUniforms);
+
     void createGraphicsDriverUniformAdditionFields(std::vector<TField *> *fieldsOut) override;
 
     ANGLE_NO_DISCARD bool insertSampleMaskWritingLogic(TIntermBlock *root,

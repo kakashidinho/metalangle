@@ -716,6 +716,7 @@ void DisplayMtl::initializeFeatures()
     mFeatures.allowInlineConstVertexData.enabled        = true;
     mFeatures.allowSeparatedDepthStencilBuffers.enabled = false;
     mFeatures.forceBufferGPUStorage.enabled             = false;
+    mFeatures.emulateDepthRangeMappingInShader.enabled  = true;
 
     ANGLE_FEATURE_CONDITION((&mFeatures), hasDepthAutoResolve, supportEitherGPUFamily(3, 2));
     ANGLE_FEATURE_CONDITION((&mFeatures), hasStencilAutoResolve, supportEitherGPUFamily(5, 2));
@@ -740,7 +741,8 @@ void DisplayMtl::initializeFeatures()
 
     if (ANGLE_APPLE_AVAILABLE_XCI(10.14, 13.0, 12.0))
     {
-        mFeatures.hasStencilOutput.enabled = true;
+        mFeatures.hasStencilOutput.enabled                 = true;
+        mFeatures.emulateDepthRangeMappingInShader.enabled = false;
     }
     if (ANGLE_APPLE_AVAILABLE_XCI(10.15, 13.0, 13.0))
     {
