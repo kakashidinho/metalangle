@@ -2381,36 +2381,35 @@ angle::Result MipmapUtils::generateMipmapCS(ContextMtl *contextMtl,
                                             const TextureRef &srcTexture,
                                             gl::TexLevelArray<mtl::TextureRef> *mipmapOutputViews)
 {
-    ComputeCommandEncoder *cmdEncoder = contextMtl->getComputeCommandEncoder();
-    ASSERT(cmdEncoder);
 
     MTLSize threadGroupSize;
-    uint32_t slices = 1;
+    uint32_t slices                           = 1;
+    id<MTLComputePipelineState> computePiline = nil;
     switch (srcTexture->textureType())
     {
         case MTLTextureType2D:
             ensure2DMipGeneratorPipelineInitialized(contextMtl);
-            cmdEncoder->setComputePipelineState(m2DMipGeneratorPipeline);
+            computePiline   = m2DMipGeneratorPipeline;
             threadGroupSize = MTLSizeMake(kGenerateMipThreadGroupSizePerDim,
                                           kGenerateMipThreadGroupSizePerDim, 1);
             break;
         case MTLTextureType2DArray:
             ensure2DArrayMipGeneratorPipelineInitialized(contextMtl);
-            cmdEncoder->setComputePipelineState(m2DArrayMipGeneratorPipeline);
+            computePiline   = m2DArrayMipGeneratorPipeline;
             slices          = srcTexture->arrayLength();
             threadGroupSize = MTLSizeMake(kGenerateMipThreadGroupSizePerDim,
                                           kGenerateMipThreadGroupSizePerDim, 1);
             break;
         case MTLTextureTypeCube:
             ensureCubeMipGeneratorPipelineInitialized(contextMtl);
-            cmdEncoder->setComputePipelineState(mCubeMipGeneratorPipeline);
+            computePiline   = mCubeMipGeneratorPipeline;
             slices          = 6;
             threadGroupSize = MTLSizeMake(kGenerateMipThreadGroupSizePerDim,
                                           kGenerateMipThreadGroupSizePerDim, 1);
             break;
         case MTLTextureType3D:
             ensure3DMipGeneratorPipelineInitialized(contextMtl);
-            cmdEncoder->setComputePipelineState(m3DMipGeneratorPipeline);
+            computePiline = m3DMipGeneratorPipeline;
             threadGroupSize =
                 MTLSizeMake(kGenerateMipThreadGroupSizePerDim, kGenerateMipThreadGroupSizePerDim,
                             kGenerateMipThreadGroupSizePerDim);
@@ -2418,6 +2417,20 @@ angle::Result MipmapUtils::generateMipmapCS(ContextMtl *contextMtl,
         default:
             UNREACHABLE();
     }
+
+    if (threadGroupSize.width * threadGroupSize.height * threadGroupSize.depth >
+        computePiline.maxTotalThreadsPerThreadgroup)
+    {
+        // HACK: use blit command encoder to generate mipmaps if it is not possible
+        // to use compute shader due to hardware limits.
+        BlitCommandEncoder *blitEncoder = contextMtl->getBlitCommandEncoder();
+        blitEncoder->generateMipmapsForTexture(srcTexture);
+        return angle::Result::Continue;
+    }
+
+    ComputeCommandEncoder *cmdEncoder = contextMtl->getComputeCommandEncoder();
+    ASSERT(cmdEncoder);
+    cmdEncoder->setComputePipelineState(computePiline);
 
     Generate3DMipmapUniform options;
     uint32_t maxMipsPerBatch = 4;
