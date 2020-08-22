@@ -15,8 +15,9 @@
 #include "compiler/translator/TranslatorMetal.h"
 
 #include "angle_gl.h"
+#include "common/apple_platform_utils.h"
 #include "common/utilities.h"
-#include "compiler/translator/OutputVulkanGLSLForMetal.h"
+#include "compiler/translator/OutputVulkanGLSL.h"
 #include "compiler/translator/StaticType.h"
 #include "compiler/translator/tree_ops/InitializeVariables.h"
 #include "compiler/translator/tree_util/BuiltIn.h"
@@ -41,6 +42,54 @@ constexpr ImmutableString kCoverageMaskField       = ImmutableString("coverageMa
 constexpr ImmutableString kEmuInstanceIDField      = ImmutableString("emulatedInstanceID");
 constexpr ImmutableString kAdjustedDepthRangeField = ImmutableString("adjustedDepthRange");
 constexpr ImmutableString kSampleMaskWriteFuncName = ImmutableString("ANGLEWriteSampleMask");
+
+// An AST traverser that removes invariant declaration for inputs that are not gl_Position
+// or if the runtime Metal version is < 2.1.
+class RemoveInvariantTraverser : public TIntermTraverser
+{
+  public:
+    RemoveInvariantTraverser() : TIntermTraverser(true, false, false) {}
+
+  private:
+    bool visitInvariantDeclaration(Visit visit, TIntermInvariantDeclaration *node) override
+    {
+        const TIntermSymbol *symbol = node->getSymbol();
+        if (!shoudRemoveInvariant(symbol->getType()))
+        {
+            return false;
+        }
+
+        TIntermSequence emptyReplacement;
+        mMultiReplacements.push_back(
+            NodeReplaceWithMultipleEntry(getParentNode()->getAsBlock(), node, emptyReplacement));
+        return false;
+    }
+    bool shoudRemoveInvariant(const TType &type)
+    {
+        if (type.getQualifier() != EvqPosition)
+        {
+            // Metal only supports invariant for gl_Position
+            return true;
+        }
+
+        if (ANGLE_APPLE_AVAILABLE_XCI(10.14, 13.0, 12))
+        {
+            return false;
+        }
+        else
+        {
+            // Metal 2.1 is not available, so we need to remove "invariant" keyword
+            return true;
+        }
+    }
+};
+
+ANGLE_NO_DISCARD bool VerifyInvariantDeclaration(TCompiler *compiler, TIntermNode *root)
+{
+    RemoveInvariantTraverser traverser;
+    root->traverse(&traverser);
+    return traverser.updateTree(compiler, root);
+}
 
 TIntermBinary *CreateDriverUniformRef(const TVariable *driverUniforms, const char *fieldName)
 {
@@ -163,6 +212,12 @@ bool TranslatorMetal::translate(TIntermBlock *root,
     const TVariable *driverUniforms = nullptr;
     if (!TranslatorVulkan::translateImpl(root, compileOptions, perfDiagnostics, &driverUniforms,
                                          &outputGLSL))
+    {
+        return false;
+    }
+
+    // Remove any unsupported invariant declaration.
+    if (!VerifyInvariantDeclaration(this, root))
     {
         return false;
     }

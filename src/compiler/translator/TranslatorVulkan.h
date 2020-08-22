@@ -34,7 +34,7 @@ class TranslatorVulkan : public TCompiler
     TIntermBinary *getDriverUniformDepthRangeReservedFieldRef(
         const TVariable *driverUniforms) const;
     // Subclass can call this method to transform the AST before writing the final output.
-    // See TranslatorMetal.cpp.
+    // See TranslatorMetal.mm.
     ANGLE_NO_DISCARD bool translateImpl(TIntermBlock *root,
                                         ShCompileOptions compileOptions,
                                         PerformanceDiagnostics *perfDiagnostics,
@@ -49,7 +49,7 @@ class TranslatorVulkan : public TCompiler
         return true;
     }
 
-    // Back-end specific fields to be added to driver uniform. See TranslatorMetal.cpp.
+    // Back-end specific fields to be added to driver uniform. See TranslatorMetal.mm.
     virtual void createGraphicsDriverUniformAdditionFields(std::vector<TField *> *fieldsOut) {}
 };
 
