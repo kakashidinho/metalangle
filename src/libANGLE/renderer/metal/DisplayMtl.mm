@@ -281,11 +281,16 @@ egl::Error DisplayMtl::makeCurrent(egl::Surface *drawSurface,
 void DisplayMtl::generateExtensions(egl::DisplayExtensions *outExtensions) const
 {
     outExtensions->flexibleSurfaceCompatibility = true;
-    outExtensions->fenceSync                    = true;
-    outExtensions->waitSync                     = true;
     outExtensions->glColorspace                 = true;
     outExtensions->mtlTextureClientBuffer       = true;
     outExtensions->deviceQuery                  = true;
+
+    if (ANGLE_APPLE_AVAILABLE_XCI(10.14, 13.0, 12.0))
+    {
+        // MTLSharedEvent is only available since Metal 2.1
+        outExtensions->fenceSync = true;
+        outExtensions->waitSync  = true;
+    }
 
     // EGL_KHR_image
     outExtensions->image     = true;
@@ -686,11 +691,16 @@ void DisplayMtl::initializeExtensions() const
     // GL_NV_pixel_buffer_object
     mNativeExtensions.pixelBufferObject = true;
 
-    // GL_NV_fence
-    mNativeExtensions.fence = true;
+    if (ANGLE_APPLE_AVAILABLE_XCI(10.14, 13.0, 12.0))
+    {
+        // MTLSharedEvent is only available since Metal 2.1
 
-    // GL_OES_EGL_sync
-    mNativeExtensions.eglSync = true;
+        // GL_NV_fence
+        mNativeExtensions.fence = true;
+
+        // GL_OES_EGL_sync
+        mNativeExtensions.eglSync = true;
+    }
 }
 
 void DisplayMtl::initializeTextureCaps() const
