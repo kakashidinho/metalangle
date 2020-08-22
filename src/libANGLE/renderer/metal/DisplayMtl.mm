@@ -720,9 +720,6 @@ void DisplayMtl::initializeExtensions() const
     // MGL_EGL_image_cube
     mNativeExtensions.eglImageCubeMGL = true;
 
-    // MGL_EGL_image_cube
-    mNativeExtensions.eglImageCubeMGL = true;
-
     mNativeExtensions.memoryObject   = false;
     mNativeExtensions.memoryObjectFd = false;
 
