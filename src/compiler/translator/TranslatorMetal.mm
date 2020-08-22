@@ -15,8 +15,9 @@
 #include "compiler/translator/TranslatorMetal.h"
 
 #include "angle_gl.h"
+#include "common/apple_platform_utils.h"
 #include "common/utilities.h"
-#include "compiler/translator/OutputVulkanGLSLForMetal.h"
+#include "compiler/translator/OutputVulkanGLSL.h"
 #include "compiler/translator/StaticType.h"
 #include "compiler/translator/tree_ops/InitializeVariables.h"
 #include "compiler/translator/tree_util/BuiltIn.h"
@@ -39,7 +40,61 @@ constexpr ImmutableString kCoverageMaskEnabledConstName =
     ImmutableString("ANGLECoverageMaskEnabled");
 constexpr ImmutableString kCoverageMaskField       = ImmutableString("coverageMask");
 constexpr ImmutableString kEmuInstanceIDField      = ImmutableString("emulatedInstanceID");
+constexpr ImmutableString kAdjustedDepthRangeField = ImmutableString("adjustedDepthRange");
 constexpr ImmutableString kSampleMaskWriteFuncName = ImmutableString("ANGLEWriteSampleMask");
+
+// An AST traverser that removes invariant declaration for inputs that are not gl_Position
+// or if the runtime Metal version is < 2.1.
+class RemoveInvariantTraverser : public TIntermTraverser
+{
+  public:
+    RemoveInvariantTraverser() : TIntermTraverser(true, false, false) {}
+
+  private:
+    bool visitGlobalQualifierDeclaration(Visit visit,
+                                         TIntermGlobalQualifierDeclaration *node) override
+    {
+        if (!node->isInvariant())
+        {
+            return false;
+        }
+        const TIntermSymbol *symbol = node->getSymbol();
+        if (!shoudRemoveInvariant(symbol->getType()))
+        {
+            return false;
+        }
+
+        TIntermSequence emptyReplacement;
+        mMultiReplacements.push_back(
+            NodeReplaceWithMultipleEntry(getParentNode()->getAsBlock(), node, emptyReplacement));
+        return false;
+    }
+    bool shoudRemoveInvariant(const TType &type)
+    {
+        if (type.getQualifier() != EvqPosition)
+        {
+            // Metal only supports invariant for gl_Position
+            return true;
+        }
+
+        if (ANGLE_APPLE_AVAILABLE_XCI(10.14, 13.0, 12))
+        {
+            return false;
+        }
+        else
+        {
+            // Metal 2.1 is not available, so we need to remove "invariant" keyword
+            return true;
+        }
+    }
+};
+
+ANGLE_NO_DISCARD bool VerifyInvariantDeclaration(TCompiler *compiler, TIntermNode *root)
+{
+    RemoveInvariantTraverser traverser;
+    root->traverse(&traverser);
+    return traverser.updateTree(compiler, root);
+}
 
 TIntermBinary *CreateDriverUniformRef(const TVariable *driverUniforms, const char *fieldName)
 {
@@ -170,6 +225,12 @@ bool TranslatorMetal::translate(TIntermBlock *root,
     // In metal backend, treats sampler2DRect as sampler2D.
     sink << "#define sampler2DRect sampler2D\n";
 
+    // Remove any unsupported invariant declaration.
+    if (!VerifyInvariantDeclaration(this, root))
+    {
+        return false;
+    }
+
     if (getShaderType() == GL_VERTEX_SHADER)
     {
         auto negViewportYScale = getDriverUniformNegViewportYScaleRef(driverUniforms);
@@ -186,6 +247,13 @@ bool TranslatorMetal::translate(TIntermBlock *root,
         // Append gl_Position.y correction to main
         if (!AppendVertexShaderPositionYCorrectionToMain(this, root, &getSymbolTable(),
                                                          negViewportYScale))
+        {
+            return false;
+        }
+
+        // Do depth range mapping emulation
+        if ((compileOptions & SH_METAL_EMULATE_LINEAR_DEPTH_RANGE_MAP) != 0 &&
+            !linearMapDepth(root, driverUniforms))
         {
             return false;
         }
@@ -258,6 +326,51 @@ bool TranslatorMetal::transformDepthBeforeCorrection(TIntermBlock *root,
     return RunAtTheEndOfShader(this, root, assignment, &getSymbolTable());
 }
 
+bool TranslatorMetal::linearMapDepth(TIntermBlock *root, const TVariable *driverUniforms)
+{
+    // Create a symbol reference to "gl_Position"
+    const TVariable *position  = BuiltInVariable::gl_Position();
+    TIntermSymbol *positionRef = new TIntermSymbol(position);
+
+    // Create a swizzle to "gl_Position.z"
+    TVector<int> swizzleOffsetZ = {2};
+    TIntermSwizzle *positionZ   = new TIntermSwizzle(positionRef, swizzleOffsetZ);
+
+    // Create a swizzle to "gl_Position.w"
+    TVector<int> swizzleOffsetW = {3};
+    TIntermSwizzle *positionW   = new TIntermSwizzle(positionRef, swizzleOffsetW);
+
+    // Create a ref to "adjustedDepthRange"
+    TIntermBinary *depthRange =
+        CreateDriverUniformRef(driverUniforms, kAdjustedDepthRangeField.data());
+
+    // Create a ref to "adjustedDepthRange.x"
+    TVector<int> swizzleOffsetX   = {0};
+    TIntermSwizzle *viewportZNear = new TIntermSwizzle(depthRange, swizzleOffsetX);
+    // Create a ref to "adjustedDepthRange.z"
+    TIntermSwizzle *viewportZDiff = new TIntermSwizzle(depthRange, swizzleOffsetZ);
+
+    // adjustedDepthRange.x * gl_Position.w
+    TIntermBinary *zNearMulW =
+        new TIntermBinary(EOpMul, viewportZNear->deepCopy(), positionW->deepCopy());
+
+    // Create the expression "gl_Position.z * (adjustedDepthRange.z)".
+    TIntermBinary *zScale = new TIntermBinary(EOpMul, positionZ->deepCopy(), viewportZDiff);
+
+    // Create the expression
+    // "gl_Position.z * adjustedDepthRange.z + adjustedDepthRange.x * gl_Position.w".
+    TIntermBinary *zMap = new TIntermBinary(EOpAdd, zScale, zNearMulW);
+
+    // Create the assignment
+    // "gl_Position.z = gl_Position.z * adjustedDepthRange.z + adjustedDepthRange.x  *
+    // gl_Position.w"
+    TIntermTyped *positionZLHS = positionZ->deepCopy();
+    TIntermBinary *assignment  = new TIntermBinary(TOperator::EOpAssign, positionZLHS, zMap);
+
+    // Append the assignment as a statement at the end of the shader.
+    return RunAtTheEndOfShader(this, root, assignment, &getSymbolTable());
+}
+
 void TranslatorMetal::createGraphicsDriverUniformAdditionFields(std::vector<TField *> *fieldsOut)
 {
     // Add coverage mask to driver uniform. Metal doesn't have built-in GL_SAMPLE_COVERAGE_VALUE
@@ -273,6 +386,12 @@ void TranslatorMetal::createGraphicsDriverUniformAdditionFields(std::vector<TFie
                                                 TSourceLoc(), SymbolType::AngleInternal);
         fieldsOut->push_back(emuInstanceIDField);
     }
+
+    // Adjusted depth range for linear mapping emulation.
+    // x, y, z = near, far, diff
+    TField *adjustedDepthRangeField = new TField(new TType(EbtFloat, 4), kAdjustedDepthRangeField,
+                                                 TSourceLoc(), SymbolType::AngleInternal);
+    fieldsOut->push_back(adjustedDepthRangeField);
 }
 
 // Add sample_mask writing to main, guarded by the specialization constant

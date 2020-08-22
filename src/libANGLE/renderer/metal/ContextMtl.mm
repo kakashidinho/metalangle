@@ -1520,6 +1520,13 @@ void ContextMtl::updateViewport(FramebufferMtl *framebufferMtl,
                                 float nearPlane,
                                 float farPlane)
 {
+    if (getDisplay()->getFeatures().emulateDepthRangeMappingInShader.enabled)
+    {
+        // Disable depth range in viewport, we do the mapping in shader itself.
+        nearPlane = 0;
+        farPlane  = 1;
+    }
+
     mViewport = mtl::GetViewport(viewport, framebufferMtl->getState().getDimensions().height,
                                  framebufferMtl->flipY(), nearPlane, farPlane);
     mDirtyBits.set(DIRTY_BIT_VIEWPORT);
@@ -1529,6 +1536,13 @@ void ContextMtl::updateViewport(FramebufferMtl *framebufferMtl,
 
 void ContextMtl::updateDepthRange(float nearPlane, float farPlane)
 {
+    if (getDisplay()->getFeatures().emulateDepthRangeMappingInShader.enabled)
+    {
+        // Disable depth range in viewport, we do the mapping in shader itself.
+        nearPlane = 0;
+        farPlane  = 1;
+    }
+
     if (NeedToInvertDepthRange(nearPlane, farPlane))
     {
         // We also need to invert the depth in shader later by using scale value stored in driver
@@ -1975,7 +1989,23 @@ angle::Result ContextMtl::handleDirtyDriverUniforms(const gl::Context *context)
     mDriverUniforms.depthRange[0] = depthRangeNear;
     mDriverUniforms.depthRange[1] = depthRangeFar;
     mDriverUniforms.depthRange[2] = depthRangeDiff;
-    mDriverUniforms.depthRange[3] = NeedToInvertDepthRange(depthRangeNear, depthRangeFar) ? -1 : 1;
+
+    if (NeedToInvertDepthRange(depthRangeNear, depthRangeFar))
+    {
+        mDriverUniforms.depthRange[3] = -1;
+
+        mDriverUniforms.adjustedDepthRange[0] = depthRangeFar;
+        mDriverUniforms.adjustedDepthRange[1] = depthRangeNear;
+        mDriverUniforms.adjustedDepthRange[2] = -depthRangeDiff;
+    }
+    else
+    {
+        mDriverUniforms.depthRange[3] = 1;
+
+        mDriverUniforms.adjustedDepthRange[0] = depthRangeNear;
+        mDriverUniforms.adjustedDepthRange[1] = depthRangeFar;
+        mDriverUniforms.adjustedDepthRange[2] = depthRangeDiff;
+    }
 
     // NOTE(hqle): preRotation is unused.
 

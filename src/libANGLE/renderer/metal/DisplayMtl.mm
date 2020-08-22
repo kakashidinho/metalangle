@@ -303,9 +303,15 @@ egl::Error DisplayMtl::makeCurrent(egl::Surface *drawSurface,
 void DisplayMtl::generateExtensions(egl::DisplayExtensions *outExtensions) const
 {
     outExtensions->flexibleSurfaceCompatibility = true;
-    outExtensions->fenceSync                    = true;
-    outExtensions->waitSync                     = true;
     outExtensions->glColorspace                 = true;
+
+    if (ANGLE_APPLE_AVAILABLE_XCI(10.14, 13.0, 12.0))
+    {
+        // MTLSharedEvent is only available since Metal 2.1
+        outExtensions->fenceSync = true;
+        outExtensions->waitSync  = true;
+    }
+
 #if defined(ANGLE_DISABLE_IOSURFACE)
     outExtensions->iosurfaceClientBuffer = false;
 #else
@@ -714,6 +720,9 @@ void DisplayMtl::initializeExtensions() const
     // MGL_EGL_image_cube
     mNativeExtensions.eglImageCubeMGL = true;
 
+    // MGL_EGL_image_cube
+    mNativeExtensions.eglImageCubeMGL = true;
+
     mNativeExtensions.memoryObject   = false;
     mNativeExtensions.memoryObjectFd = false;
 
@@ -753,11 +762,16 @@ void DisplayMtl::initializeExtensions() const
     // GL_NV_pixel_buffer_object
     mNativeExtensions.pixelBufferObjectNV = true;
 
-    // GL_NV_fence
-    mNativeExtensions.fenceNV = true;
-
-    // GL_OES_EGL_sync
-    mNativeExtensions.eglSyncOES = true;
+    if (ANGLE_APPLE_AVAILABLE_XCI(10.14, 13.0, 12.0))
+    {
+        // MTLSharedEvent is only available since Metal 2.1
+        
+        // GL_NV_fence
+        mNativeExtensions.fenceNV = true;
+        
+        // GL_OES_EGL_sync
+        mNativeExtensions.eglSyncOES = true;
+    }
 
     // GL_ANGLE_texture_rectangle
     mNativeExtensions.textureRectangle = true;
@@ -800,6 +814,7 @@ void DisplayMtl::initializeFeatures()
     mFeatures.allowInlineConstVertexData.enabled        = true;
     mFeatures.allowSeparatedDepthStencilBuffers.enabled = false;
     mFeatures.forceBufferGPUStorage.enabled             = false;
+    mFeatures.emulateDepthRangeMappingInShader.enabled  = true;
 
     ANGLE_FEATURE_CONDITION((&mFeatures), hasDepthAutoResolve, supportEitherGPUFamily(3, 2));
     ANGLE_FEATURE_CONDITION((&mFeatures), hasStencilAutoResolve, supportEitherGPUFamily(5, 2));
@@ -824,7 +839,8 @@ void DisplayMtl::initializeFeatures()
 
     if (ANGLE_APPLE_AVAILABLE_XCI(10.14, 13.0, 12.0))
     {
-        mFeatures.hasStencilOutput.enabled = true;
+        mFeatures.hasStencilOutput.enabled                 = true;
+        mFeatures.emulateDepthRangeMappingInShader.enabled = false;
     }
     if (ANGLE_APPLE_AVAILABLE_XCI(10.15, 13.0, 13.0))
     {

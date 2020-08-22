@@ -342,6 +342,11 @@ const ShCompileOptions SH_EARLY_FRAGMENT_TESTS_OPTIMIZATION = UINT64_C(1) << 55;
 // Allow compiler to insert Android pre-rotation code.
 const ShCompileOptions SH_ADD_PRE_ROTATION = UINT64_C(1) << 56;
 
+// This flag adds linear depth range mapping to shader on Metal back-end. It is used when Metal's
+// auto MTLViewport's depth range mapping on old GPUs is simply a clamp instead of linear map. Thus,
+// an emulation in shader is needed.
+const ShCompileOptions SH_METAL_EMULATE_LINEAR_DEPTH_RANGE_MAP = UINT64_C(1) << 57;
+
 // Defines alternate strategies for implementing array index clamping.
 enum ShArrayIndexClampingStrategy
 {
