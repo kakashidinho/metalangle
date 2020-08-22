@@ -518,16 +518,42 @@ bool FramebufferMtl::checkStatus(const gl::Context *context) const
         return false;
     }
 
-    if (mState.getStencilAttachment() &&
-        mState.getStencilAttachment()->getFormat().info->depthBits &&
-        mState.getStencilAttachment()->getFormat().info->stencilBits &&
-        mState.hasSeparateDepthAndStencilAttachments())
+    if (mState.getDepthAttachment() && mState.getDepthAttachment()->getFormat().info->depthBits &&
+        mState.getDepthAttachment()->getFormat().info->stencilBits)
     {
-        // If stencil attachment has depth & stencil bits, it must refer to the same texture
-        // as depth attachment.
-        return false;
+        return checkPackedDepthStencilAttachment();
     }
 
+    if (mState.getStencilAttachment() &&
+        mState.getStencilAttachment()->getFormat().info->depthBits &&
+        mState.getStencilAttachment()->getFormat().info->stencilBits)
+    {
+        return checkPackedDepthStencilAttachment();
+    }
+
+    return true;
+}
+
+bool FramebufferMtl::checkPackedDepthStencilAttachment() const
+{
+    if (ANGLE_APPLE_AVAILABLE_XCI(10.14, 13.0, 12.0))
+    {
+        // If depth/stencil attachment has depth & stencil bits, then depth & stencil must not have
+        // separate attachment. i.e. They must be the same texture or one of them has no attachement.
+        if (mState.hasSeparateDepthAndStencilAttachments())
+        {
+            return false;
+        }
+    }
+    else
+    {
+        // Metal 2.0 and below doesn't allow packed depth stencil texture to be attached only as
+        // depth or stencil buffer. i.e. None of the depth & stencil attachment can be null.
+        if (!mState.getDepthStencilAttachment())
+        {
+            return false;
+        }
+    }
     return true;
 }
 
