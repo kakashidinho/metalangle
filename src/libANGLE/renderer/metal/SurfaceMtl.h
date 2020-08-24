@@ -81,13 +81,6 @@ class SurfaceMtl : public SurfaceImpl
     angle::Result swapImpl(const gl::Context *context);
     angle::Result obtainNextDrawable(const gl::Context *context);
     angle::Result ensureTexturesSizeCorrect(const gl::Context *context);
-    angle::Result createTexture(const gl::Context *context,
-                                const mtl::Format &format,
-                                uint32_t width,
-                                uint32_t height,
-                                uint32_t samples,
-                                bool renderTargetOnly,
-                                mtl::TextureRef *textureOut);
 
     CGSize calcExpectedDrawableSize() const;
     // Check if metal layer has been resized.

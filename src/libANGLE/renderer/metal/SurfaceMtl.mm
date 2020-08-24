@@ -47,6 +47,34 @@ void CopyTextureNoScale(ContextMtl *contextMtl,
     contextMtl->endEncoding(true);
 }
 
+angle::Result CreateOrResizeTexture(const gl::Context *context,
+                                    const mtl::Format &format,
+                                    uint32_t width,
+                                    uint32_t height,
+                                    uint32_t samples,
+                                    bool renderTargetOnly,
+                                    mtl::TextureRef *textureOut)
+{
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+    if (*textureOut)
+    {
+        ANGLE_TRY((*textureOut)->resize(contextMtl, width, height));
+    }
+    else if (samples > 1)
+    {
+        ANGLE_TRY(mtl::Texture::Make2DMSTexture(contextMtl, format, width, height, samples,
+                                                /** renderTargetOnly */ renderTargetOnly,
+                                                /** allowFormatView */ false, textureOut));
+    }
+    else
+    {
+        ANGLE_TRY(mtl::Texture::Make2DTexture(contextMtl, format, width, height, 1,
+                                              /** renderTargetOnly */ renderTargetOnly,
+                                              /** allowFormatView */ false, textureOut));
+    }
+    return angle::Result::Continue;
+}
+
 void InitBlitParams(const mtl::TextureRef &src,
                     const mtl::TextureRef &dst,
                     mtl::BlitParams *paramsOut)
@@ -488,9 +516,9 @@ angle::Result SurfaceMtl::ensureTexturesSizeCorrect(const gl::Context *context)
         {
             mAutoResolveMSColorTexture =
                 contextMtl->getDisplay()->getFeatures().allowMultisampleStoreAndResolve.enabled;
-            ANGLE_TRY(createTexture(context, mColorFormat, size.width, size.height, mSamples,
-                                    /** renderTargetOnly */ mAutoResolveMSColorTexture,
-                                    &mMSColorTexture));
+            ANGLE_TRY(CreateOrResizeTexture(
+                context, mColorFormat, size.width, size.height, mSamples,
+                /** renderTargetOnly */ mAutoResolveMSColorTexture, &mMSColorTexture));
 
             if (mAutoResolveMSColorTexture)
             {
@@ -505,8 +533,8 @@ angle::Result SurfaceMtl::ensureTexturesSizeCorrect(const gl::Context *context)
     }
     else if (mRetainBuffer && (!mRetainedColorTexture || mRetainedColorTexture->size() != size))
     {
-        ANGLE_TRY(createTexture(context, mColorFormat, size.width, size.height, 1,
-                                /** renderTargetOnly */ true, &mRetainedColorTexture));
+        ANGLE_TRY(CreateOrResizeTexture(context, mColorFormat, size.width, size.height, 1,
+                                        /** renderTargetOnly */ true, &mRetainedColorTexture));
 
         // All drawing will be drawn to this texture instead of the main one.
         mColorRenderTarget.setTexture(mRetainedColorTexture);
@@ -514,8 +542,8 @@ angle::Result SurfaceMtl::ensureTexturesSizeCorrect(const gl::Context *context)
 
     if (mDepthFormat.valid() && (!mDepthTexture || mDepthTexture->size() != size))
     {
-        ANGLE_TRY(createTexture(context, mDepthFormat, size.width, size.height, mSamples,
-                                /** renderTargetOnly */ true, &mDepthTexture));
+        ANGLE_TRY(CreateOrResizeTexture(context, mDepthFormat, size.width, size.height, mSamples,
+                                        /** renderTargetOnly */ true, &mDepthTexture));
 
         mDepthRenderTarget.set(mDepthTexture, 0, 0, mDepthFormat);
     }
@@ -528,37 +556,14 @@ angle::Result SurfaceMtl::ensureTexturesSizeCorrect(const gl::Context *context)
         }
         else
         {
-            ANGLE_TRY(createTexture(context, mStencilFormat, size.width, size.height, mSamples,
-                                    /** renderTargetOnly */ true, &mStencilTexture));
+            ANGLE_TRY(CreateOrResizeTexture(context, mStencilFormat, size.width, size.height,
+                                            mSamples,
+                                            /** renderTargetOnly */ true, &mStencilTexture));
         }
 
         mStencilRenderTarget.set(mStencilTexture, 0, 0, mStencilFormat);
     }
 
-    return angle::Result::Continue;
-}
-
-angle::Result SurfaceMtl::createTexture(const gl::Context *context,
-                                        const mtl::Format &format,
-                                        uint32_t width,
-                                        uint32_t height,
-                                        uint32_t samples,
-                                        bool renderTargetOnly,
-                                        mtl::TextureRef *textureOut)
-{
-    ContextMtl *contextMtl = mtl::GetImpl(context);
-    if (samples > 1)
-    {
-        ANGLE_TRY(mtl::Texture::Make2DMSTexture(contextMtl, format, width, height, samples,
-                                                /** renderTargetOnly */ renderTargetOnly,
-                                                /** allowFormatView */ false, textureOut));
-    }
-    else
-    {
-        ANGLE_TRY(mtl::Texture::Make2DTexture(contextMtl, format, width, height, 1,
-                                              /** renderTargetOnly */ renderTargetOnly,
-                                              /** allowFormatView */ false, textureOut));
-    }
     return angle::Result::Continue;
 }
 

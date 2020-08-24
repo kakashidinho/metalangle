@@ -678,11 +678,6 @@ mtl::RenderCommandEncoder *FramebufferMtl::ensureRenderPassStarted(const gl::Con
 {
     ContextMtl *contextMtl = mtl::GetImpl(context);
 
-    if (renderPassHasStarted(contextMtl))
-    {
-        return contextMtl->getRenderCommandEncoder();
-    }
-
     if (mBackbuffer)
     {
         // Backbuffer might obtain new drawable, which means it might change the
