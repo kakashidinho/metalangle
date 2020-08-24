@@ -563,6 +563,8 @@ angle::Result FramebufferMtl::syncState(const gl::Context *context,
     ContextMtl *contextMtl = mtl::GetImpl(context);
     ASSERT(dirtyBits.any());
     bool mustNotifyContext = false;
+    // Cache old mRenderPassDesc before update*RenderTarget() invalidate it.
+    mtl::RenderPassDesc oldRenderPassDesc = mRenderPassDesc;
     for (size_t dirtyBit : dirtyBits)
     {
         switch (dirtyBit)
@@ -605,8 +607,6 @@ angle::Result FramebufferMtl::syncState(const gl::Context *context,
             }
         }
     }
-
-    auto oldRenderPassDesc = mRenderPassDesc;
 
     ANGLE_TRY(prepareRenderPass(context, &mRenderPassDesc));
     bool renderPassChanged = !oldRenderPassDesc.equalIgnoreLoadStoreOptions(mRenderPassDesc);
