@@ -680,6 +680,15 @@ size_t RenderPipelineDesc::hash() const
     return angle::ComputeGenericHash(*this);
 }
 
+// RenderPassAttachmentTextureTargetDesc implementation
+void RenderPassAttachmentTextureTargetDesc::reset()
+{
+    targetTexture.reset();
+    targetImplicitMSTexture.reset();
+    targetLevel        = 0;
+    targetSliceOrDepth = 0;
+}
+
 // RenderPassDesc implementation
 RenderPassAttachmentDesc::RenderPassAttachmentDesc()
 {
@@ -688,7 +697,8 @@ RenderPassAttachmentDesc::RenderPassAttachmentDesc()
 
 void RenderPassAttachmentDesc::reset()
 {
-    renderTarget       = nullptr;
+    RenderPassAttachmentTextureTargetDesc::reset();
+
     loadAction         = MTLLoadActionLoad;
     storeAction        = MTLStoreActionStore;
     storeActionOptions = MTLStoreActionOptionNone;
@@ -697,9 +707,8 @@ void RenderPassAttachmentDesc::reset()
 bool RenderPassAttachmentDesc::equalIgnoreLoadStoreOptions(
     const RenderPassAttachmentDesc &other) const
 {
-    return renderTarget == other.renderTarget ||
-           (texture() == other.texture() && implicitMSTexture() == other.implicitMSTexture() &&
-            level() == other.level() && sliceOrDepth() == other.sliceOrDepth());
+    return texture() == other.texture() && implicitMSTexture() == other.implicitMSTexture() &&
+           level() == other.level() && sliceOrDepth() == other.sliceOrDepth();
 }
 
 bool RenderPassAttachmentDesc::operator==(const RenderPassAttachmentDesc &other) const

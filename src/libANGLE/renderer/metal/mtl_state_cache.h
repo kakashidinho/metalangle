@@ -269,25 +269,30 @@ struct alignas(4) RenderPipelineDesc
 
 struct RenderPassAttachmentTextureTargetDesc
 {
-    TextureRef getTextureRef() const { return texture.lock(); }
-    TextureRef getImplicitMSTextureRef() const { return implicitMSTexture.lock(); }
-    bool hasImplicitMSTexture() const { return !implicitMSTexture.expired(); }
-    uint32_t getRenderSamples() const
+    // Set default values
+    void reset();
+
+    TextureRef texture() const { return targetTexture.lock(); }
+    TextureRef implicitMSTexture() const { return targetImplicitMSTexture.lock(); }
+    bool hasImplicitMSTexture() const { return !targetImplicitMSTexture.expired(); }
+    uint32_t renderSamples() const
     {
-        TextureRef tex   = getTextureRef();
-        TextureRef msTex = getImplicitMSTextureRef();
+        TextureRef tex   = texture();
+        TextureRef msTex = implicitMSTexture();
         return msTex ? msTex->samples() : (tex ? tex->samples() : 1);
     }
+    ANGLE_INLINE uint32_t level() const { return targetLevel; }
+    ANGLE_INLINE uint32_t sliceOrDepth() const { return targetSliceOrDepth; }
 
-    TextureWeakRef texture;
+    TextureWeakRef targetTexture;
     // Implicit multisample texture that will be rendered into and discarded at the end of
     // a render pass. Its result will be resolved into normal texture above.
-    TextureWeakRef implicitMSTexture;
-    uint32_t level        = 0;
-    uint32_t sliceOrDepth = 0;
+    TextureWeakRef targetImplicitMSTexture;
+    uint32_t targetLevel        = 0;
+    uint32_t targetSliceOrDepth = 0;
 };
 
-struct RenderPassAttachmentDesc
+struct RenderPassAttachmentDesc : public RenderPassAttachmentTextureTargetDesc
 {
     RenderPassAttachmentDesc();
     // Set default values
@@ -296,30 +301,6 @@ struct RenderPassAttachmentDesc
     bool equalIgnoreLoadStoreOptions(const RenderPassAttachmentDesc &other) const;
     bool operator==(const RenderPassAttachmentDesc &other) const;
 
-    ANGLE_INLINE TextureRef texture() const
-    {
-        return renderTarget ? renderTarget->getTextureRef() : nullptr;
-    }
-    ANGLE_INLINE TextureRef implicitMSTexture() const
-    {
-        return renderTarget ? renderTarget->getImplicitMSTextureRef() : nullptr;
-    }
-    ANGLE_INLINE bool hasImplicitMSTexture() const
-    {
-        return renderTarget ? renderTarget->hasImplicitMSTexture() : false;
-    }
-    ANGLE_INLINE uint32_t renderSamples() const
-    {
-        return renderTarget ? renderTarget->getRenderSamples() : 1;
-    }
-    ANGLE_INLINE uint32_t level() const { return renderTarget ? renderTarget->level : 0; }
-    ANGLE_INLINE uint32_t sliceOrDepth() const
-    {
-        return renderTarget ? renderTarget->sliceOrDepth : 0;
-    }
-
-    // This is shared pointer to avoid crashing when texture deleted after bound to a frame buffer.
-    std::shared_ptr<RenderPassAttachmentTextureTargetDesc> renderTarget;
     MTLLoadAction loadAction;
     MTLStoreAction storeAction;
     MTLStoreActionOptions storeActionOptions;
