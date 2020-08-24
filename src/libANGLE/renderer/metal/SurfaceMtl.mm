@@ -1254,6 +1254,7 @@ ExternalTextureSurfaceMtl::ExternalTextureSurfaceMtl(DisplayMtl *display,
     : OffscreenSurfaceMtl(display, state, attribs)
 {
     mColorTexture = mtl::Texture::MakeFromMetal((__bridge id<MTLTexture>)(buffer));
+    mSize         = mColorTexture->size();
 
     EGLAttrib internalFormat = attribs.get(EGL_TEXTURE_INTERNAL_FORMAT_ANGLE);
     EGLAttrib type           = attribs.get(EGL_TEXTURE_TYPE_ANGLE);
