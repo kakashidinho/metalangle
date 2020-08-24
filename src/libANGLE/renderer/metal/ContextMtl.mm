@@ -1671,9 +1671,7 @@ void ContextMtl::onBackbufferResized(const gl::Context *context, WindowSurfaceMt
         return;
     }
 
-    updateViewport(framebuffer, glState.getViewport(), glState.getNearPlane(),
-                   glState.getFarPlane());
-    updateScissor(glState);
+    onDrawFrameBufferChangedState(context, framebuffer, true);
 }
 
 angle::Result ContextMtl::onOcclusionQueryBegan(const gl::Context *context, QueryMtl *query)

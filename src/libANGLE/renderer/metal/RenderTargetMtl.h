@@ -48,21 +48,20 @@ class RenderTargetMtl final : public FramebufferAttachmentRenderTarget
     void setImplicitMSTexture(const mtl::TextureRef &implicitMSTexture);
     void reset();
 
-    mtl::TextureRef getTexture() const { return mTextureRenderTargetInfo->getTextureRef(); }
+    mtl::TextureRef getTexture() const { return mTextureRenderTargetInfo.texture(); }
     mtl::TextureRef getImplicitMSTexture() const
     {
-        return mTextureRenderTargetInfo->getImplicitMSTextureRef();
+        return mTextureRenderTargetInfo.implicitMSTexture();
     }
-    uint32_t getLevelIndex() const { return mTextureRenderTargetInfo->level; }
-    uint32_t getLayerIndex() const { return mTextureRenderTargetInfo->sliceOrDepth; }
-    uint32_t getRenderSamples() const { return mTextureRenderTargetInfo->getRenderSamples(); }
+    uint32_t getLevelIndex() const { return mTextureRenderTargetInfo.level(); }
+    uint32_t getLayerIndex() const { return mTextureRenderTargetInfo.sliceOrDepth(); }
+    uint32_t getRenderSamples() const { return mTextureRenderTargetInfo.renderSamples(); }
     const mtl::Format *getFormat() const { return mFormat; }
 
     void toRenderPassAttachmentDesc(mtl::RenderPassAttachmentDesc *rpaDescOut) const;
 
   private:
-    // This is shared pointer to avoid crashing when texture deleted after bound to a frame buffer.
-    std::shared_ptr<mtl::RenderPassAttachmentTextureTargetDesc> mTextureRenderTargetInfo;
+    mtl::RenderPassAttachmentTextureTargetDesc mTextureRenderTargetInfo;
     const mtl::Format *mFormat = nullptr;
 };
 }  // namespace rx

@@ -703,6 +703,16 @@ size_t RenderPipelineDesc::hash() const
     return angle::ComputeGenericHash(*this);
 }
 
+// RenderPassAttachmentTextureTargetDesc implementation
+void RenderPassAttachmentTextureTargetDesc::reset()
+{
+    targetTexture.reset();
+    targetImplicitMSTexture.reset();
+    targetLevel        = 0;
+    targetSliceOrDepth = 0;
+    targetBlendable    = false;
+}
+
 // RenderPassDesc implementation
 RenderPassAttachmentDesc::RenderPassAttachmentDesc()
 {
@@ -711,7 +721,8 @@ RenderPassAttachmentDesc::RenderPassAttachmentDesc()
 
 void RenderPassAttachmentDesc::reset()
 {
-    renderTarget       = nullptr;
+    RenderPassAttachmentTextureTargetDesc::reset();
+
     loadAction         = MTLLoadActionLoad;
     storeAction        = MTLStoreActionStore;
     storeActionOptions = MTLStoreActionOptionNone;
@@ -720,9 +731,8 @@ void RenderPassAttachmentDesc::reset()
 bool RenderPassAttachmentDesc::equalIgnoreLoadStoreOptions(
     const RenderPassAttachmentDesc &other) const
 {
-    return renderTarget == other.renderTarget ||
-           (texture() == other.texture() && implicitMSTexture() == other.implicitMSTexture() &&
-            level() == other.level() && sliceOrDepth() == other.sliceOrDepth());
+    return texture() == other.texture() && implicitMSTexture() == other.implicitMSTexture() &&
+           level() == other.level() && sliceOrDepth() == other.sliceOrDepth();
 }
 
 bool RenderPassAttachmentDesc::operator==(const RenderPassAttachmentDesc &other) const
@@ -760,20 +770,14 @@ void RenderPassDesc::populateRenderPipelineOutputDesc(const BlendDesc &blendStat
     for (uint32_t i = 0; i < this->numColorAttachments; ++i)
     {
         const RenderPassAttachmentDesc &renderPassColorAttachment = this->colorAttachments[i];
-        const RenderPassAttachmentTextureTargetDesc *rttDesc =
-            renderPassColorAttachment.renderTarget.get();
 
-        TextureRef texture;
-        if (rttDesc)
-        {
-            texture = rttDesc->getTextureRef();
-        }
+        TextureRef texture = renderPassColorAttachment.texture();
 
         if (texture)
         {
             // Copy parameters from blend state
             outputDescriptor.colorAttachments[i].update(blendState);
-            if (!rttDesc->blendable)
+            if (!renderPassColorAttachment.blendable())
             {
                 // Disable blending if the attachment's render target doesn't support blending.
                 outputDescriptor.colorAttachments[i].blendingEnabled = false;

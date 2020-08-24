@@ -545,6 +545,8 @@ angle::Result FramebufferMtl::syncState(const gl::Context *context,
     ContextMtl *contextMtl = mtl::GetImpl(context);
     bool mustNotifyContext = false;
     bool attachmentChanged = false;
+    // Cache old mRenderPassDesc before update*RenderTarget() invalidate it.
+    mtl::RenderPassDesc oldRenderPassDesc = mRenderPassDesc;
     for (size_t dirtyBit : dirtyBits)
     {
         switch (dirtyBit)
@@ -590,8 +592,6 @@ angle::Result FramebufferMtl::syncState(const gl::Context *context,
             }
         }
     }
-
-    auto oldRenderPassDesc = mRenderPassDesc;
 
     ANGLE_TRY(prepareRenderPass(context, &mRenderPassDesc));
     bool renderPassChanged = !oldRenderPassDesc.equalIgnoreLoadStoreOptions(mRenderPassDesc);
@@ -672,11 +672,6 @@ mtl::RenderCommandEncoder *FramebufferMtl::ensureRenderPassStarted(const gl::Con
                                                                    const mtl::RenderPassDesc &desc)
 {
     ContextMtl *contextMtl = mtl::GetImpl(context);
-
-    if (renderPassHasStarted(contextMtl))
-    {
-        return contextMtl->getRenderCommandEncoder();
-    }
 
     if (mBackbuffer)
     {
@@ -1253,8 +1248,8 @@ angle::Result FramebufferMtl::clearImpl(const gl::Context *context,
         return angle::Result::Continue;
     }
 
-    MTLColorWriteMask colorMask = contextMtl->getClearColorMask();
-    uint32_t stencilMask        = contextMtl->getStencilMask();
+    clearOpts.clearColorMask = contextMtl->getClearColorMask();
+    uint32_t stencilMask     = contextMtl->getStencilMask();
     if (!contextMtl->getDepthMask())
     {
         // Disable depth clearing, since depth write is disable
@@ -1265,7 +1260,7 @@ angle::Result FramebufferMtl::clearImpl(const gl::Context *context,
     clearOpts.enabledBuffers = clearColorBuffers;
 
     if (clearOpts.clearArea == renderArea &&
-        (!clearOpts.clearColor.valid() || colorMask == MTLColorWriteMaskAll) &&
+        (!clearOpts.clearColor.valid() || clearOpts.clearColorMask == MTLColorWriteMaskAll) &&
         (!clearOpts.clearStencil.valid() ||
          (stencilMask & mtl::kStencilMaskAll) == mtl::kStencilMaskAll))
     {
