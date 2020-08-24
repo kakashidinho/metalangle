@@ -38,6 +38,8 @@ struct ClearRectParams
     Optional<float> clearDepth;
     Optional<uint32_t> clearStencil;
 
+    MTLColorWriteMask clearColorMask = MTLColorWriteMaskAll;
+
     const mtl::Format *colorFormat = nullptr;
     gl::Extents dstTextureSize;
 
