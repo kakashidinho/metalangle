@@ -77,8 +77,7 @@ void Throw(NSString *msg)
 
 - (MGLLayer *)glLayer
 {
-    _glLayer = static_cast<MGLLayer *>(self.layer);
-    return _glLayer;
+    return static_cast<MGLLayer *>(self.layer);
 }
 
 - (void)setContext:(MGLContext *)context
