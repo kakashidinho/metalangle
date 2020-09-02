@@ -411,8 +411,14 @@ class ContextMtl : public ContextImpl, public mtl::Context
         float viewportYScale;
         float negViewportYScale;
 
+        // 32 bits for 32 clip distances
+        uint32_t enabledClipDistances;
+
         // NOTE(hqle): Transform feedsback is not supported yet.
         uint32_t xfbActiveUnpaused;
+        uint32_t xfbVerticesPerDraw;
+        // NOTE: Explicit padding. Fill in with useful data when needed in the future.
+        int32_t padding[2];
 
         int32_t xfbBufferOffsets[4];
         uint32_t acbBufferOffsets[4];
@@ -420,14 +426,11 @@ class ContextMtl : public ContextImpl, public mtl::Context
         // We'll use x, y, z, w for near / far / diff / zscale respectively.
         float depthRange[4];
 
-        // 32 bits for 32 clip distances
-        uint32_t enabledClipDistances;
-
         uint32_t coverageMask;
 
         int32_t emulatedInstanceID;
 
-        float padding;
+        float padding2[2];
 
         // Adjusted depth range used for depth range mapping emulation.
         // x, y, z is near / far / diff

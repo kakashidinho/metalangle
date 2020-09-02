@@ -54,7 +54,14 @@ struct GraphicsDriverUniforms
     float halfRenderAreaHeight;
     float viewportYScale;
     float negViewportYScale;
+
+    // 32 bits for 32 clip planes
+    uint32_t enabledClipPlanes;
+
     uint32_t xfbActiveUnpaused;
+    uint32_t xfbVerticesPerDraw;
+    // NOTE: Explicit padding. Fill in with useful data when needed in the future.
+    std::array<int32_t, 2> padding;
 
     std::array<int32_t, 4> xfbBufferOffsets;
 
@@ -67,11 +74,6 @@ struct GraphicsDriverUniforms
 
     // We'll use x, y, z for near / far / diff respectively.
     std::array<float, 4> depthRange;
-
-    // 32 bits for 32 clip planes
-    uint32_t enabledClipPlanes;
-
-    float padding[3];
 };
 
 struct ComputeDriverUniforms
@@ -519,6 +521,7 @@ ContextVk::ContextVk(const gl::State &state, gl::ErrorSet *errorSet, RendererVk 
       mLastIndexBufferOffset(0),
       mCurrentDrawElementsType(gl::DrawElementsType::InvalidEnum),
       mXfbBaseVertex(0),
+      mXfbVertexCountPerInstance(0),
       mClearColorMask(kAllColorChannelsMask),
       mFlipYForCurrentSurface(false),
       mIsAnyHostVisibleBufferWritten(false),
@@ -800,7 +803,8 @@ angle::Result ContextVk::setupDraw(const gl::Context *context,
     if (mState.isTransformFeedbackActiveUnpaused())
     {
         ASSERT(firstVertexOrInvalid != -1);
-        mXfbBaseVertex = firstVertexOrInvalid;
+        mXfbBaseVertex             = firstVertexOrInvalid;
+        mXfbVertexCountPerInstance = vertexOrIndexCount;
         invalidateGraphicsDriverUniforms();
     }
 
@@ -2665,11 +2669,13 @@ angle::Result ContextVk::handleDirtyGraphicsDriverUniforms(const gl::Context *co
         halfRenderAreaHeight,
         scaleY,
         -scaleY,
+        mState.getEnabledClipDistances().bits(),
         xfbActiveUnpaused,
+        mXfbVertexCountPerInstance,
         {},
         {},
-        {depthRangeNear, depthRangeFar, depthRangeDiff, 0.0f},
-        mState.getEnabledClipDistances().bits()};
+        {},
+        {depthRangeNear, depthRangeFar, depthRangeDiff, 0.0f}};
 
     if (xfbActiveUnpaused)
     {

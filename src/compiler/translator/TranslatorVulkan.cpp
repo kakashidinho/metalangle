@@ -168,15 +168,16 @@ constexpr const char kHalfRenderAreaHeight[] = "halfRenderAreaHeight";
 constexpr const char kViewportYScale[]       = "viewportYScale";
 constexpr const char kNegViewportYScale[]    = "negViewportYScale";
 constexpr const char kXfbActiveUnpaused[]    = "xfbActiveUnpaused";
+constexpr const char kXfbVerticesPerDraw[]   = "xfbVerticesPerDraw";
 constexpr const char kXfbBufferOffsets[]     = "xfbBufferOffsets";
 constexpr const char kAcbBufferOffsets[]     = "acbBufferOffsets";
 constexpr const char kDepthRange[]           = "depthRange";
 constexpr const char kClipDistancesEnabled[] = "clipDistancesEnabled";
 
-constexpr size_t kNumGraphicsDriverUniforms                                                = 9;
+constexpr size_t kNumGraphicsDriverUniforms                                                = 10;
 constexpr std::array<const char *, kNumGraphicsDriverUniforms> kGraphicsDriverUniformNames = {
-    {kViewport, kHalfRenderAreaHeight, kViewportYScale, kNegViewportYScale, kXfbActiveUnpaused,
-     kXfbBufferOffsets, kAcbBufferOffsets, kDepthRange, kClipDistancesEnabled}};
+    {kViewport, kHalfRenderAreaHeight, kViewportYScale, kNegViewportYScale, kClipDistancesEnabled,
+     kXfbActiveUnpaused, kXfbVerticesPerDraw, kXfbBufferOffsets, kAcbBufferOffsets, kDepthRange}};
 
 constexpr size_t kNumComputeDriverUniforms                                               = 1;
 constexpr std::array<const char *, kNumComputeDriverUniforms> kComputeDriverUniformNames = {
@@ -365,11 +366,13 @@ const TVariable *AddGraphicsDriverUniformsToShader(TIntermBlock *root,
         new TType(EbtFloat),
         new TType(EbtFloat),
         new TType(EbtFloat),
+        new TType(EbtUInt),  // uint clipDistancesEnabled;  // 32 bits for 32 clip distances max
         new TType(EbtUInt),
+        new TType(EbtUInt),
+        // NOTE: There's a vec2 gap here that can be used in the future
         new TType(EbtInt, 4),
         new TType(EbtUInt, 4),
         emulatedDepthRangeType,
-        new TType(EbtUInt),  // uint clipDistancesEnabled;  // 32 bits for 32 clip distances max
     }};
 
     for (size_t uniformIndex = 0; uniformIndex < kNumGraphicsDriverUniforms; ++uniformIndex)
