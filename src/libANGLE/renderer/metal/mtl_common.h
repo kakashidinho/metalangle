@@ -129,9 +129,10 @@ constexpr uint32_t kVertexAttribBufferStrideAlignment = 4;
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
 constexpr uint32_t kUniformBufferSettingOffsetMinAlignment = 256;
 #else
-constexpr uint32_t kUniformBufferSettingOffsetMinAlignment = 4;
+constexpr uint32_t kUniformBufferSettingOffsetMinAlignment = 16;
 #endif
 constexpr uint32_t kIndexBufferOffsetAlignment       = 4;
+constexpr uint32_t kArgumentBufferOffsetAlignment    = kUniformBufferSettingOffsetMinAlignment;
 constexpr uint32_t kTextureToBufferBlittingAlignment = 256;
 
 // Font end binding limits

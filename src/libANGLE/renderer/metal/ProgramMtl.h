@@ -17,6 +17,7 @@
 #include "common/Optional.h"
 #include "common/utilities.h"
 #include "libANGLE/renderer/ProgramImpl.h"
+#include "libANGLE/renderer/glslang_wrapper_utils.h"
 #include "libANGLE/renderer/metal/mtl_buffer_pool.h"
 #include "libANGLE/renderer/metal/mtl_command_buffer.h"
 #include "libANGLE/renderer/metal/mtl_glslang_utils.h"
@@ -29,11 +30,24 @@ class ContextMtl;
 
 struct ProgramArgumentBufferEncoderMtl
 {
+    void reset(ContextMtl *contextMtl);
+
     mtl::AutoObjCPtr<id<MTLArgumentEncoder>> metalArgBufferEncoder;
     mtl::BufferPool bufferPool;
 };
 
-class ProgramMtl : public ProgramImpl
+// Store info specific to a specialized metal shader variant.
+struct ProgramShaderVariantMtl
+{
+    void reset(ContextMtl *contextMtl);
+
+    mtl::AutoObjCPtr<id<MTLFunction>> metalShader;
+    // UBO's argument buffer encoder. Used when number of UBOs used exceeds number of allowed
+    // discreet slots, and thus needs to encode all into one argument buffer.
+    ProgramArgumentBufferEncoderMtl uboArgBufferEncoder;
+};
+
+class ProgramMtl : public ProgramImpl, public mtl::RenderPipelineCacheSpecializeShaderFactory
 {
   public:
     ProgramMtl(const gl::ProgramState &state);
@@ -110,6 +124,13 @@ class ProgramMtl : public ProgramImpl
                                  GLenum genMode,
                                  GLint components,
                                  const GLfloat *coeffs) override;
+    // Override mtl::RenderPipelineCacheSpecializeShaderFactory
+    angle::Result getSpecializedShader(mtl::Context *context,
+                                       gl::ShaderType shaderType,
+                                       const mtl::RenderPipelineDesc &renderPipelineDesc,
+                                       id<MTLFunction> *shaderOut) override;
+    bool hasSpecializedShader(gl::ShaderType shaderType,
+                              const mtl::RenderPipelineDesc &renderPipelineDesc) override;
 
     // Calls this before drawing, changedPipelineDesc is passed when vertex attributes desc and/or
     // shader program changed.
@@ -169,7 +190,7 @@ class ProgramMtl : public ProgramImpl
 
     void linkResources(const gl::ProgramLinkedResources &resources);
     angle::Result linkImpl(const gl::Context *glContext,
-                           const gl::ShaderMap<std::string> &shaderSource,
+                           const gl::ProgramLinkedResources &resources,
                            gl::InfoLog &infoLog);
 
     angle::Result linkTranslatedShaders(const gl::Context *glContext,
@@ -202,14 +223,17 @@ class ProgramMtl : public ProgramImpl
     gl::ShaderMap<std::string> mTranslatedMslShader;
 
     gl::ShaderMap<mtl::TranslatedShaderInfo> mMslShaderTranslateInfo;
+    gl::ShaderMap<mtl::AutoObjCPtr<id<MTLLibrary>>> mMslShaderLibrary;
 
     uint32_t mShadowCompareModes[mtl::kMaxShaderSamplers] = {0};
 
-    // One with emulated rasterization discard, one without.
-    std::array<ProgramArgumentBufferEncoderMtl, 2> mVertexArgumentBufferEncoders;
-    // One for sample coverage mask enabled, one with it disabled.
-    std::array<ProgramArgumentBufferEncoderMtl, 2> mFragmentArgumentBufferEncoders;
-    gl::ShaderMap<ProgramArgumentBufferEncoderMtl *> mCurrentArgumentBufferEncoders;
+    // Shader variants:
+    // - Vertex shader: One with emulated rasterization discard, one without.
+    std::array<ProgramShaderVariantMtl, 2> mVertexShaderVariants;
+    // - Fragment shader: One for sample coverage mask enabled, one with it disabled.
+    std::array<ProgramShaderVariantMtl, 2> mFragmentShaderVariants;
+
+    gl::ShaderMap<ProgramShaderVariantMtl *> mCurrentShaderVariants;
 
     // Scratch data:
     // Legalized buffers and their offsets. For example, uniform buffer's offset=1 is not a valid

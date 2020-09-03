@@ -42,10 +42,10 @@ BufferPool::BufferPool(bool alwaysAllocNewBuffer, BufferPoolMemPolicy policy)
 
 {}
 
-void BufferPool::initialize(ContextMtl *contextMtl,
-                            size_t initialSize,
-                            size_t alignment,
-                            size_t maxBuffers)
+void BufferPool::reset(ContextMtl *contextMtl,
+                       size_t initialSize,
+                       size_t alignment,
+                       size_t maxBuffers)
 {
     ANGLE_UNUSED_VARIABLE(finalizePendingBuffer(contextMtl));
     releaseInFlightBuffers(contextMtl);
@@ -90,6 +90,24 @@ void BufferPool::initialize(ContextMtl *contextMtl,
     mMaxBuffers = maxBuffers;
 
     updateAlignment(contextMtl, alignment);
+}
+
+void BufferPool::initialize(Context *context,
+                            size_t initialSize,
+                            size_t alignment,
+                            size_t maxBuffers)
+{
+    if (mBuffersAllocated)
+    {
+        // Invalid call, must call destroy() first.
+        UNREACHABLE();
+    }
+
+    mInitialSize = initialSize;
+
+    mMaxBuffers = maxBuffers;
+
+    updateAlignment(context, alignment);
 }
 
 BufferPool::~BufferPool() {}
@@ -167,8 +185,7 @@ angle::Result BufferPool::allocate(ContextMtl *contextMtl,
     if (!mBuffer || !checkedNextWriteOffset.IsValid() ||
         checkedNextWriteOffset.ValueOrDie() >= mSize ||
         // If the current buffer has been modified by GPU, do not reuse it:
-        mBuffer->isCPUReadMemNeedSync() ||
-        mAlwaysAllocateNewBuffer)
+        mBuffer->isCPUReadMemNeedSync() || mAlwaysAllocateNewBuffer)
     {
         if (mBuffer)
         {
@@ -306,7 +323,7 @@ void BufferPool::destroy(ContextMtl *contextMtl)
     }
 }
 
-void BufferPool::updateAlignment(ContextMtl *contextMtl, size_t alignment)
+void BufferPool::updateAlignment(Context *context, size_t alignment)
 {
     ASSERT(alignment > 0);
 

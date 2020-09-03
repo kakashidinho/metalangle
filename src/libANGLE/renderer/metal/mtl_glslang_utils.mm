@@ -81,7 +81,7 @@ void BindBuffers(spirv_cross::CompilerMSL *compiler,
                  gl::ShaderType shaderType,
                  const std::unordered_map<std::string, uint32_t> &uboOriginalBindings,
                  std::array<uint32_t, kMaxGLUBOBindings> *uboBindingsRemapOut,
-                 bool *argumentBufferUsed)
+                 bool *uboArgumentBufferUsed)
 {
     auto &compilerMsl = *compiler;
 
@@ -177,12 +177,12 @@ void BindBuffers(spirv_cross::CompilerMSL *compiler,
     {
         // If shader uses more than kMaxUBODiscreteBindingSlots number of UBOs, encode them all into
         // an argument buffer. Each buffer will be assigned [[id(n)]] attribute.
-        *argumentBufferUsed = true;
+        *uboArgumentBufferUsed = true;
     }
     else
     {
         // Use discrete buffer binding slot for UBOs which translates each slot to [[buffer(n)]]
-        *argumentBufferUsed = false;
+        *uboArgumentBufferUsed = false;
         // Discrete buffer binding slot starts at kUBOArgumentBufferBindingIndex
         currentSlot += kUBOArgumentBufferBindingIndex;
     }
@@ -312,9 +312,9 @@ class SpirvToMslCompiler : public spirv_cross::CompilerMSL
         spirv_cross::ShaderResources mslRes = spirv_cross::CompilerMSL::get_shader_resources();
 
         BindBuffers(this, mslRes.uniform_buffers, shaderType, uboOriginalBindings,
-                    &mslShaderInfoOut->actualUBOBindings, &mslShaderInfoOut->hasArgumentBuffer);
+                    &mslShaderInfoOut->actualUBOBindings, &mslShaderInfoOut->hasUBOArgumentBuffer);
 
-        if (mslShaderInfoOut->hasArgumentBuffer)
+        if (mslShaderInfoOut->hasUBOArgumentBuffer)
         {
             // Enable argument buffer.
             compOpt.argument_buffers = true;

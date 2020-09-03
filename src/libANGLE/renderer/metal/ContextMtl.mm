@@ -2026,7 +2026,7 @@ angle::Result ContextMtl::checkIfPipelineChanged(const gl::Context *context,
         mRenderPipelineDesc.inputPrimitiveTopology      = topologyClass;
         mRenderPipelineDesc.emulatedRasterizatonDiscard = mState.isRasterizerDiscardEnabled();
         mRenderPipelineDesc.alphaToCoverageEnabled      = mState.isSampleAlphaToCoverageEnabled();
-        mRenderPipelineDesc.coverageMaskEnabled         = mState.isSampleCoverageEnabled();
+        mRenderPipelineDesc.emulateCoverageMask         = mState.isSampleCoverageEnabled();
 
         mRenderPipelineDesc.outputDescriptor.updateEnabledDrawBuffers(
             mDrawFramebuffer->getState().getEnabledDrawBuffers());
