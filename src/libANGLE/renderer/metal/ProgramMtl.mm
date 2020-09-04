@@ -300,7 +300,7 @@ std::unique_ptr<rx::LinkEvent> ProgramMtl::load(const gl::Context *context,
 void ProgramMtl::save(const gl::Context *context, gl::BinaryOutputStream *stream)
 {
     // Magic number:
-    stream->writeInt(kBinaryShaderMagic);
+    stream->writeInt<int>(kBinaryShaderMagic);
     saveTranslatedShaders(stream);
     saveDefaultUniformBlocksInfo(stream);
 }
