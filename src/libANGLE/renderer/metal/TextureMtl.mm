@@ -1666,6 +1666,7 @@ angle::Result TextureMtl::convertAndSetPerSliceSubImage(const gl::Context *conte
                                                      : LoadImageFunctionInfo();
         const angle::Format &dstFormat = angle::Format::Get(mFormat.actualFormatId);
         const size_t dstRowPitch       = dstFormat.pixelBytes * mtlArea.size.width;
+        const size_t dstDepthPitch     = dstRowPitch * mtlArea.size.height;
 
         // Check if original image data is compressed:
         if (mFormat.intendedAngleFormat().isBlock)
@@ -1673,7 +1674,6 @@ angle::Result TextureMtl::convertAndSetPerSliceSubImage(const gl::Context *conte
             ASSERT(loadFunctionInfo.loadFunction);
 
             // Need to create a buffer to hold entire decompressed image.
-            const size_t dstDepthPitch = dstRowPitch * mtlArea.size.height;
             angle::MemoryBuffer decompressBuf;
             ANGLE_CHECK_GL_ALLOC(contextMtl,
                                  decompressBuf.resize(dstDepthPitch * mtlArea.size.depth));
@@ -1690,41 +1690,39 @@ angle::Result TextureMtl::convertAndSetPerSliceSubImage(const gl::Context *conte
         }  // if (mFormat.intendedAngleFormat().isBlock)
         else
         {
-            // Create scratch row buffer
-            angle::MemoryBuffer conversionRow;
-            ANGLE_CHECK_GL_ALLOC(contextMtl, conversionRow.resize(dstRowPitch));
+            // Create scratch 2d buffer
+            angle::MemoryBuffer conversionBuffer;
+            ANGLE_CHECK_GL_ALLOC(contextMtl, conversionBuffer.resize(dstDepthPitch));
 
-            // Convert row by row:
-            MTLRegion mtlRow   = mtlArea;
-            mtlRow.size.height = mtlRow.size.depth = 1;
+            // Convert layer by layer:
+            MTLRegion mtlRect  = mtlArea;
+            mtlRect.size.depth = 1;
             for (NSUInteger d = 0; d < mtlArea.size.depth; ++d)
             {
-                mtlRow.origin.z = mtlArea.origin.z + d;
-                for (NSUInteger r = 0; r < mtlArea.size.height; ++r)
+                mtlRect.origin.z = mtlArea.origin.z + d;
+
+                const uint8_t *psrc = pixels + d * pixelsDepthPitch;
+
+                // Convert pixels
+                if (loadFunctionInfo.loadFunction)
                 {
-                    const uint8_t *psrc = pixels + d * pixelsDepthPitch + r * pixelsRowPitch;
-                    mtlRow.origin.y     = mtlArea.origin.y + r;
-
-                    // Convert pixels
-                    if (loadFunctionInfo.loadFunction)
-                    {
-                        loadFunctionInfo.loadFunction(mtlRow.size.width, 1, 1, psrc, pixelsRowPitch,
-                                                      0, conversionRow.data(), dstRowPitch, 0);
-                    }
-                    else
-                    {
-                        CopyImageCHROMIUM(psrc, pixelsRowPitch, pixelsAngleFormat.pixelBytes, 0,
-                                          pixelsAngleFormat.pixelReadFunction, conversionRow.data(),
-                                          dstRowPitch, dstFormat.pixelBytes, 0,
-                                          dstFormat.pixelWriteFunction, internalFormat.format,
-                                          dstFormat.componentType, mtlRow.size.width, 1, 1, false,
-                                          false, false);
-                    }
-
-                    // Upload to texture
-                    ANGLE_TRY(UploadTextureContents(context, dstFormat, mtlRow, 0, slice,
-                                                    conversionRow.data(), dstRowPitch, 0, image));
+                    loadFunctionInfo.loadFunction(mtlRect.size.width, mtlRect.size.height, 1, psrc,
+                                                  pixelsRowPitch, 0, conversionBuffer.data(),
+                                                  dstRowPitch, 0);
                 }
+                else
+                {
+                    CopyImageCHROMIUM(psrc, pixelsRowPitch, pixelsAngleFormat.pixelBytes, 0,
+                                      pixelsAngleFormat.pixelReadFunction, conversionBuffer.data(),
+                                      dstRowPitch, dstFormat.pixelBytes, 0,
+                                      dstFormat.pixelWriteFunction, internalFormat.format,
+                                      dstFormat.componentType, mtlRect.size.width,
+                                      mtlRect.size.height, 1, false, false, false);
+                }
+
+                // Upload to texture
+                ANGLE_TRY(UploadTextureContents(context, dstFormat, mtlRect, 0, slice,
+                                                conversionBuffer.data(), dstRowPitch, 0, image));
             }
         }  // if (mFormat.intendedAngleFormat().isBlock)
     }      // if (unpackBuffer)

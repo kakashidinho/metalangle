@@ -70,12 +70,14 @@ angle::Result InitializeTextureContents(const gl::Context *context,
     {
         const angle::Format &dstFormat = angle::Format::Get(textureObjFormat.actualFormatId);
         const size_t dstRowPitch       = dstFormat.pixelBytes * size.width;
-        angle::MemoryBuffer conversionRow;
-        ANGLE_CHECK_GL_ALLOC(contextMtl, conversionRow.resize(dstRowPitch));
+        const size_t dstDepthPitch     = dstRowPitch * size.height;
+        angle::MemoryBuffer conversionBuffer;
+        ANGLE_CHECK_GL_ALLOC(contextMtl, conversionBuffer.resize(dstDepthPitch));
 
         if (textureObjFormat.initFunction)
         {
-            textureObjFormat.initFunction(size.width, 1, 1, conversionRow.data(), dstRowPitch, 0);
+            textureObjFormat.initFunction(size.width, size.height, 1, conversionBuffer.data(),
+                                          dstRowPitch, 0);
         }
         else
         {
@@ -89,31 +91,28 @@ angle::Result InitializeTextureContents(const gl::Context *context,
             const angle::Format &srcFormat = angle::Format::Get(
                 intendedInternalFormat.alphaBits > 0 ? angle::FormatID::R8G8B8A8_UNORM
                                                      : angle::FormatID::R8G8B8_UNORM);
-            const size_t srcRowPitch = srcFormat.pixelBytes * size.width;
-            angle::MemoryBuffer srcRow;
-            ANGLE_CHECK_GL_ALLOC(contextMtl, srcRow.resize(srcRowPitch));
-            memset(srcRow.data(), 0, srcRowPitch);
+            const size_t srcRowPitch   = srcFormat.pixelBytes * size.width;
+            const size_t srcDepthPitch = srcRowPitch * size.height;
+            angle::MemoryBuffer srcBuffer;
+            ANGLE_CHECK_GL_ALLOC(contextMtl, srcBuffer.resize(srcDepthPitch));
+            memset(srcBuffer.data(), 0, srcDepthPitch);
 
-            CopyImageCHROMIUM(srcRow.data(), srcRowPitch, srcFormat.pixelBytes, 0,
-                              srcFormat.pixelReadFunction, conversionRow.data(), dstRowPitch,
+            CopyImageCHROMIUM(srcBuffer.data(), srcRowPitch, srcFormat.pixelBytes, 0,
+                              srcFormat.pixelReadFunction, conversionBuffer.data(), dstRowPitch,
                               dstFormat.pixelBytes, 0, dstFormat.pixelWriteFunction,
-                              intendedInternalFormat.format, dstFormat.componentType, size.width, 1,
-                              1, false, false, false);
+                              intendedInternalFormat.format, dstFormat.componentType, size.width,
+                              size.height, 1, false, false, false);
         }
 
-        auto mtlRowRegion = MTLRegionMake2D(0, 0, size.width, 1);
+        auto mtlRectRegion = MTLRegionMake2D(0, 0, size.width, size.height);
 
         for (NSUInteger d = 0; d < static_cast<NSUInteger>(size.depth); ++d)
         {
-            mtlRowRegion.origin.z = d + startDepth;
-            for (NSUInteger r = 0; r < static_cast<NSUInteger>(size.height); ++r)
-            {
-                mtlRowRegion.origin.y = r;
+            mtlRectRegion.origin.z = d + startDepth;
 
-                // Upload to texture
-                texture->replaceRegion(contextMtl, mtlRowRegion, index.getLevelIndex(), layer,
-                                       conversionRow.data(), dstRowPitch);
-            }
+            // Upload to texture
+            texture->replaceRegion(contextMtl, mtlRectRegion, index.getLevelIndex(), layer,
+                                   conversionBuffer.data(), dstRowPitch);
         }
     }  // if (texture->isCPUAccessible())
     else
