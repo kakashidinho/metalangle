@@ -1076,11 +1076,20 @@ void RenderCommandEncoder::endEncodingImpl(bool considerDiscardSimulation)
     mStateCache.reset();
 }
 
-inline void RenderCommandEncoder::initWriteDependency(const TextureRef &texture)
+inline void RenderCommandEncoder::initAttachmentWriteDependencyAndScissorRect(
+    const RenderPassAttachmentDesc &attachment)
 {
+    TextureRef texture = attachment.texture();
     if (texture)
     {
         cmdBuffer().setWriteDependency(texture);
+
+        uint32_t mipLevel = attachment.level();
+
+        mRenderPassMaxScissorRect.width =
+            std::min<NSUInteger>(mRenderPassMaxScissorRect.width, texture->width(mipLevel));
+        mRenderPassMaxScissorRect.height =
+            std::min<NSUInteger>(mRenderPassMaxScissorRect.height, texture->height(mipLevel));
     }
 }
 
@@ -1188,19 +1197,24 @@ RenderCommandEncoder &RenderCommandEncoder::restart(const RenderPassDesc &desc)
         return *this;
     }
 
-    mRenderPassDesc = desc;
-    mRecording      = true;
-    mHasDrawCalls   = false;
+    mRenderPassDesc            = desc;
+    mRecording                 = true;
+    mHasDrawCalls              = false;
+    mWarnOutOfBoundScissorRect = true;
+    mRenderPassMaxScissorRect  = {.x      = 0,
+                                 .y      = 0,
+                                 .width  = std::numeric_limits<NSUInteger>::max(),
+                                 .height = std::numeric_limits<NSUInteger>::max()};
 
     // mask writing dependency & set appropriate store options
     for (uint32_t i = 0; i < mRenderPassDesc.numColorAttachments; ++i)
     {
-        initWriteDependency(mRenderPassDesc.colorAttachments[i].texture());
+        initAttachmentWriteDependencyAndScissorRect(mRenderPassDesc.colorAttachments[i]);
     }
 
-    initWriteDependency(mRenderPassDesc.depthAttachment.texture());
+    initAttachmentWriteDependencyAndScissorRect(mRenderPassDesc.depthAttachment);
 
-    initWriteDependency(mRenderPassDesc.stencilAttachment.texture());
+    initAttachmentWriteDependencyAndScissorRect(mRenderPassDesc.stencilAttachment);
 
     // Convert to Objective-C descriptor
     mRenderPassDesc.convertToMetalDesc(mCachedRenderPassDescObjC);
@@ -1335,6 +1349,17 @@ RenderCommandEncoder &RenderCommandEncoder::setScissorRect(const MTLScissorRect 
     {
         return *this;
     }
+
+    if (rect.x + rect.width > mRenderPassMaxScissorRect.width ||
+        rect.y + rect.height > mRenderPassMaxScissorRect.height)
+    {
+        WARN() << "Out of bound scissor rect detected " << rect.x << " " << rect.y << " "
+               << rect.width << " " << rect.height;
+
+        // Out of bound rect will crash the metal runtime, ignore it.
+        return *this;
+    }
+
     mStateCache.scissorRect = rect;
 
     mCommands.push(CmdType::SetScissorRect).push(rect);
