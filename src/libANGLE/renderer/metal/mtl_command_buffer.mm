@@ -1161,6 +1161,11 @@ void RenderCommandEncoder::encodeMetalEncoder()
         // Verify that it was created successfully
         ASSERT(metalCmdEncoder);
 
+        if (mLabel)
+        {
+            metalCmdEncoder.label = mLabel;
+        }
+
         // Work-around driver bug on iOS devices: stencil must be explicitly set to zero
         // even if the doc says the default value is already zero.
         [metalCmdEncoder setStencilReferenceValue:0];
@@ -1196,10 +1201,13 @@ RenderCommandEncoder &RenderCommandEncoder::restart(const RenderPassDesc &desc)
         return *this;
     }
 
-    mRenderPassDesc           = desc;
-    mRecording                = true;
-    mHasDrawCalls             = false;
-    mRenderPassMaxScissorRect = {.x      = 0,
+    mLabel.reset();
+
+    mRenderPassDesc            = desc;
+    mRecording                 = true;
+    mHasDrawCalls              = false;
+    mWarnOutOfBoundScissorRect = true;
+    mRenderPassMaxScissorRect  = {.x      = 0,
                                  .y      = 0,
                                  .width  = std::numeric_limits<NSUInteger>::max(),
                                  .height = std::numeric_limits<NSUInteger>::max()};
@@ -1348,11 +1356,14 @@ RenderCommandEncoder &RenderCommandEncoder::setScissorRect(const MTLScissorRect 
         return *this;
     }
 
-    if (ANGLE_UNLIKELY(rect.x + rect.width > mRenderPassMaxScissorRect.width ||
-                       rect.y + rect.height > mRenderPassMaxScissorRect.height))
+    if (rect.x + rect.width > mRenderPassMaxScissorRect.width ||
+        rect.y + rect.height > mRenderPassMaxScissorRect.height)
     {
-        WARN() << "Out of bound scissor rect detected " << rect.x << " " << rect.y << " "
-               << rect.width << " " << rect.height;
+        if (mWarnOutOfBoundScissorRect)
+        {
+            WARN() << "Out of bound scissor rect detected " << rect.x << " " << rect.y << " "
+                   << rect.width << " " << rect.height;
+        }
         // Out of bound rect will crash the metal runtime, ignore it.
         return *this;
     }
@@ -1734,6 +1745,11 @@ void RenderCommandEncoder::popDebugGroup()
     mCommands.push(CmdType::PopDebugGroup);
 }
 
+void RenderCommandEncoder::setLabel(NSString *label)
+{
+    mLabel.retainAssign(label);
+}
+
 RenderCommandEncoder &RenderCommandEncoder::setColorStoreAction(MTLStoreAction action,
                                                                 uint32_t colorAttachmentIndex)
 {
@@ -1781,6 +1797,13 @@ RenderCommandEncoder &RenderCommandEncoder::setStencilStoreAction(MTLStoreAction
     // We only store the options, will defer the actual setting until the encoder finishes
     mRenderPassDesc.stencilAttachment.storeAction = action;
 
+    return *this;
+}
+
+RenderCommandEncoder &RenderCommandEncoder::setStoreAction(MTLStoreAction action)
+{
+    setColorStoreAction(action);
+    setDepthStencilStoreAction(action, action);
     return *this;
 }
 

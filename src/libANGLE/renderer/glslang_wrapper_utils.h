@@ -126,6 +126,7 @@ angle::Result GlslangTransformSpirvCode(const GlslangErrorCallback &callback,
 angle::Result GlslangGetShaderSpirvCode(const GlslangErrorCallback &callback,
                                         const gl::ShaderBitSet &linkedShaderStages,
                                         const gl::Caps &glCaps,
+                                        bool keepXfbEmulation,
                                         const gl::ShaderMap<std::string> &shaderSources,
                                         const ShaderMapInterfaceVariableInfoMap &variableInfoMap,
                                         gl::ShaderMap<SpirvBlob> *spirvBlobsOut);

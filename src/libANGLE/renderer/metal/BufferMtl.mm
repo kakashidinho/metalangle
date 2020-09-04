@@ -272,6 +272,11 @@ angle::Result BufferMtl::getFirstLastIndices(ContextMtl *contextMtl,
     return angle::Result::Continue;
 }
 
+void BufferMtl::onDataChanged()
+{
+    markConversionBuffersDirty();
+}
+
 /* public */
 const uint8_t *BufferMtl::getClientShadowCopyData(ContextMtl *contextMtl)
 {

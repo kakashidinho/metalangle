@@ -77,8 +77,7 @@ void Throw(NSString *msg)
 
 - (MGLLayer *)glLayer
 {
-    _glLayer = static_cast<MGLLayer *>(self.layer);
-    return _glLayer;
+    return static_cast<MGLLayer *>(self.layer);
 }
 
 - (void)setContext:(MGLContext *)context
@@ -136,7 +135,7 @@ void Throw(NSString *msg)
 
 - (void)display
 {
-    [self drawRect:self.bounds];
+    [self displayAndCapture:nullptr];
 }
 
 - (void)bindDrawable
@@ -188,10 +187,13 @@ void Throw(NSString *msg)
 
 - (void)drawRect:(CGRect)rect
 {
-    [self drawRect:rect andCapture:nullptr];
+    if (_delegate)
+    {
+        [_delegate mglkView:self drawInRect:rect];
+    }
 }
 
-- (void)drawRect:(CGRect)rect andCapture:(uint8_t **)pPixels
+- (void)displayAndCapture:(uint8_t **)pPixels
 {
     _drawing = YES;
     if (_context)
@@ -202,10 +204,7 @@ void Throw(NSString *msg)
         }
     }
 
-    if (_delegate)
-    {
-        [_delegate mglkView:self drawInRect:rect];
-    }
+    [self drawRect:self.bounds];
 
     if (pPixels)
     {
@@ -252,7 +251,7 @@ static void freeImageData(void *info, const void *data, size_t size)
 - (UIImage *)snapshot
 {
     uint8_t *pixels = nullptr;
-    [self drawRect:self.bounds andCapture:&pixels];
+    [self displayAndCapture:&pixels];
 
     if (!pixels)
     {

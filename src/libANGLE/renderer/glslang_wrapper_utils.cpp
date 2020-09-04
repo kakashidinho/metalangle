@@ -51,9 +51,12 @@ namespace rx
 {
 namespace
 {
-constexpr char kXfbDeclMarker[]    = "@@ XFB-DECL @@";
-constexpr char kXfbOutMarker[]     = "@@ XFB-OUT @@;";
-constexpr char kXfbBuiltInPrefix[] = "xfbANGLE";
+constexpr char kXfbDeclMarker[]       = "@@ XFB-DECL @@";
+constexpr char kXfbOutMarker[]        = "@@ XFB-OUT @@;";
+constexpr char kXfbBuiltInPrefix[]    = "xfbANGLE";
+constexpr char kVersionDefine[]       = "#version 450 core\n";
+constexpr char kXfbEmuDisableMacro[]  = "ANGLE_DISABLE_XFB_EMULATION";
+constexpr char kXfbEmuDisableDefine[] = "#version 450 core\n#define ANGLE_DISABLE_XFB_EMULATION\n";
 
 template <size_t N>
 constexpr size_t ConstStrLen(const char (&)[N])
@@ -344,7 +347,10 @@ void GenerateTransformFeedbackEmulationOutputs(GlslangSourceOptions &options,
     const std::string xfbSet = Str(programInterfaceInfo->uniformsAndXfbDescriptorSetIndex);
     std::vector<std::string> xfbIndices(bufferCount);
 
-    std::string xfbDecl;
+    const std::string ifndef = "#ifndef " + std::string(kXfbEmuDisableMacro) + "\n";
+
+    // Wrap XFB emulation in #ifndef guard.
+    std::string xfbDecl = ifndef;
 
     for (uint32_t bufferIndex = 0; bufferIndex < bufferCount; ++bufferIndex)
     {
@@ -363,8 +369,10 @@ void GenerateTransformFeedbackEmulationOutputs(GlslangSourceOptions &options,
                         programInterfaceInfo->currentUniformBindingIndex, gl::ShaderType::Vertex);
         ++programInterfaceInfo->currentUniformBindingIndex;
     }
+    xfbDecl += "#endif\n";
 
-    std::string xfbOut =
+    std::string xfbOut = ifndef;
+    xfbOut +=
         "if (" + std::string(sh::vk::kDriverUniformsVarName) + ".xfbActiveUnpaused != 0)\n{\n";
     size_t outputOffset = 0;
     for (size_t varyingIndex = 0; varyingIndex < varyings.size(); ++varyingIndex)
@@ -384,6 +392,7 @@ void GenerateTransformFeedbackEmulationOutputs(GlslangSourceOptions &options,
         }
     }
     xfbOut += "}\n";
+    xfbOut += "#endif\n";
 
     *vertexShader = SubstituteTransformFeedbackMarkers(*vertexShader, xfbDecl, xfbOut);
 }
@@ -1968,12 +1977,30 @@ angle::Result GlslangTransformSpirvCode(const GlslangErrorCallback &callback,
 angle::Result GlslangGetShaderSpirvCode(const GlslangErrorCallback &callback,
                                         const gl::ShaderBitSet &linkedShaderStages,
                                         const gl::Caps &glCaps,
+                                        bool keepXfbEmulation,
                                         const gl::ShaderMap<std::string> &shaderSources,
                                         const ShaderMapInterfaceVariableInfoMap &variableInfoMap,
                                         gl::ShaderMap<SpirvBlob> *spirvBlobsOut)
 {
     gl::ShaderMap<SpirvBlob> initialSpirvBlobs;
-    ANGLE_TRY(GetShaderSpirvCode(callback, glCaps, shaderSources, &initialSpirvBlobs));
+
+    if (!keepXfbEmulation && !shaderSources[gl::ShaderType::Vertex].empty())
+    {
+        gl::ShaderMap<std::string> patchedSources = shaderSources;
+
+        std::string defines = kXfbEmuDisableDefine;
+
+        ANGLE_GLSLANG_CHECK(callback,
+                            angle::ReplaceSubstring(&patchedSources[gl::ShaderType::Vertex],
+                                                    kVersionDefine, kXfbEmuDisableDefine),
+                            GlslangError::InvalidShader);
+
+        ANGLE_TRY(GetShaderSpirvCode(callback, glCaps, patchedSources, &initialSpirvBlobs));
+    }
+    else
+    {
+        ANGLE_TRY(GetShaderSpirvCode(callback, glCaps, shaderSources, &initialSpirvBlobs));
+    }
 
     for (const gl::ShaderType shaderType : linkedShaderStages)
     {
