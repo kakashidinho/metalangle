@@ -199,7 +199,8 @@ class TextureMtl : public TextureImpl
     angle::Result redefineImage(const gl::Context *context,
                                 const gl::ImageIndex &index,
                                 const mtl::Format &mtlFormat,
-                                const gl::Extents &size);
+                                const gl::Extents &size,
+                                bool initEmulatedChannels);
 
     angle::Result setImageImpl(const gl::Context *context,
                                const gl::ImageIndex &index,

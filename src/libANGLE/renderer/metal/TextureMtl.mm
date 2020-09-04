@@ -546,10 +546,9 @@ angle::Result TextureMtl::createNativeTexture(const gl::Context *context,
             UNREACHABLE();
     }
 
-    ANGLE_TRY(checkForEmulatedChannels(context, mFormat, mNativeTexture));
+    bool hasEmulatedChannels = mtl::IsFormatEmulated(mFormat);
 
     // Transfer data from images to actual texture object
-    mtl::BlitCommandEncoder *encoder = nullptr;
     for (int face = 0; face < numCubeFaces; ++face)
     {
         for (GLuint mip = 0; mip < mips; ++mip)
@@ -563,12 +562,19 @@ angle::Result TextureMtl::createNativeTexture(const gl::Context *context,
             if (imageToTransfer && imageToTransfer->size() == actualMipSize &&
                 imageToTransfer->pixelFormat() == mNativeTexture->pixelFormat())
             {
-                if (!encoder)
-                {
-                    encoder = contextMtl->getBlitCommandEncoder();
-                }
+                mtl::BlitCommandEncoder *encoder = contextMtl->getBlitCommandEncoder();
                 encoder->copyTexture(imageToTransfer, 0, 0, mNativeTexture, face, mip,
                                      imageToTransfer->arrayLength(), 1);
+            }
+            else
+            {
+                if (hasEmulatedChannels)
+                {
+                    GLint layerIndex = numCubeFaces > 1 ? face : gl::ImageIndex::kEntireLevel;
+                    gl::ImageIndex mipIndex = gl::ImageIndex::MakeFromType(type, mip, layerIndex);
+                    ANGLE_TRY(
+                        mtl::InitializeTextureContents(context, mNativeTexture, mFormat, mipIndex));
+                }
             }
 
             imageToTransfer = nullptr;
@@ -642,7 +648,7 @@ angle::Result TextureMtl::ensureImageCreated(const gl::Context *context,
     {
         // Image at this level hasn't been defined yet. We need to define it:
         const gl::ImageDesc &desc = mState.getImageDesc(index);
-        ANGLE_TRY(redefineImage(context, index, mFormat, desc.size));
+        ANGLE_TRY(redefineImage(context, index, mFormat, desc.size, true));
     }
     return angle::Result::Continue;
 }
@@ -879,7 +885,7 @@ angle::Result TextureMtl::copyImage(const gl::Context *context,
         angle::Format::InternalFormatToID(internalFormatInfo.sizedInternalFormat);
     const mtl::Format &mtlFormat = contextMtl->getPixelFormat(angleFormatId);
 
-    ANGLE_TRY(redefineImage(context, index, mtlFormat, newImageSize));
+    ANGLE_TRY(redefineImage(context, index, mtlFormat, newImageSize, true));
 
     if (context->isWebGL())
     {
@@ -1315,7 +1321,8 @@ angle::Result TextureMtl::bindToShader(const gl::Context *context,
 angle::Result TextureMtl::redefineImage(const gl::Context *context,
                                         const gl::ImageIndex &index,
                                         const mtl::Format &mtlFormat,
-                                        const gl::Extents &size)
+                                        const gl::Extents &size,
+                                        bool initEmulatedChannels)
 {
     bool imageWithinLevelRange = false;
 
@@ -1381,10 +1388,13 @@ angle::Result TextureMtl::redefineImage(const gl::Context *context,
             default:
                 UNREACHABLE();
         }
-    }
 
-    // Make sure emulated channels are properly initialized
-    ANGLE_TRY(checkForEmulatedChannels(context, mtlFormat, imageDef.image));
+        if (initEmulatedChannels)
+        {
+            // Make sure emulated channels are properly initialized
+            ANGLE_TRY(checkForEmulatedChannels(context, mtlFormat, imageDef.image));
+        }
+    }
 
     // Tell context to rebind textures
     contextMtl->invalidateCurrentTextures();
@@ -1427,7 +1437,7 @@ angle::Result TextureMtl::setImageImpl(const gl::Context *context,
         angle::Format::InternalFormatToID(formatInfo.sizedInternalFormat);
     const mtl::Format &mtlFormat = contextMtl->getPixelFormat(angleFormatId);
 
-    ANGLE_TRY(redefineImage(context, index, mtlFormat, size));
+    ANGLE_TRY(redefineImage(context, index, mtlFormat, size, /** initEmulatedChannels */ !pixels));
 
     // Early-out on empty textures, don't create a zero-sized storage.
     if (size.empty())
