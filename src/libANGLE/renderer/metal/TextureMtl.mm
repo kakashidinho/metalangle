@@ -572,8 +572,16 @@ angle::Result TextureMtl::createNativeTexture(const gl::Context *context,
                 {
                     GLint layerIndex = numCubeFaces > 1 ? face : gl::ImageIndex::kEntireLevel;
                     gl::ImageIndex mipIndex = gl::ImageIndex::MakeFromType(type, mip, layerIndex);
-                    ANGLE_TRY(
-                        mtl::InitializeTextureContents(context, mNativeTexture, mFormat, mipIndex));
+                    if (mFormat.getCaps().isRenderable())
+                    {
+                        ANGLE_TRY(mtl::InitializeTextureContentsGPU(
+                            context, mNativeTexture, mFormat, mipIndex, MTLColorWriteMaskAll));
+                    }
+                    else
+                    {
+                        ANGLE_TRY(mtl::InitializeTextureContents(context, mNativeTexture, mFormat,
+                                                                 mipIndex));
+                    }
                 }
             }
 

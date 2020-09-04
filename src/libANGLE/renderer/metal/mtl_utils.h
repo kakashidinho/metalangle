@@ -32,6 +32,18 @@ angle::Result InitializeTextureContents(const gl::Context *context,
                                         const TextureRef &texture,
                                         const Format &textureObjFormat,
                                         const gl::ImageIndex &index);
+// Same as above but using GPU clear operation instead of CPU.
+// - channelsToInit parameter controls which channels will get their content initialized.
+angle::Result InitializeTextureContentsGPU(const gl::Context *context,
+                                           const TextureRef &texture,
+                                           const Format &textureObjFormat,
+                                           const gl::ImageIndex &index,
+                                           MTLColorWriteMask channelsToInit);
+// Same as above but for a depth/stencil texture.
+angle::Result InitializeDepthStencilTextureContentsGPU(const gl::Context *context,
+                                                       const TextureRef &texture,
+                                                       const Format &textureObjFormat,
+                                                       const gl::ImageIndex &index);
 
 // Unified texture's per slice/depth texel reading function
 angle::Result ReadTexturePerSliceBytes(const gl::Context *context,

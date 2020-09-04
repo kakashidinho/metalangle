@@ -162,7 +162,7 @@ constexpr uint32_t kStencilMaskAll = 0xff;  // Only 8 bits stencil is supported
 constexpr MTLVertexStepFunction kVertexStepFunctionInvalid =
     static_cast<MTLVertexStepFunction>(0xff);
 
-constexpr float kEmulatedAlphaValue = 1.0f;
+constexpr int kEmulatedAlphaValue = 1;
 
 constexpr uint32_t kOcclusionQueryResultSize = sizeof(uint64_t);
 

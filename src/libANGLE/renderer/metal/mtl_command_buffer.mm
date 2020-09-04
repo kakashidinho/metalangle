@@ -1771,6 +1771,13 @@ RenderCommandEncoder &RenderCommandEncoder::setStencilStoreAction(MTLStoreAction
     return *this;
 }
 
+RenderCommandEncoder &RenderCommandEncoder::setStoreAction(MTLStoreAction action)
+{
+    setColorStoreAction(action);
+    setDepthStencilStoreAction(action, action);
+    return *this;
+}
+
 RenderCommandEncoder &RenderCommandEncoder::setColorLoadAction(MTLLoadAction action,
                                                                const MTLClearColor &clearValue,
                                                                uint32_t colorAttachmentIndex)

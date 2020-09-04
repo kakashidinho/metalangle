@@ -14,12 +14,50 @@
 
 #include "common/MemoryBuffer.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
+#include "libANGLE/renderer/metal/DisplayMtl.h"
 #include "libANGLE/renderer/metal/RenderTargetMtl.h"
+#include "libANGLE/renderer/metal/mtl_render_utils.h"
 
 namespace rx
 {
 namespace mtl
 {
+
+namespace
+{
+
+void GetSliceAndDepth(const gl::ImageIndex &index, GLint *layer, GLint *startDepth)
+{
+    *layer = *startDepth = 0;
+    if (!index.hasLayer())
+    {
+        return;
+    }
+
+    switch (index.getType())
+    {
+        case gl::TextureType::CubeMap:
+            *layer = index.cubeMapFaceIndex();
+            break;
+        case gl::TextureType::_2DArray:
+            *layer = index.getLayerIndex();
+            break;
+        case gl::TextureType::_3D:
+            *startDepth = index.getLayerIndex();
+            break;
+        default:
+            break;
+    }
+}
+GLint GetSliceOrDepth(const gl::ImageIndex &index)
+{
+    GLint layer, startDepth;
+    GetSliceAndDepth(index, &layer, &startDepth);
+
+    return std::max(layer, startDepth);
+}
+
+}
 
 angle::Result InitializeTextureContents(const gl::Context *context,
                                         const TextureRef &texture,
@@ -43,27 +81,9 @@ angle::Result InitializeTextureContents(const gl::Context *context,
 
     gl::Extents size = texture->size(index);
 
-    // Intialize the content to black
-    GLint layer      = 0;
-    GLint startDepth = 0;
-    if (index.hasLayer())
-    {
-        switch (index.getType())
-        {
-            case gl::TextureType::CubeMap:
-                layer = index.cubeMapFaceIndex();
-                break;
-            case gl::TextureType::_2DArray:
-                layer = index.getLayerIndex();
-                break;
-            case gl::TextureType::_3D:
-                startDepth = index.getLayerIndex();
-                break;
-            default:
-                UNREACHABLE();
-                break;
-        }
-    }
+    // Initialize the content to black
+    GLint layer, startDepth;
+    GetSliceAndDepth(index, &layer, &startDepth);
 
     if (texture->isCPUAccessible() && index.getType() != gl::TextureType::_2DMultisample &&
         index.getType() != gl::TextureType::_2DMultisampleArray)
@@ -117,25 +137,141 @@ angle::Result InitializeTextureContents(const gl::Context *context,
     }  // if (texture->isCPUAccessible())
     else
     {
-        // Use clear render command
-        RenderTargetMtl tempRtt;
-        tempRtt.set(texture, index.getLevelIndex(), std::max(layer, startDepth), textureObjFormat);
+        ANGLE_TRY(InitializeTextureContentsGPU(context, texture, textureObjFormat, index,
+                                               MTLColorWriteMaskAll));
+    }  // if (texture->isCPUAccessible())
 
-        // temporarily enable all color channels. Some emulated format has some channels write mask
-        // disabled when the texture is created.
-        MTLColorWriteMask enableAllChannels = MTLColorWriteMaskAll;
-        MTLColorWriteMask oldMask           = texture->getColorWritableMask();
-        texture->setColorWritableMask(enableAllChannels);
+    return angle::Result::Continue;
+}
 
-        Optional<MTLClearColor> blackColor = MTLClearColorMake(0, 0, 0, 1);
-        RenderCommandEncoder *encoder = contextMtl->getRenderCommandEncoder(tempRtt, blackColor);
-        ANGLE_UNUSED_VARIABLE(encoder);
-        contextMtl->endEncoding(true);
+angle::Result InitializeTextureContentsGPU(const gl::Context *context,
+                                           const TextureRef &texture,
+                                           const Format &textureObjFormat,
+                                           const gl::ImageIndex &index,
+                                           MTLColorWriteMask channelsToInit)
+{
+    // Only one slice can be initialized at a time.
+    ASSERT(!index.isLayered() || index.getType() == gl::TextureType::_3D);
+    if (index.isLayered() && index.getType() == gl::TextureType::_3D)
+    {
+        gl::ImageIndexIterator ite = index.getLayerIterator(texture->depth(index.getLevelIndex()));
+        while (ite.hasNext())
+        {
+            gl::ImageIndex depthLayerIndex = ite.next();
+            ANGLE_TRY(InitializeTextureContentsGPU(context, texture, textureObjFormat,
+                                                   depthLayerIndex, MTLColorWriteMaskAll));
+        }
+
+        return angle::Result::Continue;
+    }
+
+    if (textureObjFormat.hasDepthOrStencilBits())
+    {
+        // Depth stencil texture needs dedicated function.
+        return InitializeDepthStencilTextureContentsGPU(context, texture, textureObjFormat, index);
+    }
+
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+    GLint sliceOrDepth     = GetSliceOrDepth(index);
+
+    // Use clear render command
+    RenderTargetMtl tempRtt;
+    tempRtt.set(texture, index.getLevelIndex(), sliceOrDepth, textureObjFormat);
+
+    int clearAlpha = 0;
+    if (!textureObjFormat.intendedAngleFormat().alphaBits)
+    {
+        // if intended format doesn't have alpha, set it to 1.0.
+        clearAlpha = kEmulatedAlphaValue;
+    }
+
+    RenderCommandEncoder *encoder;
+    if (channelsToInit == MTLColorWriteMaskAll)
+    {
+        // If all channels will be initialized, use clear loadOp.
+        Optional<MTLClearColor> blackColor = MTLClearColorMake(0, 0, 0, clearAlpha);
+        encoder = contextMtl->getRenderCommandEncoder(tempRtt, blackColor);
+    }
+    else
+    {
+        // temporarily enable color channels requested via channelsToInit. Some emulated format has
+        // some channels write mask disabled when the texture is created.
+        MTLColorWriteMask oldMask = texture->getColorWritableMask();
+        texture->setColorWritableMask(channelsToInit);
+
+        // If there are some channels don't need to be initialized, we must use clearWithDraw.
+        encoder = contextMtl->getRenderCommandEncoder(tempRtt);
+
+        const angle::Format &angleFormat = textureObjFormat.actualAngleFormat();
+
+        ClearRectParams clearParams;
+        ClearColorValue clearColor = {.red = 0, .green = 0, .blue = 0};
+        if (angleFormat.isSint())
+        {
+            clearColor.type   = PixelType::Int;
+            clearColor.alphaI = clearAlpha;
+        }
+        else if (angleFormat.isUint())
+        {
+            clearColor.type   = PixelType::UInt;
+            clearColor.alphaU = clearAlpha;
+        }
+        else
+        {
+            clearColor.type  = PixelType::Float;
+            clearColor.alpha = clearAlpha;
+        }
+        clearParams.clearColor     = clearColor;
+        clearParams.dstTextureSize = texture->size();
+        clearParams.enabledBuffers.set(0);
+        clearParams.clearArea = gl::Rectangle(0, 0, texture->width(), texture->height());
+
+        ANGLE_TRY(
+            contextMtl->getDisplay()->getUtils().clearWithDraw(context, encoder, clearParams));
 
         // Restore texture's intended write mask
         texture->setColorWritableMask(oldMask);
+    }
+    encoder->setStoreAction(MTLStoreActionStore);
 
-    }  // if (texture->isCPUAccessible())
+    return angle::Result::Continue;
+}
+
+angle::Result InitializeDepthStencilTextureContentsGPU(const gl::Context *context,
+                                                       const TextureRef &texture,
+                                                       const Format &textureObjFormat,
+                                                       const gl::ImageIndex &index)
+{
+    // Use clear operation
+    ContextMtl *contextMtl           = mtl::GetImpl(context);
+    const angle::Format &angleFormat = textureObjFormat.actualAngleFormat();
+
+    mtl::RenderPassDesc rpDesc;
+
+    uint32_t layer = index.hasLayer() ? index.getLayerIndex() : 0;
+
+    rpDesc.sampleCount = texture->samples();
+    if (angleFormat.depthBits)
+    {
+        rpDesc.depthAttachment.targetTexture      = texture;
+        rpDesc.depthAttachment.targetLevel        = index.getLevelIndex();
+        rpDesc.depthAttachment.targetSliceOrDepth = layer;
+        rpDesc.depthAttachment.loadAction         = MTLLoadActionClear;
+        rpDesc.depthAttachment.clearDepth         = 1.0;
+    }
+    if (angleFormat.stencilBits)
+    {
+        rpDesc.stencilAttachment.targetTexture      = texture;
+        rpDesc.stencilAttachment.targetLevel        = index.getLevelIndex();
+        rpDesc.stencilAttachment.targetSliceOrDepth = layer;
+        rpDesc.stencilAttachment.loadAction         = MTLLoadActionClear;
+    }
+
+    // End current render pass
+    contextMtl->endEncoding(true);
+
+    RenderCommandEncoder *encoder = contextMtl->getRenderCommandEncoder(rpDesc);
+    encoder->setStoreAction(MTLStoreActionStore);
 
     return angle::Result::Continue;
 }
