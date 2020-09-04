@@ -51,12 +51,12 @@ namespace rx
 {
 namespace
 {
-constexpr char kXfbDeclMarker[]       = "@@ XFB-DECL @@";
-constexpr char kXfbOutMarker[]        = "@@ XFB-OUT @@;";
-constexpr char kXfbBuiltInPrefix[]    = "xfbANGLE";
-constexpr char kVersionDefine[]       = "#version 450 core\n";
-constexpr char kXfbEmuDisableMacro[]  = "ANGLE_DISABLE_XFB_EMULATION";
-constexpr char kXfbEmuDisableDefine[] = "#version 450 core\n#define ANGLE_DISABLE_XFB_EMULATION\n";
+constexpr char kXfbDeclMarker[]    = "@@ XFB-DECL @@";
+constexpr char kXfbOutMarker[]     = "@@ XFB-OUT @@;";
+constexpr char kXfbBuiltInPrefix[] = "xfbANGLE";
+constexpr char kVersionDefine[]    = "#version 450 core\n";
+constexpr char kXfbEmuMacro[]      = "ANGLE_ENABLE_XFB_EMULATION";
+constexpr char kXfbEmuDefine[]     = "#version 450 core\n#define ANGLE_ENABLE_XFB_EMULATION\n";
 
 template <size_t N>
 constexpr size_t ConstStrLen(const char (&)[N])
@@ -347,10 +347,10 @@ void GenerateTransformFeedbackEmulationOutputs(GlslangSourceOptions &options,
     const std::string xfbSet = Str(programInterfaceInfo->uniformsAndXfbDescriptorSetIndex);
     std::vector<std::string> xfbIndices(bufferCount);
 
-    const std::string ifndef = "#ifndef " + std::string(kXfbEmuDisableMacro) + "\n";
+    const std::string ifdef = "#ifdef " + std::string(kXfbEmuMacro) + "\n";
 
-    // Wrap XFB emulation in #ifndef guard.
-    std::string xfbDecl = ifndef;
+    // Wrap XFB emulation in #ifdef guard.
+    std::string xfbDecl = ifdef;
 
     for (uint32_t bufferIndex = 0; bufferIndex < bufferCount; ++bufferIndex)
     {
@@ -371,7 +371,7 @@ void GenerateTransformFeedbackEmulationOutputs(GlslangSourceOptions &options,
     }
     xfbDecl += "#endif\n";
 
-    std::string xfbOut = ifndef;
+    std::string xfbOut = ifdef;
     xfbOut +=
         "if (" + std::string(sh::vk::kDriverUniformsVarName) + ".xfbActiveUnpaused != 0)\n{\n";
     size_t outputOffset = 0;
@@ -1984,15 +1984,15 @@ angle::Result GlslangGetShaderSpirvCode(const GlslangErrorCallback &callback,
 {
     gl::ShaderMap<SpirvBlob> initialSpirvBlobs;
 
-    if (!keepXfbEmulation && !shaderSources[gl::ShaderType::Vertex].empty())
+    if (keepXfbEmulation && !shaderSources[gl::ShaderType::Vertex].empty())
     {
         gl::ShaderMap<std::string> patchedSources = shaderSources;
 
-        std::string defines = kXfbEmuDisableDefine;
+        std::string defines = kXfbEmuDefine;
 
         ANGLE_GLSLANG_CHECK(callback,
                             angle::ReplaceSubstring(&patchedSources[gl::ShaderType::Vertex],
-                                                    kVersionDefine, kXfbEmuDisableDefine),
+                                                    kVersionDefine, kXfbEmuDefine),
                             GlslangError::InvalidShader);
 
         ANGLE_TRY(GetShaderSpirvCode(callback, glCaps, patchedSources, &initialSpirvBlobs));
