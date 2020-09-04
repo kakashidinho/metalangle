@@ -800,6 +800,8 @@ void main() {
     glReadPixels(0, 0, 1, 1, GL_RGBA_INTEGER, GL_INT, pixel);
     EXPECT_EQ(pixel[0], val[0]);
 
+    glViewport(0, 0, 1, 1);
+
     GLVertexIDIntegerTextureDrawArrays_helper(0, 1, GL_NO_ERROR);
     GLVertexIDIntegerTextureDrawArrays_helper(1, 1, GL_NO_ERROR);
     GLVertexIDIntegerTextureDrawArrays_helper(10000, 1, GL_NO_ERROR);
@@ -7137,7 +7139,7 @@ TEST_P(GLSLTest_ES3, MixedRowAndColumnMajorMatrices_ReadSideEffectOrder)
 {
     // IntermTraverser::insertStatementsInParentBlock that's used to move side effects does not
     // respect the order of evaluation of logical expressions.  http://anglebug.com/3829.
-    ANGLE_SKIP_TEST_IF(IsVulkan());
+    ANGLE_SKIP_TEST_IF(IsVulkan() || IsMetal());
 
     // http://anglebug.com/3837
     ANGLE_SKIP_TEST_IF(IsLinux() && IsIntel() && IsOpenGL());
@@ -7202,7 +7204,7 @@ TEST_P(GLSLTest_ES3, MixedRowAndColumnMajorMatrices_ReadSideEffectShortCircuit)
 {
     // IntermTraverser::insertStatementsInParentBlock that's used to move side effects does not
     // respect short-circuiting in evaluation of logical expressions.  http://anglebug.com/3829.
-    ANGLE_SKIP_TEST_IF(IsVulkan());
+    ANGLE_SKIP_TEST_IF(IsVulkan() || IsMetal());
 
     // Fails on Android: http://anglebug.com/3839
     ANGLE_SKIP_TEST_IF(IsAndroid() && IsOpenGL());
@@ -7439,7 +7441,12 @@ ANGLE_INSTANTIATE_TEST(GLSLTestNoValidation,
 
 // Use this to select which configurations (e.g. which renderer, which GLES major version) these
 // tests should be run against.
-ANGLE_INSTANTIATE_TEST(GLSLTest_ES3, ES3_D3D11(), ES3_OPENGL(), ES3_OPENGLES(), ES3_VULKAN());
+ANGLE_INSTANTIATE_TEST(GLSLTest_ES3,
+                       ES3_D3D11(),
+                       ES3_OPENGL(),
+                       ES3_OPENGLES(),
+                       ES3_VULKAN(),
+                       ES3_METAL());
 
 ANGLE_INSTANTIATE_TEST(WebGLGLSLTest,
                        ES2_D3D11(),
