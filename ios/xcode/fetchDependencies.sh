@@ -33,7 +33,7 @@ git_pull()
     echo
 }
 
-glslang_revision="4b97a1108114107a8082a55e9e0721a40f9536d3"
+glslang_revision="7d65f09b83112c1ec9e29313cb9913ed2b850aa0"
 spirv_cross_revision="f38cbeb814c73510b85697adbe5e894f9eac978f"
 jsoncpp_revision="48246a099549ab325c01f69f24a34fc72e5c42e4"
 jsoncpp_src_revision="645250b6690785be60ab6780ce4b58698d884d11"

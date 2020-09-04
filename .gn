@@ -39,4 +39,5 @@ default_args = {
   build_angle_deqp_tests = true
   use_sysroot = true
   strip_absolute_paths_from_debug_symbols = false
+  enable_dsyms = true
 }
