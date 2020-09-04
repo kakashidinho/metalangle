@@ -242,6 +242,28 @@ constexpr PrimitiveTopologyClass kPrimitiveTopologyClassTriangle =
 constexpr PrimitiveTopologyClass kPrimitiveTopologyClassPoint = MTLPrimitiveTopologyClassPoint;
 #endif
 
+enum class RenderPipelineRasterization : uint32_t
+{
+    // This flag is used for vertex shader not writing any stage output (e.g gl_Position).
+    // This will disable fragment shader stage. This is useful for transform feedback ouput vertex
+    // shader.
+    Disabled,
+
+    // Fragment shader is enabled.
+    Enabled,
+
+    // This flag is for rasterization discard emulation when vertex shader still writes to stage
+    // output. Disabled flag cannot be used in this case since Metal doesn't allow that. The
+    // emulation would insert a code snippet to move gl_Position out of clip space's visible area to
+    // simulate the discard.
+    EmulatedDiscard,
+
+    EnumCount,
+};
+
+template <typename T>
+using RenderPipelineRasterStateMap = angle::PackedEnumMap<RenderPipelineRasterization, T>;
+
 struct alignas(4) RenderPipelineDesc
 {
     RenderPipelineDesc();
@@ -254,6 +276,8 @@ struct alignas(4) RenderPipelineDesc
 
     size_t hash() const;
 
+    bool rasterizationEnabled() const;
+
     VertexDesc vertexDescriptor;
 
     RenderPipelineOutputDesc outputDescriptor;
@@ -261,13 +285,12 @@ struct alignas(4) RenderPipelineDesc
     // Use uint8_t instead of PrimitiveTopologyClass to compact space.
     uint8_t inputPrimitiveTopology : 2;
 
-    bool rasterizationEnabled : 1;
     bool alphaToCoverageEnabled : 1;
 
     // These flags are for emulation and do not correspond to any flags in
     // MTLRenderPipelineDescriptor descriptor. These flags should be used by
     // RenderPipelineCacheSpecializeShaderFactory.
-    bool emulatedRasterizatonDiscard : 1;
+    RenderPipelineRasterization rasterizationType : 2;
     bool emulateCoverageMask : 1;
 };
 

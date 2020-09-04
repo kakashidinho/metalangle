@@ -463,8 +463,13 @@ class RenderCommandEncoder final : public CommandEncoder
     void pushDebugGroup(NSString *label);
     void popDebugGroup();
 
+    void setLabel(NSString *label);
+
     const RenderPassDesc &renderPassDesc() const { return mRenderPassDesc; }
     bool hasDrawCalls() const { return mHasDrawCalls; }
+
+    // Enable warning when scissor rect is out of render target's bound
+    void enableScissorRectOOBWarn(bool e) { mWarnOutOfBoundScissorRect = e; }
 
   private:
     // Override CommandEncoder
@@ -491,7 +496,12 @@ class RenderCommandEncoder final : public CommandEncoder
     // Cached Objective-C render pass desc to avoid re-allocate every frame.
     mtl::AutoObjCObj<MTLRenderPassDescriptor> mCachedRenderPassDescObjC;
 
+    mtl::AutoObjCObj<NSString> mLabel;
+
     MTLScissorRect mRenderPassMaxScissorRect;
+
+    bool mWarnOutOfBoundScissorRect;
+
     const OcclusionQueryPool &mOcclusionQueryPool;
     bool mRecording    = false;
     bool mHasDrawCalls = false;

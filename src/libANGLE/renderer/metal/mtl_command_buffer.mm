@@ -1162,6 +1162,11 @@ void RenderCommandEncoder::encodeMetalEncoder()
         // Verify that it was created successfully
         ASSERT(get());
 
+        if (mLabel)
+        {
+            metalCmdEncoder.label = mLabel;
+        }
+
         // Work-around driver bug on iOS devices: stencil must be explicitly set to zero
         // even if the doc says the default value is already zero.
         [metalCmdEncoder setStencilReferenceValue:0];
@@ -1196,6 +1201,8 @@ RenderCommandEncoder &RenderCommandEncoder::restart(const RenderPassDesc &desc)
         reset();
         return *this;
     }
+
+    mLabel.reset();
 
     mRenderPassDesc            = desc;
     mRecording                 = true;
@@ -1353,9 +1360,11 @@ RenderCommandEncoder &RenderCommandEncoder::setScissorRect(const MTLScissorRect 
     if (rect.x + rect.width > mRenderPassMaxScissorRect.width ||
         rect.y + rect.height > mRenderPassMaxScissorRect.height)
     {
-        WARN() << "Out of bound scissor rect detected " << rect.x << " " << rect.y << " "
-               << rect.width << " " << rect.height;
-
+        if (mWarnOutOfBoundScissorRect)
+        {
+            WARN() << "Out of bound scissor rect detected " << rect.x << " " << rect.y << " "
+                   << rect.width << " " << rect.height;
+        }
         // Out of bound rect will crash the metal runtime, ignore it.
         return *this;
     }
@@ -1705,6 +1714,11 @@ void RenderCommandEncoder::pushDebugGroup(NSString *label)
 void RenderCommandEncoder::popDebugGroup()
 {
     mCommands.push(CmdType::PopDebugGroup);
+}
+
+void RenderCommandEncoder::setLabel(NSString *label)
+{
+    mLabel.retainAssign(label);
 }
 
 RenderCommandEncoder &RenderCommandEncoder::setColorStoreAction(MTLStoreAction action,

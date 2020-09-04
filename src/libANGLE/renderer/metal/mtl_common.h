@@ -115,6 +115,8 @@ constexpr uint32_t kMaxRenderTargets = 4;
 constexpr uint32_t kMaxShaderUBOs = 12;
 constexpr uint32_t kMaxUBOSize    = 16384;
 
+constexpr uint32_t kMaxShaderXFBs = gl::IMPLEMENTATION_MAX_TRANSFORM_FEEDBACK_SEPARATE_ATTRIBS;
+
 constexpr size_t kDefaultAttributeSize = 4 * sizeof(float);
 
 // Metal limits

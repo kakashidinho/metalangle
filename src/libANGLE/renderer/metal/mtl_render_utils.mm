@@ -610,7 +610,7 @@ RenderPipelineDesc GetComputingVertexShaderOnlyRenderPipelineDesc(RenderCommandE
     const RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
 
     renderPassDesc.populateRenderPipelineOutputDesc(&pipelineDesc.outputDescriptor);
-    pipelineDesc.rasterizationEnabled   = false;
+    pipelineDesc.rasterizationType      = RenderPipelineRasterization::Disabled;
     pipelineDesc.inputPrimitiveTopology = kPrimitiveTopologyClassPoint;
 
     return pipelineDesc;

@@ -150,8 +150,6 @@ MTLRenderPipelineDescriptor *ToObjC(id<MTLFunction> vertexShader,
 {
     MTLRenderPipelineDescriptor *objCDesc = [[MTLRenderPipelineDescriptor alloc] init];
     [objCDesc reset];
-    objCDesc.vertexFunction   = vertexShader;
-    objCDesc.fragmentFunction = fragmentShader;
 
     ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, vertexDescriptor);
 
@@ -167,8 +165,13 @@ MTLRenderPipelineDescriptor *ToObjC(id<MTLFunction> vertexShader,
 #if ANGLE_MTL_PRIMITIVE_TOPOLOGY_CLASS_AVAILABLE
     ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, inputPrimitiveTopology);
 #endif
-    ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, rasterizationEnabled);
     ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, alphaToCoverageEnabled);
+
+    // rasterizationEnabled will be true for both EmulatedDiscard & Enabled.
+    objCDesc.rasterizationEnabled = desc.rasterizationEnabled();
+
+    objCDesc.vertexFunction   = vertexShader;
+    objCDesc.fragmentFunction = objCDesc.rasterizationEnabled ? fragmentShader : nil;
 
     return [objCDesc ANGLE_MTL_AUTORELEASE];
 }
@@ -649,7 +652,7 @@ RenderPipelineDesc::RenderPipelineDesc()
 {
     memset(this, 0, sizeof(*this));
     outputDescriptor.sampleCount = 1;
-    rasterizationEnabled         = true;
+    rasterizationType            = RenderPipelineRasterization::Enabled;
 }
 
 RenderPipelineDesc::RenderPipelineDesc(const RenderPipelineDesc &src)
@@ -679,6 +682,11 @@ bool RenderPipelineDesc::operator==(const RenderPipelineDesc &rhs) const
 size_t RenderPipelineDesc::hash() const
 {
     return angle::ComputeGenericHash(*this);
+}
+
+bool RenderPipelineDesc::rasterizationEnabled() const
+{
+    return rasterizationType != RenderPipelineRasterization::Disabled;
 }
 
 // RenderPassAttachmentTextureTargetDesc implementation

@@ -53,6 +53,6 @@ angle::Result GlslangWrapperVk::GetShaderCode(vk::Context *context,
 {
     return GlslangGetShaderSpirvCode(
         [context](GlslangError error) { return ErrorHandler(context, error); }, glCaps,
-        enableLineRasterEmulation, shaderSources, shaderCodeOut);
+        enableLineRasterEmulation, /* enableXfbEmulation */ true, shaderSources, shaderCodeOut);
 }
 }  // namespace rx
