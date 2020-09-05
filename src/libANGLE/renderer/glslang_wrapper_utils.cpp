@@ -1984,9 +1984,14 @@ angle::Result GlslangGetShaderSpirvCode(const GlslangErrorCallback &callback,
 {
     gl::ShaderMap<SpirvBlob> initialSpirvBlobs;
 
-    if (keepXfbEmulation && !shaderSources[gl::ShaderType::Vertex].empty())
+    if (keepXfbEmulation && linkedShaderStages.test(gl::ShaderType::Vertex) &&
+        !shaderSources[gl::ShaderType::Vertex].empty())
     {
-        gl::ShaderMap<std::string> patchedSources = shaderSources;
+        gl::ShaderMap<std::string> patchedSources;
+        for (const gl::ShaderType shaderType : linkedShaderStages)
+        {
+            patchedSources[shaderType] = shaderSources[shaderType];
+        }
 
         std::string defines = kXfbEmuDefine;
 

@@ -1210,16 +1210,18 @@ angle::Result GlslangGetShaderSpirvCode(ErrorHandler *context,
 
     // Metal doesn't allow vertex shader to write to both buffers and stage output. So need a
     // special version with only XFB emulation.
-    if (xfbOnlyShaderCodeOut && !programState.getLinkedTransformFeedbackVaryings().empty())
+    if (xfbOnlyShaderCodeOut && linkedShaderStages.test(gl::ShaderType::Vertex) &&
+        !programState.getLinkedTransformFeedbackVaryings().empty())
     {
-        gl::ShaderMap<std::string> vsOnlySrcMap;
+        gl::ShaderBitSet vsOnlyStage;
         gl::ShaderMap<std::vector<uint32_t>> vsOnlyCodeMap;
-        vsOnlySrcMap[gl::ShaderType::Vertex] = shaderSources[gl::ShaderType::Vertex];
+
+        vsOnlyStage.set(gl::ShaderType::Vertex);
 
         ANGLE_TRY(rx::GlslangGetShaderSpirvCode(
-            [context](GlslangError error) { return HandleError(context, error); },
-            linkedShaderStages, glCaps,
-            /* enableXfbEmulation */ true, vsOnlySrcMap, variableInfoMap, &vsOnlyCodeMap));
+            [context](GlslangError error) { return HandleError(context, error); }, vsOnlyStage,
+            glCaps,
+            /* enableXfbEmulation */ true, shaderSources, variableInfoMap, &vsOnlyCodeMap));
         *xfbOnlyShaderCodeOut = std::move(vsOnlyCodeMap[gl::ShaderType::Vertex]);
     }
 
