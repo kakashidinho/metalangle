@@ -88,6 +88,10 @@
 		0AAF41582354FAE9000E3CC8 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0AAF41562354FAE9000E3CC8 /* LaunchScreen.storyboard */; };
 		0AAF415B2354FAE9000E3CC8 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AAF415A2354FAE9000E3CC8 /* main.m */; };
 		0AAF415F2354FAFF000E3CC8 /* MetalANGLE.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AAF40CA2354CB64000E3CC8 /* MetalANGLE.framework */; };
+		0AB325F42503710E00AA5079 /* XFBPassthrough.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 0AB325F32503710E00AA5079 /* XFBPassthrough.glsl */; };
+		0AB325F52503710E00AA5079 /* XFBPassthrough.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 0AB325F32503710E00AA5079 /* XFBPassthrough.glsl */; };
+		0AB325F62503710E00AA5079 /* XFBPassthrough.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 0AB325F32503710E00AA5079 /* XFBPassthrough.glsl */; };
+		0AB325F72503710E00AA5079 /* XFBPassthrough.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 0AB325F32503710E00AA5079 /* XFBPassthrough.glsl */; };
 		0AD9E4942355DEA5006F5642 /* CC3Foundation.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AD9E48B2355DEA5006F5642 /* CC3Foundation.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		0AD9E4952355DEA5006F5642 /* CC3Kazmath.c in Sources */ = {isa = PBXBuildFile; fileRef = 0AD9E48C2355DEA5006F5642 /* CC3Kazmath.c */; };
 		0AD9E4962355DEA5006F5642 /* CC3GLMatrix.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AD9E4912355DEA5006F5642 /* CC3GLMatrix.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
@@ -683,6 +687,7 @@
 		0AAF41572354FAE9000E3CC8 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		0AAF41592354FAE9000E3CC8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		0AAF415A2354FAE9000E3CC8 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		0AB325F32503710E00AA5079 /* XFBPassthrough.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = XFBPassthrough.glsl; sourceTree = "<group>"; };
 		0AD9E48A2355DEA5006F5642 /* ccTypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ccTypes.h; sourceTree = "<group>"; };
 		0AD9E48B2355DEA5006F5642 /* CC3Foundation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CC3Foundation.m; sourceTree = "<group>"; };
 		0AD9E48C2355DEA5006F5642 /* CC3Kazmath.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = CC3Kazmath.c; sourceTree = "<group>"; };
@@ -931,6 +936,7 @@
 				0A946A30235700930027DFE1 /* MGLKitSampleApp.entitlements */,
 				0AD9E49E2355DEDF006F5642 /* SimpleFragment.glsl */,
 				0AD9E49D2355DEDF006F5642 /* SimpleVertex.glsl */,
+				0AB325F32503710E00AA5079 /* XFBPassthrough.glsl */,
 				0AD9E4982355DECC006F5642 /* Art */,
 				0AD9E4892355DE94006F5642 /* Math */,
 				0AAF41482354FAE8000E3CC8 /* AppDelegate.h */,
@@ -1555,6 +1561,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0A90FA822406896B005BA9A8 /* Main_mac.storyboard in Resources */,
+				0AB325F62503710E00AA5079 /* XFBPassthrough.glsl in Resources */,
 				0A90FA8924068E01005BA9A8 /* tile_floor.png in Resources */,
 				0A90FA8824068DFD005BA9A8 /* item_powerup_fish.png in Resources */,
 				0A90FA8624068B4E005BA9A8 /* SimpleFragment.glsl in Resources */,
@@ -1573,6 +1580,7 @@
 				0A9A6BBA2391283B006A152A /* item_powerup_fish.png in Resources */,
 				0A028404243DD6FE00F4FFCD /* item_powerup_fish.pvr in Resources */,
 				0A9A6BBB2391283B006A152A /* Assets.xcassets in Resources */,
+				0AB325F52503710E00AA5079 /* XFBPassthrough.glsl in Resources */,
 				0A9A6BBC2391283B006A152A /* Main.storyboard in Resources */,
 				0A9A6BBD2391283B006A152A /* SimpleVertex.glsl in Resources */,
 			);
@@ -1589,6 +1597,7 @@
 				0AD9E49B2355DECC006F5642 /* item_powerup_fish.png in Resources */,
 				0A028403243DD6FE00F4FFCD /* item_powerup_fish.pvr in Resources */,
 				0AAF41552354FAE9000E3CC8 /* Assets.xcassets in Resources */,
+				0AB325F42503710E00AA5079 /* XFBPassthrough.glsl in Resources */,
 				0AAF41532354FAE8000E3CC8 /* Main.storyboard in Resources */,
 				0AD9E49F2355DEDF006F5642 /* SimpleVertex.glsl in Resources */,
 			);
@@ -1605,6 +1614,7 @@
 				0A93672D244CC11400B3497E /* Main_tvos.storyboard in Resources */,
 				0AFDDBA9244CBD3D000B60B1 /* item_powerup_fish.png in Resources */,
 				0AFDDBAA244CBD3D000B60B1 /* item_powerup_fish.pvr in Resources */,
+				0AB325F72503710E00AA5079 /* XFBPassthrough.glsl in Resources */,
 				0AFDDBAB244CBD3D000B60B1 /* Assets.xcassets in Resources */,
 				0AFDDBAD244CBD3D000B60B1 /* SimpleVertex.glsl in Resources */,
 			);
