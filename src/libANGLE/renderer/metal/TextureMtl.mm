@@ -617,6 +617,9 @@ angle::Result TextureMtl::createNativeTexture(const gl::Context *context,
         }
     }
 
+    // Flush texture's GPU updates
+    contextMtl->flushCommandBufer();
+
     // Create sampler state
     ANGLE_TRY(ensureSamplerStateCreated(context));
 
