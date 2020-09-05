@@ -29,7 +29,7 @@ Preliminary Metal based WebGL benchmarks (based on [gles3-dev branch](https://gi
   - [x] Pixel buffer objects.
   - [ ] Primitive Restart. Metal's primitive restart doesn't work reliably.
   - [ ] Flat shading with last provoking vertex. Metal's default is first provoking vertex.
-  - [ ] Transform feedbacks.
+  - [x] Transform feedbacks.
 - __OpenGL ES 1.0__ is not recommended to be used. Its implementation is not actively maintained by
   original `ANGLE` project and currently buggy/not fully compliant.
 - All basic samples are working.
