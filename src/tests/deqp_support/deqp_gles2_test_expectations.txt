@@ -435,6 +435,9 @@
 4235 METAL : dEQP-GLES2.functional.texture.vertex.cube.filtering.linear_mipmap_linear_linear_clamp = FAIL
 4235 METAL : dEQP-GLES2.functional.texture.vertex.cube.filtering.linear_mipmap_linear_linear_repeat = FAIL
 4235 METAL : dEQP-GLES2.functional.texture.vertex.cube.filtering.linear_mipmap_linear_linear_mirror = FAIL
+4235 METAL : dEQP-GLES2.functional.texture.filtering.cube.nearest_nearest_clamp_rgba8888_npot = FAIL
+4235 METAL : dEQP-GLES2.functional.texture.filtering.cube.nearest_nearest_clamp_rgb888_npot = FAIL
+4235 METAL : dEQP-GLES2.functional.texture.filtering.cube.nearest_nearest_clamp_rgba4444_npot = FAIL
 4235 METAL : dEQP-GLES2.functional.texture.vertex.cube.wrap.* = FAIL
 4235 METAL : dEQP-GLES2.functional.attribute_location.bind_aliasing.*cond_* = FAIL
 4235 METAL : dEQP-GLES2.functional.clipping.point.wide_point_clip = FAIL
