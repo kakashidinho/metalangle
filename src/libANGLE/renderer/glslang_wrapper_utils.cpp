@@ -1993,8 +1993,6 @@ angle::Result GlslangGetShaderSpirvCode(const GlslangErrorCallback &callback,
             patchedSources[shaderType] = shaderSources[shaderType];
         }
 
-        std::string defines = kXfbEmuDefine;
-
         ANGLE_GLSLANG_CHECK(callback,
                             angle::ReplaceSubstring(&patchedSources[gl::ShaderType::Vertex],
                                                     kVersionDefine, kXfbEmuDefine),
