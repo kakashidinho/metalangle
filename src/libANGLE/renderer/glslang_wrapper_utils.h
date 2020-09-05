@@ -49,6 +49,9 @@ struct GlslangSourceOptions
 {
     bool useOldRewriteStructSamplers        = false;
     bool supportsTransformFeedbackExtension = false;
+    // This flag controls whether XFB emulation code would be inserted to translated source
+    // or not. This code could still be disabled by GlslangGetShaderSpirvCode() later via
+    // keepXfbEmulation boolean flag.
     bool emulateTransformFeedback           = false;
     bool emulateBresenhamLines              = false;
 };
