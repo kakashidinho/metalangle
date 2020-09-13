@@ -1755,7 +1755,12 @@ angle::Result TextureMtl::convertAndSetPerSliceSubImage(const gl::Context *conte
 
             // If texture is not array, slice must be zero, if texture is array, mtlArea.origin.z
             // must be zero.
+            // This is because this function uses Metal convention: where slice is only used for
+            // array textures, and z layer of mtlArea.origin is only used for 3D textures.
             ASSERT(slice == 0 || params.textureArea.z == 0);
+
+            // For mtl::RenderUtils we convert to OpenGL convention: z layer is used as either array
+            // texture's slice or 3D texture's layer index.
             params.textureArea.z += slice;
 
             ANGLE_TRY(contextMtl->getDisplay()->getUtils().unpackPixelsFromBufferToTexture(
