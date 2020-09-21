@@ -218,8 +218,8 @@ angle::Result BufferMtl::unmap(const gl::Context *context, GLboolean *result)
         if (mState.getAccessFlags() & GL_MAP_UNSYNCHRONIZED_BIT)
         {
             // Copy the mapped region without synchronization with GPU
-            auto ptr = mBuffer->map(contextMtl, /* readonly */ false, /* noSync */ true);
-            std::copy(mShadowCopy.data() + offset, mShadowCopy.data() + len, ptr);
+            auto ptr = mBuffer->map(contextMtl, /* readonly */ false, /* noSync */ true) + offset;
+            std::copy(mShadowCopy.data() + offset, mShadowCopy.data() + offset + len, ptr);
             mBuffer->unmap(contextMtl, offset, len);
         }
         else
