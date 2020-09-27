@@ -520,9 +520,12 @@ bool FramebufferMtl::checkPackedDepthStencilAttachment() const
     if (ANGLE_APPLE_AVAILABLE_XCI(10.14, 13.0, 12.0))
     {
         // If depth/stencil attachment has depth & stencil bits, then depth & stencil must not have
-        // separate attachment. i.e. They must be the same texture or one of them has no attachement.
+        // separate attachment. i.e. They must be the same texture or one of them has no
+        // attachment.
         if (mState.hasSeparateDepthAndStencilAttachments())
         {
+            WARN() << "Packed depth stencil texture/buffer must not be mixed with other "
+                      "texture/buffer.";
             return false;
         }
     }
@@ -532,6 +535,8 @@ bool FramebufferMtl::checkPackedDepthStencilAttachment() const
         // depth or stencil buffer. i.e. None of the depth & stencil attachment can be null.
         if (!mState.getDepthStencilAttachment())
         {
+            WARN() << "Packed depth stencil texture/buffer must be bound to both depth & stencil "
+                      "attachment point.";
             return false;
         }
     }
