@@ -754,6 +754,8 @@ void DisplayMtl::initializeFeatures()
     {
         mFeatures.hasStencilOutput.enabled                 = true;
         mFeatures.emulateDepthRangeMappingInShader.enabled = false;
+        ANGLE_FEATURE_CONDITION((&mFeatures), hasExplicitMemBarrier,
+                                (TARGET_OS_OSX || TARGET_OS_MACCATALYST) && !ANGLE_MTL_ARM);
     }
     if (ANGLE_APPLE_AVAILABLE_XCI(10.15, 13.0, 13.0))
     {
@@ -761,13 +763,8 @@ void DisplayMtl::initializeFeatures()
     }
 
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-    mFeatures.hasDepthTextureFiltering.enabled = true;
-    mFeatures.breakRenderPassIsCheap.enabled   = true;
-
-    if (ANGLE_APPLE_AVAILABLE_XC(10.14, 13.0))
-    {
-        mFeatures.hasExplicitMemBarrier.enabled = true;
-    }
+    mFeatures.hasDepthTextureFiltering.enabled = !ANGLE_MTL_ARM;
+    mFeatures.breakRenderPassIsCheap.enabled   = !ANGLE_MTL_ARM;
 
 #elif TARGET_OS_IOS || TARGET_OS_TV
     mFeatures.breakRenderPassIsCheap.enabled = false;
