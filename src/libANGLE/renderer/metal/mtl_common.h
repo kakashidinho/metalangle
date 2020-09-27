@@ -40,6 +40,10 @@
 #    endif
 #endif
 
+#if !defined(TARGET_OS_MACCATALYST)
+#    define TARGET_OS_MACCATALYST 0
+#endif
+
 #if defined(__ARM_ARCH)
 #    define ANGLE_MTL_ARM (__ARM_ARCH != 0)
 #else
