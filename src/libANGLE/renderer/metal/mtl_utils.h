@@ -164,6 +164,12 @@ static inline gl::Rectangle MTLRegionToGLRectangle(const MTLRegion &mtlRegion)
                          static_cast<int>(mtlRegion.size.height));
 }
 
+
+angle::Result TriangleFanBoundCheck(ContextMtl *context, size_t numTris);
+angle::Result GetTriangleFanIndicesCount(ContextMtl *context,
+                                         GLsizei vetexCount,
+                                         uint32_t *numElemsOut);
+
 NS_ASSUME_NONNULL_END
 }  // namespace mtl
 }  // namespace rx
