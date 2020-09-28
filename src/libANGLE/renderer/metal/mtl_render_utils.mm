@@ -2220,7 +2220,7 @@ angle::Result IndexGeneratorUtils::generateLineLoopLastSegment(ContextMtl *conte
     uint32_t indices[2] = {lastVertex, firstVertex};
     memcpy(ptr, indices, sizeof(indices));
 
-    dstBuffer->unmap(contextMtl);
+    dstBuffer->unmap(contextMtl, dstOffset, sizeof(indices));
 
     return angle::Result::Continue;
 }
