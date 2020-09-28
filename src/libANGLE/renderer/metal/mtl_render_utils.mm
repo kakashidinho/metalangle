@@ -240,13 +240,17 @@ angle::Result GenTriFanFromClientElements(ContextMtl *contextMtl,
                                           uint32_t dstOffset)
 {
     ASSERT(count > 2);
+
+    uint32_t genIndicesCount;
+    ANGLE_TRY(mtl::GetTriangleFanIndicesCount(contextMtl, count, &genIndicesCount));
+
     constexpr T kSrcPrimitiveRestartIndex    = std::numeric_limits<T>::max();
     const uint32_t kDstPrimitiveRestartIndex = std::numeric_limits<uint32_t>::max();
 
     uint32_t *dstPtr = reinterpret_cast<uint32_t *>(dstBuffer->map(contextMtl) + dstOffset);
-    T triFirstIdx, srcPrevIdx;
+    T triFirstIdx = 0;  // Vertex index of trianlge's 1st vertex
+    T srcPrevIdx  = 0;  // Vertex index of trianlge's 2nd vertex
     memcpy(&triFirstIdx, indices, sizeof(triFirstIdx));
-    memcpy(&srcPrevIdx, indices + 1, sizeof(srcPrevIdx));
 
     if (primitiveRestartEnabled)
     {
@@ -265,6 +269,10 @@ angle::Result GenTriFanFromClientElements(ContextMtl *contextMtl,
             {
                 memcpy(&dstPtr[i], &kDstPrimitiveRestartIndex, sizeof(kDstPrimitiveRestartIndex));
             }
+        }
+        else if (triFirstIdxLoc + 1 < count)
+        {
+            memcpy(&srcPrevIdx, indices + triFirstIdxLoc + 1, sizeof(srcPrevIdx));
         }
 
         for (GLsizei i = triFirstIdxLoc + 2; i < count; ++i)
@@ -302,6 +310,8 @@ angle::Result GenTriFanFromClientElements(ContextMtl *contextMtl,
     }
     else
     {
+        memcpy(&srcPrevIdx, indices + 1, sizeof(srcPrevIdx));
+
         for (GLsizei i = 2; i < count; ++i)
         {
             T srcIdx;
@@ -316,7 +326,7 @@ angle::Result GenTriFanFromClientElements(ContextMtl *contextMtl,
             memcpy(dstPtr + 3 * (i - 2), triIndices, sizeof(triIndices));
         }
     }
-    dstBuffer->unmap(contextMtl);
+    dstBuffer->unmap(contextMtl, dstOffset, genIndicesCount * sizeof(uint32_t));
 
     return angle::Result::Continue;
 }
@@ -401,7 +411,7 @@ angle::Result GenLineLoopFromClientElements(ContextMtl *contextMtl,
 
         *indicesGenerated = count + 1;
     }
-    dstBuffer->unmap(contextMtl);
+    dstBuffer->unmap(contextMtl, dstOffset, (*indicesGenerated) * sizeof(uint32_t));
 
     return angle::Result::Continue;
 }
