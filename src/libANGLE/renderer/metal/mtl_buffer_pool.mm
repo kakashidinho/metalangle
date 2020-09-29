@@ -179,8 +179,7 @@ angle::Result BufferPool::allocate(ContextMtl *contextMtl,
 {
     size_t sizeToAllocate = roundUp(sizeInBytes, mAlignment);
 
-    angle::base::CheckedNumeric<size_t> checkedNextWriteOffset =
-        roundUp<size_t>(mNextAllocationOffset, mAlignment);
+    angle::base::CheckedNumeric<size_t> checkedNextWriteOffset = mNextAllocationOffset;
     checkedNextWriteOffset += sizeToAllocate;
 
     if (!mBuffer || !checkedNextWriteOffset.IsValid() ||
@@ -329,7 +328,13 @@ void BufferPool::updateAlignment(Context *context, size_t alignment)
     ASSERT(alignment > 0);
 
     // NOTE(hqle): May check additional platform limits.
-    mAlignment = alignment;
+
+    // If alignment has changed, make sure the next allocation is done at an aligned offset.
+    if (alignment != mAlignment)
+    {
+        mNextAllocationOffset = roundUp(mNextAllocationOffset, static_cast<uint32_t>(alignment));
+        mAlignment            = alignment;
+    }
 }
 
 void BufferPool::reset()
