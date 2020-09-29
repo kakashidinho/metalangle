@@ -1258,10 +1258,12 @@ void ClearUtils::setupClearWithDraw(const gl::Context *context,
 
     // uniform
     ClearParamsUniform uniformParams;
-    uniformParams.clearColor[0] = static_cast<float>(params.clearColor.value().red);
-    uniformParams.clearColor[1] = static_cast<float>(params.clearColor.value().green);
-    uniformParams.clearColor[2] = static_cast<float>(params.clearColor.value().blue);
-    uniformParams.clearColor[3] = static_cast<float>(params.clearColor.value().alpha);
+    // ClearColorValue is an int, uint, float union so it's safe to use only floats.
+    // The Shader will do the bit cast based on appropriate format type.
+    uniformParams.clearColor[0] = params.clearColor.value().red;
+    uniformParams.clearColor[1] = params.clearColor.value().green;
+    uniformParams.clearColor[2] = params.clearColor.value().blue;
+    uniformParams.clearColor[3] = params.clearColor.value().alpha;
     uniformParams.clearDepth    = params.clearDepth.value();
 
     cmdEncoder->setVertexData(uniformParams, 0);
