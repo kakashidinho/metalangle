@@ -1182,8 +1182,7 @@ angle::Result FramebufferMtl::clearWithDraw(const gl::Context *context,
     ContextMtl *contextMtl = mtl::GetImpl(context);
     DisplayMtl *display    = contextMtl->getDisplay();
 
-    if (mRenderPassAttachmentsSameColorType || !clearColorBuffers.any() ||
-        !clearOpts.clearColor.valid())
+    if (mRenderPassAttachmentsSameColorType)
     {
         // Start new render encoder if not already.
         mtl::RenderCommandEncoder *encoder = ensureRenderPassStarted(context, mRenderPassDesc);
@@ -1193,9 +1192,20 @@ angle::Result FramebufferMtl::clearWithDraw(const gl::Context *context,
     else
     {
         // Not all attachments have the same color type.
-        // Clear the attachment one by one.
         mtl::ClearRectParams overrideClearOps = clearOpts;
         overrideClearOps.enabledBuffers.reset();
+
+        // First clear depth/stencil without color attachment
+        if (clearOpts.clearDepth.valid() || clearOpts.clearStencil.valid())
+        {
+            mtl::RenderPassDesc dsOnlyDesc     = mRenderPassDesc;
+            dsOnlyDesc.numColorAttachments     = 0;
+            mtl::RenderCommandEncoder *encoder = contextMtl->getRenderCommandEncoder(dsOnlyDesc);
+
+            ANGLE_TRY(display->getUtils().clearWithDraw(context, encoder, overrideClearOps));
+        }
+
+        // Clear the color attachment one by one.
         overrideClearOps.enabledBuffers.set(0);
         for (size_t drawbuffer : clearColorBuffers)
         {
