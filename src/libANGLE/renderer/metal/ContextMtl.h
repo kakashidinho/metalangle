@@ -491,11 +491,13 @@ class ContextMtl : public ContextImpl, public mtl::Context
     bool mCullAllPolygons = false;
 
     // Lineloop and TriFan index buffer
-    mtl::BufferPool mLineLoopIndexBuffer;
-    mtl::BufferPool mLineLoopLastSegmentIndexBuffer;
-    mtl::BufferPool mTriFanIndexBuffer;
-    // one buffer can be reused for any starting vertex in DrawArrays()
+    mtl::BufferPool mLineLoopIndexBufferPool;
+    mtl::BufferPool mLineLoopLastSegmentIndexBufferPool;
+    mtl::BufferPool mTriFanIndexBufferPool;
+    // one buffer can be reused for multiple DrawArrays()
     mtl::BufferRef mTriFanArraysIndexBuffer;
+    GLint mTriFanArraysIndexBufferFirstVertex = 0;
+    uint32_t mTriFanArraysIndexBufferOffset   = 0;
 
     // Dummy texture to be used for transform feedback only pass.
     mtl::TextureRef mDummyXFBRenderTexture;
