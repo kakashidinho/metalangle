@@ -226,9 +226,18 @@ void BaseRenderPassAttachmentDescToObjC(const RenderPassAttachmentDesc &src,
         dst.resolveDepthPlane = 0;
     }
 
-    ANGLE_OBJC_CP_PROPERTY(dst, src, loadAction);
-    ANGLE_OBJC_CP_PROPERTY(dst, src, storeAction);
-    ANGLE_OBJC_CP_PROPERTY(dst, src, storeActionOptions);
+    if (!dst.texture)
+    {
+        dst.resolveTexture = nil;
+        dst.loadAction     = MTLLoadActionDontCare;
+        dst.storeAction    = MTLStoreActionDontCare;
+    }
+    else
+    {
+        ANGLE_OBJC_CP_PROPERTY(dst, src, loadAction);
+        ANGLE_OBJC_CP_PROPERTY(dst, src, storeAction);
+        ANGLE_OBJC_CP_PROPERTY(dst, src, storeActionOptions);
+    }
 }
 
 void ToObjC(const RenderPassColorAttachmentDesc &desc,

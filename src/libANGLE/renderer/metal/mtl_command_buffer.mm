@@ -38,365 +38,6 @@ namespace mtl
 namespace
 {
 
-#define ANGLE_MTL_CMD_X(PROC)            \
-    PROC(Invalid)                        \
-    PROC(SetRenderPipelineState)         \
-    PROC(SetTriangleFillMode)            \
-    PROC(SetFrontFacingWinding)          \
-    PROC(SetCullMode)                    \
-    PROC(SetDepthStencilState)           \
-    PROC(SetDepthBias)                   \
-    PROC(SetStencilRefVals)              \
-    PROC(SetViewport)                    \
-    PROC(SetScissorRect)                 \
-    PROC(SetBlendColor)                  \
-    PROC(SetVertexBuffer)                \
-    PROC(SetVertexBufferOffset)          \
-    PROC(SetVertexBytes)                 \
-    PROC(SetVertexSamplerState)          \
-    PROC(SetVertexTexture)               \
-    PROC(SetFragmentBuffer)              \
-    PROC(SetFragmentBufferOffset)        \
-    PROC(SetFragmentBytes)               \
-    PROC(SetFragmentSamplerState)        \
-    PROC(SetFragmentTexture)             \
-    PROC(Draw)                           \
-    PROC(DrawInstanced)                  \
-    PROC(DrawIndexed)                    \
-    PROC(DrawIndexedInstanced)           \
-    PROC(DrawIndexedInstancedBaseVertex) \
-    PROC(SetVisibilityResultMode)        \
-    PROC(UseResource)                    \
-    PROC(MemoryBarrierWithResource)      \
-    PROC(InsertDebugsign)                \
-    PROC(PushDebugGroup)                 \
-    PROC(PopDebugGroup)
-
-#define ANGLE_MTL_TYPE_DECL(CMD) CMD,
-
-// Command types
-enum class CmdType : uint8_t
-{
-    ANGLE_MTL_CMD_X(ANGLE_MTL_TYPE_DECL)
-};
-
-// Commands decoder
-void InvalidCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
-{
-    UNREACHABLE();
-}
-
-void SetRenderPipelineStateCmd(id<MTLRenderCommandEncoder> encoder,
-                               IntermediateCommandStream *stream)
-{
-    auto state = stream->fetch<id<MTLRenderPipelineState>>();
-    [encoder setRenderPipelineState:state];
-    [state ANGLE_MTL_RELEASE];
-}
-
-void SetTriangleFillModeCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
-{
-    auto mode = stream->fetch<MTLTriangleFillMode>();
-    [encoder setTriangleFillMode:mode];
-}
-
-void SetFrontFacingWindingCmd(id<MTLRenderCommandEncoder> encoder,
-                              IntermediateCommandStream *stream)
-{
-    auto winding = stream->fetch<MTLWinding>();
-    [encoder setFrontFacingWinding:winding];
-}
-
-void SetCullModeCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
-{
-    auto mode = stream->fetch<MTLCullMode>();
-    [encoder setCullMode:mode];
-}
-
-void SetDepthStencilStateCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
-{
-    auto state = stream->fetch<id<MTLDepthStencilState>>();
-    [encoder setDepthStencilState:state];
-    [state ANGLE_MTL_RELEASE];
-}
-
-void SetDepthBiasCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
-{
-    auto depthBias  = stream->fetch<float>();
-    auto slopeScale = stream->fetch<float>();
-    auto clamp      = stream->fetch<float>();
-    [encoder setDepthBias:depthBias slopeScale:slopeScale clamp:clamp];
-}
-
-void SetStencilRefValsCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
-{
-    // Metal has some bugs when reference values are larger than 0xff
-    uint32_t frontRef = stream->fetch<uint32_t>();
-    uint32_t backRef  = stream->fetch<uint32_t>();
-    [encoder setStencilFrontReferenceValue:frontRef backReferenceValue:backRef];
-}
-
-void SetViewportCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
-{
-    auto viewport = stream->fetch<MTLViewport>();
-    [encoder setViewport:viewport];
-}
-
-void SetScissorRectCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
-{
-    auto rect = stream->fetch<MTLScissorRect>();
-    [encoder setScissorRect:rect];
-}
-
-void SetBlendColorCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
-{
-    float r = stream->fetch<float>();
-    float g = stream->fetch<float>();
-    float b = stream->fetch<float>();
-    float a = stream->fetch<float>();
-    [encoder setBlendColorRed:r green:g blue:b alpha:a];
-}
-
-void SetVertexBufferCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
-{
-    auto buffer = stream->fetch<id<MTLBuffer>>();
-    auto offset = stream->fetch<uint32_t>();
-    auto index  = stream->fetch<uint32_t>();
-    [encoder setVertexBuffer:buffer offset:offset atIndex:index];
-    [buffer ANGLE_MTL_RELEASE];
-}
-
-void SetVertexBufferOffsetCmd(id<MTLRenderCommandEncoder> encoder,
-                              IntermediateCommandStream *stream)
-{
-    auto offset = stream->fetch<uint32_t>();
-    auto index  = stream->fetch<uint32_t>();
-    [encoder setVertexBufferOffset:offset atIndex:index];
-}
-
-void SetVertexBytesCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
-{
-    auto size  = stream->fetch<size_t>();
-    auto bytes = stream->fetch(size);
-    auto index = stream->fetch<uint32_t>();
-    [encoder setVertexBytes:bytes length:size atIndex:index];
-}
-
-void SetVertexSamplerStateCmd(id<MTLRenderCommandEncoder> encoder,
-                              IntermediateCommandStream *stream)
-{
-    auto state        = stream->fetch<id<MTLSamplerState>>();
-    float lodMinClamp = stream->fetch<float>();
-    float lodMaxClamp = stream->fetch<float>();
-    auto index        = stream->fetch<uint32_t>();
-    [encoder setVertexSamplerState:state
-                       lodMinClamp:lodMinClamp
-                       lodMaxClamp:lodMaxClamp
-                           atIndex:index];
-
-    [state ANGLE_MTL_RELEASE];
-}
-
-void SetVertexTextureCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
-{
-    auto texture = stream->fetch<id<MTLTexture>>();
-    auto index   = stream->fetch<uint32_t>();
-    [encoder setVertexTexture:texture atIndex:index];
-    [texture ANGLE_MTL_RELEASE];
-}
-
-void SetFragmentBufferCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
-{
-    auto buffer = stream->fetch<id<MTLBuffer>>();
-    auto offset = stream->fetch<uint32_t>();
-    auto index  = stream->fetch<uint32_t>();
-    [encoder setFragmentBuffer:buffer offset:offset atIndex:index];
-    [buffer ANGLE_MTL_RELEASE];
-}
-
-void SetFragmentBufferOffsetCmd(id<MTLRenderCommandEncoder> encoder,
-                                IntermediateCommandStream *stream)
-{
-    auto offset = stream->fetch<uint32_t>();
-    auto index  = stream->fetch<uint32_t>();
-    [encoder setFragmentBufferOffset:offset atIndex:index];
-}
-
-void SetFragmentBytesCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
-{
-    auto size  = stream->fetch<size_t>();
-    auto bytes = stream->fetch(size);
-    auto index = stream->fetch<uint32_t>();
-    [encoder setFragmentBytes:bytes length:size atIndex:index];
-}
-
-void SetFragmentSamplerStateCmd(id<MTLRenderCommandEncoder> encoder,
-                                IntermediateCommandStream *stream)
-{
-    auto state        = stream->fetch<id<MTLSamplerState>>();
-    float lodMinClamp = stream->fetch<float>();
-    float lodMaxClamp = stream->fetch<float>();
-    auto index        = stream->fetch<uint32_t>();
-    [encoder setFragmentSamplerState:state
-                         lodMinClamp:lodMinClamp
-                         lodMaxClamp:lodMaxClamp
-                             atIndex:index];
-    [state ANGLE_MTL_RELEASE];
-}
-
-void SetFragmentTextureCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
-{
-    auto texture = stream->fetch<id<MTLTexture>>();
-    auto index   = stream->fetch<uint32_t>();
-    [encoder setFragmentTexture:texture atIndex:index];
-    [texture ANGLE_MTL_RELEASE];
-}
-
-void DrawCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
-{
-    auto primitiveType = stream->fetch<MTLPrimitiveType>();
-    auto vertexStart   = stream->fetch<uint32_t>();
-    auto vertexCount   = stream->fetch<uint32_t>();
-    [encoder drawPrimitives:primitiveType vertexStart:vertexStart vertexCount:vertexCount];
-}
-
-void DrawInstancedCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
-{
-    auto primitiveType = stream->fetch<MTLPrimitiveType>();
-    auto vertexStart   = stream->fetch<uint32_t>();
-    auto vertexCount   = stream->fetch<uint32_t>();
-    auto instances     = stream->fetch<uint32_t>();
-    [encoder drawPrimitives:primitiveType
-                vertexStart:vertexStart
-                vertexCount:vertexCount
-              instanceCount:instances];
-}
-
-void DrawIndexedCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
-{
-    auto primitiveType = stream->fetch<MTLPrimitiveType>();
-    auto indexCount    = stream->fetch<uint32_t>();
-    auto indexType     = stream->fetch<MTLIndexType>();
-    auto indexBuffer   = stream->fetch<id<MTLBuffer>>();
-    auto bufferOffset  = stream->fetch<size_t>();
-    [encoder drawIndexedPrimitives:primitiveType
-                        indexCount:indexCount
-                         indexType:indexType
-                       indexBuffer:indexBuffer
-                 indexBufferOffset:bufferOffset];
-    [indexBuffer ANGLE_MTL_RELEASE];
-}
-
-void DrawIndexedInstancedCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
-{
-    auto primitiveType = stream->fetch<MTLPrimitiveType>();
-    auto indexCount    = stream->fetch<uint32_t>();
-    auto indexType     = stream->fetch<MTLIndexType>();
-    auto indexBuffer   = stream->fetch<id<MTLBuffer>>();
-    auto bufferOffset  = stream->fetch<size_t>();
-    auto instances     = stream->fetch<uint32_t>();
-    [encoder drawIndexedPrimitives:primitiveType
-                        indexCount:indexCount
-                         indexType:indexType
-                       indexBuffer:indexBuffer
-                 indexBufferOffset:bufferOffset
-                     instanceCount:instances];
-    [indexBuffer ANGLE_MTL_RELEASE];
-}
-
-void DrawIndexedInstancedBaseVertexCmd(id<MTLRenderCommandEncoder> encoder,
-                                       IntermediateCommandStream *stream)
-{
-    auto primitiveType = stream->fetch<MTLPrimitiveType>();
-    auto indexCount    = stream->fetch<uint32_t>();
-    auto indexType     = stream->fetch<MTLIndexType>();
-    auto indexBuffer   = stream->fetch<id<MTLBuffer>>();
-    auto bufferOffset  = stream->fetch<size_t>();
-    auto instances     = stream->fetch<uint32_t>();
-    auto baseVertex    = stream->fetch<uint32_t>();
-    [encoder drawIndexedPrimitives:primitiveType
-                        indexCount:indexCount
-                         indexType:indexType
-                       indexBuffer:indexBuffer
-                 indexBufferOffset:bufferOffset
-                     instanceCount:instances
-                        baseVertex:baseVertex
-                      baseInstance:0];
-    [indexBuffer ANGLE_MTL_RELEASE];
-}
-
-void SetVisibilityResultModeCmd(id<MTLRenderCommandEncoder> encoder,
-                                IntermediateCommandStream *stream)
-{
-    auto mode   = stream->fetch<MTLVisibilityResultMode>();
-    auto offset = stream->fetch<size_t>();
-    [encoder setVisibilityResultMode:mode offset:offset];
-}
-
-void UseResourceCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
-{
-    auto resource = stream->fetch<id<MTLResource>>();
-    auto usage    = stream->fetch<MTLResourceUsage>();
-    auto stages   = stream->fetch<mtl::RenderStages>();
-    ANGLE_UNUSED_VARIABLE(stages);
-#if defined(__IPHONE_13_0) || defined(__MAC_10_15)
-    if (ANGLE_APPLE_AVAILABLE_XCI(10.15, 13.0, 13.0))
-    {
-        [encoder useResource:resource usage:usage stages:stages];
-    }
-    else
-#endif
-    {
-        [encoder useResource:resource usage:usage];
-    }
-    [resource ANGLE_MTL_RELEASE];
-}
-
-void MemoryBarrierWithResourceCmd(id<MTLRenderCommandEncoder> encoder,
-                                  IntermediateCommandStream *stream)
-{
-    auto resource = stream->fetch<id<MTLResource>>();
-    auto after    = stream->fetch<mtl::RenderStages>();
-    auto before   = stream->fetch<mtl::RenderStages>();
-    ANGLE_UNUSED_VARIABLE(after);
-    ANGLE_UNUSED_VARIABLE(before);
-#if defined(__MAC_10_14) && (TARGET_OS_OSX || TARGET_OS_MACCATALYST)
-    if (ANGLE_APPLE_AVAILABLE_XC(10.14, 13.0))
-    {
-        [encoder memoryBarrierWithResources:&resource
-                                      count:1
-                                afterStages:after
-                               beforeStages:before];
-    }
-#endif
-    [resource ANGLE_MTL_RELEASE];
-}
-
-void InsertDebugsignCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
-{
-    auto label = stream->fetch<NSString *>();
-    [encoder insertDebugSignpost:label];
-    [label ANGLE_MTL_RELEASE];
-}
-
-void PushDebugGroupCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
-{
-    auto label = stream->fetch<NSString *>();
-    [encoder pushDebugGroup:label];
-    [label ANGLE_MTL_RELEASE];
-}
-
-void PopDebugGroupCmd(id<MTLRenderCommandEncoder> encoder, IntermediateCommandStream *stream)
-{
-    [encoder popDebugGroup];
-}
-
-// Command encoder mapping
-#define ANGLE_MTL_CMD_MAP(CMD) CMD##Cmd,
-
-using CommandEncoderFunc = void (*)(id<MTLRenderCommandEncoder>, IntermediateCommandStream *);
-constexpr CommandEncoderFunc gCommandEncoders[] = {ANGLE_MTL_CMD_X(ANGLE_MTL_CMD_MAP)};
-
 NSString *cppLabelToObjC(const std::string &marker)
 {
     auto label = [NSString stringWithUTF8String:marker.c_str()];
@@ -877,7 +518,7 @@ RenderCommandEncoderShaderStates::RenderCommandEncoderShaderStates()
 
 void RenderCommandEncoderShaderStates::reset()
 {
-    for (id<MTLBuffer> &buffer : buffers)
+    for (AutoObjCPtr<id<MTLBuffer>> &buffer : buffers)
     {
         buffer = nil;
     }
@@ -887,7 +528,7 @@ void RenderCommandEncoderShaderStates::reset()
         offset = 0;
     }
 
-    for (id<MTLSamplerState> &sampler : samplers)
+    for (AutoObjCPtr<id<MTLSamplerState>> &sampler : samplers)
     {
         sampler = nil;
     }
@@ -897,7 +538,7 @@ void RenderCommandEncoderShaderStates::reset()
         lodClampRange.reset();
     }
 
-    for (id<MTLTexture> &texture : textures)
+    for (AutoObjCPtr<id<MTLTexture>> &texture : textures)
     {
         texture = nil;
     }
@@ -946,56 +587,58 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer *cmdBuffer,
         mCachedRenderPassDescObjC = [MTLRenderPassDescriptor renderPassDescriptor];
     }
 
-    static_assert(sizeof(uint8_t) == sizeof(CmdType), "CmdType was expected to be 8 bit");
     for (gl::ShaderType shaderType : gl::AllShaderTypes())
     {
-        mSetBufferCmds[shaderType]  = static_cast<uint8_t>(CmdType::Invalid);
-        mSetBytesCmds[shaderType]   = static_cast<uint8_t>(CmdType::Invalid);
-        mSetTextureCmds[shaderType] = static_cast<uint8_t>(CmdType::Invalid);
-        mSetSamplerCmds[shaderType] = static_cast<uint8_t>(CmdType::Invalid);
+        mSetBufferFuncs[shaderType]  = nullptr;
+        mSetBytesFuncs[shaderType]   = nullptr;
+        mSetTextureFuncs[shaderType] = nullptr;
+        mSetSamplerFuncs[shaderType] = nullptr;
     }
 
-    mSetBufferCmds[gl::ShaderType::Vertex]   = static_cast<uint8_t>(CmdType::SetVertexBuffer);
-    mSetBufferCmds[gl::ShaderType::Fragment] = static_cast<uint8_t>(CmdType::SetFragmentBuffer);
+    mSetBufferFuncs[gl::ShaderType::Vertex]   = &RenderCommandEncoder::mtlSetVertexBuffer;
+    mSetBufferFuncs[gl::ShaderType::Fragment] = &RenderCommandEncoder::mtlSetFragmentBuffer;
 
-    mSetBufferOffsetCmds[gl::ShaderType::Vertex] =
-        static_cast<uint8_t>(CmdType::SetVertexBufferOffset);
-    mSetBufferOffsetCmds[gl::ShaderType::Fragment] =
-        static_cast<uint8_t>(CmdType::SetFragmentBufferOffset);
+    mSetBufferOffsetFuncs[gl::ShaderType::Vertex] = &RenderCommandEncoder::mtlSetVertexBufferOffset;
+    mSetBufferOffsetFuncs[gl::ShaderType::Fragment] =
+        &RenderCommandEncoder::mtlSetFragmentBufferOffset;
 
-    mSetBytesCmds[gl::ShaderType::Vertex]   = static_cast<uint8_t>(CmdType::SetVertexBytes);
-    mSetBytesCmds[gl::ShaderType::Fragment] = static_cast<uint8_t>(CmdType::SetFragmentBytes);
+    mSetBytesFuncs[gl::ShaderType::Vertex]   = &RenderCommandEncoder::mtlSetVertexBytes;
+    mSetBytesFuncs[gl::ShaderType::Fragment] = &RenderCommandEncoder::mtlSetFragmentBytes;
 
-    mSetTextureCmds[gl::ShaderType::Vertex]   = static_cast<uint8_t>(CmdType::SetVertexTexture);
-    mSetTextureCmds[gl::ShaderType::Fragment] = static_cast<uint8_t>(CmdType::SetFragmentTexture);
+    mSetTextureFuncs[gl::ShaderType::Vertex]   = &RenderCommandEncoder::mtlSetVertexTexture;
+    mSetTextureFuncs[gl::ShaderType::Fragment] = &RenderCommandEncoder::mtlSetFragmentTexture;
 
-    mSetSamplerCmds[gl::ShaderType::Vertex] = static_cast<uint8_t>(CmdType::SetVertexSamplerState);
-    mSetSamplerCmds[gl::ShaderType::Fragment] =
-        static_cast<uint8_t>(CmdType::SetFragmentSamplerState);
+    mSetSamplerFuncs[gl::ShaderType::Vertex]   = &RenderCommandEncoder::mtlSetVertexSamplerState;
+    mSetSamplerFuncs[gl::ShaderType::Fragment] = &RenderCommandEncoder::mtlSetFragmentSamplerState;
 }
 RenderCommandEncoder::~RenderCommandEncoder() {}
 
 void RenderCommandEncoder::reset()
 {
     CommandEncoder::reset();
+
+    if (mRecording)
+    {
+        mRenderPassDesc = RenderPassDesc();
+        mStateCache.reset();
+
+        mDeferredLabel     = nil;
+        mDeferredDebugSign = nil;
+        mDeferredDebugGroups.clear();
+    }
+
     mRecording = false;
-    mCommands.clear();
 }
 
-void RenderCommandEncoder::finalizeLoadStoreAction(
-    MTLRenderPassAttachmentDescriptor *objCRenderPassAttachment)
+MTLStoreAction RenderCommandEncoder::correctStoreAction(
+    MTLRenderPassAttachmentDescriptor *objCRenderPassAttachment,
+    MTLStoreAction finalStoreAction)
 {
-    if (!objCRenderPassAttachment.texture)
-    {
-        objCRenderPassAttachment.loadAction     = MTLLoadActionDontCare;
-        objCRenderPassAttachment.storeAction    = MTLStoreActionDontCare;
-        objCRenderPassAttachment.resolveTexture = nil;
-        return;
-    }
+    MTLStoreAction storeAction = finalStoreAction;
 
     if (objCRenderPassAttachment.resolveTexture)
     {
-        if (objCRenderPassAttachment.storeAction == MTLStoreActionStore)
+        if (finalStoreAction == MTLStoreActionStore)
         {
             // NOTE(hqle): Currently if the store action with implicit MS texture is MTLStoreAction,
             // it is automatically convert to store and resolve action. It might introduce
@@ -1003,20 +646,17 @@ void RenderCommandEncoder::finalizeLoadStoreAction(
             // Consider an improvement such as only store the MS texture, and resolve only at
             // the end of real render pass (not render pass the was interrupted by compute pass)
             // or before glBlitFramebuffer operation starts.
-            objCRenderPassAttachment.storeAction = MTLStoreActionStoreAndMultisampleResolve;
-        }
-        else if (objCRenderPassAttachment.storeAction == MTLStoreActionDontCare)
-        {
-            // Ignore resolve texture if the store action is not a resolve action.
-            objCRenderPassAttachment.resolveTexture = nil;
+            storeAction = MTLStoreActionStoreAndMultisampleResolve;
         }
     }
 
-    if (objCRenderPassAttachment.storeAction == MTLStoreActionUnknown)
+    if (finalStoreAction == MTLStoreActionUnknown)
     {
         // If storeAction hasn't been set for this attachment, we set to dontcare.
-        objCRenderPassAttachment.storeAction = MTLStoreActionDontCare;
+        storeAction = MTLStoreActionDontCare;
     }
+
+    return storeAction;
 }
 
 void RenderCommandEncoder::endEncoding()
@@ -1029,38 +669,37 @@ void RenderCommandEncoder::endEncodingImpl(bool considerDiscardSimulation)
     if (!valid())
         return;
 
+    ensureMetalEncoderStarted();
+
     // Last minute correcting the store options.
     MTLRenderPassDescriptor *objCRenderPassDesc = mCachedRenderPassDescObjC.get();
     for (uint32_t i = 0; i < mRenderPassDesc.numColorAttachments; ++i)
     {
+        if (!objCRenderPassDesc.colorAttachments[i].texture)
+        {
+            continue;
+        }
         // Update store action set between restart() and endEncoding()
-        objCRenderPassDesc.colorAttachments[i].storeAction =
-            mRenderPassDesc.colorAttachments[i].storeAction;
-        finalizeLoadStoreAction(objCRenderPassDesc.colorAttachments[i]);
+        MTLStoreAction storeAction =
+            correctStoreAction(objCRenderPassDesc.colorAttachments[i],
+                               mRenderPassDesc.colorAttachments[i].storeAction);
+        [get() setColorStoreAction:storeAction atIndex:i];
     }
 
     // Update store action set between restart() and endEncoding()
-    objCRenderPassDesc.depthAttachment.storeAction = mRenderPassDesc.depthAttachment.storeAction;
-    finalizeLoadStoreAction(objCRenderPassDesc.depthAttachment);
-
+    if (objCRenderPassDesc.depthAttachment.texture)
+    {
+        MTLStoreAction storeAction = correctStoreAction(
+            objCRenderPassDesc.depthAttachment, mRenderPassDesc.depthAttachment.storeAction);
+        [get() setDepthStoreAction:storeAction];
+    }
     // Update store action set between restart() and endEncoding()
-    objCRenderPassDesc.stencilAttachment.storeAction =
-        mRenderPassDesc.stencilAttachment.storeAction;
-    finalizeLoadStoreAction(objCRenderPassDesc.stencilAttachment);
-
-    // Set visibility result buffer
-    if (mOcclusionQueryPool.getNumRenderPassAllocatedQueries())
+    if (objCRenderPassDesc.stencilAttachment.texture)
     {
-        objCRenderPassDesc.visibilityResultBuffer =
-            mOcclusionQueryPool.getRenderPassVisibilityPoolBuffer()->get();
+        MTLStoreAction storeAction = correctStoreAction(
+            objCRenderPassDesc.stencilAttachment, mRenderPassDesc.stencilAttachment.storeAction);
+        [get() setStencilStoreAction:storeAction];
     }
-    else
-    {
-        objCRenderPassDesc.visibilityResultBuffer = nil;
-    }
-
-    // Encode the actual encoder
-    encodeMetalEncoder();
 
     CommandEncoder::endEncoding();
 
@@ -1074,6 +713,10 @@ void RenderCommandEncoder::endEncodingImpl(bool considerDiscardSimulation)
     // reset state
     mRenderPassDesc = RenderPassDesc();
     mStateCache.reset();
+
+    mDeferredLabel     = nil;
+    mDeferredDebugSign = nil;
+    mDeferredDebugGroups.clear();
 }
 
 inline void RenderCommandEncoder::initAttachmentWriteDependencyAndScissorRect(
@@ -1147,38 +790,156 @@ void RenderCommandEncoder::simulateDiscardFramebuffer()
 #endif  // ANGLE_MTL_SIMULATE_DISCARD_FRAMEBUFFER
 }
 
-void RenderCommandEncoder::encodeMetalEncoder()
+void RenderCommandEncoder::ensureMetalEncoderStarted()
 {
+    if (get())
+    {
+        return;
+    }
+
     ANGLE_MTL_OBJC_SCOPE
     {
-        ANGLE_MTL_LOG("Creating new render command encoder with desc: %@",
-                      mCachedRenderPassDescObjC);
+        // Set store action to unknown so that we can set proper value later.
+        MTLRenderPassDescriptor *objCRenderPassDesc = mCachedRenderPassDescObjC.get();
+        for (uint32_t i = 0; i < mRenderPassDesc.numColorAttachments; ++i)
+        {
+            if (objCRenderPassDesc.colorAttachments[i].texture)
+            {
+                objCRenderPassDesc.colorAttachments[i].storeAction = MTLStoreActionUnknown;
+            }
+        }
+
+        if (objCRenderPassDesc.depthAttachment.texture)
+        {
+            objCRenderPassDesc.depthAttachment.storeAction = MTLStoreActionUnknown;
+        }
+        if (objCRenderPassDesc.stencilAttachment.texture)
+        {
+            objCRenderPassDesc.stencilAttachment.storeAction = MTLStoreActionUnknown;
+        }
+
+        // Set visibility result buffer
+        if (mOcclusionQueryPool.getRenderPassVisibilityPoolBuffer())
+        {
+            objCRenderPassDesc.visibilityResultBuffer =
+                mOcclusionQueryPool.getRenderPassVisibilityPoolBuffer()->get();
+        }
+        else
+        {
+            objCRenderPassDesc.visibilityResultBuffer = nil;
+        }
+
+        ANGLE_MTL_LOG("Creating new render command encoder with desc: %@", objCRenderPassDesc);
 
         id<MTLRenderCommandEncoder> metalCmdEncoder =
-            [cmdBuffer().get() renderCommandEncoderWithDescriptor:mCachedRenderPassDescObjC];
+            [cmdBuffer().get() renderCommandEncoderWithDescriptor:objCRenderPassDesc];
 
         set(metalCmdEncoder);
 
         // Verify that it was created successfully
         ASSERT(get());
 
-        if (mLabel)
+        applyStates();
+    }
+}
+
+void RenderCommandEncoder::applyStates()
+{
+    // Apply the current cached states
+    if (mDeferredLabel)
+    {
+        mtlSetLabel(mDeferredLabel);
+    }
+    mtlInsertDebugSign(mDeferredDebugSign);
+
+    for (mtl::AutoObjCObj<NSString> &group : mDeferredDebugGroups)
+    {
+        mtlPushDebugGroup(group);
+    }
+
+    mtlSetTriangleFillMode(mStateCache.triangleFillMode);
+    mtlSetFrontFacingWinding(mStateCache.winding);
+    mtlSetCullMode(mStateCache.cullMode);
+    mtlSetDepthBias(mStateCache.depthBias, mStateCache.depthSlopeScale, mStateCache.depthClamp);
+    mtlSetStencilRefVals(mStateCache.stencilFrontRef, mStateCache.stencilBackRef);
+    mtlSetBlendColor(mStateCache.blendColor[0], mStateCache.blendColor[1],
+                     mStateCache.blendColor[2], mStateCache.blendColor[3]);
+
+    if (mStateCache.renderPipeline)
+    {
+        mtlSetRenderPipelineState(mStateCache.renderPipeline);
+    }
+    if (mStateCache.depthStencilState)
+    {
+        mtlSetDepthStencilState(mStateCache.depthStencilState);
+    }
+    if (mStateCache.viewport.valid())
+    {
+        mtlSetViewport(mStateCache.viewport.value());
+    }
+    if (mStateCache.scissorRect.valid())
+    {
+        mtlSetScissorRect(mStateCache.scissorRect.value());
+    }
+    if (mStateCache.visibilityResultMode != MTLVisibilityResultModeDisabled)
+    {
+        mtlSetVisibilityResultMode(mStateCache.visibilityResultMode,
+                                   mStateCache.visibilityResultBufferOffset);
+    }
+
+    const RenderCommandEncoderShaderStates &vsStates =
+        mStateCache.perShaderStates[gl::ShaderType::Vertex];
+    const RenderCommandEncoderShaderStates &fsStates =
+        mStateCache.perShaderStates[gl::ShaderType::Fragment];
+    for (uint32_t i = 0; i < kMaxShaderBuffers; ++i)
+    {
+        if (vsStates.buffers[i])
         {
-            metalCmdEncoder.label = mLabel;
+            mtlSetVertexBuffer(vsStates.buffers[i], vsStates.bufferOffsets[i], i);
+        }
+        if (fsStates.buffers[i])
+        {
+            mtlSetFragmentBuffer(fsStates.buffers[i], fsStates.bufferOffsets[i], i);
+        }
+    }
+
+    for (uint32_t i = 0; i < kMaxShaderSamplers; ++i)
+    {
+        if (vsStates.samplers[i])
+        {
+            if (vsStates.samplerLodClamps[i].valid())
+            {
+                const std::pair<float, float> &clamps = vsStates.samplerLodClamps[i].value();
+                mtlSetVertexSamplerState(vsStates.samplers[i], clamps.first, clamps.second, i);
+            }
+            else
+            {
+                mtlSetVertexSamplerState(vsStates.samplers[i], i);
+            }
         }
 
-        // Work-around driver bug on iOS devices: stencil must be explicitly set to zero
-        // even if the doc says the default value is already zero.
-        [metalCmdEncoder setStencilReferenceValue:0];
-
-        while (mCommands.good())
+        if (fsStates.samplers[i])
         {
-            auto cmdType               = mCommands.fetch<CmdType>();
-            CommandEncoderFunc encoder = gCommandEncoders[static_cast<int>(cmdType)];
-            encoder(metalCmdEncoder, &mCommands);
+            if (fsStates.samplerLodClamps[i].valid())
+            {
+                const std::pair<float, float> &clamps = fsStates.samplerLodClamps[i].value();
+                mtlSetFragmentSamplerState(fsStates.samplers[i], clamps.first, clamps.second, i);
+            }
+            else
+            {
+                mtlSetFragmentSamplerState(fsStates.samplers[i], i);
+            }
         }
 
-        mCommands.clear();
+        if (vsStates.textures[i])
+        {
+            mtlSetVertexTexture(vsStates.textures[i], i);
+        }
+
+        if (fsStates.textures[i])
+        {
+            mtlSetFragmentTexture(fsStates.textures[i], i);
+        }
     }
 }
 
@@ -1202,11 +963,8 @@ RenderCommandEncoder &RenderCommandEncoder::restart(const RenderPassDesc &desc)
         return *this;
     }
 
-    mLabel.reset();
-
     mRenderPassDesc            = desc;
     mRecording                 = true;
-    mHasDrawCalls              = false;
     mWarnOutOfBoundScissorRect = true;
     mRenderPassMaxScissorRect  = {.x      = 0,
                                  .y      = 0,
@@ -1242,9 +1000,12 @@ RenderCommandEncoder &RenderCommandEncoder::setRenderPipelineState(id<MTLRenderP
     {
         return *this;
     }
-    mStateCache.renderPipeline = state;
+    mStateCache.renderPipeline.retainAssign(state);
 
-    mCommands.push(CmdType::SetRenderPipelineState).push([state ANGLE_MTL_RETAIN]);
+    if (get())
+    {
+        mtlSetRenderPipelineState(state);
+    }
 
     return *this;
 }
@@ -1256,7 +1017,10 @@ RenderCommandEncoder &RenderCommandEncoder::setTriangleFillMode(MTLTriangleFillM
     }
     mStateCache.triangleFillMode = mode;
 
-    mCommands.push(CmdType::SetTriangleFillMode).push(mode);
+    if (get())
+    {
+        mtlSetTriangleFillMode(mode);
+    }
 
     return *this;
 }
@@ -1268,7 +1032,10 @@ RenderCommandEncoder &RenderCommandEncoder::setFrontFacingWinding(MTLWinding win
     }
     mStateCache.winding = winding;
 
-    mCommands.push(CmdType::SetFrontFacingWinding).push(winding);
+    if (get())
+    {
+        mtlSetFrontFacingWinding(winding);
+    }
 
     return *this;
 }
@@ -1280,7 +1047,10 @@ RenderCommandEncoder &RenderCommandEncoder::setCullMode(MTLCullMode mode)
     }
     mStateCache.cullMode = mode;
 
-    mCommands.push(CmdType::SetCullMode).push(mode);
+    if (get())
+    {
+        mtlSetCullMode(mode);
+    }
 
     return *this;
 }
@@ -1291,9 +1061,12 @@ RenderCommandEncoder &RenderCommandEncoder::setDepthStencilState(id<MTLDepthSten
     {
         return *this;
     }
-    mStateCache.depthStencilState = state;
+    mStateCache.depthStencilState.retainAssign(state);
 
-    mCommands.push(CmdType::SetDepthStencilState).push([state ANGLE_MTL_RETAIN]);
+    if (get())
+    {
+        mtlSetDepthStencilState(state);
+    }
 
     return *this;
 }
@@ -1310,7 +1083,10 @@ RenderCommandEncoder &RenderCommandEncoder::setDepthBias(float depthBias,
     mStateCache.depthSlopeScale = slopeScale;
     mStateCache.depthClamp      = clamp;
 
-    mCommands.push(CmdType::SetDepthBias).push(depthBias).push(slopeScale).push(clamp);
+    if (get())
+    {
+        mtlSetDepthBias(depthBias, slopeScale, clamp);
+    }
 
     return *this;
 }
@@ -1327,7 +1103,10 @@ RenderCommandEncoder &RenderCommandEncoder::setStencilRefVals(uint32_t frontRef,
     mStateCache.stencilFrontRef = frontRef;
     mStateCache.stencilBackRef  = backRef;
 
-    mCommands.push(CmdType::SetStencilRefVals).push(frontRef).push(backRef);
+    if (get())
+    {
+        mtlSetStencilRefVals(frontRef, backRef);
+    }
 
     return *this;
 }
@@ -1345,7 +1124,10 @@ RenderCommandEncoder &RenderCommandEncoder::setViewport(const MTLViewport &viewp
     }
     mStateCache.viewport = viewport;
 
-    mCommands.push(CmdType::SetViewport).push(viewport);
+    if (get())
+    {
+        mtlSetViewport(viewport);
+    }
 
     return *this;
 }
@@ -1371,7 +1153,10 @@ RenderCommandEncoder &RenderCommandEncoder::setScissorRect(const MTLScissorRect 
 
     mStateCache.scissorRect = rect;
 
-    mCommands.push(CmdType::SetScissorRect).push(rect);
+    if (get())
+    {
+        mtlSetScissorRect(rect);
+    }
 
     return *this;
 }
@@ -1388,7 +1173,10 @@ RenderCommandEncoder &RenderCommandEncoder::setBlendColor(float r, float g, floa
     mStateCache.blendColor[2] = b;
     mStateCache.blendColor[3] = a;
 
-    mCommands.push(CmdType::SetBlendColor).push(r).push(g).push(b).push(a);
+    if (get())
+    {
+        mtlSetBlendColor(r, g, b, a);
+    }
 
     return *this;
 }
@@ -1443,20 +1231,20 @@ RenderCommandEncoder &RenderCommandEncoder::commonSetBuffer(gl::ShaderType shade
         // If buffer already bound but with different offset, then update the offer only.
         shaderStates.bufferOffsets[index] = offset;
 
-        mCommands.push(static_cast<CmdType>(mSetBufferOffsetCmds[shaderType]))
-            .push(offset)
-            .push(index);
-
+        if (get())
+        {
+            (this->*mSetBufferOffsetFuncs[shaderType])(offset, index);
+        }
         return *this;
     }
 
-    shaderStates.buffers[index]       = mtlBuffer;
+    shaderStates.buffers[index].retainAssign(mtlBuffer);
     shaderStates.bufferOffsets[index] = offset;
 
-    mCommands.push(static_cast<CmdType>(mSetBufferCmds[shaderType]))
-        .push([mtlBuffer ANGLE_MTL_RETAIN])
-        .push(offset)
-        .push(index);
+    if (get())
+    {
+        (this->*mSetBufferFuncs[shaderType])(mtlBuffer, offset, index);
+    }
 
     return *this;
 }
@@ -1471,14 +1259,14 @@ RenderCommandEncoder &RenderCommandEncoder::setBytes(gl::ShaderType shaderType,
         return *this;
     }
 
+    // NOTE(hqle): find an efficient way to cache inline data.
+    ensureMetalEncoderStarted();
+
     RenderCommandEncoderShaderStates &shaderStates = mStateCache.perShaderStates[shaderType];
     shaderStates.buffers[index]                    = nil;
     shaderStates.bufferOffsets[index]              = 0;
 
-    mCommands.push(static_cast<CmdType>(mSetBytesCmds[shaderType]))
-        .push(size)
-        .push(bytes, size)
-        .push(index);
+    (this->*mSetBytesFuncs[shaderType])(bytes, size, index);
 
     return *this;
 }
@@ -1505,14 +1293,13 @@ RenderCommandEncoder &RenderCommandEncoder::setSamplerState(gl::ShaderType shade
         }
     }
 
-    shaderStates.samplers[index]         = state;
+    shaderStates.samplers[index].retainAssign(state);
     shaderStates.samplerLodClamps[index] = {lodMinClamp, lodMaxClamp};
 
-    mCommands.push(static_cast<CmdType>(mSetSamplerCmds[shaderType]))
-        .push([state ANGLE_MTL_RETAIN])
-        .push(lodMinClamp)
-        .push(lodMaxClamp)
-        .push(index);
+    if (get())
+    {
+        (this->*mSetSamplerFuncs[shaderType])(state, lodMinClamp, lodMaxClamp, index);
+    }
 
     return *this;
 }
@@ -1534,11 +1321,12 @@ RenderCommandEncoder &RenderCommandEncoder::setTexture(gl::ShaderType shaderType
     {
         return *this;
     }
-    shaderStates.textures[index] = mtlTexture;
+    shaderStates.textures[index].retainAssign(mtlTexture);
 
-    mCommands.push(static_cast<CmdType>(mSetTextureCmds[shaderType]))
-        .push([mtlTexture ANGLE_MTL_RETAIN])
-        .push(index);
+    if (get())
+    {
+        (this->*mSetTextureFuncs[shaderType])(mtlTexture, index);
+    }
 
     return *this;
 }
@@ -1547,8 +1335,8 @@ RenderCommandEncoder &RenderCommandEncoder::draw(MTLPrimitiveType primitiveType,
                                                  uint32_t vertexStart,
                                                  uint32_t vertexCount)
 {
-    mHasDrawCalls = true;
-    mCommands.push(CmdType::Draw).push(primitiveType).push(vertexStart).push(vertexCount);
+    ensureMetalEncoderStarted();
+    [get() drawPrimitives:primitiveType vertexStart:vertexStart vertexCount:vertexCount];
 
     return *this;
 }
@@ -1558,12 +1346,11 @@ RenderCommandEncoder &RenderCommandEncoder::drawInstanced(MTLPrimitiveType primi
                                                           uint32_t vertexCount,
                                                           uint32_t instances)
 {
-    mHasDrawCalls = true;
-    mCommands.push(CmdType::DrawInstanced)
-        .push(primitiveType)
-        .push(vertexStart)
-        .push(vertexCount)
-        .push(instances);
+    ensureMetalEncoderStarted();
+    [get() drawPrimitives:primitiveType
+              vertexStart:vertexStart
+              vertexCount:vertexCount
+            instanceCount:instances];
 
     return *this;
 }
@@ -1579,15 +1366,14 @@ RenderCommandEncoder &RenderCommandEncoder::drawIndexed(MTLPrimitiveType primiti
         return *this;
     }
 
-    mHasDrawCalls = true;
+    ensureMetalEncoderStarted();
     cmdBuffer().setReadDependency(indexBuffer);
 
-    mCommands.push(CmdType::DrawIndexed)
-        .push(primitiveType)
-        .push(indexCount)
-        .push(indexType)
-        .push([indexBuffer->get() ANGLE_MTL_RETAIN])
-        .push(bufferOffset);
+    [get() drawIndexedPrimitives:primitiveType
+                      indexCount:indexCount
+                       indexType:indexType
+                     indexBuffer:indexBuffer->get()
+               indexBufferOffset:bufferOffset];
 
     return *this;
 }
@@ -1604,16 +1390,15 @@ RenderCommandEncoder &RenderCommandEncoder::drawIndexedInstanced(MTLPrimitiveTyp
         return *this;
     }
 
-    mHasDrawCalls = true;
+    ensureMetalEncoderStarted();
     cmdBuffer().setReadDependency(indexBuffer);
 
-    mCommands.push(CmdType::DrawIndexedInstanced)
-        .push(primitiveType)
-        .push(indexCount)
-        .push(indexType)
-        .push([indexBuffer->get() ANGLE_MTL_RETAIN])
-        .push(bufferOffset)
-        .push(instances);
+    [get() drawIndexedPrimitives:primitiveType
+                      indexCount:indexCount
+                       indexType:indexType
+                     indexBuffer:indexBuffer->get()
+               indexBufferOffset:bufferOffset
+                   instanceCount:instances];
 
     return *this;
 }
@@ -1632,17 +1417,17 @@ RenderCommandEncoder &RenderCommandEncoder::drawIndexedInstancedBaseVertex(
         return *this;
     }
 
-    mHasDrawCalls = true;
+    ensureMetalEncoderStarted();
     cmdBuffer().setReadDependency(indexBuffer);
 
-    mCommands.push(CmdType::DrawIndexedInstancedBaseVertex)
-        .push(primitiveType)
-        .push(indexCount)
-        .push(indexType)
-        .push([indexBuffer->get() ANGLE_MTL_RETAIN])
-        .push(bufferOffset)
-        .push(instances)
-        .push(baseVertex);
+    [get() drawIndexedPrimitives:primitiveType
+                      indexCount:indexCount
+                       indexType:indexType
+                     indexBuffer:indexBuffer->get()
+               indexBufferOffset:bufferOffset
+                   instanceCount:instances
+                      baseVertex:baseVertex
+                    baseInstance:0];
 
     return *this;
 }
@@ -1658,25 +1443,28 @@ RenderCommandEncoder &RenderCommandEncoder::setVisibilityResultMode(MTLVisibilit
     mStateCache.visibilityResultMode         = mode;
     mStateCache.visibilityResultBufferOffset = offset;
 
-    mCommands.push(CmdType::SetVisibilityResultMode).push(mode).push(offset);
+    if (get())
+    {
+        mtlSetVisibilityResultMode(mode, offset);
+    }
     return *this;
 }
 
 RenderCommandEncoder &RenderCommandEncoder::useResource(const BufferRef &resource,
                                                         MTLResourceUsage usage,
-                                                        mtl::RenderStages states)
+                                                        mtl::RenderStages stages)
 {
     if (!resource)
     {
         return *this;
     }
 
+    // NOTE(hqle): Find an efficient way to cache resource usage.
+    ensureMetalEncoderStarted();
+
     cmdBuffer().setReadDependency(resource);
 
-    mCommands.push(CmdType::UseResource)
-        .push([resource->get() ANGLE_MTL_RETAIN])
-        .push(usage)
-        .push(states);
+    mtlUseResource(resource->get(), usage, stages);
 
     return *this;
 }
@@ -1690,35 +1478,57 @@ RenderCommandEncoder &RenderCommandEncoder::memoryBarrierWithResource(const Buff
         return *this;
     }
 
+    // NOTE(hqle): Find an efficient way to cache resource barrier.
+    ensureMetalEncoderStarted();
     cmdBuffer().setWriteDependency(resource);
 
-    mCommands.push(CmdType::MemoryBarrierWithResource)
-        .push([resource->get() ANGLE_MTL_RETAIN])
-        .push(after)
-        .push(before);
+    mtlMemoryBarrierWithResource(resource->get(), after, before);
 
     return *this;
 }
 
 void RenderCommandEncoder::insertDebugSignImpl(NSString *label)
 {
-    // Defer the insertion until endEncoding()
-    mCommands.push(CmdType::InsertDebugsign).push([label ANGLE_MTL_RETAIN]);
+    if (get())
+    {
+        mtlInsertDebugSign(label);
+        return;
+    }
+    // Defer the insertion
+    mDeferredDebugSign.retainAssign(label);
 }
 
 void RenderCommandEncoder::pushDebugGroup(NSString *label)
 {
-    // Defer the insertion until endEncoding()
-    mCommands.push(CmdType::PushDebugGroup).push([label ANGLE_MTL_RETAIN]);
+    if (get())
+    {
+        mtlPushDebugGroup(label);
+        return;
+    }
+    // Defer the insertion
+    mtl::AutoObjCObj<NSString> retainedLabel;
+    retainedLabel.retainAssign(label);
+    mDeferredDebugGroups.push_back(retainedLabel);
 }
 void RenderCommandEncoder::popDebugGroup()
 {
-    mCommands.push(CmdType::PopDebugGroup);
+    if (get())
+    {
+        mtlPopDebugGroup();
+        return;
+    }
+
+    mDeferredDebugGroups.pop_back();
 }
 
 void RenderCommandEncoder::setLabel(NSString *label)
 {
-    mLabel.retainAssign(label);
+    if (get())
+    {
+        mtlSetLabel(label);
+        return;
+    }
+    mDeferredLabel.retainAssign(label);
 }
 
 RenderCommandEncoder &RenderCommandEncoder::setColorStoreAction(MTLStoreAction action,
@@ -1782,7 +1592,7 @@ RenderCommandEncoder &RenderCommandEncoder::setColorLoadAction(MTLLoadAction act
                                                                const MTLClearColor &clearValue,
                                                                uint32_t colorAttachmentIndex)
 {
-    ASSERT(!hasDrawCalls());
+    ASSERT(canChangeLoadAction());
     if (mCachedRenderPassDescObjC.get().colorAttachments[colorAttachmentIndex].texture)
     {
         mCachedRenderPassDescObjC.get().colorAttachments[colorAttachmentIndex].loadAction = action;
@@ -1795,7 +1605,7 @@ RenderCommandEncoder &RenderCommandEncoder::setColorLoadAction(MTLLoadAction act
 RenderCommandEncoder &RenderCommandEncoder::setDepthLoadAction(MTLLoadAction action,
                                                                double clearVal)
 {
-    ASSERT(!hasDrawCalls());
+    ASSERT(canChangeLoadAction());
     if (mCachedRenderPassDescObjC.get().depthAttachment.texture)
     {
         mCachedRenderPassDescObjC.get().depthAttachment.loadAction = action;
@@ -1807,12 +1617,225 @@ RenderCommandEncoder &RenderCommandEncoder::setDepthLoadAction(MTLLoadAction act
 RenderCommandEncoder &RenderCommandEncoder::setStencilLoadAction(MTLLoadAction action,
                                                                  uint32_t clearVal)
 {
-    ASSERT(!hasDrawCalls());
+    ASSERT(canChangeLoadAction());
     if (mCachedRenderPassDescObjC.get().stencilAttachment.texture)
     {
         mCachedRenderPassDescObjC.get().stencilAttachment.loadAction   = action;
         mCachedRenderPassDescObjC.get().stencilAttachment.clearStencil = clearVal;
     }
+    return *this;
+}
+
+RenderCommandEncoder &RenderCommandEncoder::mtlSetRenderPipelineState(
+    id<MTLRenderPipelineState> state)
+{
+    [get() setRenderPipelineState:state];
+    return *this;
+}
+RenderCommandEncoder &RenderCommandEncoder::mtlSetTriangleFillMode(MTLTriangleFillMode mode)
+{
+    [get() setTriangleFillMode:mode];
+    return *this;
+}
+RenderCommandEncoder &RenderCommandEncoder::mtlSetFrontFacingWinding(MTLWinding winding)
+{
+    [get() setFrontFacingWinding:winding];
+    return *this;
+}
+RenderCommandEncoder &RenderCommandEncoder::mtlSetCullMode(MTLCullMode mode)
+{
+    [get() setCullMode:mode];
+    return *this;
+}
+
+RenderCommandEncoder &RenderCommandEncoder::mtlSetDepthStencilState(id<MTLDepthStencilState> state)
+{
+    [get() setDepthStencilState:state];
+    return *this;
+}
+RenderCommandEncoder &RenderCommandEncoder::mtlSetDepthBias(float depthBias,
+                                                            float slopeScale,
+                                                            float clamp)
+{
+    [get() setDepthBias:depthBias slopeScale:slopeScale clamp:clamp];
+    return *this;
+}
+RenderCommandEncoder &RenderCommandEncoder::mtlSetStencilRefVals(uint32_t frontRef,
+                                                                 uint32_t backRef)
+{
+    [get() setStencilFrontReferenceValue:frontRef backReferenceValue:backRef];
+    return *this;
+}
+
+RenderCommandEncoder &RenderCommandEncoder::mtlSetViewport(const MTLViewport &viewport)
+{
+    [get() setViewport:viewport];
+    return *this;
+}
+RenderCommandEncoder &RenderCommandEncoder::mtlSetScissorRect(const MTLScissorRect &rect)
+{
+    [get() setScissorRect:rect];
+    return *this;
+}
+
+RenderCommandEncoder &RenderCommandEncoder::mtlSetBlendColor(float r, float g, float b, float a)
+{
+    [get() setBlendColorRed:r green:g blue:b alpha:a];
+    return *this;
+}
+
+RenderCommandEncoder &RenderCommandEncoder::mtlSetVertexBuffer(id<MTLBuffer> buffer,
+                                                               uint32_t offset,
+                                                               uint32_t index)
+{
+    [get() setVertexBuffer:buffer offset:offset atIndex:index];
+    return *this;
+}
+RenderCommandEncoder &RenderCommandEncoder::mtlSetVertexBufferOffset(uint32_t offset,
+                                                                     uint32_t index)
+{
+    [get() setVertexBufferOffset:offset atIndex:index];
+    return *this;
+}
+RenderCommandEncoder &RenderCommandEncoder::mtlSetVertexBytes(const uint8_t *bytes,
+                                                              size_t size,
+                                                              uint32_t index)
+{
+    [get() setVertexBytes:bytes length:size atIndex:index];
+    return *this;
+}
+RenderCommandEncoder &RenderCommandEncoder::mtlSetVertexSamplerState(id<MTLSamplerState> state,
+                                                                     uint32_t index)
+{
+    [get() setVertexSamplerState:state atIndex:index];
+    return *this;
+}
+RenderCommandEncoder &RenderCommandEncoder::mtlSetVertexSamplerState(id<MTLSamplerState> state,
+                                                                     float lodMinClamp,
+                                                                     float lodMaxClamp,
+                                                                     uint32_t index)
+{
+    [get() setVertexSamplerState:state
+                     lodMinClamp:lodMinClamp
+                     lodMaxClamp:lodMaxClamp
+                         atIndex:index];
+    return *this;
+}
+RenderCommandEncoder &RenderCommandEncoder::mtlSetVertexTexture(id<MTLTexture> texture,
+                                                                uint32_t index)
+{
+    [get() setVertexTexture:texture atIndex:index];
+    return *this;
+}
+
+RenderCommandEncoder &RenderCommandEncoder::mtlSetFragmentBuffer(id<MTLBuffer> buffer,
+                                                                 uint32_t offset,
+                                                                 uint32_t index)
+{
+    [get() setFragmentBuffer:buffer offset:offset atIndex:index];
+    return *this;
+}
+RenderCommandEncoder &RenderCommandEncoder::mtlSetFragmentBufferOffset(uint32_t offset,
+                                                                       uint32_t index)
+{
+    [get() setFragmentBufferOffset:offset atIndex:index];
+    return *this;
+}
+RenderCommandEncoder &RenderCommandEncoder::mtlSetFragmentBytes(const uint8_t *bytes,
+                                                                size_t size,
+                                                                uint32_t index)
+{
+    [get() setFragmentBytes:bytes length:size atIndex:index];
+    return *this;
+}
+RenderCommandEncoder &RenderCommandEncoder::mtlSetFragmentSamplerState(id<MTLSamplerState> state,
+                                                                       uint32_t index)
+{
+    [get() setFragmentSamplerState:state atIndex:index];
+    return *this;
+}
+RenderCommandEncoder &RenderCommandEncoder::mtlSetFragmentSamplerState(id<MTLSamplerState> state,
+                                                                       float lodMinClamp,
+                                                                       float lodMaxClamp,
+                                                                       uint32_t index)
+{
+    [get() setFragmentSamplerState:state
+                       lodMinClamp:lodMinClamp
+                       lodMaxClamp:lodMaxClamp
+                           atIndex:index];
+    return *this;
+}
+RenderCommandEncoder &RenderCommandEncoder::mtlSetFragmentTexture(id<MTLTexture> texture,
+                                                                  uint32_t index)
+{
+    [get() setFragmentTexture:texture atIndex:index];
+    return *this;
+}
+
+RenderCommandEncoder &RenderCommandEncoder::mtlSetVisibilityResultMode(MTLVisibilityResultMode mode,
+                                                                       size_t offset)
+{
+    [get() setVisibilityResultMode:mode offset:offset];
+    return *this;
+}
+
+RenderCommandEncoder &RenderCommandEncoder::mtlUseResource(id<MTLBuffer> resource,
+                                                           MTLResourceUsage usage,
+                                                           mtl::RenderStages stages)
+{
+    ANGLE_UNUSED_VARIABLE(stages);
+#if defined(__IPHONE_13_0) || defined(__MAC_10_15)
+    if (ANGLE_APPLE_AVAILABLE_XCI(10.15, 13.0, 13.0))
+    {
+        [get() useResource:resource usage:usage stages:stages];
+    }
+    else
+#endif
+    {
+        [get() useResource:resource usage:usage];
+    }
+    return *this;
+}
+
+RenderCommandEncoder &RenderCommandEncoder::mtlMemoryBarrierWithResource(id<MTLBuffer> resource,
+                                                                         mtl::RenderStages after,
+                                                                         mtl::RenderStages before)
+{
+    ANGLE_UNUSED_VARIABLE(after);
+    ANGLE_UNUSED_VARIABLE(before);
+#if defined(__MAC_10_14) && (TARGET_OS_OSX || TARGET_OS_MACCATALYST)
+    if (ANGLE_APPLE_AVAILABLE_XC(10.14, 13.0))
+    {
+        [get() memoryBarrierWithResources:&resource count:1 afterStages:after beforeStages:before];
+    }
+#endif
+    return *this;
+}
+
+RenderCommandEncoder &RenderCommandEncoder::mtlInsertDebugSign(NSString *label)
+{
+    if (!label)
+    {
+        return *this;
+    }
+    [get() insertDebugSignpost:label];
+    return *this;
+}
+
+RenderCommandEncoder &RenderCommandEncoder::mtlPushDebugGroup(NSString *label)
+{
+    [get() pushDebugGroup:label];
+    return *this;
+}
+RenderCommandEncoder &RenderCommandEncoder::mtlPopDebugGroup()
+{
+    [get() popDebugGroup];
+    return *this;
+}
+
+RenderCommandEncoder &RenderCommandEncoder::mtlSetLabel(NSString *label)
+{
+    get().label = label;
     return *this;
 }
 

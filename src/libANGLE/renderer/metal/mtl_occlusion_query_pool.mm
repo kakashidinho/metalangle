@@ -22,6 +22,21 @@ namespace mtl
 OcclusionQueryPool::OcclusionQueryPool() {}
 OcclusionQueryPool::~OcclusionQueryPool() {}
 
+angle::Result OcclusionQueryPool::initialize(ContextMtl *contextMtl)
+{
+    // https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
+    if (contextMtl->getDisplay()->supportEitherGPUFamily(7, 1))
+    {
+        mMaxRenderPassResultsPoolSize = 256 * 1024;
+    }
+    else
+    {
+        mMaxRenderPassResultsPoolSize = 65528;
+    }
+
+    return angle::Result::Continue;
+}
+
 void OcclusionQueryPool::destroy(ContextMtl *contextMtl)
 {
     mRenderPassResultsPool = nullptr;
@@ -36,6 +51,30 @@ void OcclusionQueryPool::destroy(ContextMtl *contextMtl)
     mAllocatedQueries.clear();
 }
 
+bool OcclusionQueryPool::canAllocateQueryOffset() const
+{
+    if (!mRenderPassResultsPool)
+    {
+        return false;
+    }
+    uint32_t currentOffset =
+        static_cast<uint32_t>(mAllocatedQueries.size()) * kOcclusionQueryResultSize;
+    return currentOffset + kOcclusionQueryResultSize <= mMaxRenderPassResultsPoolSize;
+}
+
+angle::Result OcclusionQueryPool::reserveForMaxPossibleQueryOffsets(ContextMtl *contextMtl)
+{
+    if (mRenderPassResultsPool && mRenderPassResultsPool->size() >= mMaxRenderPassResultsPoolSize)
+    {
+        return angle::Result::Continue;
+    }
+
+    ANGLE_TRY(Buffer::MakeBuffer(contextMtl, MTLResourceStorageModePrivate,
+                                 mMaxRenderPassResultsPoolSize, nullptr, &mRenderPassResultsPool));
+    mRenderPassResultsPool->get().label = @"OcclusionQueryPool";
+    return angle::Result::Continue;
+}
+
 angle::Result OcclusionQueryPool::allocateQueryOffset(ContextMtl *contextMtl,
                                                       QueryMtl *query,
                                                       bool clearOldValue)
@@ -46,23 +85,10 @@ angle::Result OcclusionQueryPool::allocateQueryOffset(ContextMtl *contextMtl,
     ASSERT(clearOldValue || mAllocatedQueries.empty() ||
            !query->getAllocatedVisibilityOffsets().empty());
 
+    ASSERT(canAllocateQueryOffset());
+
     uint32_t currentOffset =
         static_cast<uint32_t>(mAllocatedQueries.size()) * kOcclusionQueryResultSize;
-    if (!mRenderPassResultsPool)
-    {
-        // First allocation
-        ANGLE_TRY(Buffer::MakeBuffer(contextMtl, MTLResourceStorageModePrivate,
-                                     kOcclusionQueryResultSize, nullptr, &mRenderPassResultsPool));
-        mRenderPassResultsPool->get().label = @"OcclusionQueryPool";
-    }
-    else if (currentOffset + kOcclusionQueryResultSize > mRenderPassResultsPool->size())
-    {
-        // Double the capacity
-        ANGLE_TRY(Buffer::MakeBuffer(contextMtl, MTLResourceStorageModePrivate,
-                                     mRenderPassResultsPool->size() * 2, nullptr,
-                                     &mRenderPassResultsPool));
-        mRenderPassResultsPool->get().label = @"OcclusionQueryPool";
-    }
 
     if (clearOldValue)
     {

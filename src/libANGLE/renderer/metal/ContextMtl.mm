@@ -200,6 +200,8 @@ angle::Result ContextMtl::initialize()
     mLineLoopLastSegmentIndexBufferPool.initialize(this, 2 * sizeof(uint32_t),
                                                    mtl::kIndexBufferOffsetAlignment);
 
+    ANGLE_TRY(mOcclusionQueryPool.initialize(this));
+
     return angle::Result::Continue;
 }
 
@@ -1701,10 +1703,25 @@ void ContextMtl::onBackbufferResized(const gl::Context *context, SurfaceMtl *bac
     onDrawFrameBufferChangedState(context, framebuffer, true);
 }
 
+angle::Result ContextMtl::ensureOcclusionQueryPoolCapacity()
+{
+    if (!mOcclusionQueryPool.canAllocateQueryOffset())
+    {
+        // No more room to allocate new query offset, end current render pass.
+        endEncoding(true);
+
+        ANGLE_TRY(mOcclusionQueryPool.reserveForMaxPossibleQueryOffsets(this));
+    }
+
+    return angle::Result::Continue;
+}
+
 angle::Result ContextMtl::onOcclusionQueryBegan(const gl::Context *context, QueryMtl *query)
 {
     ASSERT(mOcclusionQuery == nullptr);
     mOcclusionQuery = query;
+
+    ANGLE_TRY(ensureOcclusionQueryPoolCapacity());
 
     if (mRenderEncoder.valid())
     {
@@ -1761,6 +1778,8 @@ angle::Result ContextMtl::restartActiveOcclusionQueryInRenderPass()
     {
         return angle::Result::Continue;
     }
+
+    ANGLE_TRY(ensureOcclusionQueryPoolCapacity());
 
     return startOcclusionQueryInRenderPass(mOcclusionQuery, false);
 }

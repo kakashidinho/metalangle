@@ -401,6 +401,8 @@ class ContextMtl : public ContextImpl, public mtl::Context
                                          bool *pipelineDescChanged);
 
     angle::Result startOcclusionQueryInRenderPass(QueryMtl *query, bool clearOldValue);
+    // ensure that occlusion query pool can allocate new offset.
+    angle::Result ensureOcclusionQueryPoolCapacity();
 
     // Dirty bits.
     enum DirtyBitType : size_t
