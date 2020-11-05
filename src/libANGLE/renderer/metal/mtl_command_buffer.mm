@@ -648,6 +648,12 @@ MTLStoreAction RenderCommandEncoder::correctStoreAction(
             // or before glBlitFramebuffer operation starts.
             storeAction = MTLStoreActionStoreAndMultisampleResolve;
         }
+        else if (finalStoreAction == MTLStoreActionDontCare)
+        {
+            // NOTE(hqle): If there is a resolve texture in the render pass, we cannot set
+            // storeAction=MTLStoreActionDontCare. Use MTLStoreActionMultisampleResolve instead.
+            storeAction = MTLStoreActionMultisampleResolve;
+        }
     }
 
     if (finalStoreAction == MTLStoreActionUnknown)
@@ -683,6 +689,7 @@ void RenderCommandEncoder::endEncodingImpl(bool considerDiscardSimulation)
         MTLStoreAction storeAction =
             correctStoreAction(objCRenderPassDesc.colorAttachments[i],
                                mRenderPassDesc.colorAttachments[i].storeAction);
+        ANGLE_MTL_LOG("setColorStoreAction:%lu atIndex:%u", storeAction, i);
         [get() setColorStoreAction:storeAction atIndex:i];
     }
 
