@@ -35,13 +35,7 @@ namespace rx
 
 namespace
 {
-#if TARGET_OS_OSX
-// Unlimited triangle fan buffers
-constexpr uint32_t kMaxTriFanLineLoopBuffersPerFrame = 0;
-#else
-// Allow up to 10 buffers for trifan/line loop generation without stalling the GPU.
-constexpr uint32_t kMaxTriFanLineLoopBuffersPerFrame = 10;
-#endif
+constexpr uint32_t kMaxTriFanClientBuffersCachedPerFrame = 10;
 
 #define ANGLE_MTL_XFB_DRAW(DRAW_PROC)                                                       \
     if (!mState.isTransformFeedbackActiveUnpaused())                                        \
@@ -73,7 +67,6 @@ angle::Result AllocateTriangleFanBufferFromPool(ContextMtl *context,
     ANGLE_TRY(mtl::GetTriangleFanIndicesCount(context, vertexCount, &numIndices));
 
     size_t offset;
-    pool->releaseInFlightBuffers(context);
     ANGLE_TRY(pool->allocate(context, numIndices * sizeof(uint32_t), nullptr, bufferOut, &offset,
                              nullptr));
 
@@ -90,7 +83,6 @@ angle::Result AllocateLineLoopBufferFromPool(ContextMtl *context,
                                              uint32_t *offsetOut)
 {
     size_t offset;
-    pool->releaseInFlightBuffers(context);
     ANGLE_TRY(pool->allocate(context, indicesToReserve * sizeof(uint32_t), nullptr, bufferOut,
                              &offset, nullptr));
 
@@ -153,8 +145,6 @@ class LineLoopLastSegmentHelper
     {
         mContextMtl = mtl::GetImpl(context);
 
-        indexBufferPool->releaseInFlightBuffers(mContextMtl);
-
         ANGLE_TRY(indexBufferPool->allocate(mContextMtl, 2 * sizeof(uint32_t), nullptr,
                                             &mLineLoopIndexBufferPool, nullptr, nullptr));
 
@@ -191,7 +181,8 @@ ContextMtl::ContextMtl(const gl::State &state, gl::ErrorSet *errorSet, DisplayMt
       mCmdBuffer(&display->cmdQueue()),
       mRenderEncoder(&mCmdBuffer, mOcclusionQueryPool),
       mBlitEncoder(&mCmdBuffer),
-      mComputeEncoder(&mCmdBuffer)
+      mComputeEncoder(&mCmdBuffer),
+      mTriFanClientIndexBufferCache(kMaxTriFanClientBuffersCachedPerFrame)
 {}
 
 ContextMtl::~ContextMtl() {}
@@ -201,20 +192,24 @@ angle::Result ContextMtl::initialize()
     mBlendDesc.reset();
     mDepthStencilDesc.reset();
 
-    mTriFanIndexBufferPool.initialize(this, 0, mtl::kIndexBufferOffsetAlignment,
-                                      kMaxTriFanLineLoopBuffersPerFrame);
-    mLineLoopIndexBufferPool.initialize(this, 0, mtl::kIndexBufferOffsetAlignment,
-                                        kMaxTriFanLineLoopBuffersPerFrame);
+    mClientIndexBufferPool.initialize(this, 0, mtl::kIndexBufferOffsetAlignment);
+
+    mTriFanIndexBufferPool.initialize(this, 0, mtl::kIndexBufferOffsetAlignment);
+    mTriFanClientIndexBufferPool.initialize(this, 0, mtl::kIndexBufferOffsetAlignment);
+    mLineLoopIndexBufferPool.initialize(this, 0, mtl::kIndexBufferOffsetAlignment);
     mLineLoopLastSegmentIndexBufferPool.initialize(this, 2 * sizeof(uint32_t),
-                                                   mtl::kIndexBufferOffsetAlignment,
-                                                   kMaxTriFanLineLoopBuffersPerFrame);
+                                                   mtl::kIndexBufferOffsetAlignment);
 
     return angle::Result::Continue;
 }
 
 void ContextMtl::onDestroy(const gl::Context *context)
 {
+    mClientIndexBufferPool.destroy(this);
+
+    mTriFanClientIndexBufferCache.Clear();
     mTriFanIndexBufferPool.destroy(this);
+    mTriFanClientIndexBufferPool.destroy(this);
     mLineLoopIndexBufferPool.destroy(this);
     mLineLoopLastSegmentIndexBufferPool.destroy(this);
     mOcclusionQueryPool.destroy(this);
@@ -487,17 +482,49 @@ angle::Result ContextMtl::drawTriFanElements(const gl::Context *context,
     if (count > 3)
     {
         mtl::BufferRef genIdxBuffer;
-        uint32_t genIdxBufferOffset;
-        uint32_t genIndicesCount;
-        bool primitiveRestart = getState().isPrimitiveRestartEnabled();
-        ANGLE_TRY(AllocateTriangleFanBufferFromPool(this, count, &mTriFanIndexBufferPool,
-                                                    &genIdxBuffer, &genIdxBufferOffset,
-                                                    &genIndicesCount));
+        uint32_t genIdxBufferOffset = 0;
+        uint32_t genIndicesCount    = 0;
 
-        ANGLE_TRY(getDisplay()->getUtils().generateTriFanBufferFromElementsArray(
-            this, {type, count, indices, genIdxBuffer, genIdxBufferOffset, primitiveRestart}));
+        const gl::VertexArray *vertexArray = getState().getVertexArray();
+        const gl::Buffer *elementBuffer    = vertexArray->getElementArrayBuffer();
 
-        ANGLE_TRY(mTriFanIndexBufferPool.commit(this));
+        mtl::ClientIndexArrayKey clientIndicesKey;
+        if (!elementBuffer)
+        {
+            // If indices is from client memory, check if it is already cached.
+            clientIndicesKey.assign(indices, type, count);
+
+            mtl::ClientIndexBufferCache::const_iterator ite =
+                mTriFanClientIndexBufferCache.Peek(clientIndicesKey);
+            if (ite != mTriFanClientIndexBufferCache.end())
+            {
+                // Found in cache, reuse the index buffer.
+                genIdxBuffer       = ite->second.buffer;
+                genIdxBufferOffset = static_cast<uint32_t>(ite->second.offset);
+
+                ANGLE_TRY(mtl::GetTriangleFanIndicesCount(this, count, &genIndicesCount));
+            }
+        }
+
+        if (!genIdxBuffer)
+        {
+            bool primitiveRestart = getState().isPrimitiveRestartEnabled();
+            ANGLE_TRY(AllocateTriangleFanBufferFromPool(this, count, &mTriFanClientIndexBufferPool,
+                                                        &genIdxBuffer, &genIdxBufferOffset,
+                                                        &genIndicesCount));
+
+            ANGLE_TRY(getDisplay()->getUtils().generateTriFanBufferFromElementsArray(
+                this, {type, count, indices, genIdxBuffer, genIdxBufferOffset, primitiveRestart}));
+
+            ANGLE_TRY(mTriFanClientIndexBufferPool.commit(this));
+
+            if (clientIndicesKey.valid())
+            {
+                // Cache the generated buffer
+                mtl::ClientArrayBufferCachePayload entry = {genIdxBuffer, genIdxBufferOffset};
+                mTriFanClientIndexBufferCache.Put(clientIndicesKey, std::move(entry));
+            }
+        }
 
         ANGLE_TRY(setupDraw(context, gl::PrimitiveMode::TriangleFan, 0, count, instances, type,
                             indices, false));
@@ -909,7 +936,7 @@ angle::Result ContextMtl::syncState(const gl::Context *context,
                 // Do nothing
                 break;
             case gl::State::DIRTY_BIT_PRIMITIVE_RESTART_ENABLED:
-                // NOTE(hqle): ES 3.0 feature.
+                updatePrimitiRestart(glState);
                 break;
             case gl::State::DIRTY_BIT_CLEAR_COLOR:
                 mClearColor.red   = glState.getColorClearValue().red;
@@ -1356,6 +1383,8 @@ void ContextMtl::flushCommandBufer()
 
     endEncoding(true);
     mCmdBuffer.commit();
+
+    releaseInFlightBuffers();
 }
 
 void ContextMtl::present(const gl::Context *context, id<CAMetalDrawable> presentationDrawable)
@@ -1371,6 +1400,8 @@ void ContextMtl::present(const gl::Context *context, id<CAMetalDrawable> present
     endEncoding(false);
     mCmdBuffer.present(presentationDrawable);
     mCmdBuffer.commit();
+
+    releaseInFlightBuffers();
 }
 
 angle::Result ContextMtl::finishCommandBuffer()
@@ -1496,6 +1527,19 @@ void ContextMtl::ensureCommandBufferValid()
     }
 
     ASSERT(mCmdBuffer.valid());
+}
+
+void ContextMtl::releaseInFlightBuffers()
+{
+    mClientIndexBufferPool.releaseInFlightBuffers(this);
+    mLineLoopIndexBufferPool.releaseInFlightBuffers(this);
+    mLineLoopLastSegmentIndexBufferPool.releaseInFlightBuffers(this);
+    mTriFanIndexBufferPool.releaseInFlightBuffers(this);
+    mTriFanClientIndexBufferPool.releaseInFlightBuffers(this);
+
+    // At this point the buffers in mTriFanClientIndexBufferPool could be re-used.
+    // So clear the cache.
+    mTriFanClientIndexBufferCache.Clear();
 }
 
 void ContextMtl::updateViewport(FramebufferMtl *framebufferMtl,
@@ -1784,6 +1828,12 @@ void ContextMtl::updateVertexArray(const gl::Context *context)
     mVertexArray             = mtl::GetImpl(glState.getVertexArray());
     invalidateDefaultAttributes(context->getStateCache().getActiveDefaultAttribsMask());
     invalidateRenderPipeline();
+}
+
+void ContextMtl::updatePrimitiRestart(const gl::State &glState)
+{
+    // Need to invalidate client index buffer caches
+    mTriFanClientIndexBufferCache.Clear();
 }
 
 angle::Result ContextMtl::updateDefaultAttribute(size_t attribIndex)

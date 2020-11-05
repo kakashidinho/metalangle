@@ -1062,6 +1062,34 @@ void RenderPipelineCache::clearPipelineStates()
     mRenderPipelineStates[1].clear();
 }
 
+// ClientIndexArrayKey implementation
+void ClientIndexArrayKey::assign(const void *data, gl::DrawElementsType type, size_t count)
+{
+    mtl::SmallVector tmp(static_cast<const uint8_t *>(data),
+                         count * gl::GetDrawElementsTypeSize(type));
+
+    mBytes = std::move(tmp);
+    mBytes.push_back(static_cast<uint8_t>(type));
+
+    // The array size must be multple of 4 for hash function to work
+    size_t multiple4size = roundUp<size_t>(mBytes.size(), 4);
+    if (multiple4size != mBytes.size())
+    {
+        mBytes.resize(multiple4size, 0);
+    }
+}
+
+size_t ClientIndexArrayKey::hash() const
+{
+    std::hash<SmallVector> hasher;
+    return hasher(mBytes);
+}
+
+bool ClientIndexArrayKey::operator==(const ClientIndexArrayKey &rhs) const
+{
+    return mBytes == rhs.mBytes;
+}
+
 // StateCache implementation
 StateCache::StateCache(const angle::FeaturesMtl &features) : mFeatures(features) {}
 

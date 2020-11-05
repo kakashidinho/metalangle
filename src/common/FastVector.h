@@ -39,6 +39,7 @@ class FastVector final
     FastVector(const FastVector<T, N, Storage> &other);
     FastVector(FastVector<T, N, Storage> &&other);
     FastVector(std::initializer_list<value_type> init);
+    FastVector(const T *src, size_type count);
 
     FastVector<T, N, Storage> &operator=(const FastVector<T, N, Storage> &other);
     FastVector<T, N, Storage> &operator=(FastVector<T, N, Storage> &&other);
@@ -154,6 +155,14 @@ FastVector<T, N, Storage>::FastVector(std::initializer_list<value_type> init)
 }
 
 template <class T, size_t N, class Storage>
+FastVector<T, N, Storage>::FastVector(const T *src, size_type count)
+{
+    ensure_capacity(count);
+    mSize = count;
+    std::copy(src, src + count, begin());
+}
+
+template <class T, size_t N, class Storage>
 FastVector<T, N, Storage> &FastVector<T, N, Storage>::operator=(
     const FastVector<T, N, Storage> &other)
 {
@@ -166,7 +175,7 @@ FastVector<T, N, Storage> &FastVector<T, N, Storage>::operator=(
 template <class T, size_t N, class Storage>
 FastVector<T, N, Storage> &FastVector<T, N, Storage>::operator=(FastVector<T, N, Storage> &&other)
 {
-    swap(*this, other);
+    swap(other);
     return *this;
 }
 

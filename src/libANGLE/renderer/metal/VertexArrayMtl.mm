@@ -22,7 +22,6 @@ namespace rx
 {
 namespace
 {
-constexpr size_t kDynamicIndexDataSize = 1024 * 8;
 
 angle::Result StreamVertexData(ContextMtl *contextMtl,
                                mtl::BufferPool *dynamicBuffer,
@@ -83,8 +82,6 @@ angle::Result StreamIndexData(ContextMtl *contextMtl,
                               mtl::BufferRef *bufferOut,
                               size_t *bufferOffsetOut)
 {
-    dynamicBuffer->releaseInFlightBuffers(contextMtl);
-
     const size_t amount = GetIndexConvertedBufferSize(indexType, indexCount);
     GLubyte *dst        = nullptr;
 
@@ -176,8 +173,6 @@ VertexArrayMtl::VertexArrayMtl(const gl::VertexArrayState &state, ContextMtl *co
 
     mDynamicVertexData.initialize(context, 0, mtl::kVertexAttribBufferStrideAlignment,
                                   /** maxBuffers */ 10 * mtl::kMaxVertexAttribs);
-
-    mDynamicIndexData.initialize(context, kDynamicIndexDataSize, mtl::kIndexBufferOffsetAlignment);
 }
 VertexArrayMtl::~VertexArrayMtl() {}
 
@@ -188,7 +183,6 @@ void VertexArrayMtl::destroy(const gl::Context *context)
     reset(contextMtl);
 
     mDynamicVertexData.destroy(contextMtl);
-    mDynamicIndexData.destroy(contextMtl);
 }
 
 void VertexArrayMtl::reset(ContextMtl *context)
@@ -778,6 +772,7 @@ angle::Result VertexArrayMtl::convertIndexBuffer(const gl::Context *glContext,
         contextMtl->getRenderCommandEncoder())
     {
         // We shouldn't use GPU to convert when we are in a middle of a render pass.
+        conversion->data.releaseInFlightBuffers(contextMtl);
         ANGLE_TRY(StreamIndexData(contextMtl, &conversion->data,
                                   idxBuffer->getClientShadowCopyData(contextMtl) + offsetModulo,
                                   indexType, indexCount, glState.isPrimitiveRestartEnabled(),
@@ -838,10 +833,11 @@ angle::Result VertexArrayMtl::streamIndexBufferFromClient(const gl::Context *con
     ASSERT(getState().getElementArrayBuffer() == nullptr);
     ContextMtl *contextMtl = mtl::GetImpl(context);
 
+    // Generate index buffer
     auto srcData = static_cast<const uint8_t *>(sourcePointer);
-    ANGLE_TRY(StreamIndexData(contextMtl, &mDynamicIndexData, srcData, indexType, indexCount,
-                              context->getState().isPrimitiveRestartEnabled(), idxBufferOut,
-                              idxBufferOffsetOut));
+    ANGLE_TRY(StreamIndexData(
+        contextMtl, &contextMtl->getClientIndexBufferPool(), srcData, indexType, indexCount,
+        context->getState().isPrimitiveRestartEnabled(), idxBufferOut, idxBufferOffsetOut));
 
     return angle::Result::Continue;
 }
