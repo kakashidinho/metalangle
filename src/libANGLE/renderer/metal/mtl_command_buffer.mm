@@ -590,6 +590,7 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer *cmdBuffer,
     for (gl::ShaderType shaderType : gl::AllShaderTypes())
     {
         mSetBufferFuncs[shaderType]            = nullptr;
+        mSetBufferOffsetFuncs[shaderType]      = nullptr;
         mSetBytesFuncs[shaderType]             = nullptr;
         mSetTextureFuncs[shaderType]           = nullptr;
         mSetSamplerFuncs[shaderType]           = nullptr;
@@ -625,7 +626,6 @@ void RenderCommandEncoder::reset()
 
     if (mRecording)
     {
-        mRenderPassDesc = RenderPassDesc();
         mStateCache.reset();
 
         mDeferredLabel     = nil;
@@ -725,11 +725,6 @@ void RenderCommandEncoder::endEncodingImpl(bool considerDiscardSimulation)
 
     // reset state
     mRenderPassDesc = RenderPassDesc();
-    mStateCache.reset();
-
-    mDeferredLabel     = nil;
-    mDeferredDebugSign = nil;
-    mDeferredDebugGroups.clear();
 }
 
 inline void RenderCommandEncoder::initAttachmentWriteDependencyAndScissorRect(
