@@ -589,10 +589,11 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer *cmdBuffer,
 
     for (gl::ShaderType shaderType : gl::AllShaderTypes())
     {
-        mSetBufferFuncs[shaderType]  = nullptr;
-        mSetBytesFuncs[shaderType]   = nullptr;
-        mSetTextureFuncs[shaderType] = nullptr;
-        mSetSamplerFuncs[shaderType] = nullptr;
+        mSetBufferFuncs[shaderType]            = nullptr;
+        mSetBytesFuncs[shaderType]             = nullptr;
+        mSetTextureFuncs[shaderType]           = nullptr;
+        mSetSamplerFuncs[shaderType]           = nullptr;
+        mSetSamplerWithoutLodFuncs[shaderType] = nullptr;
     }
 
     mSetBufferFuncs[gl::ShaderType::Vertex]   = &RenderCommandEncoder::mtlSetVertexBuffer;
@@ -610,6 +611,11 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer *cmdBuffer,
 
     mSetSamplerFuncs[gl::ShaderType::Vertex]   = &RenderCommandEncoder::mtlSetVertexSamplerState;
     mSetSamplerFuncs[gl::ShaderType::Fragment] = &RenderCommandEncoder::mtlSetFragmentSamplerState;
+
+    mSetSamplerWithoutLodFuncs[gl::ShaderType::Vertex] =
+        &RenderCommandEncoder::mtlSetVertexSamplerState;
+    mSetSamplerWithoutLodFuncs[gl::ShaderType::Fragment] =
+        &RenderCommandEncoder::mtlSetFragmentSamplerState;
 }
 RenderCommandEncoder::~RenderCommandEncoder() {}
 
@@ -894,58 +900,40 @@ void RenderCommandEncoder::applyStates()
                                    mStateCache.visibilityResultBufferOffset);
     }
 
-    const RenderCommandEncoderShaderStates &vsStates =
-        mStateCache.perShaderStates[gl::ShaderType::Vertex];
-    const RenderCommandEncoderShaderStates &fsStates =
-        mStateCache.perShaderStates[gl::ShaderType::Fragment];
-    for (uint32_t i = 0; i < kMaxShaderBuffers; ++i)
+    for (gl::ShaderType shaderType : gl::AllGLES2ShaderTypes())
     {
-        if (vsStates.buffers[i])
+        const RenderCommandEncoderShaderStates &shaderStates =
+            mStateCache.perShaderStates[shaderType];
+        for (uint32_t i = 0; i < kMaxShaderBuffers; ++i)
         {
-            mtlSetVertexBuffer(vsStates.buffers[i], vsStates.bufferOffsets[i], i);
-        }
-        if (fsStates.buffers[i])
-        {
-            mtlSetFragmentBuffer(fsStates.buffers[i], fsStates.bufferOffsets[i], i);
-        }
-    }
-
-    for (uint32_t i = 0; i < kMaxShaderSamplers; ++i)
-    {
-        if (vsStates.samplers[i])
-        {
-            if (vsStates.samplerLodClamps[i].valid())
+            if (shaderStates.buffers[i])
             {
-                const std::pair<float, float> &clamps = vsStates.samplerLodClamps[i].value();
-                mtlSetVertexSamplerState(vsStates.samplers[i], clamps.first, clamps.second, i);
-            }
-            else
-            {
-                mtlSetVertexSamplerState(vsStates.samplers[i], i);
+                (this->*mSetBufferFuncs[shaderType])(shaderStates.buffers[i],
+                                                     shaderStates.bufferOffsets[i], i);
             }
         }
 
-        if (fsStates.samplers[i])
+        for (uint32_t i = 0; i < kMaxShaderSamplers; ++i)
         {
-            if (fsStates.samplerLodClamps[i].valid())
+            if (shaderStates.samplers[i])
             {
-                const std::pair<float, float> &clamps = fsStates.samplerLodClamps[i].value();
-                mtlSetFragmentSamplerState(fsStates.samplers[i], clamps.first, clamps.second, i);
+                if (shaderStates.samplerLodClamps[i].valid())
+                {
+                    const std::pair<float, float> &clamps =
+                        shaderStates.samplerLodClamps[i].value();
+                    (this->*mSetSamplerFuncs[shaderType])(shaderStates.samplers[i], clamps.first,
+                                                          clamps.second, i);
+                }
+                else
+                {
+                    (this->*mSetSamplerWithoutLodFuncs[shaderType])(shaderStates.samplers[i], i);
+                }
             }
-            else
+
+            if (shaderStates.textures[i])
             {
-                mtlSetFragmentSamplerState(fsStates.samplers[i], i);
+                (this->*mSetTextureFuncs[shaderType])(shaderStates.textures[i], i);
             }
-        }
-
-        if (vsStates.textures[i])
-        {
-            mtlSetVertexTexture(vsStates.textures[i], i);
-        }
-
-        if (fsStates.textures[i])
-        {
-            mtlSetFragmentTexture(fsStates.textures[i], i);
         }
     }
 }

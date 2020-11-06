@@ -510,6 +510,8 @@ class RenderCommandEncoder final : public CommandEncoder
     using SetBytesFunc        = RenderCommandEncoder &(RenderCommandEncoder::*)(const uint8_t *,
                                                                          size_t,
                                                                          uint32_t);
+    using SetSamplerStateWithoutLodFunc =
+        RenderCommandEncoder &(RenderCommandEncoder::*)(id<MTLSamplerState>, uint32_t);
     using SetSamplerStateFunc = RenderCommandEncoder &(RenderCommandEncoder::*)(id<MTLSamplerState>,
                                                                                 float,
                                                                                 float,
@@ -522,6 +524,7 @@ class RenderCommandEncoder final : public CommandEncoder
     gl::ShaderMap<SetBytesFunc> mSetBytesFuncs;
     gl::ShaderMap<SetTextureFunc> mSetTextureFuncs;
     gl::ShaderMap<SetSamplerStateFunc> mSetSamplerFuncs;
+    gl::ShaderMap<SetSamplerStateWithoutLodFunc> mSetSamplerWithoutLodFuncs;
 
     RenderCommandEncoderStates mStateCache = {};
 };
