@@ -145,8 +145,6 @@ class CommandBuffer final : public WrappedObject<id<MTLCommandBuffer>>, angle::N
 
     uint64_t mQueueSerial = 0;
 
-    mutable std::mutex mLock;
-
     std::vector<std::string> mPendingDebugSigns;
     std::vector<std::pair<mtl::SharedEventRef, uint64_t>> mPendingSignalEvents;
 

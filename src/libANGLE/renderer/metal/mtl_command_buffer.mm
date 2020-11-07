@@ -219,14 +219,11 @@ CommandBuffer::~CommandBuffer()
 
 bool CommandBuffer::valid() const
 {
-    std::lock_guard<std::mutex> lg(mLock);
-
     return validImpl();
 }
 
 void CommandBuffer::commit()
 {
-    std::lock_guard<std::mutex> lg(mLock);
     commitImpl();
 }
 
@@ -248,8 +245,6 @@ void CommandBuffer::setWriteDependency(const ResourceRef &resource)
         return;
     }
 
-    std::lock_guard<std::mutex> lg(mLock);
-
     if (!validImpl())
     {
         return;
@@ -265,8 +260,6 @@ void CommandBuffer::setReadDependency(const ResourceRef &resource)
         return;
     }
 
-    std::lock_guard<std::mutex> lg(mLock);
-
     if (!validImpl())
     {
         return;
@@ -279,8 +272,6 @@ void CommandBuffer::restart()
 {
     uint64_t serial     = 0;
     auto metalCmdBuffer = mCmdQueue.makeMetalCommandBuffer(&serial);
-
-    std::lock_guard<std::mutex> lg(mLock);
 
     set(metalCmdBuffer);
     mQueueSerial = serial;
@@ -318,8 +309,6 @@ void CommandBuffer::popDebugGroup()
 
 void CommandBuffer::queueEventSignal(const mtl::SharedEventRef &event, uint64_t value)
 {
-    std::lock_guard<std::mutex> lg(mLock);
-
     ASSERT(validImpl());
 
     if (mActiveCommandEncoder && mActiveCommandEncoder->getType() == CommandEncoder::RENDER)
@@ -336,7 +325,6 @@ void CommandBuffer::queueEventSignal(const mtl::SharedEventRef &event, uint64_t 
 
 void CommandBuffer::serverWaitEvent(const mtl::SharedEventRef &event, uint64_t value)
 {
-    std::lock_guard<std::mutex> lg(mLock);
     ASSERT(validImpl());
 
     waitEventImpl(event, value);
