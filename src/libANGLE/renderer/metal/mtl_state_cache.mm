@@ -1116,7 +1116,7 @@ ClientIndexArrayKey &ClientIndexArrayKey::operator=(ClientIndexArrayKey &&rhs)
     if (rhs.isWrapping())
     {
         // Make a copy. We want to store it in the cache.
-        assign(rhs.data(), rhs.type(), rhs.size());
+        assign(rhs.data(), rhs.type(), rhs.elementsCount());
     }
     else
     {
@@ -1133,7 +1133,7 @@ ClientIndexArrayKey &ClientIndexArrayKey::operator=(ClientIndexArrayKey &&rhs)
 }
 ClientIndexArrayKey &ClientIndexArrayKey::operator=(const ClientIndexArrayKey &rhs)
 {
-    assign(rhs.data(), rhs.type(), rhs.size());
+    assign(rhs.data(), rhs.type(), rhs.elementsCount());
     return *this;
 }
 
@@ -1145,6 +1145,11 @@ const void *ClientIndexArrayKey::data() const
 size_t ClientIndexArrayKey::size() const
 {
     return mWrappedBytes ? mWrappedSize : mBytes.size();
+}
+
+size_t ClientIndexArrayKey::elementsCount() const
+{
+    return size() / gl::GetDrawElementsTypeSize(mType);
 }
 
 bool ClientIndexArrayKey::isWrapping() const
@@ -1192,7 +1197,6 @@ bool ClientIndexArrayKey::operator==(const ClientIndexArrayKey &rhs) const
         return false;
     }
     return memcmp(data(), rhs.data(), size()) == 0;
-    ;
 }
 
 // StateCache implementation

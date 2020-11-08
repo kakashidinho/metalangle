@@ -426,6 +426,7 @@ struct ClientIndexArrayKey
 
     const void *data() const;
     size_t size() const;
+    size_t elementsCount() const;
     gl::DrawElementsType type() const { return mType; }
     bool isWrapping() const;
 
