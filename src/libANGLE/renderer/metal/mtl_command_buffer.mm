@@ -506,6 +506,11 @@ RenderCommandEncoderShaderStates::RenderCommandEncoderShaderStates()
 
 void RenderCommandEncoderShaderStates::reset()
 {
+    for (CommandEncoderOptionalInlData &data : bytes)
+    {
+        data.reset();
+    }
+
     for (AutoObjCPtr<id<MTLBuffer>> &buffer : buffers)
     {
         buffer = nil;
@@ -894,6 +899,11 @@ void RenderCommandEncoder::applyStates()
                 (this->*mSetBufferFuncs[shaderType])(shaderStates.buffers[i],
                                                      shaderStates.bufferOffsets[i], i);
             }
+            else if (shaderStates.bytes[i].valid())
+            {
+                const CommandEncoderInlineData &data = shaderStates.bytes[i].value();
+                (this->*mSetBytesFuncs[shaderType])(data.data(), data.size(), i);
+            }
         }
 
         for (uint32_t i = 0; i < kMaxShaderSamplers; ++i)
@@ -1237,14 +1247,22 @@ RenderCommandEncoder &RenderCommandEncoder::setBytes(gl::ShaderType shaderType,
         return *this;
     }
 
-    // NOTE(hqle): find an efficient way to cache inline data.
-    ensureMetalEncoderStarted();
-
+    CommandEncoderInlineData tmp(bytes, size);
     RenderCommandEncoderShaderStates &shaderStates = mStateCache.perShaderStates[shaderType];
+
+    if (shaderStates.bytes[index].valid() && shaderStates.bytes[index].value() == tmp)
+    {
+        return *this;
+    }
+
+    shaderStates.bytes[index]                      = std::move(tmp);
     shaderStates.buffers[index]                    = nil;
     shaderStates.bufferOffsets[index]              = 0;
 
-    (this->*mSetBytesFuncs[shaderType])(bytes, size, index);
+    if (get())
+    {
+        (this->*mSetBytesFuncs[shaderType])(bytes, size, index);
+    }
 
     return *this;
 }
