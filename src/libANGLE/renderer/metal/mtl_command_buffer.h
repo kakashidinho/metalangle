@@ -190,8 +190,6 @@ class CommandEncoder : public WrappedObject<id<MTLCommandEncoder>>, angle::NonCo
     CommandBuffer &mCmdBuffer;
 };
 
-using CommandEncoderInlineData      = angle::FastVector<uint8_t, kInlineConstDataMaxSize>;
-using CommandEncoderOptionalInlData = Optional<CommandEncoderInlineData>;
 // Per shader stage's states
 struct RenderCommandEncoderShaderStates
 {
@@ -199,7 +197,6 @@ struct RenderCommandEncoderShaderStates
 
     void reset();
 
-    std::array<CommandEncoderOptionalInlData, kMaxShaderBuffers> bytes;
     std::array<AutoObjCPtr<id<MTLBuffer>>, kMaxShaderBuffers> buffers;
     std::array<uint32_t, kMaxShaderBuffers> bufferOffsets;
     std::array<AutoObjCPtr<id<MTLSamplerState>>, kMaxShaderSamplers> samplers;
