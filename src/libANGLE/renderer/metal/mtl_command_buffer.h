@@ -190,16 +190,6 @@ class CommandEncoder : public WrappedObject<id<MTLCommandEncoder>>, angle::NonCo
     CommandBuffer &mCmdBuffer;
 };
 
-struct CommandEncoderBatchBufferSettings
-{
-    CommandEncoderBatchBufferSettings();
-    void reset();
-
-    std::vector<id<MTLBuffer>> bufferBindingBuffers;
-    std::vector<NSUInteger> bufferBindingOffsets;
-    NSRange bufferBindingRange;
-};
-
 // Per shader stage's states
 struct RenderCommandEncoderShaderStates
 {
@@ -436,8 +426,6 @@ class RenderCommandEncoder final : public CommandEncoder
     void simulateDiscardFramebuffer();
     void endEncodingImpl(bool considerDiscardSimulation);
     void applyStates();
-    void applyBatchedBufferBindings();
-    void clearBatchedBufferBindings();
 
     RenderCommandEncoder &commonSetBuffer(gl::ShaderType shaderType,
                                           id<MTLBuffer> mtlBuffer,
@@ -459,9 +447,6 @@ class RenderCommandEncoder final : public CommandEncoder
     RenderCommandEncoder &mtlSetBlendColor(float r, float g, float b, float a);
 
     RenderCommandEncoder &mtlSetVertexBuffer(id<MTLBuffer> buffer, uint32_t offset, uint32_t index);
-    RenderCommandEncoder &mtlSetVertexBuffers(const id<MTLBuffer> *buffers,
-                                              const NSUInteger *offsets,
-                                              const NSRange &range);
     RenderCommandEncoder &mtlSetVertexBufferOffset(uint32_t offset, uint32_t index);
     RenderCommandEncoder &mtlSetVertexBytes(const uint8_t *bytes, size_t size, uint32_t index);
     RenderCommandEncoder &mtlSetVertexSamplerState(id<MTLSamplerState> state, uint32_t index);
@@ -474,9 +459,6 @@ class RenderCommandEncoder final : public CommandEncoder
     RenderCommandEncoder &mtlSetFragmentBuffer(id<MTLBuffer> buffer,
                                                uint32_t offset,
                                                uint32_t index);
-    RenderCommandEncoder &mtlSetFragmentBuffers(const id<MTLBuffer> *buffers,
-                                                const NSUInteger *offsets,
-                                                const NSRange &range);
     RenderCommandEncoder &mtlSetFragmentBufferOffset(uint32_t offset, uint32_t index);
     RenderCommandEncoder &mtlSetFragmentBytes(const uint8_t *bytes, size_t size, uint32_t index);
     RenderCommandEncoder &mtlSetFragmentSamplerState(id<MTLSamplerState> state, uint32_t index);
@@ -519,12 +501,9 @@ class RenderCommandEncoder final : public CommandEncoder
     const OcclusionQueryPool &mOcclusionQueryPool;
     bool mRecording = false;
 
-    using SetBufferFunc  = RenderCommandEncoder &(RenderCommandEncoder::*)(id<MTLBuffer>,
+    using SetBufferFunc       = RenderCommandEncoder &(RenderCommandEncoder::*)(id<MTLBuffer>,
                                                                           uint32_t,
                                                                           uint32_t);
-    using SetBuffersFunc = RenderCommandEncoder &(RenderCommandEncoder::*)(const id<MTLBuffer> *,
-                                                                           const NSUInteger *,
-                                                                           const NSRange &);
     using SetBufferOffsetFunc = RenderCommandEncoder &(RenderCommandEncoder::*)(uint32_t, uint32_t);
     using SetBytesFunc        = RenderCommandEncoder &(RenderCommandEncoder::*)(const uint8_t *,
                                                                          size_t,
@@ -539,14 +518,11 @@ class RenderCommandEncoder final : public CommandEncoder
                                                                            uint32_t);
 
     gl::ShaderMap<SetBufferFunc> mSetBufferFuncs;
-    gl::ShaderMap<SetBuffersFunc> mSetBuffersFuncs;
     gl::ShaderMap<SetBufferOffsetFunc> mSetBufferOffsetFuncs;
     gl::ShaderMap<SetBytesFunc> mSetBytesFuncs;
     gl::ShaderMap<SetTextureFunc> mSetTextureFuncs;
     gl::ShaderMap<SetSamplerStateFunc> mSetSamplerFuncs;
     gl::ShaderMap<SetSamplerStateWithoutLodFunc> mSetSamplerWithoutLodFuncs;
-
-    gl::ShaderMap<CommandEncoderBatchBufferSettings> mBatchedBufferBindings;
 
     RenderCommandEncoderStates mStateCache = {};
 };

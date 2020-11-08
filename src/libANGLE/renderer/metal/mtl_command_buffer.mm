@@ -498,18 +498,6 @@ void CommandEncoder::insertDebugSignImpl(NSString *label)
     [get() insertDebugSignpost:label];
 }
 
-// CommandEncoderBatchBufferSettings implementation
-CommandEncoderBatchBufferSettings::CommandEncoderBatchBufferSettings()
-{
-    reset();
-}
-void CommandEncoderBatchBufferSettings::reset()
-{
-    bufferBindingBuffers.clear();
-    bufferBindingOffsets.clear();
-    bufferBindingRange = NSMakeRange(0, 0);
-}
-
 // RenderCommandEncoderShaderStates implementation
 RenderCommandEncoderShaderStates::RenderCommandEncoderShaderStates()
 {
@@ -590,7 +578,6 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer *cmdBuffer,
     for (gl::ShaderType shaderType : gl::AllShaderTypes())
     {
         mSetBufferFuncs[shaderType]            = nullptr;
-        mSetBuffersFuncs[shaderType]           = nullptr;
         mSetBufferOffsetFuncs[shaderType]      = nullptr;
         mSetBytesFuncs[shaderType]             = nullptr;
         mSetTextureFuncs[shaderType]           = nullptr;
@@ -600,9 +587,6 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer *cmdBuffer,
 
     mSetBufferFuncs[gl::ShaderType::Vertex]   = &RenderCommandEncoder::mtlSetVertexBuffer;
     mSetBufferFuncs[gl::ShaderType::Fragment] = &RenderCommandEncoder::mtlSetFragmentBuffer;
-
-    mSetBuffersFuncs[gl::ShaderType::Vertex]   = &RenderCommandEncoder::mtlSetVertexBuffers;
-    mSetBuffersFuncs[gl::ShaderType::Fragment] = &RenderCommandEncoder::mtlSetFragmentBuffers;
 
     mSetBufferOffsetFuncs[gl::ShaderType::Vertex] = &RenderCommandEncoder::mtlSetVertexBufferOffset;
     mSetBufferOffsetFuncs[gl::ShaderType::Fragment] =
@@ -636,8 +620,6 @@ void RenderCommandEncoder::reset()
         mDeferredDebugSign = nil;
         mDeferredDebugGroups.clear();
     }
-
-    clearBatchedBufferBindings();
 
     mRecording = false;
 }
@@ -854,7 +836,6 @@ void RenderCommandEncoder::ensureMetalEncoderStarted()
         ASSERT(get());
 
         applyStates();
-        clearBatchedBufferBindings();
     }
 }
 
@@ -937,38 +918,6 @@ void RenderCommandEncoder::applyStates()
                 (this->*mSetTextureFuncs[shaderType])(shaderStates.textures[i], i);
             }
         }
-    }
-}
-
-void RenderCommandEncoder::applyBatchedBufferBindings()
-{
-    for (gl::ShaderType shaderType : gl::AllGLES2ShaderTypes())
-    {
-        const CommandEncoderBatchBufferSettings &batchedBufferBindings =
-            mBatchedBufferBindings[shaderType];
-        if (batchedBufferBindings.bufferBindingRange.length == 1)
-        {
-            (this->*mSetBufferFuncs[shaderType])(
-                *batchedBufferBindings.bufferBindingBuffers.data(),
-                static_cast<uint32_t>(*batchedBufferBindings.bufferBindingOffsets.data()),
-                static_cast<uint32_t>(batchedBufferBindings.bufferBindingRange.location));
-        }
-        else if (batchedBufferBindings.bufferBindingRange.length > 1)
-        {
-            (this->*mSetBuffersFuncs[shaderType])(batchedBufferBindings.bufferBindingBuffers.data(),
-                                                  batchedBufferBindings.bufferBindingOffsets.data(),
-                                                  batchedBufferBindings.bufferBindingRange);
-        }
-    }
-
-    clearBatchedBufferBindings();
-}
-
-void RenderCommandEncoder::clearBatchedBufferBindings()
-{
-    for (gl::ShaderType shaderType : gl::AllGLES2ShaderTypes())
-    {
-        mBatchedBufferBindings[shaderType].reset();
     }
 }
 
@@ -1270,19 +1219,10 @@ RenderCommandEncoder &RenderCommandEncoder::commonSetBuffer(gl::ShaderType shade
     shaderStates.buffers[index].retainAssign(mtlBuffer);
     shaderStates.bufferOffsets[index] = offset;
 
-    // Try to batch continuous range buffer bindings as many as possible
-    CommandEncoderBatchBufferSettings &buffersBatch = mBatchedBufferBindings[shaderType];
-    if (buffersBatch.bufferBindingRange.length == 0 ||
-        buffersBatch.bufferBindingRange.location + buffersBatch.bufferBindingRange.length != index)
+    if (get())
     {
-        applyBatchedBufferBindings();
-        buffersBatch.bufferBindingRange.location = index;
-        buffersBatch.bufferBindingRange.length   = 0;
+        (this->*mSetBufferFuncs[shaderType])(mtlBuffer, offset, index);
     }
-
-    buffersBatch.bufferBindingBuffers.push_back(mtlBuffer);
-    buffersBatch.bufferBindingOffsets.push_back(offset);
-    buffersBatch.bufferBindingRange.length++;
 
     return *this;
 }
@@ -1299,7 +1239,6 @@ RenderCommandEncoder &RenderCommandEncoder::setBytes(gl::ShaderType shaderType,
 
     // NOTE(hqle): find an efficient way to cache inline data.
     ensureMetalEncoderStarted();
-    applyBatchedBufferBindings();
 
     RenderCommandEncoderShaderStates &shaderStates = mStateCache.perShaderStates[shaderType];
     shaderStates.buffers[index]                    = nil;
@@ -1375,7 +1314,6 @@ RenderCommandEncoder &RenderCommandEncoder::draw(MTLPrimitiveType primitiveType,
                                                  uint32_t vertexCount)
 {
     ensureMetalEncoderStarted();
-    applyBatchedBufferBindings();
     [get() drawPrimitives:primitiveType vertexStart:vertexStart vertexCount:vertexCount];
 
     return *this;
@@ -1387,7 +1325,6 @@ RenderCommandEncoder &RenderCommandEncoder::drawInstanced(MTLPrimitiveType primi
                                                           uint32_t instances)
 {
     ensureMetalEncoderStarted();
-    applyBatchedBufferBindings();
     [get() drawPrimitives:primitiveType
               vertexStart:vertexStart
               vertexCount:vertexCount
@@ -1408,7 +1345,6 @@ RenderCommandEncoder &RenderCommandEncoder::drawIndexed(MTLPrimitiveType primiti
     }
 
     ensureMetalEncoderStarted();
-    applyBatchedBufferBindings();
     cmdBuffer().setReadDependency(indexBuffer);
 
     [get() drawIndexedPrimitives:primitiveType
@@ -1433,7 +1369,6 @@ RenderCommandEncoder &RenderCommandEncoder::drawIndexedInstanced(MTLPrimitiveTyp
     }
 
     ensureMetalEncoderStarted();
-    applyBatchedBufferBindings();
     cmdBuffer().setReadDependency(indexBuffer);
 
     [get() drawIndexedPrimitives:primitiveType
@@ -1461,7 +1396,6 @@ RenderCommandEncoder &RenderCommandEncoder::drawIndexedInstancedBaseVertex(
     }
 
     ensureMetalEncoderStarted();
-    applyBatchedBufferBindings();
     cmdBuffer().setReadDependency(indexBuffer);
 
     [get() drawIndexedPrimitives:primitiveType
@@ -1735,13 +1669,6 @@ RenderCommandEncoder &RenderCommandEncoder::mtlSetVertexBuffer(id<MTLBuffer> buf
     [get() setVertexBuffer:buffer offset:offset atIndex:index];
     return *this;
 }
-RenderCommandEncoder &RenderCommandEncoder::mtlSetVertexBuffers(const id<MTLBuffer> *buffers,
-                                                                const NSUInteger *offsets,
-                                                                const NSRange &range)
-{
-    [get() setVertexBuffers:buffers offsets:offsets withRange:range];
-    return *this;
-}
 RenderCommandEncoder &RenderCommandEncoder::mtlSetVertexBufferOffset(uint32_t offset,
                                                                      uint32_t index)
 {
@@ -1784,13 +1711,6 @@ RenderCommandEncoder &RenderCommandEncoder::mtlSetFragmentBuffer(id<MTLBuffer> b
                                                                  uint32_t index)
 {
     [get() setFragmentBuffer:buffer offset:offset atIndex:index];
-    return *this;
-}
-RenderCommandEncoder &RenderCommandEncoder::mtlSetFragmentBuffers(const id<MTLBuffer> *buffers,
-                                                                  const NSUInteger *offsets,
-                                                                  const NSRange &range)
-{
-    [get() setFragmentBuffers:buffers offsets:offsets withRange:range];
     return *this;
 }
 RenderCommandEncoder &RenderCommandEncoder::mtlSetFragmentBufferOffset(uint32_t offset,
