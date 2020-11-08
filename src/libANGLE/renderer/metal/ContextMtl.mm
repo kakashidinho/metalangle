@@ -494,7 +494,7 @@ angle::Result ContextMtl::drawTriFanElements(const gl::Context *context,
         if (!elementBuffer)
         {
             // If indices is from client memory, check if it is already cached.
-            clientIndicesKey.assign(indices, type, count);
+            clientIndicesKey.wrap(indices, type, count);
 
             mtl::ClientIndexBufferCache::const_iterator ite =
                 mTriFanClientIndexBufferCache.Peek(clientIndicesKey);

@@ -409,15 +409,38 @@ struct RenderPassDesc
 struct ClientIndexArrayKey
 {
   public:
+    ClientIndexArrayKey();
+    ClientIndexArrayKey(ClientIndexArrayKey &&rhs);
+    ClientIndexArrayKey(const ClientIndexArrayKey &rhs);
+
     void assign(const void *data, gl::DrawElementsType type, size_t count);
+    void wrap(const void *data, gl::DrawElementsType type, size_t count);
     size_t hash() const;
 
     bool operator==(const ClientIndexArrayKey &rhs) const;
 
-    bool valid() const { return !mBytes.empty(); }
+    ClientIndexArrayKey &operator=(ClientIndexArrayKey &&rhs);
+    ClientIndexArrayKey &operator=(const ClientIndexArrayKey &rhs);
+
+    bool valid() const { return !mBytes.empty() || mWrappedBytes; }
+
+    const void *data() const;
+    size_t size() const;
+    gl::DrawElementsType type() const { return mType; }
+    bool isWrapping() const;
+
+    void clear();
 
   private:
+    gl::DrawElementsType mType = gl::DrawElementsType::InvalidEnum;
+
     SmallVector mBytes;
+
+    const void *mWrappedBytes = nullptr;
+    size_t mWrappedSize       = 0;
+
+    mutable size_t mCachedHash;
+    mutable bool mIsHashCached = false;
 };
 
 }  // namespace mtl
