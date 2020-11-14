@@ -558,10 +558,15 @@ angle::Result VertexArrayMtl::updateClientAttribs(const gl::Context *context,
             startElement = 0;
             elementCount = UnsignedCeilDivide(instanceCount, binding.getDivisor());
         }
-        size_t bytesIntendedToUse = (startElement + elementCount) * binding.getStride();
 
+        ASSERT(elementCount);
         const mtl::VertexFormat &format = contextMtl->getVertexFormat(attrib.format->id, false);
-        bool needStreaming              = format.actualFormatId != format.intendedFormatId ||
+
+        // Actual bytes to use: the last element doesn't need to be full stride
+        size_t bytesIntendedToUse = (startElement + elementCount - 1) * binding.getStride() +
+                                    format.actualAngleFormat().pixelBytes;
+
+        bool needStreaming = format.actualFormatId != format.intendedFormatId ||
                              (binding.getStride() % mtl::kVertexAttribBufferStrideAlignment) != 0 ||
                              (binding.getStride() < format.actualAngleFormat().pixelBytes) ||
                              bytesIntendedToUse > mInlineDataMaxSize;
