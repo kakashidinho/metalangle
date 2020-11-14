@@ -255,6 +255,7 @@ class ContextMtl : public ContextImpl, public mtl::Context
                                  gl::Texture **textureOut);
 
     mtl::BufferPool &getClientIndexBufferPool() { return mClientIndexBufferPool; }
+    mtl::ClientIndexRangeCache &getClientIndexRangeCache() { return mClientIndexRangeCache; }
 
     // Recommended to call these methods to end encoding instead of invoking the encoder's
     // endEncoding() directly.
@@ -497,6 +498,7 @@ class ContextMtl : public ContextImpl, public mtl::Context
     bool mCullAllPolygons = false;
 
     mtl::BufferPool mClientIndexBufferPool;
+    mtl::ClientIndexRangeCache mClientIndexRangeCache;
 
     // Lineloop and TriFan index buffer
     mtl::BufferPool mLineLoopIndexBufferPool;

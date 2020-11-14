@@ -16,6 +16,7 @@
 #include "libANGLE/renderer/metal/mtl_command_buffer.h"
 #include "libANGLE/renderer/metal/mtl_format_utils.h"
 #include "libANGLE/renderer/metal/mtl_resources.h"
+#include "libANGLE/renderer/metal/mtl_state_cache.h"
 
 namespace rx
 {
@@ -76,6 +77,15 @@ class VertexArrayMtl : public VertexArrayImpl
     void getVertexAttribFormatAndArraySize(const sh::ShaderVariable &var,
                                            MTLVertexFormat *formatOut,
                                            uint32_t *arraySizeOut);
+
+    angle::Result getVertexRangeInfo(const gl::Context *context,
+                                     GLint firstVertex,
+                                     GLsizei vertexOrIndexCount,
+                                     gl::DrawElementsType indexTypeOrInvalid,
+                                     const void *indices,
+                                     GLint baseVertex,
+                                     GLint *startVertexOut,
+                                     size_t *vertexCountOut);
 
     angle::Result syncDirtyAttrib(const gl::Context *glContext,
                                   const gl::VertexAttribute &attrib,
@@ -150,6 +160,10 @@ class VertexArrayMtl : public VertexArrayImpl
     const mtl::VertexFormat &mDefaultUIntVertexFormat;
 
     mtl::BufferPool mDynamicVertexData;
+
+    using DynamicIndexRangeCache =
+        angle::base::HashingMRUCache<mtl::ClientIndexArrayKey, gl::IndexRange>;
+    DynamicIndexRangeCache mDynamicIndexRangeCache;
 
     std::vector<uint32_t> mEmulatedInstanceAttribs;
 

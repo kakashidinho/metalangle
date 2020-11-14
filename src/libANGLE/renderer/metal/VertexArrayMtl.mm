@@ -167,7 +167,8 @@ VertexArrayMtl::VertexArrayMtl(const gl::VertexArrayState &state, ContextMtl *co
       mDefaultFloatVertexFormat(
           context->getVertexFormat(angle::FormatID::R32G32B32A32_FLOAT, false)),
       mDefaultIntVertexFormat(context->getVertexFormat(angle::FormatID::R32G32B32A32_SINT, false)),
-      mDefaultUIntVertexFormat(context->getVertexFormat(angle::FormatID::R32G32B32A32_UINT, false))
+      mDefaultUIntVertexFormat(context->getVertexFormat(angle::FormatID::R32G32B32A32_UINT, false)),
+      mDynamicIndexRangeCache(/* maxEntries */ 10)
 {
     reset(context);
 
@@ -243,8 +244,7 @@ angle::Result VertexArrayMtl::syncState(const gl::Context *context,
         switch (dirtyBit)
         {
             case gl::VertexArray::DIRTY_BIT_ELEMENT_ARRAY_BUFFER:
-            case gl::VertexArray::DIRTY_BIT_ELEMENT_ARRAY_BUFFER_DATA:
-            {
+            case gl::VertexArray::DIRTY_BIT_ELEMENT_ARRAY_BUFFER_DATA: {
                 break;
             }
 
@@ -512,6 +512,48 @@ void VertexArrayMtl::emulateInstanceDrawStep(mtl::RenderCommandEncoder *cmdEncod
     }
 }
 
+angle::Result VertexArrayMtl::getVertexRangeInfo(const gl::Context *context,
+                                                 GLint firstVertex,
+                                                 GLsizei vertexOrIndexCount,
+                                                 gl::DrawElementsType indexTypeOrInvalid,
+                                                 const void *indices,
+                                                 GLint baseVertex,
+                                                 GLint *startVertexOut,
+                                                 size_t *vertexCountOut)
+{
+    if (indexTypeOrInvalid == gl::DrawElementsType::InvalidEnum || mState.getElementArrayBuffer() ||
+        vertexOrIndexCount * gl::GetDrawElementsTypeSize(indexTypeOrInvalid) >
+            mtl::kSmallVectorSize)
+    {
+        return GetVertexRangeInfo(context, firstVertex, vertexOrIndexCount, indexTypeOrInvalid,
+                                  indices, 0, startVertexOut, vertexCountOut);
+    }
+
+    // This is client index data
+    mtl::ClientIndexArrayKey clientIndicesKey;
+    clientIndicesKey.wrap(indices, indexTypeOrInvalid, vertexOrIndexCount);
+
+    gl::IndexRange indexRange;
+    mtl::ClientIndexRangeCache &cache = mtl::GetImpl(context)->getClientIndexRangeCache();
+    mtl::ClientIndexRangeCache::const_iterator ite = cache.Peek(clientIndicesKey);
+    if (ite != cache.end())
+    {
+        // Found in cache, reuse the computed index range.
+        indexRange = ite->second;
+    }
+    else
+    {
+        // Not in the cache, do the computation again
+        ANGLE_TRY(context->getState().getVertexArray()->getIndexRange(
+            context, indexTypeOrInvalid, vertexOrIndexCount, indices, &indexRange));
+
+        cache.Put(clientIndicesKey, indexRange);
+    }
+
+    *vertexCountOut = indexRange.vertexCount();
+    return ComputeStartVertex(context->getImplementation(), indexRange, baseVertex, startVertexOut);
+}
+
 angle::Result VertexArrayMtl::updateClientAttribs(const gl::Context *context,
                                                   GLint firstVertex,
                                                   GLsizei vertexOrIndexCount,
@@ -526,7 +568,7 @@ angle::Result VertexArrayMtl::updateClientAttribs(const gl::Context *context,
 
     GLint startVertex;
     size_t vertexCount;
-    ANGLE_TRY(GetVertexRangeInfo(context, firstVertex, vertexOrIndexCount, indexTypeOrInvalid,
+    ANGLE_TRY(getVertexRangeInfo(context, firstVertex, vertexOrIndexCount, indexTypeOrInvalid,
                                  indices, 0, &startVertex, &vertexCount));
 
     mDynamicVertexData.releaseInFlightBuffers(contextMtl);

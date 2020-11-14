@@ -587,6 +587,8 @@ struct ClientArrayBufferCachePayload
 using ClientIndexBufferCache =
     angle::base::HashingMRUCache<ClientIndexArrayKey, ClientArrayBufferCachePayload>;
 
+using ClientIndexRangeCache = angle::base::HashingMRUCache<ClientIndexArrayKey, gl::IndexRange>;
+
 }  // namespace mtl
 }  // namespace rx
 

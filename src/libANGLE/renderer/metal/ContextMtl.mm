@@ -35,6 +35,7 @@ namespace rx
 
 namespace
 {
+constexpr uint32_t kMaxClientIndexRangeCachedPerFrame    = 0;
 constexpr uint32_t kMaxTriFanClientBuffersCachedPerFrame = 10;
 
 #define ANGLE_MTL_XFB_DRAW(DRAW_PROC)                                                       \
@@ -182,6 +183,7 @@ ContextMtl::ContextMtl(const gl::State &state, gl::ErrorSet *errorSet, DisplayMt
       mRenderEncoder(&mCmdBuffer, mOcclusionQueryPool),
       mBlitEncoder(&mCmdBuffer),
       mComputeEncoder(&mCmdBuffer),
+      mClientIndexRangeCache(kMaxClientIndexRangeCachedPerFrame),
       mTriFanClientIndexBufferCache(kMaxTriFanClientBuffersCachedPerFrame)
 {}
 
@@ -209,6 +211,7 @@ void ContextMtl::onDestroy(const gl::Context *context)
 {
     mClientIndexBufferPool.destroy(this);
 
+    mClientIndexRangeCache.Clear();
     mTriFanClientIndexBufferCache.Clear();
     mTriFanIndexBufferPool.destroy(this);
     mTriFanClientIndexBufferPool.destroy(this);
@@ -1542,6 +1545,8 @@ void ContextMtl::releaseInFlightBuffers()
     // At this point the buffers in mTriFanClientIndexBufferPool could be re-used.
     // So clear the cache.
     mTriFanClientIndexBufferCache.Clear();
+
+    mClientIndexRangeCache.Clear();
 }
 
 void ContextMtl::updateViewport(FramebufferMtl *framebufferMtl,
@@ -1853,6 +1858,8 @@ void ContextMtl::updatePrimitiRestart(const gl::State &glState)
 {
     // Need to invalidate client index buffer caches
     mTriFanClientIndexBufferCache.Clear();
+
+    mClientIndexRangeCache.Clear();
 }
 
 angle::Result ContextMtl::updateDefaultAttribute(size_t attribIndex)
