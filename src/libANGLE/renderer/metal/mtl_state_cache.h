@@ -15,6 +15,7 @@
 
 #include <unordered_map>
 
+#include "common/third_party/base/anglebase/containers/mru_cache.h"
 #include "libANGLE/State.h"
 #include "libANGLE/angletypes.h"
 #include "libANGLE/renderer/metal/mtl_common.h"
@@ -413,6 +414,44 @@ struct RenderPassDesc
     uint32_t sampleCount         = 1;
 };
 
+struct ClientIndexArrayKey
+{
+  public:
+    ClientIndexArrayKey();
+    ClientIndexArrayKey(ClientIndexArrayKey &&rhs);
+    ClientIndexArrayKey(const ClientIndexArrayKey &rhs);
+
+    void assign(const void *data, gl::DrawElementsType type, size_t count);
+    void wrap(const void *data, gl::DrawElementsType type, size_t count);
+    size_t hash() const;
+
+    bool operator==(const ClientIndexArrayKey &rhs) const;
+
+    ClientIndexArrayKey &operator=(ClientIndexArrayKey &&rhs);
+    ClientIndexArrayKey &operator=(const ClientIndexArrayKey &rhs);
+
+    bool valid() const { return !mBytes.empty() || mWrappedBytes; }
+
+    const void *data() const;
+    size_t size() const;
+    size_t elementsCount() const;
+    gl::DrawElementsType type() const { return mType; }
+    bool isWrapping() const;
+
+    void clear();
+
+  private:
+    gl::DrawElementsType mType = gl::DrawElementsType::InvalidEnum;
+
+    SmallVector mBytes;
+
+    const void *mWrappedBytes = nullptr;
+    size_t mWrappedSize       = 0;
+
+    mutable size_t mCachedHash;
+    mutable bool mIsHashCached = false;
+};
+
 }  // namespace mtl
 }  // namespace rx
 
@@ -435,6 +474,12 @@ template <>
 struct hash<rx::mtl::RenderPipelineDesc>
 {
     size_t operator()(const rx::mtl::RenderPipelineDesc &key) const { return key.hash(); }
+};
+
+template <>
+struct hash<rx::mtl::ClientIndexArrayKey>
+{
+    size_t operator()(const rx::mtl::ClientIndexArrayKey &key) const { return key.hash(); }
 };
 
 }  // namespace std
@@ -540,6 +585,15 @@ class StateCache final : angle::NonCopyable
     std::unordered_map<DepthStencilDesc, AutoObjCPtr<id<MTLDepthStencilState>>> mDepthStencilStates;
     std::unordered_map<SamplerDesc, AutoObjCPtr<id<MTLSamplerState>>> mSamplerStates;
 };
+
+// A LRU Cache to store generated index buffer from client array data
+struct ClientArrayBufferCachePayload
+{
+    BufferRef buffer;
+    size_t offset;
+};
+using ClientIndexBufferCache =
+    angle::base::HashingMRUCache<ClientIndexArrayKey, ClientArrayBufferCachePayload>;
 
 }  // namespace mtl
 }  // namespace rx

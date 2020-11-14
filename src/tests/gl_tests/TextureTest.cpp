@@ -3607,7 +3607,6 @@ TEST_P(ShadowSamplerTestES3, ArrayOfShadowSamplerLodCompareOn)
         "in vec2 texcoord;\n"
         "uniform float depthRef;\n"
         "uniform float lod;\n"
-        "uniform int index;\n"
         "out vec4 fragColor;\n"
         "vec4 depthSample2(highp sampler2DShadow texShadow)\n"
         "{\n"
@@ -3615,7 +3614,7 @@ TEST_P(ShadowSamplerTestES3, ArrayOfShadowSamplerLodCompareOn)
         "}\n"
         "vec4 depthSample1()\n"
         "{\n"
-        "    return depthSample2(tex2DShadow[index]);\n"
+        "    return depthSample2(tex2DShadow[1]);\n"
         "}\n"
         "\n"
         "void main()\n"
@@ -3631,13 +3630,11 @@ TEST_P(ShadowSamplerTestES3, ArrayOfShadowSamplerLodCompareOn)
     GLint sampler0Location = glGetUniformLocation(program, "tex2DShadow[0]");
     GLint sampler1Location = glGetUniformLocation(program, "tex2DShadow[1]");
     GLint lodLocation      = glGetUniformLocation(program, "lod");
-    GLint indexLocation    = glGetUniformLocation(program, "index");
 
     EXPECT_NE(depthRefLocation, -1);
     EXPECT_NE(sampler0Location, -1);
     EXPECT_NE(sampler1Location, -1);
     EXPECT_NE(lodLocation, -1);
-    EXPECT_NE(indexLocation, -1);
 
     glActiveTexture(GL_TEXTURE0);
     GLTexture tempTex;
@@ -3667,7 +3664,6 @@ TEST_P(ShadowSamplerTestES3, ArrayOfShadowSamplerLodCompareOn)
     glUniform1f(depthRefLocation, 0.45f);
     glUniform1i(sampler0Location, 0);
     glUniform1i(sampler1Location, 1);
-    glUniform1i(indexLocation, 1);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
     glUniform1f(lodLocation, 0);
@@ -7230,6 +7226,7 @@ ANGLE_INSTANTIATE_TEST_ES3(Texture2DTestES3);
 ANGLE_INSTANTIATE_TEST_ES3(Texture3DTestES3);
 ANGLE_INSTANTIATE_TEST_ES3(Texture2DIntegerAlpha1TestES3);
 ANGLE_INSTANTIATE_TEST_ES3(Texture2DUnsignedIntegerAlpha1TestES3);
+ANGLE_INSTANTIATE_TEST_ES3(ShadowSamplerTestES3);
 ANGLE_INSTANTIATE_TEST_ES3(ShadowSamplerPlusSampler3DTestES3);
 ANGLE_INSTANTIATE_TEST_ES3(SamplerTypeMixTestES3);
 ANGLE_INSTANTIATE_TEST_ES3(Texture2DArrayTestES3);

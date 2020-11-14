@@ -276,6 +276,8 @@ class ContextMtl : public ContextImpl, public mtl::Context
                                        gl::TextureType type,
                                        gl::Texture **textureOut);
 
+    mtl::BufferPool &getClientIndexBufferPool() { return mClientIndexBufferPool; }
+
     // Recommended to call these methods to end encoding instead of invoking the encoder's
     // endEncoding() directly.
     void endEncoding(mtl::RenderCommandEncoder *encoder);
@@ -315,6 +317,7 @@ class ContextMtl : public ContextImpl, public mtl::Context
 
   private:
     void ensureCommandBufferReady();
+    void releaseInFlightBuffers();
     angle::Result ensureIncompleteTexturesCreated(const gl::Context *context);
     angle::Result setupDraw(const gl::Context *context,
                             gl::PrimitiveMode mode,
@@ -399,6 +402,7 @@ class ContextMtl : public ContextImpl, public mtl::Context
     void updateDrawFrameBufferBinding(const gl::Context *context);
     void updateProgramExecutable(const gl::Context *context);
     void updateVertexArray(const gl::Context *context);
+    void updatePrimitiRestart(const gl::State &glState);
 
     angle::Result updateDefaultAttribute(size_t attribIndex);
     void filterOutXFBOnlyDirtyBits(const gl::Context *context);
@@ -419,6 +423,8 @@ class ContextMtl : public ContextImpl, public mtl::Context
                                          bool *pipelineDescChanged);
 
     angle::Result startOcclusionQueryInRenderPass(QueryMtl *query, bool clearOldValue);
+    // ensure that occlusion query pool can allocate new offset.
+    angle::Result ensureOcclusionQueryPoolCapacity();
 
     // Dirty bits.
     enum DirtyBitType : size_t
@@ -517,12 +523,22 @@ class ContextMtl : public ContextImpl, public mtl::Context
     MTLCullMode mCullMode;
     bool mCullAllPolygons = false;
 
+    mtl::BufferPool mClientIndexBufferPool;
+
     // Lineloop and TriFan index buffer
-    mtl::BufferPool mLineLoopIndexBuffer;
-    mtl::BufferPool mLineLoopLastSegmentIndexBuffer;
-    mtl::BufferPool mTriFanIndexBuffer;
-    // one buffer can be reused for any starting vertex in DrawArrays()
+    mtl::BufferPool mLineLoopIndexBufferPool;
+    mtl::BufferPool mLineLoopLastSegmentIndexBufferPool;
+    mtl::BufferPool mTriFanIndexBufferPool;
+    mtl::BufferPool mTriFanClientIndexBufferPool;
+
+    // LRU cache to store generate index buffer from client data. Note: if primitive restart is
+    // changed, this cache must be invalidated
+    mtl::ClientIndexBufferCache mTriFanClientIndexBufferCache;
+
+    // one buffer can be reused for multiple DrawArrays()
     mtl::BufferRef mTriFanArraysIndexBuffer;
+    GLint mTriFanArraysIndexBufferFirstVertex = 0;
+    uint32_t mTriFanArraysIndexBufferOffset   = 0;
 
     // Dummy texture to be used for transform feedback only pass.
     mtl::TextureRef mDummyXFBRenderTexture;

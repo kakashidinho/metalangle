@@ -17,10 +17,12 @@
 
 #include <string>
 
+#include "common/FastVector.h"
 #include "common/Optional.h"
 #include "common/PackedEnums.h"
 #include "common/angleutils.h"
 #include "common/apple_platform_utils.h"
+#include "common/hash_utils.h"
 #include "libANGLE/Constants.h"
 #include "libANGLE/Version.h"
 #include "libANGLE/angletypes.h"
@@ -274,6 +276,30 @@ GetImplType<T> *GetImpl(const T *_Nonnull glObject)
 {
     return GetImplAs<GetImplType<T>>(glObject);
 }
+
+// A vector that allow containing up to SmallVectorSize bytes without allocating anything on heap.
+constexpr size_t kSmallVectorSize = 256;
+using SmallVector                 = ::angle::FastVector<uint8_t, kSmallVectorSize>;
+
+}  // namespace mtl
+}  // namespace rx
+
+namespace std
+{
+template <>
+struct hash<rx::mtl::SmallVector>
+{
+    size_t operator()(const rx::mtl::SmallVector &key) const
+    {
+        return angle::ComputeGenericHash(key.data(), key.size());
+    }
+};
+}  // namespace std
+
+namespace rx
+{
+namespace mtl
+{
 
 // This class wraps Objective-C pointer inside, it will manage the lifetime of
 // the Objective-C pointer. Changing pointer is not supported outside subclass.

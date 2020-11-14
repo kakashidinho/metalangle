@@ -241,9 +241,18 @@ void BaseRenderPassAttachmentDescToObjC(const RenderPassAttachmentDesc &src,
         dst.resolveDepthPlane = 0;
     }
 
-    ANGLE_OBJC_CP_PROPERTY(dst, src, loadAction);
-    ANGLE_OBJC_CP_PROPERTY(dst, src, storeAction);
-    ANGLE_OBJC_CP_PROPERTY(dst, src, storeActionOptions);
+    if (!dst.texture)
+    {
+        dst.resolveTexture = nil;
+        dst.loadAction     = MTLLoadActionDontCare;
+        dst.storeAction    = MTLStoreActionDontCare;
+    }
+    else
+    {
+        ANGLE_OBJC_CP_PROPERTY(dst, src, loadAction);
+        ANGLE_OBJC_CP_PROPERTY(dst, src, storeAction);
+        ANGLE_OBJC_CP_PROPERTY(dst, src, storeActionOptions);
+    }
 }
 
 void ToObjC(const RenderPassColorAttachmentDesc &desc,
@@ -1089,6 +1098,134 @@ void RenderPipelineCache::clearPipelineStates()
 {
     mRenderPipelineStates[0].clear();
     mRenderPipelineStates[1].clear();
+}
+
+// ClientIndexArrayKey implementation
+ClientIndexArrayKey::ClientIndexArrayKey() = default;
+
+ClientIndexArrayKey::ClientIndexArrayKey(ClientIndexArrayKey &&rhs)
+{
+    (*this) = std::move(rhs);
+}
+
+ClientIndexArrayKey::ClientIndexArrayKey(const ClientIndexArrayKey &rhs)
+{
+    (*this) = rhs;
+}
+
+void ClientIndexArrayKey::assign(const void *data, gl::DrawElementsType type, size_t count)
+{
+    mtl::SmallVector tmp(static_cast<const uint8_t *>(data),
+                         count * gl::GetDrawElementsTypeSize(type));
+
+    mBytes = std::move(tmp);
+
+    mWrappedBytes = nullptr;
+    mWrappedSize  = 0;
+
+    mType = type;
+
+    mIsHashCached = false;
+}
+
+void ClientIndexArrayKey::wrap(const void *data, gl::DrawElementsType type, size_t count)
+{
+    mBytes.clear();
+
+    mWrappedBytes = data;
+    mWrappedSize  = count * gl::GetDrawElementsTypeSize(type);
+
+    mType = type;
+
+    mIsHashCached = false;
+}
+
+ClientIndexArrayKey &ClientIndexArrayKey::operator=(ClientIndexArrayKey &&rhs)
+{
+    if (rhs.isWrapping())
+    {
+        // Make a copy. We want to store it in the cache.
+        assign(rhs.data(), rhs.type(), rhs.elementsCount());
+    }
+    else
+    {
+        mWrappedBytes = nullptr;
+        mWrappedSize  = 0;
+
+        mBytes = std::move(rhs.mBytes);
+    }
+
+    mType         = rhs.mType;
+    mIsHashCached = false;
+
+    return *this;
+}
+ClientIndexArrayKey &ClientIndexArrayKey::operator=(const ClientIndexArrayKey &rhs)
+{
+    assign(rhs.data(), rhs.type(), rhs.elementsCount());
+    return *this;
+}
+
+const void *ClientIndexArrayKey::data() const
+{
+    return mWrappedBytes ? mWrappedBytes : mBytes.data();
+}
+
+size_t ClientIndexArrayKey::size() const
+{
+    return mWrappedBytes ? mWrappedSize : mBytes.size();
+}
+
+size_t ClientIndexArrayKey::elementsCount() const
+{
+    return size() / gl::GetDrawElementsTypeSize(mType);
+}
+
+bool ClientIndexArrayKey::isWrapping() const
+{
+    return mWrappedBytes;
+}
+
+void ClientIndexArrayKey::clear()
+{
+    mBytes.clear();
+    mWrappedBytes = nullptr;
+    mWrappedSize  = 0;
+    mIsHashCached = false;
+}
+
+size_t ClientIndexArrayKey::hash() const
+{
+    if (mIsHashCached)
+    {
+        return mCachedHash;
+    }
+
+    auto bytePtr       = static_cast<const uint8_t *>(data());
+    size_t totalBytes  = size();
+    size_t multipleOf4 = (totalBytes >> 2) << 2;
+    mCachedHash        = angle::ComputeGenericHash(bytePtr, multipleOf4);
+
+    // Combine hash with the remaining bytes
+    for (size_t i = multipleOf4, shift = 0; i < totalBytes; ++i, shift += 8)
+    {
+        mCachedHash ^= (*(bytePtr + i)) << shift;
+    }
+
+    mCachedHash ^= static_cast<uint8_t>(mType);
+
+    mIsHashCached = true;
+
+    return mCachedHash;
+}
+
+bool ClientIndexArrayKey::operator==(const ClientIndexArrayKey &rhs) const
+{
+    if (mType != rhs.mType || size() != rhs.size())
+    {
+        return false;
+    }
+    return memcmp(data(), rhs.data(), size()) == 0;
 }
 
 // StateCache implementation

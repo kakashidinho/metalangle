@@ -1079,7 +1079,7 @@ angle::Result FramebufferMtl::clearWithLoadOp(const gl::Context *context,
     if (startedRenderPass)
     {
         encoder = ensureRenderPassStarted(context);
-        if (encoder->hasDrawCalls())
+        if (!encoder->canChangeLoadAction())
         {
             // Render pass already has draw calls recorded, it is better to use clear with draw
             // operation.
@@ -1142,7 +1142,7 @@ angle::Result FramebufferMtl::clearWithLoadOpRenderPassStarted(
     const mtl::ClearRectParams &clearOpts,
     mtl::RenderCommandEncoder *encoder)
 {
-    ASSERT(!encoder->hasDrawCalls());
+    ASSERT(encoder->canChangeLoadAction());
 
     for (uint32_t colorIndexGL = 0; colorIndexGL < mRenderPassDesc.numColorAttachments;
          ++colorIndexGL)
