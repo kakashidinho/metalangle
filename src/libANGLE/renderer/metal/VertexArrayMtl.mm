@@ -171,8 +171,7 @@ VertexArrayMtl::VertexArrayMtl(const gl::VertexArrayState &state, ContextMtl *co
 {
     reset(context);
 
-    mDynamicVertexData.initialize(context, 0, mtl::kVertexAttribBufferStrideAlignment,
-                                  /** maxBuffers */ 10 * mtl::kMaxVertexAttribs);
+    mDynamicVertexData.initialize(context, 0, mtl::kVertexAttribBufferStrideAlignment);
 }
 VertexArrayMtl::~VertexArrayMtl() {}
 
