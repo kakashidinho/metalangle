@@ -26,6 +26,7 @@
 namespace rx
 {
 class ContextMtl;
+class LinkEventNativeParallel;
 
 struct ProgramArgumentBufferEncoderMtl
 {
@@ -168,18 +169,17 @@ class ProgramMtl : public ProgramImpl
     void loadShaderInternalInfo(gl::BinaryInputStream *stream);
 
     void linkResources(const gl::ProgramLinkedResources &resources);
-    angle::Result linkImpl(const gl::Context *glContext,
-                           const gl::ShaderMap<std::string> &shaderSource,
-                           gl::InfoLog &infoLog);
 
     angle::Result linkTranslatedShaders(const gl::Context *glContext,
                                         gl::BinaryInputStream *stream,
-                                        gl::InfoLog &infoLog);
+                                        gl::InfoLog &infoLog,
+                                        LinkEventNativeParallel &linkEvent);
 
     angle::Result createMslShader(const gl::Context *glContext,
                                   gl::ShaderType shaderType,
                                   gl::InfoLog &infoLog,
-                                  const std::string &translatedSource);
+                                  const std::string &translatedSource,
+                                  LinkEventNativeParallel &linkEvent);
 
     // State for the default uniform blocks.
     struct DefaultUniformBlock final : private angle::NonCopyable

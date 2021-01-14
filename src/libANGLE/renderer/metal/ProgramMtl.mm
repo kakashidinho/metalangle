@@ -28,6 +28,116 @@
 namespace rx
 {
 
+class LinkEventNativeParallel final : public LinkEvent
+{
+    friend class ProgramMtl;
+
+  private:
+    angle::Result final_result = angle::Result::Incomplete;
+
+    angle::Result getCurrentResult()
+    {
+        while (callbacks.size())
+        {
+            callbacks.front()();
+            if (errored)
+            {
+                break;
+            }
+            callbacks.pop_front();
+        }
+        if (errored)
+        {
+            callbacks.clear();
+            return angle::Result::Stop;
+        }
+        for (int i = 0; i < 4; ++i)
+        {
+            if (!mtlShaders[i])
+            {
+                return angle::Result::Incomplete;
+            }
+        }
+        return angle::Result::Continue;
+    }
+
+  public:
+    std::unique_ptr<std::thread> th;
+    std::recursive_mutex mutex;
+    std::deque<std::function<void()>> callbacks;
+    mtl::AutoObjCPtr<id<MTLFunction>> mtlShaders[4];  // 2 (vert./frag.) x 2 (enable true/false)
+    bool errored = false;
+
+    ~LinkEventNativeParallel()
+    {
+        if (th)
+        {
+            th->join();
+            th.reset();
+        }
+    }
+
+    angle::Result wait(const gl::Context *context) override
+    {
+        if (final_result != angle::Result::Incomplete)
+        {
+            return final_result;
+        }
+        else
+        {
+            if (th)
+            {
+                th->join();
+                th.reset();
+            }
+            std::unique_lock<std::recursive_mutex> lock(mutex);
+            while (true)
+            {
+                angle::Result result = getCurrentResult();
+                if (result == angle::Result::Incomplete)
+                {
+                    lock.unlock();
+                    std::this_thread::sleep_for(std::chrono::microseconds(100));
+                    lock.lock();
+                }
+                else
+                {
+                    final_result = result;
+                    return result;
+                }
+            }
+        }
+    }
+
+    bool isLinking() override
+    {
+        if (final_result == angle::Result::Incomplete)
+        {
+            std::unique_lock<std::recursive_mutex> lock(mutex, std::try_to_lock_t());
+            if (lock.owns_lock())
+            {
+                auto result = getCurrentResult();
+                lock.unlock();
+                if (result != angle::Result::Incomplete)
+                {
+                    if (th)
+                    {
+                        th->join();
+                        th.reset();
+                    }
+                    final_result = result;
+                    return false;
+                }
+            }
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+};
+
 namespace
 {
 
@@ -170,34 +280,34 @@ void InitArgumentBufferEncoder(ContextMtl *context,
     }
 }
 
-angle::Result CreateMslShader(ContextMtl *contextMtl,
-                              id<MTLLibrary> shaderLib,
-                              MTLFunctionConstantValues *funcConstants,
-                              gl::InfoLog &infoLog,
-                              id<MTLFunction> *shaderOut)
+void CreateMslShader(ContextMtl *contextMtl,
+                     id<MTLLibrary> shaderLib,
+                     MTLFunctionConstantValues *funcConstants,
+                     gl::InfoLog &infoLog,
+                     LinkEventNativeParallel &linkEvent,
+                     std::function<void(id<MTLFunction>, NSError *)> callback)
 {
-    NSError *nsErr = nil;
+    [shaderLib newFunctionWithName:SHADER_ENTRY_NAME
+                    constantValues:funcConstants
+                 completionHandler:[&infoLog, &linkEvent, callback](id<MTLFunction> mtlShader,
+                                                                    NSError *nsErr) {
+                     std::lock_guard<std::recursive_mutex> lock(linkEvent.mutex);
+                     mtl::AutoObjCPtr<id<MTLFunction>> autoShader(std::move(mtlShader));
+                     linkEvent.callbacks.emplace_back([&infoLog, callback, autoShader, nsErr]() {
+                         if (nsErr && !autoShader)
+                         {
+                             std::ostringstream ss;
+                             ss << "Internal error compiling Metal shader:\n"
+                                << nsErr.localizedDescription.UTF8String << "\n";
 
-    auto mtlShader = [shaderLib newFunctionWithName:SHADER_ENTRY_NAME
-                                     constantValues:funcConstants
-                                              error:&nsErr];
-    [mtlShader ANGLE_MTL_AUTORELEASE];
-    if (nsErr && !mtlShader)
-    {
-        std::ostringstream ss;
-        ss << "Internal error compiling Metal shader:\n"
-           << nsErr.localizedDescription.UTF8String << "\n";
+                             ERR() << ss.str();
 
-        ERR() << ss.str();
+                             infoLog << ss.str();
+                         }
 
-        infoLog << ss.str();
-
-        ANGLE_MTL_CHECK(contextMtl, false, GL_INVALID_OPERATION);
-    }
-
-    *shaderOut = mtlShader;
-
-    return angle::Result::Continue;
+                         callback(autoShader.get(), nsErr);
+                     });
+                 }];
 }
 
 }  // namespace
@@ -276,8 +386,12 @@ std::unique_ptr<rx::LinkEvent> ProgramMtl::load(const gl::Context *context,
                                                 gl::BinaryInputStream *stream,
                                                 gl::InfoLog &infoLog)
 {
-
-    return std::make_unique<LinkEventDone>(linkTranslatedShaders(context, stream, infoLog));
+    auto linkEvent = std::make_unique<LinkEventNativeParallel>();
+    if (linkTranslatedShaders(context, stream, infoLog, *linkEvent) != angle::Result::Continue)
+    {
+        linkEvent->errored = true;
+    }
+    return linkEvent;
 }
 
 void ProgramMtl::save(const gl::Context *context, gl::BinaryOutputStream *stream)
@@ -301,50 +415,73 @@ std::unique_ptr<LinkEvent> ProgramMtl::link(const gl::Context *context,
                                             const gl::ProgramLinkedResources &resources,
                                             gl::InfoLog &infoLog)
 {
-    // Link resources before calling GetShaderSource to make sure they are ready for the set/binding
-    // assignment done in that function.
-    linkResources(resources);
-
-    gl::ShaderMap<std::string> shaderSource;
-    mtl::GlslangGetShaderSource(mState, resources, &shaderSource);
-
-    // NOTE(hqle): Parallelize linking.
-    return std::make_unique<LinkEventDone>(linkImpl(context, shaderSource, infoLog));
-}
-
-angle::Result ProgramMtl::linkImpl(const gl::Context *glContext,
-                                   const gl::ShaderMap<std::string> &shaderSource,
-                                   gl::InfoLog &infoLog)
-{
-    ContextMtl *contextMtl = mtl::GetImpl(glContext);
+    ContextMtl *contextMtl = mtl::GetImpl(context);
     // NOTE(hqle): No transform feedbacks for now, since we only support ES 2.0 atm
 
     reset(contextMtl);
 
-    ANGLE_TRY(initDefaultUniformBlocks(glContext));
-
-    // Convert GLSL to spirv code
-    gl::ShaderMap<std::vector<uint32_t>> shaderCodes;
-    ANGLE_TRY(mtl::GlslangGetShaderSpirvCode(contextMtl, contextMtl->getCaps(), false, shaderSource,
-                                             &shaderCodes));
-
-    // Convert spirv code to MSL
-    ANGLE_TRY(mtl::SpirvCodeToMsl(contextMtl, mState, &shaderCodes, &mMslShaderTranslateInfo,
-                                  &mTranslatedMslShader));
-
-    for (gl::ShaderType shaderType : gl::AllGLES2ShaderTypes())
+    auto linkEvent = std::make_unique<LinkEventNativeParallel>();
+    if (initDefaultUniformBlocks(context) != angle::Result::Continue)
     {
-        // Create actual Metal shader
-        ANGLE_TRY(
-            createMslShader(glContext, shaderType, infoLog, mTranslatedMslShader[shaderType]));
+        linkEvent->errored = true;
+    }
+    else
+    {
+        linkEvent->th = std::make_unique<std::thread>(
+            [this, glContext(context), &resources, &infoLog, &linkEvent(*linkEvent), contextMtl]() {
+                // Link resources before calling GetShaderSource to make sure they are ready for the
+                // set/binding assignment done in that function.
+                linkResources(resources);
+
+                gl::ShaderMap<std::string> shaderSource;
+                mtl::GlslangGetShaderSource(mState, resources, &shaderSource);
+
+                gl::ShaderMap<std::vector<uint32_t>> shaderCodes;
+                bool ok = false;
+                // Convert GLSL to spirv code
+                if (mtl::GlslangGetShaderSpirvCode(contextMtl, contextMtl->getCaps(), false,
+                                                   shaderSource,
+                                                   &shaderCodes) == angle::Result::Continue)
+                {
+                    // Convert spirv code to MSL
+                    if (mtl::SpirvCodeToMsl(contextMtl, mState, &shaderCodes,
+                                            &mMslShaderTranslateInfo,
+                                            &mTranslatedMslShader) == angle::Result::Continue)
+                    {
+                        ok = true;
+                    }
+                }
+                std::lock_guard<std::recursive_mutex> lock(linkEvent.mutex);
+                if (ok)
+                {
+                    linkEvent.callbacks.emplace_back([this, glContext, &infoLog, &linkEvent]() {
+                        for (gl::ShaderType shaderType : gl::AllGLES2ShaderTypes())
+                        {
+                            // Create actual Metal shader
+                            if (createMslShader(glContext, shaderType, infoLog,
+                                                mTranslatedMslShader[shaderType],
+                                                linkEvent) != angle::Result::Continue)
+                            {
+                                linkEvent.errored = true;
+                                break;
+                            }
+                        }
+                    });
+                }
+                else
+                {
+                    linkEvent.errored = true;
+                }
+            });
     }
 
-    return angle::Result::Continue;
+    return linkEvent;
 }
 
 angle::Result ProgramMtl::linkTranslatedShaders(const gl::Context *glContext,
                                                 gl::BinaryInputStream *stream,
-                                                gl::InfoLog &infoLog)
+                                                gl::InfoLog &infoLog,
+                                                LinkEventNativeParallel &linkEvent)
 {
     ContextMtl *contextMtl = mtl::GetImpl(glContext);
     // NOTE(hqle): No transform feedbacks for now, since we only support ES 2.0 atm
@@ -355,10 +492,18 @@ angle::Result ProgramMtl::linkTranslatedShaders(const gl::Context *glContext,
     loadShaderInternalInfo(stream);
     ANGLE_TRY(loadDefaultUniformBlocksInfo(glContext, stream));
 
-    ANGLE_TRY(createMslShader(glContext, gl::ShaderType::Vertex, infoLog,
-                              mTranslatedMslShader[gl::ShaderType::Vertex]));
-    ANGLE_TRY(createMslShader(glContext, gl::ShaderType::Fragment, infoLog,
-                              mTranslatedMslShader[gl::ShaderType::Fragment]));
+    linkEvent.th = std::make_unique<std::thread>([this, glContext, &infoLog, &linkEvent]() {
+        if (createMslShader(glContext, gl::ShaderType::Vertex, infoLog,
+                            mTranslatedMslShader[gl::ShaderType::Vertex],
+                            linkEvent) != angle::Result::Continue ||
+            createMslShader(glContext, gl::ShaderType::Fragment, infoLog,
+                            mTranslatedMslShader[gl::ShaderType::Fragment],
+                            linkEvent) != angle::Result::Continue)
+        {
+            std::lock_guard<std::recursive_mutex> lock(linkEvent.mutex);
+            linkEvent.errored = true;
+        }
+    });
 
     return angle::Result::Continue;
 }
@@ -551,7 +696,8 @@ void ProgramMtl::loadShaderInternalInfo(gl::BinaryInputStream *stream)
 angle::Result ProgramMtl::createMslShader(const gl::Context *glContext,
                                           gl::ShaderType shaderType,
                                           gl::InfoLog &infoLog,
-                                          const std::string &translatedMsl)
+                                          const std::string &translatedMsl,
+                                          LinkEventNativeParallel &linkEvent)
 {
     ANGLE_MTL_OBJC_SCOPE
     {
@@ -594,16 +740,25 @@ angle::Result ProgramMtl::createMslShader(const gl::Context *glContext,
                                            type:MTLDataTypeBool
                                        withName:discardEnabledStr];
 
-                id<MTLFunction> mtlShader = nil;
-                ANGLE_TRY(
-                    CreateMslShader(contextMtl, mtlShaderLib, funcConstants, infoLog, &mtlShader));
-                mMetalRenderPipelineCache.setVertexShader(contextMtl, mtlShader, enable);
+                CreateMslShader(
+                    contextMtl, mtlShaderLib, funcConstants, infoLog, linkEvent,
+                    [this, contextMtl, &linkEvent, enable](id<MTLFunction> mtlShader,
+                                                           NSError *nsErr) {
+                        linkEvent.mtlShaders[int(gl::ShaderType::Vertex) * 2 + enable].retainAssign(
+                            mtlShader);
+                        linkEvent.errored = linkEvent.errored || nsErr;
+                        if (!nsErr)
+                        {
+                            mMetalRenderPipelineCache.setVertexShader(contextMtl, mtlShader,
+                                                                      enable);
 
-                if (mMslShaderTranslateInfo[shaderType].hasArgumentBuffer)
-                {
-                    InitArgumentBufferEncoder(contextMtl, mtlShader,
-                                              &mVertexArgumentBufferEncoders[enable]);
-                }
+                            if (mMslShaderTranslateInfo[gl::ShaderType::Vertex].hasArgumentBuffer)
+                            {
+                                InitArgumentBufferEncoder(contextMtl, mtlShader,
+                                                          &mVertexArgumentBufferEncoders[enable]);
+                            }
+                        }
+                    });
             }
         }
         else if (shaderType == gl::ShaderType::Fragment)
@@ -621,17 +776,25 @@ angle::Result ProgramMtl::createMslShader(const gl::Context *glContext,
                                            type:MTLDataTypeBool
                                        withName:coverageMaskEnabledStr];
 
-                id<MTLFunction> mtlShader = nil;
-                ANGLE_TRY(
-                    CreateMslShader(contextMtl, mtlShaderLib, funcConstants, infoLog, &mtlShader));
+                CreateMslShader(
+                    contextMtl, mtlShaderLib, funcConstants, infoLog, linkEvent,
+                    [this, contextMtl, &linkEvent, enable](id<MTLFunction> mtlShader,
+                                                           NSError *nsErr) {
+                        linkEvent.mtlShaders[int(gl::ShaderType::Fragment) * 2 + enable]
+                            .retainAssign(mtlShader);
+                        linkEvent.errored = linkEvent.errored || nsErr;
+                        if (!nsErr)
+                        {
+                            mMetalRenderPipelineCache.setFragmentShader(contextMtl, mtlShader,
+                                                                        enable);
 
-                mMetalRenderPipelineCache.setFragmentShader(contextMtl, mtlShader, enable);
-
-                if (mMslShaderTranslateInfo[shaderType].hasArgumentBuffer)
-                {
-                    InitArgumentBufferEncoder(contextMtl, mtlShader,
-                                              &mFragmentArgumentBufferEncoders[enable]);
-                }
+                            if (mMslShaderTranslateInfo[gl::ShaderType::Fragment].hasArgumentBuffer)
+                            {
+                                InitArgumentBufferEncoder(contextMtl, mtlShader,
+                                                          &mFragmentArgumentBufferEncoders[enable]);
+                            }
+                        }
+                    });
             }
         }  // gl::ShaderType::Fragment
 
