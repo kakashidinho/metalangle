@@ -12,7 +12,7 @@ jobs:
     runs-on: macos-10.15
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-ruby@v1
+    - uses: ruby/setup-ruby@v1
     - name: prerequisite tools
       run: gem install xcpretty
     - name: build
@@ -22,7 +22,7 @@ jobs:
     runs-on: macos-11.0
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-ruby@v1
+    - uses: ruby/setup-ruby@v1
     - name: prerequisite tools
       run: gem install xcpretty
     - name: build
@@ -32,7 +32,7 @@ jobs:
     runs-on: macos-10.15
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-ruby@v1
+    - uses: ruby/setup-ruby@v1
     - name: prerequisite tools
       run: gem install xcpretty
     - name: build
@@ -42,7 +42,7 @@ jobs:
     runs-on: macos-11.0
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-ruby@v1
+    - uses: ruby/setup-ruby@v1
     - name: prerequisite tools
       run: gem install xcpretty
     - name: build
@@ -69,7 +69,7 @@ jobs:
     runs-on: macos-10.15
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-ruby@v1
+    - uses: ruby/setup-ruby@v1
     - name: prerequisite tools
       run: gem install xcpretty
     - name: build
@@ -79,7 +79,7 @@ jobs:
     runs-on: macos-11.0
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-ruby@v1
+    - uses: ruby/setup-ruby@v1
     - name: prerequisite tools
       run: gem install xcpretty
     - name: build
@@ -89,7 +89,7 @@ jobs:
     runs-on: macos-10.15
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-ruby@v1
+    - uses: ruby/setup-ruby@v1
     - name: prerequisite tools
       run: gem install xcpretty
     - name: build
@@ -99,7 +99,7 @@ jobs:
     runs-on: macos-10.15
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-ruby@v1
+    - uses: ruby/setup-ruby@v1
     - name: prerequisite tools
       run: gem install xcpretty
     - name: build
@@ -109,12 +109,10 @@ jobs:
     runs-on: macos-11.0
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-ruby@v1
     - name: prerequisite tools
       run: |
         git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git depot_tools
         echo "$PWD/depot_tools" >> $GITHUB_PATH
-        gem install xcpretty
     - name: gclient sync
       run: |
         python scripts/bootstrap.py
