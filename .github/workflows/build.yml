@@ -8,7 +8,7 @@ on:
 
 jobs:
   
-  ios_10.15:
+  ios_10_15:
     runs-on: macos-10.15
     steps:
     - uses: actions/checkout@v2
@@ -18,7 +18,7 @@ jobs:
     - name: build
       run: ios/xcode/travis_build_ios.sh Release iphoneos $PWD/build_ios
   
-  ios_11.0:
+  ios_11_0:
     runs-on: macos-11.0
     steps:
     - uses: actions/checkout@v2
@@ -28,7 +28,7 @@ jobs:
     - name: build
       run: ios/xcode/travis_build_ios.sh Release iphoneos $PWD/build_ios
   
-  mac_10.15:
+  mac_10_15:
     runs-on: macos-10.15
     steps:
     - uses: actions/checkout@v2
@@ -38,7 +38,7 @@ jobs:
     - name: build
       run: mac/xcode/travis_build_mac.sh Release macosx $PWD/build_mac
   
-  mac_11.0:
+  mac_11_0:
     runs-on: macos-11.0
     steps:
     - uses: actions/checkout@v2
@@ -65,7 +65,7 @@ jobs:
     - name: make
       run: ninja -C out/release angle_end2end_tests angle_deqp_gles2_tests hello_triangle
 
-  tvos_10.15:
+  tvos_10_15:
     runs-on: macos-10.15
     steps:
     - uses: actions/checkout@v2
@@ -75,7 +75,7 @@ jobs:
     - name: build
       run: ios/xcode/travis_build_tvos.sh Release appletvos $PWD/build_tvos
   
-  tvos_11.0:
+  tvos_11_0:
     runs-on: macos-11.0
     steps:
     - uses: actions/checkout@v2
@@ -85,7 +85,7 @@ jobs:
     - name: build
       run: ios/xcode/travis_build_tvos.sh Release appletvos $PWD/build_tvos
 
-  ios_sim_10.15:
+  ios_sim_10_15:
     runs-on: macos-10.15
     steps:
     - uses: actions/checkout@v2
@@ -95,7 +95,7 @@ jobs:
     - name: build
       run: ios/xcode/travis_build_ios.sh Release iphonesimulator $PWD/build_ios
 
-  tvos_sim_10.15:
+  tvos_sim_10_15:
     runs-on: macos-10.15
     steps:
     - uses: actions/checkout@v2
@@ -105,7 +105,7 @@ jobs:
     - name: build
       run: ios/xcode/travis_build_tvos.sh Release appletvsimulator $PWD/build_tvos
 
-  build_gn_11.0:
+  build_gn_11_0:
     runs-on: macos-11.0
     steps:
     - uses: actions/checkout@v2
