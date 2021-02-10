@@ -7,10 +7,106 @@ on:
     branches: [ master ]
 
 jobs:
-  build_gn:
-
+  
+  ios_10.15:
     runs-on: macos-10.15
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-ruby@v1
+    - name: prerequisite tools
+      run: gem install xcpretty
+    - name: build
+      run: ios/xcode/travis_build_ios.sh Release iphoneos $PWD/build_ios
+  
+  ios_11.0:
+    runs-on: macos-11.0
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-ruby@v1
+    - name: prerequisite tools
+      run: gem install xcpretty
+    - name: build
+      run: ios/xcode/travis_build_ios.sh Release iphoneos $PWD/build_ios
+  
+  mac_10.15:
+    runs-on: macos-10.15
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-ruby@v1
+    - name: prerequisite tools
+      run: gem install xcpretty
+    - name: build
+      run: mac/xcode/travis_build_mac.sh Release macosx $PWD/build_mac
+  
+  mac_11.0:
+    runs-on: macos-11.0
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-ruby@v1
+    - name: prerequisite tools
+      run: gem install xcpretty
+    - name: build
+      run: mac/xcode/travis_build_mac.sh Release macosx $PWD/build_mac
+     
+  build_gn:
+    runs-on: macos-10.15
+    steps:
+    - uses: actions/checkout@v2
+    - name: prerequisite tools
+      run: |
+        git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git depot_tools
+        echo "$PWD/depot_tools" >> $GITHUB_PATH
+    - name: gclient sync
+      run: |
+        python scripts/bootstrap.py
+        gclient sync
+    - name: gn gen
+      run: gn gen out/release --args="angle_enable_gl=false is_debug=false strip_absolute_paths_from_debug_symbols=true"
+    - name: make
+      run: ninja -C out/release angle_end2end_tests angle_deqp_gles2_tests hello_triangle
 
+  tvos_10.15:
+    runs-on: macos-10.15
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-ruby@v1
+    - name: prerequisite tools
+      run: gem install xcpretty
+    - name: build
+      run: ios/xcode/travis_build_tvos.sh Release appletvos $PWD/build_tvos
+  
+  tvos_11.0:
+    runs-on: macos-11.0
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-ruby@v1
+    - name: prerequisite tools
+      run: gem install xcpretty
+    - name: build
+      run: ios/xcode/travis_build_tvos.sh Release appletvos $PWD/build_tvos
+
+  ios_sim_10.15:
+    runs-on: macos-10.15
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-ruby@v1
+    - name: prerequisite tools
+      run: gem install xcpretty
+    - name: build
+      run: ios/xcode/travis_build_ios.sh Release iphonesimulator $PWD/build_ios
+
+  tvos_sim_10.15:
+    runs-on: macos-10.15
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-ruby@v1
+    - name: prerequisite tools
+      run: gem install xcpretty
+    - name: build
+      run: ios/xcode/travis_build_tvos.sh Release appletvsimulator $PWD/build_tvos
+
+  build_gn_11.0:
+    runs-on: macos-11.0
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-ruby@v1
