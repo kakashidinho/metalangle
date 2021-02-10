@@ -53,7 +53,7 @@ deps = {
   },
 
   '{angle_root}/build': {
-    'url': '{chromium_git}/chromium/src/build.git@a1cbf6469a5400f2b455ffba2e95ea47a1b47c94',
+    'url': 'https://github.com/kakashidinho/chromium_build.git@7b75d3a6f831f97ede498ea40f3276db0d8f0171',
     'condition': 'not build_with_chromium',
   },
 
