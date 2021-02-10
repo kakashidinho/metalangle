@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ master ]
 
-commands:
+anchors:
   ruby-deps:
     steps:
       - uses: ruby/setup-ruby@v1
@@ -28,37 +28,37 @@ commands:
   ios-build:
     steps:
       - uses: actions/checkout@v2
-      - ruby-deps
+      - <<: *ruby-deps
       - name: build
         run: ios/xcode/travis_build_ios.sh Release iphoneos $PWD/build_ios
   macos-build:
     steps:
       - uses: actions/checkout@v2
-      - ruby-deps
+      - <<: *ruby-deps
       - name: build
         run: mac/xcode/travis_build_mac.sh Release macosx $PWD/build_mac
   tvos-build:
     steps:
       - uses: actions/checkout@v2
-      - ruby-deps
+      - <<: *ruby-deps
       - name: build
         run: ios/xcode/travis_build_tvos.sh Release appletvos $PWD/build_tvos
   ios-sim-build:
     steps:
       - uses: actions/checkout@v2
-      - ruby-deps
+      - <<: *ruby-deps
       - name: build
         run: ios/xcode/travis_build_ios.sh Release iphonesimulator $PWD/build_ios
   tvos-sim-build:
     steps:
       - uses: actions/checkout@v2
-      - ruby-deps
+      - <<: *ruby-deps
       - name: build
         run: ios/xcode/travis_build_tvos.sh Release appletvsimulator $PWD/build_tvos
   gn-build:
     steps:
       - uses: actions/checkout@v2
-      - gclient-sync
+      - <<: *gclient-sync
       - name: gn gen
         run: gn gen out/release --args="angle_enable_gl=false is_debug=false strip_absolute_paths_from_debug_symbols=true"
       - name: make
@@ -69,49 +69,49 @@ jobs:
   ios_10_15:
     runs-on: macos-10.15
     steps:
-    - ios-build
+    - <<: *ios-build
   
   mac_10_15:
     runs-on: macos-10.15
     steps:
-    - macos-build
+    - <<: *macos-build
 
   tvos_10_15:
     runs-on: macos-10.15
     steps:
-    - tvos-build
+    - <<: *tvos-build
      
   build_gn:
     runs-on: macos-10.15
     steps:
-    - gn-build
+    - <<: *gn-build
   
   ios_11_0:
     runs-on: macos-11.0
     steps:
-    - ios-build
+    - <<: *ios-build
   
   mac_11_0:
     runs-on: macos-11.0
     steps:
-    - macos-build
+    - <<: *macos-build
   
   tvos_11_0:
     runs-on: macos-11.0
     steps:
-    - tvos-build
+    - <<: *tvos-build
 
   ios_sim_10_15:
     runs-on: macos-10.15
     steps:
-    - ios-sim-build
+    - <<: *ios-sim-build
 
   tvos_sim_10_15:
     runs-on: macos-10.15
     steps:
-    - tvos-sim-build
+    - <<: *tvos-sim-build
 
   build_gn_11_0:
     runs-on: macos-11.0
     steps:
-    - gn-build
+    - <<: *gn-build
