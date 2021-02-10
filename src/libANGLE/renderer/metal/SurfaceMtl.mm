@@ -343,6 +343,9 @@ egl::Error SurfaceMtl::initialize(const egl::Display *display)
         if (mMetalLayer.get() != mLayer)
         {
             mMetalLayer.get().contentsScale = mLayer.contentsScale;
+            
+            // contentsScale might have changed in the lina above , ensure drawableSize is set to correct value:
+            mMetalLayer.get().drawableSize = mCurrentKnownDrawableSize = calcExpectedDrawableSize();
 
             [mLayer addSublayer:mMetalLayer.get()];
         }
