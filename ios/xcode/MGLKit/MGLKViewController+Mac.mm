@@ -106,6 +106,9 @@ static CVReturn CVFrameDisplayCallback(CVDisplayLinkRef displayLink,
 - (void)pause
 {
     NSLog(@"MGLKViewController pause");
+
+    _isPaused = YES;
+
     if (_displayLink)
     {
         CVDisplayLinkStop(_displayLink);
@@ -121,6 +124,8 @@ static CVReturn CVFrameDisplayCallback(CVDisplayLinkRef displayLink,
 {
     [self pause];
     NSLog(@"MGLKViewController resume");
+
+    _isPaused = NO;
 
     if (!_glView)
     {
