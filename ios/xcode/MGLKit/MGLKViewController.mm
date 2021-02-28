@@ -55,6 +55,8 @@
 {
     _appWasInBackground       = YES;
     _preferredFramesPerSecond = 30;
+    _pauseOnWillResignActive  = YES;
+    _resumeOnDidBecomeActive  = YES;
 }
 
 - (void)dealloc
@@ -92,6 +94,17 @@
             _glView.controller = nil;
         }
         _glView = nil;
+    }
+}
+
+- (void)setIsPaused:(bool)isPaused
+{
+    if (isPaused != _isPaused) {
+        if (isPaused) {
+            [self pause];
+        } else {
+            [self resume];
+        }
     }
 }
 
@@ -156,14 +169,18 @@
 - (void)appWillPause:(NSNotification *)note
 {
     NSLog(@"MGLKViewController appWillPause:");
-    _appWasInBackground = YES;
-    [self pause];
+    if (_pauseOnWillResignActive) {
+        _appWasInBackground = YES;
+        [self pause];
+    }
 }
 
 - (void)appDidBecomeActive:(NSNotification *)note
 {
     NSLog(@"MGLKViewController appDidBecomeActive:");
-    [self resume];
+    if (_resumeOnDidBecomeActive) {
+        [self resume];
+    }
 }
 
 - (void)handleAppWasInBackground
