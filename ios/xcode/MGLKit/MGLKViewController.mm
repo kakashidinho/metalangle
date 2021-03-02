@@ -57,6 +57,8 @@
     _preferredFramesPerSecond = 30;
     _pauseOnWillResignActive  = YES;
     _resumeOnDidBecomeActive  = YES;
+    // not-paused corresponds to having a DisplayLink or timer active and driving the frame loop
+    _isPaused                 = YES;
 }
 
 - (void)dealloc
