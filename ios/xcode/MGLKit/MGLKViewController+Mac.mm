@@ -49,6 +49,7 @@
         CGDisplayModeRelease(displayModeRef);
 
         // Call resume to reset display link's window
+        [self pause];
         [self resume];
 
         // Register callback to be called when this window is closed.
