@@ -31,9 +31,10 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, readonly) NSInteger framesDisplayed;
 @property(nonatomic, readonly) NSTimeInterval timeSinceLastUpdate;
 
-@property(nonatomic) bool isPaused;
-@property(nonatomic) bool pauseOnWillResignActive;
-@property(nonatomic) bool resumeOnDidBecomeActive;
+@property(nonatomic) BOOL isPaused;
+@property(nonatomic, setter=setIsPaused:) BOOL paused;
+@property(nonatomic) BOOL pauseOnWillResignActive;
+@property(nonatomic) BOOL resumeOnDidBecomeActive;
 
 @property(weak, nonatomic, readonly) MGLKView *glView;
 

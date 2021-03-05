@@ -99,7 +99,7 @@
     }
 }
 
-- (void)setIsPaused:(bool)isPaused
+- (void)setIsPaused:(BOOL)isPaused
 {
     if (isPaused != _isPaused) {
         if (isPaused) {
@@ -108,6 +108,11 @@
             [self resume];
         }
     }
+}
+
+- (BOOL)paused
+{
+    return _isPaused;
 }
 
 - (void)mglkView:(MGLKView *)view drawInRect:(CGRect)rect
