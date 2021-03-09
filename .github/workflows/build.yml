@@ -28,6 +28,7 @@ jobs:
         cd ${GITHUB_WORKSPACE}/build_ios/Build/Products/Release-iphoneos && zip --symlinks -r ${GITHUB_WORKSPACE}/libMetalANGLE.a.ios.zip libMetalANGLE_static.a
     - name: upload
       uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
       with:
         files: |
           MetalANGLE.framework.ios.zip
