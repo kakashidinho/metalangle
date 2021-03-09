@@ -281,6 +281,7 @@ egl::Error DisplayMtl::makeCurrent(egl::Surface *drawSurface,
 void DisplayMtl::generateExtensions(egl::DisplayExtensions *outExtensions) const
 {
     outExtensions->flexibleSurfaceCompatibility = true;
+    outExtensions->surfacelessContext           = true;
     outExtensions->glColorspace                 = true;
     outExtensions->mtlTextureClientBuffer       = true;
     outExtensions->deviceQuery                  = true;

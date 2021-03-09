@@ -45,7 +45,8 @@ class EGLSurfacelessContextTest : public ANGLETest
         {
             EGLint surfaceType;
             eglGetConfigAttrib(mDisplay, config, EGL_SURFACE_TYPE, &surfaceType);
-            if (surfaceType & EGL_PBUFFER_BIT)
+            // NOTE(hqle): Pbuffer is not implemented yet on Metal on master branch
+            if (isMetal() || surfaceType & EGL_PBUFFER_BIT)
             {
                 mConfig = config;
                 break;
@@ -115,6 +116,8 @@ class EGLSurfacelessContextTest : public ANGLETest
         }
         return true;
     }
+
+    bool isMetal() const { return GetParam().getRenderer() == EGL_PLATFORM_ANGLE_TYPE_METAL_ANGLE; }
 
     EGLContext mContext = EGL_NO_CONTEXT;
     EGLSurface mPbuffer = EGL_NO_SURFACE;
@@ -214,6 +217,9 @@ TEST_P(EGLSurfacelessContextTest, ClearReadPixelsInFBO)
 // Test clear+readpixels in an FBO in surfaceless and in the default FBO in a pbuffer
 TEST_P(EGLSurfacelessContextTest, Switcheroo)
 {
+    // NOTE(hqle): Pbuffer is not implemented yet on Metal on master branch
+    ANGLE_SKIP_TEST_IF(isMetal());
+
     if (!checkExtension())
     {
         return;
@@ -261,4 +267,5 @@ ANGLE_INSTANTIATE_TEST(EGLSurfacelessContextTest,
                        WithNoFixture(ES2_D3D9()),
                        WithNoFixture(ES2_D3D11()),
                        WithNoFixture(ES2_OPENGL()),
-                       WithNoFixture(ES2_VULKAN()));
+                       WithNoFixture(ES2_VULKAN()),
+                       WithNoFixture(ES2_METAL()));
