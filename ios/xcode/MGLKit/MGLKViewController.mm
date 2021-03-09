@@ -55,6 +55,10 @@
 {
     _appWasInBackground       = YES;
     _preferredFramesPerSecond = 30;
+    _pauseOnWillResignActive  = YES;
+    _resumeOnDidBecomeActive  = YES;
+    // not-paused corresponds to having a DisplayLink or timer active and driving the frame loop
+    _isPaused                 = YES;
 }
 
 - (void)dealloc
@@ -93,6 +97,22 @@
         }
         _glView = nil;
     }
+}
+
+- (void)setIsPaused:(BOOL)isPaused
+{
+    if (isPaused != _isPaused) {
+        if (isPaused) {
+            [self pause];
+        } else {
+            [self resume];
+        }
+    }
+}
+
+- (BOOL)paused
+{
+    return _isPaused;
 }
 
 - (void)mglkView:(MGLKView *)view drawInRect:(CGRect)rect
@@ -156,14 +176,18 @@
 - (void)appWillPause:(NSNotification *)note
 {
     NSLog(@"MGLKViewController appWillPause:");
-    _appWasInBackground = YES;
-    [self pause];
+    if (_pauseOnWillResignActive) {
+        _appWasInBackground = YES;
+        [self pause];
+    }
 }
 
 - (void)appDidBecomeActive:(NSNotification *)note
 {
     NSLog(@"MGLKViewController appDidBecomeActive:");
-    [self resume];
+    if (_resumeOnDidBecomeActive) {
+        [self resume];
+    }
 }
 
 - (void)handleAppWasInBackground
