@@ -306,4 +306,5 @@ ANGLE_INSTANTIATE_TEST(PbufferTest,
                        ES2_D3D11(),
                        ES2_OPENGL(),
                        ES2_OPENGLES(),
-                       ES2_VULKAN());
+                       ES2_VULKAN(),
+                       ES2_METAL());

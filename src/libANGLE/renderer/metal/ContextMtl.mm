@@ -1691,7 +1691,7 @@ void ContextMtl::onDrawFrameBufferChangedState(const gl::Context *context,
     }
 }
 
-void ContextMtl::onBackbufferResized(const gl::Context *context, SurfaceMtl *backbuffer)
+void ContextMtl::onBackbufferResized(const gl::Context *context, WindowSurfaceMtl *backbuffer)
 {
     const gl::State &glState    = getState();
     FramebufferMtl *framebuffer = mtl::GetImpl(glState.getDrawFramebuffer());

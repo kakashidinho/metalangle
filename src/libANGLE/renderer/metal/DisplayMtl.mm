@@ -183,14 +183,13 @@ SurfaceImpl *DisplayMtl::createWindowSurface(const egl::SurfaceState &state,
                                              EGLNativeWindowType window,
                                              const egl::AttributeMap &attribs)
 {
-    return new SurfaceMtl(this, state, window, attribs);
+    return new WindowSurfaceMtl(this, state, window, attribs);
 }
 
 SurfaceImpl *DisplayMtl::createPbufferSurface(const egl::SurfaceState &state,
                                               const egl::AttributeMap &attribs)
 {
-    UNIMPLEMENTED();
-    return static_cast<SurfaceImpl *>(0);
+    return new PBufferSurfaceMtl(this, state, attribs);
 }
 
 SurfaceImpl *DisplayMtl::createPbufferFromClientBuffer(const egl::SurfaceState &state,
@@ -336,9 +335,9 @@ egl::ConfigSet DisplayMtl::generateConfigs()
     config.sampleBuffers     = 0;
     config.level             = 0;
     config.bindToTextureRGB  = EGL_FALSE;
-    config.bindToTextureRGBA = EGL_FALSE;
+    config.bindToTextureRGBA = EGL_TRUE;
 
-    config.surfaceType = EGL_WINDOW_BIT | EGL_SWAP_BEHAVIOR_PRESERVED_BIT;
+    config.surfaceType = EGL_WINDOW_BIT | EGL_PBUFFER_BIT | EGL_SWAP_BEHAVIOR_PRESERVED_BIT;
 
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
     config.minSwapInterval = 0;
@@ -475,7 +474,7 @@ void DisplayMtl::ensureCapsInitialized() const
     mNativeCaps.maxElementIndex  = std::numeric_limits<GLuint>::max() - 1;
     mNativeCaps.max3DTextureSize = 2048;
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-    mNativeCaps.max2DTextureSize          = 16384;
+    mNativeCaps.max2DTextureSize = 16384;
     // On macOS exclude [[position]] from maxVaryingVectors.
     mNativeCaps.maxVaryingVectors         = 31 - 1;
     mNativeCaps.maxVertexOutputComponents = mNativeCaps.maxFragmentInputComponents = 124 - 4;
@@ -504,11 +503,11 @@ void DisplayMtl::ensureCapsInitialized() const
     // on Intel and 64 on AMD for now.
     if ([mMetalDevice.get().name rangeOfString:@"Intel"].location != NSNotFound)
     {
-        mNativeCaps.maxAliasedPointSize   = 255;
+        mNativeCaps.maxAliasedPointSize = 255;
     }
     else
     {
-        mNativeCaps.maxAliasedPointSize   = 64;
+        mNativeCaps.maxAliasedPointSize = 64;
     }
 
     mNativeCaps.minAliasedLineWidth = 1.0f;

@@ -49,7 +49,7 @@ const gl::InternalFormat &GetReadAttachmentInfo(const gl::Context *context,
 // FramebufferMtl implementation
 FramebufferMtl::FramebufferMtl(const gl::FramebufferState &state,
                                bool flipY,
-                               SurfaceMtl *backbuffer)
+                               WindowSurfaceMtl *backbuffer)
     : FramebufferImpl(state), mBackbuffer(backbuffer), mFlipY(flipY)
 {
     reset();
@@ -600,8 +600,7 @@ angle::Result FramebufferMtl::syncState(const gl::Context *context,
             case gl::Framebuffer::DIRTY_BIT_DEFAULT_SAMPLES:
             case gl::Framebuffer::DIRTY_BIT_DEFAULT_FIXED_SAMPLE_LOCATIONS:
                 break;
-            default:
-            {
+            default: {
                 static_assert(gl::Framebuffer::DIRTY_BIT_COLOR_ATTACHMENT_0 == 0, "FB dirty bits");
                 if (dirtyBit < gl::Framebuffer::DIRTY_BIT_COLOR_ATTACHMENT_MAX)
                 {

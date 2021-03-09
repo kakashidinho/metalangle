@@ -15,12 +15,14 @@
 #include "common/debug.h"
 #include "common/mathutil.h"
 #include "image_util/imageformats.h"
+#include "libANGLE/Surface.h"
 #include "libANGLE/renderer/metal/BufferMtl.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
 #include "libANGLE/renderer/metal/DisplayMtl.h"
 #include "libANGLE/renderer/metal/FrameBufferMtl.h"
 #include "libANGLE/renderer/metal/ImageMtl.h"
 #include "libANGLE/renderer/metal/SamplerMtl.h"
+#include "libANGLE/renderer/metal/SurfaceMtl.h"
 #include "libANGLE/renderer/metal/mtl_common.h"
 #include "libANGLE/renderer/metal/mtl_format_utils.h"
 #include "libANGLE/renderer/metal/mtl_utils.h"
@@ -61,8 +63,7 @@ gl::ImageIndex GetSliceMipIndex(const mtl::TextureRef &image, uint32_t slice, ui
     {
         case MTLTextureType2D:
             return gl::ImageIndex::Make2D(level);
-        case MTLTextureTypeCube:
-        {
+        case MTLTextureTypeCube: {
             auto cubeFace = static_cast<gl::TextureTarget>(
                 static_cast<int>(gl::TextureTarget::CubeMapPositiveX) + slice);
             return gl::ImageIndex::MakeCubeMapFace(cubeFace, level);
@@ -453,6 +454,7 @@ void TextureMtl::releaseTexture(bool releaseImages, bool releaseTextureObjectsOn
 
     mNativeTexture             = nullptr;
     mNativeSwizzleSamplingView = nullptr;
+    mBoundPBuffer              = nullptr;
 
     mImplicitMSTextures.clear();
 
@@ -1144,16 +1146,26 @@ angle::Result TextureMtl::setBaseLevel(const gl::Context *context, GLuint baseLe
 
 angle::Result TextureMtl::bindTexImage(const gl::Context *context, egl::Surface *surface)
 {
-    UNIMPLEMENTED();
+    releaseTexture(true);
 
-    return angle::Result::Stop;
+    mBoundPBuffer    = GetImplAs<OffscreenSurfaceMtl>(surface);
+    mNativeTexture   = mBoundPBuffer->getColorTexture();
+    mFormat          = mBoundPBuffer->getColorFormat();
+    gl::Extents size = mNativeTexture->size();
+    mIsPow2          = gl::isPow2(size.width) && gl::isPow2(size.height) && gl::isPow2(size.depth);
+    ANGLE_TRY(ensureSamplerStateCreated(context));
+
+    // Tell context to rebind textures
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+    contextMtl->invalidateCurrentTextures();
+
+    return angle::Result::Continue;
 }
 
 angle::Result TextureMtl::releaseTexImage(const gl::Context *context)
 {
-    UNIMPLEMENTED();
-
-    return angle::Result::Stop;
+    releaseTexture(true);
+    return angle::Result::Continue;
 }
 
 angle::Result TextureMtl::getAttachmentRenderTarget(const gl::Context *context,
@@ -1169,8 +1181,7 @@ angle::Result TextureMtl::getAttachmentRenderTarget(const gl::Context *context,
 
     switch (imageIndex.getType())
     {
-        case gl::TextureType::_2D:
-        {
+        case gl::TextureType::_2D: {
             RenderTargetMtl &rtt = getRenderTarget(imageIndex);
             *rtOut               = &rtt;
 
@@ -1189,12 +1200,22 @@ angle::Result TextureMtl::getAttachmentRenderTarget(const gl::Context *context,
                 mtl::TextureRef &msTexture = getImplicitMSTexture(imageIndex);
                 if (!msTexture || msTexture->samples() != static_cast<uint32_t>(samples))
                 {
-                    const gl::ImageDesc &desc = mState.getImageDesc(imageIndex);
+                    if (mBoundPBuffer)
+                    {
+                        // NOTE(hqle): mipmapped pbuffer is not supported yet.
+                        ASSERT(imageIndex.getLevelIndex() == 0);
+                        ANGLE_TRY(mBoundPBuffer->getAttachmentMSColorTexture(context, samples,
+                                                                             &msTexture));
+                    }
+                    else
+                    {
+                        const gl::ImageDesc &desc = mState.getImageDesc(imageIndex);
 
-                    ANGLE_TRY(mtl::Texture::Make2DMSTexture(
-                        contextMtl, mFormat, desc.size.width, desc.size.height, samples,
-                        /* renderTargetOnly */ true,
-                        /* allowFormatView */ false, &msTexture));
+                        ANGLE_TRY(mtl::Texture::Make2DMSTexture(
+                            contextMtl, mFormat, desc.size.width, desc.size.height, samples,
+                            /* renderTargetOnly */ true,
+                            /* allowFormatView */ false, &msTexture));
+                    }
 
                     ANGLE_TRY(checkForEmulatedChannels(context, mFormat, msTexture));
                 }
@@ -1246,8 +1267,7 @@ angle::Result TextureMtl::syncState(const gl::Context *context,
             case gl::Texture::DIRTY_BIT_SWIZZLE_RED:
             case gl::Texture::DIRTY_BIT_SWIZZLE_GREEN:
             case gl::Texture::DIRTY_BIT_SWIZZLE_BLUE:
-            case gl::Texture::DIRTY_BIT_SWIZZLE_ALPHA:
-            {
+            case gl::Texture::DIRTY_BIT_SWIZZLE_ALPHA: {
                 // Recreate swizzle view.
                 mNativeSwizzleSamplingView = nullptr;
             }

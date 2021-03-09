@@ -29,7 +29,7 @@ class FramebufferMtl;
 class VertexArrayMtl;
 class ProgramMtl;
 class RenderTargetMtl;
-class SurfaceMtl;
+class WindowSurfaceMtl;
 class TransformFeedbackMtl;
 
 class ContextMtl : public ContextImpl, public mtl::Context
@@ -211,7 +211,7 @@ class ContextMtl : public ContextImpl, public mtl::Context
     void onDrawFrameBufferChangedState(const gl::Context *context,
                                        FramebufferMtl *framebuffer,
                                        bool renderPassChanged);
-    void onBackbufferResized(const gl::Context *context, SurfaceMtl *backbuffer);
+    void onBackbufferResized(const gl::Context *context, WindowSurfaceMtl *backbuffer);
 
     // Invoke by QueryMtl
     angle::Result onOcclusionQueryBegan(const gl::Context *context, QueryMtl *query);
