@@ -104,7 +104,7 @@ declare_args() {
       angle_has_build && ((is_win && !angle_is_winuwp) ||
                           (is_linux && angle_use_x11 && !is_chromeos) ||
                           (is_android && ndk_api_level_at_least_26) ||
-                          is_fuchsia || is_ggp || is_mac)
+                          is_fuchsia || is_ggp)
   angle_enable_null = true
   angle_enable_essl = true
   angle_enable_glsl = true
