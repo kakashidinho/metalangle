@@ -30,8 +30,8 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          ${GITHUB_WORKSPACE}/MetalANGLE.framework.ios.zip
-          ${GITHUB_WORKSPACE}/libMetalANGLE.a.ios.zip
+          MetalANGLE.framework.ios.zip
+          libMetalANGLE.a.ios.zip
         draft: true
         prerelease: false
         name: "Draft"
@@ -59,8 +59,8 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/')
       with:
         files: |
-          ${GITHUB_WORKSPACE}/MetalANGLE.framework.mac.zip
-          ${GITHUB_WORKSPACE}/libMetalANGLE.a.mac.zip
+          MetalANGLE.framework.mac.zip
+          libMetalANGLE.a.mac.zip
         draft: true
         prerelease: false
       env:
@@ -92,7 +92,7 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/')
       with:
         files: |
-          ${GITHUB_WORKSPACE}/MetalANGLE.dylib.mac.zip
+          MetalANGLE.dylib.mac.zip
         draft: true
         prerelease: false
       env:
@@ -119,8 +119,8 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/')
       with:
         files: |
-          ${GITHUB_WORKSPACE}/MetalANGLE.framework.tvos.zip
-          ${GITHUB_WORKSPACE}/libMetalANGLE.a.tvos.zip
+          MetalANGLE.framework.tvos.zip
+          libMetalANGLE.a.tvos.zip
         draft: true
         prerelease: false
       env:
@@ -147,8 +147,8 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/')
       with:
         files: |
-          ${GITHUB_WORKSPACE}/MetalANGLE.framework.ios.simulator.zip
-          ${GITHUB_WORKSPACE}/libMetalANGLE.a.ios.simulator.zip
+          MetalANGLE.framework.ios.simulator.zip
+          libMetalANGLE.a.ios.simulator.zip
         draft: true
         prerelease: false
       env:
@@ -175,8 +175,8 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/')
       with:
         files: |
-          ${GITHUB_WORKSPACE}/MetalANGLE.framework.tvos.simulator.zip
-          ${GITHUB_WORKSPACE}/libMetalANGLE.a.tvos.simulator.zip
+          MetalANGLE.framework.tvos.simulator.zip
+          libMetalANGLE.a.tvos.simulator.zip
         draft: true
         prerelease: false
       env:
