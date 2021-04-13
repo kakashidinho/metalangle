@@ -66,7 +66,7 @@ void Throw(NSString *msg)
 
 // MGLSharegroup implementation
 @interface MGLSharegroup ()
-@property(atomic) MGLContext *firstContext;
+@property(atomic, weak) MGLContext *firstContext;
 @end
 
 @implementation MGLSharegroup
