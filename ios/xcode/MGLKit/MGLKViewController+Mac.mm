@@ -106,7 +106,7 @@ static CVReturn CVFrameDisplayCallback(CVDisplayLinkRef displayLink,
 
 - (void)pause
 {
-    if (_isPaused)
+    if (_paused)
     {
         return;
     }
@@ -122,12 +122,12 @@ static CVReturn CVFrameDisplayCallback(CVDisplayLinkRef displayLink,
         _displayTimer = nil;
     }
 
-    _isPaused = YES;
+    _paused = YES;
 }
 
 - (void)resume
 {
-    if (!_isPaused)
+    if (!_paused)
     {
         return;
     }
@@ -197,5 +197,5 @@ static CVReturn CVFrameDisplayCallback(CVDisplayLinkRef displayLink,
         [[NSRunLoop currentRunLoop] addTimer:_displayTimer forMode:NSModalPanelRunLoopMode];
     }
 
-    _isPaused = NO;
+    _paused = NO;
 }
