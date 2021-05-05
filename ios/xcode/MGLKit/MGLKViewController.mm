@@ -173,7 +173,7 @@
     NSLog(@"MGLKViewController appWillPause:");
     if (_pauseOnWillResignActive) {
         _appWasInBackground = YES;
-        [self pause];
+        self.paused = YES;
     }
 }
 
@@ -181,7 +181,7 @@
 {
     NSLog(@"MGLKViewController appDidBecomeActive:");
     if (_resumeOnDidBecomeActive) {
-        [self resume];
+        self.paused = NO;
     }
 }
 
