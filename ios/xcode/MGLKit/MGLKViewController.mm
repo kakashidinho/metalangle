@@ -58,7 +58,7 @@
     _pauseOnWillResignActive  = YES;
     _resumeOnDidBecomeActive  = YES;
     // not-paused corresponds to having a DisplayLink or timer active and driving the frame loop
-    _paused                 = YES;
+    _paused                   = YES;
 }
 
 - (void)dealloc
