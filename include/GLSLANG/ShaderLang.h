@@ -313,6 +313,11 @@ const ShCompileOptions SH_ADD_BASE_VERTEX_TO_VERTEX_ID = UINT64_C(1) << 48;
 // an emulation in shader is needed.
 const ShCompileOptions SH_METAL_EMULATE_LINEAR_DEPTH_RANGE_MAP = UINT64_C(1) << 49;
 
+// This flag indicates whether Bresenham line raster emulation code should be generated.  This
+// emulation is necessary if the backend uses a differnet algorithm to draw lines.  Currently only
+// implemented for the Vulkan backend.
+const ShCompileOptions SH_ADD_BRESENHAM_LINE_RASTER_EMULATION = UINT64_C(1) << 50;
+
 // Defines alternate strategies for implementing array index clamping.
 enum ShArrayIndexClampingStrategy
 {

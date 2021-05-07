@@ -25,7 +25,7 @@ std::shared_ptr<WaitableCompileEvent> ShaderVk::compile(const gl::Context *conte
                                                         gl::ShCompilerInstance *compilerInstance,
                                                         ShCompileOptions options)
 {
-    ShCompileOptions compileOptions = SH_INITIALIZE_UNINITIALIZED_LOCALS;
+    ShCompileOptions compileOptions = SH_INITIALIZE_UNINITIALIZED_LOCALS | SH_ADD_BRESENHAM_LINE_RASTER_EMULATION;
 
     ContextVk *contextVk = vk::GetImpl(context);
 

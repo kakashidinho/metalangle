@@ -839,10 +839,13 @@ bool TranslatorVulkan::translateImpl(TIntermBlock *root,
             }
         }
 
-        if (!AddLineSegmentRasterizationEmulation(this, sink, root, &getSymbolTable(),
-                                                  driverUniforms, usesFragCoord))
+        if ((compileOptions & SH_ADD_BRESENHAM_LINE_RASTER_EMULATION) != 0)
         {
-            return false;
+            if (!AddLineSegmentRasterizationEmulation(this, sink, root, &getSymbolTable(),
+                                                      driverUniforms, usesFragCoord))
+            {
+                return false;
+            }
         }
 
         bool hasGLFragColor = false;
