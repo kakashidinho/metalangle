@@ -13,14 +13,10 @@
 #include <EGL/egl.h>
 
 @interface MGLContext () {
-    // ANGLE won't allow context to be current without surface.
-    // Create a dummy surface for it using this dummy layer.
-    CALayer *_dummyLayer;
-    EGLSurface _dummySurface;
     MGLRenderingAPI _renderingApi;
-    MGLDisplay *_display;
 }
 
+@property(nonatomic, readonly) MGLDisplay *display;
 @property(nonatomic, readonly) EGLContext eglContext;
 
 @end

@@ -34,7 +34,7 @@
 
 - (void)pause
 {
-    if (_isPaused)
+    if (_paused)
     {
         return;
     }
@@ -47,12 +47,12 @@
         _displayLink = nil;
     }
 
-    _isPaused = YES;
+    _paused = YES;
 }
 
 - (void)resume
 {
-    if (!_isPaused)
+    if (!_paused)
     {
         return;
     }
@@ -70,7 +70,8 @@
         _displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(frameStep)];
         if (ANGLE_APPLE_AVAILABLE_CI(13.0, 10.0))
         {
-            _displayLink.preferredFramesPerSecond = _preferredFramesPerSecond == 1 ? 0 : _preferredFramesPerSecond;
+            _displayLink.preferredFramesPerSecond =
+                _preferredFramesPerSecond == 1 ? 0 : _preferredFramesPerSecond;
         }
         else
         {
@@ -78,7 +79,8 @@
             {
                 _displayLink.frameInterval = 1;
             }
-            else {
+            else
+            {
                 _displayLink.frameInterval = 60 / _preferredFramesPerSecond;
             }
         }
@@ -86,5 +88,5 @@
 
     [_displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSDefaultRunLoopMode];
 
-    _isPaused = NO;
+    _paused = NO;
 }

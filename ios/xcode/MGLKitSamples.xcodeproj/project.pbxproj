@@ -43,6 +43,17 @@
 		0A28CD83235789B20081BB84 /* Particle.png in Resources */ = {isa = PBXBuildFile; fileRef = 0A28CD7F235789B20081BB84 /* Particle.png */; };
 		0A28CD88235789DF0081BB84 /* PaintingView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A28CD86235789DE0081BB84 /* PaintingView.mm */; };
 		0A28CD89235789DF0081BB84 /* SoundEffect.m in Sources */ = {isa = PBXBuildFile; fileRef = 0A28CD87235789DE0081BB84 /* SoundEffect.m */; };
+		0A3B1775264588CB0066F38D /* AppDelegateMac.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A3B1774264588CB0066F38D /* AppDelegateMac.swift */; };
+		0A3B1777264588CB0066F38D /* GLViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A3B1776264588CB0066F38D /* GLViewController.swift */; };
+		0A3B1779264588CC0066F38D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0A3B1778264588CC0066F38D /* Assets.xcassets */; };
+		0A3B177C264588CC0066F38D /* Main_mac.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0A3B177A264588CC0066F38D /* Main_mac.storyboard */; };
+		0A3B17D026458E4B0066F38D /* GLView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A3B17CF26458E4B0066F38D /* GLView.swift */; };
+		0A3B17D82645A7080066F38D /* GLView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A3B17CF26458E4B0066F38D /* GLView.swift */; };
+		0A3B17D92645A7080066F38D /* GLViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A3B1776264588CB0066F38D /* GLViewController.swift */; };
+		0A3B17DE2645A7080066F38D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0A3B1778264588CC0066F38D /* Assets.xcassets */; };
+		0A3B17EF2645A8AB0066F38D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0A3B17D42645A6C20066F38D /* LaunchScreen.storyboard */; };
+		0A3B17F22645A8AE0066F38D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0A3B17D22645A6C20066F38D /* Main.storyboard */; };
+		0A3B18192645A97B0066F38D /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A3B18182645A97B0066F38D /* AppDelegate.swift */; };
 		0A90FA822406896B005BA9A8 /* Main_mac.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0A90FA802406896B005BA9A8 /* Main_mac.storyboard */; };
 		0A90FA8324068A8C005BA9A8 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AAF41492354FAE8000E3CC8 /* AppDelegate.m */; };
 		0A90FA8424068A8E005BA9A8 /* GLViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AAF414F2354FAE8000E3CC8 /* GLViewController.m */; };
@@ -81,6 +92,10 @@
 		0A9A6BBC2391283B006A152A /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0AAF41512354FAE8000E3CC8 /* Main.storyboard */; };
 		0A9A6BBD2391283B006A152A /* SimpleVertex.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 0AD9E49D2355DEDF006F5642 /* SimpleVertex.glsl */; };
 		0A9A6BBF2391283B006A152A /* MetalANGLE.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0AAF40CA2354CB64000E3CC8 /* MetalANGLE.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		0AA41D462645C8D9000A68EF /* MetalANGLE.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A90FA6A24068856005BA9A8 /* MetalANGLE.framework */; };
+		0AA41D472645C8D9000A68EF /* MetalANGLE.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 0A90FA6A24068856005BA9A8 /* MetalANGLE.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		0AA41D832645C8DF000A68EF /* MetalANGLE.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AAF40CA2354CB64000E3CC8 /* MetalANGLE.framework */; };
+		0AA41D842645C8DF000A68EF /* MetalANGLE.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 0AAF40CA2354CB64000E3CC8 /* MetalANGLE.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		0AAF414A2354FAE8000E3CC8 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AAF41492354FAE8000E3CC8 /* AppDelegate.m */; };
 		0AAF41502354FAE8000E3CC8 /* GLViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AAF414F2354FAE8000E3CC8 /* GLViewController.m */; };
 		0AAF41532354FAE8000E3CC8 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0AAF41512354FAE8000E3CC8 /* Main.storyboard */; };
@@ -537,6 +552,20 @@
 			remoteGlobalIDString = 0ABF407C235340FE0051488C;
 			remoteInfo = tri_fan_microbench;
 		};
+		0AE310EA2645B920005E5288 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 0A60525223464F51005CEA98;
+			remoteInfo = MetalANGLE;
+		};
+		0AE311252645B92C005E5288 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 0A90F77824065C0C005BA9A8;
+			remoteInfo = MetalANGLE_mac;
+		};
 		0AFDDBE9244CBD3D000B60B1 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */;
@@ -658,6 +687,28 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		0AA41D482645C8D9000A68EF /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				0AA41D472645C8D9000A68EF /* MetalANGLE.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0AA41D852645C8DF000A68EF /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				0AA41D842645C8DF000A68EF /* MetalANGLE.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		0AD9E4A12355F265006F5642 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -723,6 +774,20 @@
 		0A28CD86235789DE0081BB84 /* PaintingView.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = PaintingView.mm; sourceTree = "<group>"; };
 		0A28CD87235789DE0081BB84 /* SoundEffect.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SoundEffect.m; sourceTree = "<group>"; };
 		0A28CD8B235795BF0081BB84 /* MGLPaint.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MGLPaint.entitlements; sourceTree = "<group>"; };
+		0A3B1772264588CB0066F38D /* MGLKitSampleSwiftApp_mac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MGLKitSampleSwiftApp_mac.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0A3B1774264588CB0066F38D /* AppDelegateMac.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegateMac.swift; sourceTree = "<group>"; };
+		0A3B1776264588CB0066F38D /* GLViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GLViewController.swift; sourceTree = "<group>"; };
+		0A3B1778264588CC0066F38D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		0A3B177B264588CC0066F38D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main_mac.storyboard; sourceTree = "<group>"; };
+		0A3B177D264588CC0066F38D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		0A3B177E264588CC0066F38D /* MGLKitSampleSwiftApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MGLKitSampleSwiftApp.entitlements; sourceTree = "<group>"; };
+		0A3B17CC26458A0F0066F38D /* MetalANGLE-BridgingHeader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MetalANGLE-BridgingHeader.h"; sourceTree = "<group>"; };
+		0A3B17CF26458E4B0066F38D /* GLView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GLView.swift; sourceTree = "<group>"; };
+		0A3B17D32645A6C20066F38D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		0A3B17D52645A6C20066F38D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		0A3B17E32645A7080066F38D /* MGLKitSampleSwiftApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MGLKitSampleSwiftApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0A3B17E92645A78F0066F38D /* Info_mac.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info_mac.plist; sourceTree = "<group>"; };
+		0A3B18182645A97B0066F38D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		0A90FA3524068853005BA9A8 /* MGLKitSampleApp_mac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MGLKitSampleApp_mac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A90FA7E24068948005BA9A8 /* Info_mac.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info_mac.plist; sourceTree = "<group>"; };
 		0A90FA812406896B005BA9A8 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main_mac.storyboard; sourceTree = "<group>"; };
@@ -770,6 +835,22 @@
 			buildActionMask = 2147483647;
 			files = (
 				0A28CD5A235788EF0081BB84 /* MetalANGLE.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0A3B176F264588CB0066F38D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0AA41D462645C8D9000A68EF /* MetalANGLE.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0A3B17DB2645A7080066F38D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0AA41D832645C8DF000A68EF /* MetalANGLE.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -895,10 +976,30 @@
 			name = Resources;
 			sourceTree = "<group>";
 		};
+		0A3B1773264588CB0066F38D /* MGLKitSampleSwiftApp */ = {
+			isa = PBXGroup;
+			children = (
+				0A3B18182645A97B0066F38D /* AppDelegate.swift */,
+				0A3B1774264588CB0066F38D /* AppDelegateMac.swift */,
+				0A3B1776264588CB0066F38D /* GLViewController.swift */,
+				0A3B1778264588CC0066F38D /* Assets.xcassets */,
+				0A3B17D42645A6C20066F38D /* LaunchScreen.storyboard */,
+				0A3B17D22645A6C20066F38D /* Main.storyboard */,
+				0A3B177A264588CC0066F38D /* Main_mac.storyboard */,
+				0A3B177D264588CC0066F38D /* Info.plist */,
+				0A3B17E92645A78F0066F38D /* Info_mac.plist */,
+				0A3B177E264588CC0066F38D /* MGLKitSampleSwiftApp.entitlements */,
+				0A3B17CC26458A0F0066F38D /* MetalANGLE-BridgingHeader.h */,
+				0A3B17CF26458E4B0066F38D /* GLView.swift */,
+			);
+			path = MGLKitSampleSwiftApp;
+			sourceTree = "<group>";
+		};
 		0AAF408B2354CB06000E3CC8 = {
 			isa = PBXGroup;
 			children = (
 				0AAF41472354FAE8000E3CC8 /* MGLKitSampleApp */,
+				0A3B1773264588CB0066F38D /* MGLKitSampleSwiftApp */,
 				0A28CD23235787370081BB84 /* MGLPaint */,
 				0AAF40B02354CB64000E3CC8 /* OpenGLES.xcodeproj */,
 				0AAF40952354CB06000E3CC8 /* Products */,
@@ -915,6 +1016,8 @@
 				0A90FA3524068853005BA9A8 /* MGLKitSampleApp_mac.app */,
 				0AFDDBB3244CBD3D000B60B1 /* MGLKitSampleApp_tvos.app */,
 				0AFDDC27244CBD80000B60B1 /* MGLPaint_tvos.app */,
+				0A3B1772264588CB0066F38D /* MGLKitSampleSwiftApp_mac.app */,
+				0A3B17E32645A7080066F38D /* MGLKitSampleSwiftApp.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1073,6 +1176,44 @@
 			productReference = 0A28CD22235787370081BB84 /* MGLPaint.app */;
 			productType = "com.apple.product-type.application";
 		};
+		0A3B1771264588CB0066F38D /* MGLKitSampleSwiftApp_mac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0A3B17C6264588CC0066F38D /* Build configuration list for PBXNativeTarget "MGLKitSampleSwiftApp_mac" */;
+			buildPhases = (
+				0A3B176E264588CB0066F38D /* Sources */,
+				0A3B176F264588CB0066F38D /* Frameworks */,
+				0A3B1770264588CB0066F38D /* Resources */,
+				0AA41D482645C8D9000A68EF /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				0AE311262645B92C005E5288 /* PBXTargetDependency */,
+			);
+			name = MGLKitSampleSwiftApp_mac;
+			productName = MGLKitSampleSwiftApp;
+			productReference = 0A3B1772264588CB0066F38D /* MGLKitSampleSwiftApp_mac.app */;
+			productType = "com.apple.product-type.application";
+		};
+		0A3B17D62645A7080066F38D /* MGLKitSampleSwiftApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0A3B17E02645A7080066F38D /* Build configuration list for PBXNativeTarget "MGLKitSampleSwiftApp" */;
+			buildPhases = (
+				0A3B17D72645A7080066F38D /* Sources */,
+				0A3B17DB2645A7080066F38D /* Frameworks */,
+				0A3B17DD2645A7080066F38D /* Resources */,
+				0AA41D852645C8DF000A68EF /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				0AE310EB2645B920005E5288 /* PBXTargetDependency */,
+			);
+			name = MGLKitSampleSwiftApp;
+			productName = MGLKitSampleSwiftApp;
+			productReference = 0A3B17E32645A7080066F38D /* MGLKitSampleSwiftApp.app */;
+			productType = "com.apple.product-type.application";
+		};
 		0A90FA3424068853005BA9A8 /* MGLKitSampleApp_mac */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 0A90FA7D24068856005BA9A8 /* Build configuration list for PBXNativeTarget "MGLKitSampleApp_mac" */;
@@ -1174,11 +1315,15 @@
 		0AAF408C2354CB06000E3CC8 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				LastSwiftUpdateCheck = 1220;
 				LastUpgradeCheck = 1100;
 				ORGANIZATIONNAME = HQGame;
 				TargetAttributes = {
 					0A28CD21235787370081BB84 = {
 						CreatedOnToolsVersion = 11.0;
+					};
+					0A3B1771264588CB0066F38D = {
+						CreatedOnToolsVersion = 12.2;
 					};
 					0A90FA3424068853005BA9A8 = {
 						CreatedOnToolsVersion = 11.3.1;
@@ -1213,6 +1358,8 @@
 				0A90FA3424068853005BA9A8 /* MGLKitSampleApp_mac */,
 				0AFDDB96244CBD3D000B60B1 /* MGLKitSampleApp_tvos */,
 				0AFDDBFF244CBD80000B60B1 /* MGLPaint_tvos */,
+				0A3B17D62645A7080066F38D /* MGLKitSampleSwiftApp */,
+				0A3B1771264588CB0066F38D /* MGLKitSampleSwiftApp_mac */,
 			);
 		};
 /* End PBXProject section */
@@ -1676,6 +1823,25 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		0A3B1770264588CB0066F38D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0A3B1779264588CC0066F38D /* Assets.xcassets in Resources */,
+				0A3B177C264588CC0066F38D /* Main_mac.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0A3B17DD2645A7080066F38D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0A3B17EF2645A8AB0066F38D /* LaunchScreen.storyboard in Resources */,
+				0A3B17DE2645A7080066F38D /* Assets.xcassets in Resources */,
+				0A3B17F22645A8AE0066F38D /* Main.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		0A90FA3324068853005BA9A8 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1785,6 +1951,26 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		0A3B176E264588CB0066F38D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0A3B17D026458E4B0066F38D /* GLView.swift in Sources */,
+				0A3B1777264588CB0066F38D /* GLViewController.swift in Sources */,
+				0A3B1775264588CB0066F38D /* AppDelegateMac.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0A3B17D72645A7080066F38D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0A3B18192645A97B0066F38D /* AppDelegate.swift in Sources */,
+				0A3B17D82645A7080066F38D /* GLView.swift in Sources */,
+				0A3B17D92645A7080066F38D /* GLViewController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		0A90FA3124068853005BA9A8 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1891,6 +2077,16 @@
 			name = MetalANGLE_tvos;
 			targetProxy = 0A936728244CBF2B00B3497E /* PBXContainerItemProxy */;
 		};
+		0AE310EB2645B920005E5288 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = MetalANGLE;
+			targetProxy = 0AE310EA2645B920005E5288 /* PBXContainerItemProxy */;
+		};
+		0AE311262645B92C005E5288 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = MetalANGLE_mac;
+			targetProxy = 0AE311252645B92C005E5288 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
@@ -1906,6 +2102,30 @@
 			isa = PBXVariantGroup;
 			children = (
 				0A28CD332357873A0081BB84 /* Base */,
+			);
+			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+		0A3B177A264588CC0066F38D /* Main_mac.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				0A3B177B264588CC0066F38D /* Base */,
+			);
+			name = Main_mac.storyboard;
+			sourceTree = "<group>";
+		};
+		0A3B17D22645A6C20066F38D /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				0A3B17D32645A6C20066F38D /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		0A3B17D42645A6C20066F38D /* LaunchScreen.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				0A3B17D52645A6C20066F38D /* Base */,
 			);
 			name = LaunchScreen.storyboard;
 			sourceTree = "<group>";
@@ -1979,6 +2199,118 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.hqgame.angle.samples.MGLPaint;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTS_MACCATALYST = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		0A3B177F264588CC0066F38D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CODE_SIGN_ENTITLEMENTS = MGLKitSampleSwiftApp/MGLKitSampleSwiftApp.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = MGLKitSampleSwiftApp/Info_mac.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				PRODUCT_BUNDLE_IDENTIFIER = com.hqgame.MGLKitSampleSwiftApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OBJC_BRIDGING_HEADER = "MGLKitSampleSwiftApp/MetalANGLE-BridgingHeader.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		0A3B1780264588CC0066F38D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CODE_SIGN_ENTITLEMENTS = MGLKitSampleSwiftApp/MGLKitSampleSwiftApp.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = MGLKitSampleSwiftApp/Info_mac.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				PRODUCT_BUNDLE_IDENTIFIER = com.hqgame.MGLKitSampleSwiftApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OBJC_BRIDGING_HEADER = "MGLKitSampleSwiftApp/MetalANGLE-BridgingHeader.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		0A3B17E12645A7080066F38D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CODE_SIGN_ENTITLEMENTS = MGLKitSampleSwiftApp/MGLKitSampleSwiftApp.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = MGLKitSampleSwiftApp/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				PRODUCT_BUNDLE_IDENTIFIER = com.hqgame.MGLKitSampleSwiftApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OBJC_BRIDGING_HEADER = "MGLKitSampleSwiftApp/MetalANGLE-BridgingHeader.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		0A3B17E22645A7080066F38D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CODE_SIGN_ENTITLEMENTS = MGLKitSampleSwiftApp/MGLKitSampleSwiftApp.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = MGLKitSampleSwiftApp/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				PRODUCT_BUNDLE_IDENTIFIER = com.hqgame.MGLKitSampleSwiftApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OBJC_BRIDGING_HEADER = "MGLKitSampleSwiftApp/MetalANGLE-BridgingHeader.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
@@ -2341,6 +2673,24 @@
 			buildConfigurations = (
 				0A28CD382357873A0081BB84 /* Debug */,
 				0A28CD392357873A0081BB84 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		0A3B17C6264588CC0066F38D /* Build configuration list for PBXNativeTarget "MGLKitSampleSwiftApp_mac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0A3B177F264588CC0066F38D /* Debug */,
+				0A3B1780264588CC0066F38D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		0A3B17E02645A7080066F38D /* Build configuration list for PBXNativeTarget "MGLKitSampleSwiftApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0A3B17E12645A7080066F38D /* Debug */,
+				0A3B17E22645A7080066F38D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

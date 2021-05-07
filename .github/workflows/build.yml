@@ -1,0 +1,184 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ master, ci-temp, ci-temp2, gles3, gles3-dev ]
+    tags:
+      - '*'
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  ios_10_15:
+    runs-on: macos-10.15
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 2.6 # Not needed with a .ruby-version file
+        bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+    - name: prerequisite tools
+      run: gem install xcpretty
+    - name: build
+      run: ios/xcode/travis_build_ios.sh Release iphoneos ${GITHUB_WORKSPACE}/build_ios
+    - name: archive
+      run: |
+        cd ${GITHUB_WORKSPACE}/build_ios/Build/Products/Release-iphoneos && zip --symlinks -r ${GITHUB_WORKSPACE}/MetalANGLE.framework.ios.zip MetalANGLE.framework
+        cd ${GITHUB_WORKSPACE}/build_ios/Build/Products/Release-iphoneos && zip --symlinks -r ${GITHUB_WORKSPACE}/libMetalANGLE.a.ios.zip libMetalANGLE_static.a
+    - name: upload
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: |
+          MetalANGLE.framework.ios.zip
+          libMetalANGLE.a.ios.zip
+        draft: true
+        prerelease: false
+        name: "Draft"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  mac_10_15:
+    runs-on: macos-10.15
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 2.6 # Not needed with a .ruby-version file
+        bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+    - name: prerequisite tools
+      run: gem install xcpretty
+    - name: build
+      run: mac/xcode/travis_build_mac.sh Release macosx ${GITHUB_WORKSPACE}/build_mac
+    - name: archive
+      run: |
+        cd ${GITHUB_WORKSPACE}/build_mac/Build/Products/Release && zip --symlinks -r ${GITHUB_WORKSPACE}/MetalANGLE.framework.mac.zip MetalANGLE.framework
+        cd ${GITHUB_WORKSPACE}/build_mac/Build/Products/Release && zip --symlinks -r ${GITHUB_WORKSPACE}/libMetalANGLE.a.mac.zip libMetalANGLE_static_mac.a
+    - name: upload
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: |
+          MetalANGLE.framework.mac.zip
+          libMetalANGLE.a.mac.zip
+        draft: true
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build_gn:
+    runs-on: macos-10.15
+    steps:
+    - uses: actions/checkout@v2
+    - name: prerequisite tools
+      run: |
+        git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git depot_tools
+        echo "${GITHUB_WORKSPACE}/depot_tools" >> $GITHUB_PATH
+    - name: gclient sync
+      run: |
+        python scripts/bootstrap.py
+        gclient sync
+    - name: gn gen
+      run: gn gen out/release --args="angle_enable_gl=false is_debug=false strip_absolute_paths_from_debug_symbols=true"
+    - name: make
+      run: ninja -C out/release angle_end2end_tests angle_deqp_gles2_tests hello_triangle
+    - name: archive
+      run: |
+        cp -v out/release/*.dylib ./
+        zip --symlinks -r MetalANGLE.dylib.mac.zip include libGLESv2.dylib libGLESv1_CM.dylib libEGL.dylib
+        rm -v *.dylib
+    - name: upload
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: |
+          MetalANGLE.dylib.mac.zip
+        draft: true
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  tvos_10_15:
+    runs-on: macos-10.15
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 2.6 # Not needed with a .ruby-version file
+        bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+    - name: prerequisite tools
+      run: gem install xcpretty
+    - name: build
+      run: ios/xcode/travis_build_tvos.sh Release appletvos ${GITHUB_WORKSPACE}/build_tvos
+    - name: archive
+      run: |
+        cd ${GITHUB_WORKSPACE}/build_tvos/Build/Products/Release-appletvos && zip --symlinks -r ${GITHUB_WORKSPACE}/MetalANGLE.framework.tvos.zip MetalANGLE.framework
+        cd ${GITHUB_WORKSPACE}/build_tvos/Build/Products/Release-appletvos && zip --symlinks -r ${GITHUB_WORKSPACE}/libMetalANGLE.a.tvos.zip libMetalANGLE_static_tvos.a
+    - name: upload
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: |
+          MetalANGLE.framework.tvos.zip
+          libMetalANGLE.a.tvos.zip
+        draft: true
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  ios_sim_10_15:
+    runs-on: macos-10.15
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 2.6 # Not needed with a .ruby-version file
+        bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+    - name: prerequisite tools
+      run: gem install xcpretty
+    - name: build
+      run: ios/xcode/travis_build_ios.sh Release iphonesimulator ${GITHUB_WORKSPACE}/build_ios
+    - name: archive
+      run: |
+        cd ${GITHUB_WORKSPACE}/build_ios/Build/Products/Release-iphonesimulator && zip --symlinks -r ${GITHUB_WORKSPACE}/MetalANGLE.framework.ios.simulator.zip MetalANGLE.framework
+        cd ${GITHUB_WORKSPACE}/build_ios/Build/Products/Release-iphonesimulator && zip --symlinks -r ${GITHUB_WORKSPACE}/libMetalANGLE.a.ios.simulator.zip libMetalANGLE_static.a
+    - name: upload
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: |
+          MetalANGLE.framework.ios.simulator.zip
+          libMetalANGLE.a.ios.simulator.zip
+        draft: true
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  tvos_sim_10_15:
+    runs-on: macos-10.15
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 2.6 # Not needed with a .ruby-version file
+        bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+    - name: prerequisite tools
+      run: gem install xcpretty
+    - name: build
+      run: ios/xcode/travis_build_tvos.sh Release appletvsimulator ${GITHUB_WORKSPACE}/build_tvos
+    - name: archive
+      run: |
+        cd ${GITHUB_WORKSPACE}/build_tvos/Build/Products/Release-appletvsimulator && zip --symlinks -r ${GITHUB_WORKSPACE}/MetalANGLE.framework.tvos.simulator.zip MetalANGLE.framework
+        cd ${GITHUB_WORKSPACE}/build_tvos/Build/Products/Release-appletvsimulator && zip --symlinks -r ${GITHUB_WORKSPACE}/libMetalANGLE.a.tvos.simulator.zip libMetalANGLE_static_tvos.a
+    - name: upload
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: |
+          MetalANGLE.framework.tvos.simulator.zip
+          libMetalANGLE.a.tvos.simulator.zip
+        draft: true
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

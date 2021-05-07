@@ -376,8 +376,8 @@ egl::ConfigSet DisplayMtl::generateConfigs()
     config.minSwapInterval = 0;
     config.maxSwapInterval = 1;
 #else
-    config.minSwapInterval = 1;
-    config.maxSwapInterval = 1;
+    config.minSwapInterval               = 1;
+    config.maxSwapInterval               = 1;
 #endif
 
     config.renderTargetFormat = GL_RGBA8;
@@ -541,7 +541,7 @@ void DisplayMtl::ensureCapsInitialized() const
     mNativeCaps.maxElementIndex  = std::numeric_limits<GLuint>::max() - 1;
     mNativeCaps.max3DTextureSize = 2048;
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-    mNativeCaps.max2DTextureSize          = 16384;
+    mNativeCaps.max2DTextureSize = 16384;
     // On macOS exclude [[position]] from maxVaryingVectors.
     mNativeCaps.maxVaryingVectors         = 31 - 1;
     mNativeCaps.maxVertexOutputComponents = mNativeCaps.maxFragmentInputComponents = 124 - 4;
@@ -763,10 +763,10 @@ void DisplayMtl::initializeExtensions() const
     if (ANGLE_APPLE_AVAILABLE_XCI(10.14, 13.0, 12.0))
     {
         // MTLSharedEvent is only available since Metal 2.1
-        
+
         // GL_NV_fence
         mNativeExtensions.fenceNV = true;
-        
+
         // GL_OES_EGL_sync
         mNativeExtensions.eglSyncOES = true;
     }
