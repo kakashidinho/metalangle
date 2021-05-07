@@ -47,12 +47,10 @@
 		0A3B1777264588CB0066F38D /* GLViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A3B1776264588CB0066F38D /* GLViewController.swift */; };
 		0A3B1779264588CC0066F38D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0A3B1778264588CC0066F38D /* Assets.xcassets */; };
 		0A3B177C264588CC0066F38D /* Main_mac.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0A3B177A264588CC0066F38D /* Main_mac.storyboard */; };
-		0A3B17C9264589640066F38D /* MetalANGLE.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A90FA6A24068856005BA9A8 /* MetalANGLE.framework */; };
 		0A3B17D026458E4B0066F38D /* GLView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A3B17CF26458E4B0066F38D /* GLView.swift */; };
 		0A3B17D82645A7080066F38D /* GLView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A3B17CF26458E4B0066F38D /* GLView.swift */; };
 		0A3B17D92645A7080066F38D /* GLViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A3B1776264588CB0066F38D /* GLViewController.swift */; };
 		0A3B17DE2645A7080066F38D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0A3B1778264588CC0066F38D /* Assets.xcassets */; };
-		0A3B17EC2645A85E0066F38D /* MetalANGLE.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AAF40CA2354CB64000E3CC8 /* MetalANGLE.framework */; };
 		0A3B17EF2645A8AB0066F38D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0A3B17D42645A6C20066F38D /* LaunchScreen.storyboard */; };
 		0A3B17F22645A8AE0066F38D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0A3B17D22645A6C20066F38D /* Main.storyboard */; };
 		0A3B18192645A97B0066F38D /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A3B18182645A97B0066F38D /* AppDelegate.swift */; };
@@ -94,6 +92,10 @@
 		0A9A6BBC2391283B006A152A /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0AAF41512354FAE8000E3CC8 /* Main.storyboard */; };
 		0A9A6BBD2391283B006A152A /* SimpleVertex.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 0AD9E49D2355DEDF006F5642 /* SimpleVertex.glsl */; };
 		0A9A6BBF2391283B006A152A /* MetalANGLE.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0AAF40CA2354CB64000E3CC8 /* MetalANGLE.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		0AA41D462645C8D9000A68EF /* MetalANGLE.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A90FA6A24068856005BA9A8 /* MetalANGLE.framework */; };
+		0AA41D472645C8D9000A68EF /* MetalANGLE.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 0A90FA6A24068856005BA9A8 /* MetalANGLE.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		0AA41D832645C8DF000A68EF /* MetalANGLE.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AAF40CA2354CB64000E3CC8 /* MetalANGLE.framework */; };
+		0AA41D842645C8DF000A68EF /* MetalANGLE.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 0AAF40CA2354CB64000E3CC8 /* MetalANGLE.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		0AAF414A2354FAE8000E3CC8 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AAF41492354FAE8000E3CC8 /* AppDelegate.m */; };
 		0AAF41502354FAE8000E3CC8 /* GLViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AAF414F2354FAE8000E3CC8 /* GLViewController.m */; };
 		0AAF41532354FAE8000E3CC8 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0AAF41512354FAE8000E3CC8 /* Main.storyboard */; };
@@ -671,6 +673,28 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		0AA41D482645C8D9000A68EF /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				0AA41D472645C8D9000A68EF /* MetalANGLE.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0AA41D852645C8DF000A68EF /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				0AA41D842645C8DF000A68EF /* MetalANGLE.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		0AD9E4A12355F265006F5642 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -804,7 +828,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0A3B17C9264589640066F38D /* MetalANGLE.framework in Frameworks */,
+				0AA41D462645C8D9000A68EF /* MetalANGLE.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -812,7 +836,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0A3B17EC2645A85E0066F38D /* MetalANGLE.framework in Frameworks */,
+				0AA41D832645C8DF000A68EF /* MetalANGLE.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1143,6 +1167,7 @@
 				0A3B176E264588CB0066F38D /* Sources */,
 				0A3B176F264588CB0066F38D /* Frameworks */,
 				0A3B1770264588CB0066F38D /* Resources */,
+				0AA41D482645C8D9000A68EF /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -1161,6 +1186,7 @@
 				0A3B17D72645A7080066F38D /* Sources */,
 				0A3B17DB2645A7080066F38D /* Frameworks */,
 				0A3B17DD2645A7080066F38D /* Resources */,
+				0AA41D852645C8DF000A68EF /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -2218,6 +2244,7 @@
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
+					"@executable_path/Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hqgame.MGLKitSampleSwiftApp;
@@ -2244,6 +2271,7 @@
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
+					"@executable_path/Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hqgame.MGLKitSampleSwiftApp;
