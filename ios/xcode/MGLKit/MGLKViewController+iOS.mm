@@ -34,7 +34,7 @@
 
 - (void)pause
 {
-    if (_isPaused)
+    if (_paused)
     {
         return;
     }
@@ -47,12 +47,12 @@
         _displayLink = nil;
     }
 
-    _isPaused = YES;
+    _paused = YES;
 }
 
 - (void)resume
 {
-    if (!_isPaused)
+    if (!_paused)
     {
         return;
     }
@@ -86,5 +86,5 @@
 
     [_displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSDefaultRunLoopMode];
 
-    _isPaused = NO;
+    _paused = NO;
 }
