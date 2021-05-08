@@ -450,3 +450,6 @@
 4235 METAL INTEL : dEQP-GLES2.functional.shaders.invariance.mediump.loop_4 = FAIL
 4235 METAL INTEL : dEQP-GLES2.functional.shaders.invariance.lowp.loop_2 = FAIL
 4235 METAL INTEL : dEQP-GLES2.functional.shaders.invariance.lowp.loop_4 = FAIL
+
+// Crash on M1 Mac
+4235 METAL : dEQP-GLES2.functional.shaders.random.texture.vertex.1 = SKIP
