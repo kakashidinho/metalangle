@@ -331,6 +331,10 @@ TEST_P(EGLSurfaceTest, ResizeWindow)
     // XGetGeometry.  http://anglebug.com/3122
     ANGLE_SKIP_TEST_IF(IsLinux() && IsOpenGL());
 
+    // NOTE(hqle): Metal back-end doesn't resize window surface after swapBuffers.
+    // It only resizes after first draw call.
+    ANGLE_SKIP_TEST_IF(IsMetal());
+
     eglQuerySurface(mDisplay, mWindowSurface, EGL_HEIGHT, &height);
     ASSERT_EGL_SUCCESS();
     ASSERT_EQ(minSize, height);
