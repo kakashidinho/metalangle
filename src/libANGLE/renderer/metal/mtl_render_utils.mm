@@ -248,8 +248,8 @@ angle::Result GenTriFanFromClientElements(ContextMtl *contextMtl,
     const uint32_t kDstPrimitiveRestartIndex = std::numeric_limits<uint32_t>::max();
 
     uint32_t *dstPtr = reinterpret_cast<uint32_t *>(dstBuffer->map(contextMtl) + dstOffset);
-    T triFirstIdx = 0;  // Vertex index of trianlge's 1st vertex
-    T srcPrevIdx  = 0;  // Vertex index of trianlge's 2nd vertex
+    T triFirstIdx    = 0;  // Vertex index of trianlge's 1st vertex
+    T srcPrevIdx     = 0;  // Vertex index of trianlge's 2nd vertex
     memcpy(&triFirstIdx, indices, sizeof(triFirstIdx));
 
     if (primitiveRestartEnabled)

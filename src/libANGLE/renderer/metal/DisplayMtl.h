@@ -106,9 +106,9 @@ class DisplayMtl : public DisplayImpl
     const angle::FeaturesMtl &getFeatures() const { return mFeatures; }
 
     // Check whether either of the specified iOS or Mac GPU family is supported
-    bool supportEitherGPUFamily(uint8_t iOSFamily, uint8_t macFamily) const;
-    bool supportiOSGPUFamily(uint8_t iOSFamily) const;
-    bool supportMacGPUFamily(uint8_t macFamily) const;
+    bool supportsEitherGPUFamily(uint8_t iOSFamily, uint8_t macFamily) const;
+    bool supportsAppleGPUFamily(uint8_t iOSFamily) const;
+    bool supportsMacGPUFamily(uint8_t macFamily) const;
 
     id<MTLDevice> getMetalDevice() const { return mMetalDevice; }
 

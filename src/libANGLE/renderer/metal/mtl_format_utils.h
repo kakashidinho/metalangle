@@ -65,6 +65,7 @@ struct Format : public FormatBase
     static angle::FormatID MetalToAngleFormatID(MTLPixelFormat formatMtl);
 
     const gl::InternalFormat &intendedInternalFormat() const;
+    const gl::InternalFormat &actualInternalFormat() const;
 
     bool valid() const { return metalFormat != MTLPixelFormatInvalid; }
     bool hasDepthAndStencilBits() const
@@ -142,6 +143,7 @@ class FormatTable final : angle::NonCopyable
     uint32_t getMaxSamples() const { return mMaxSamples; }
 
   private:
+    void initNativeFormatCapsAutogen(const DisplayMtl *display);
     void initNativeFormatCaps(const DisplayMtl *display);
     void setFormatCaps(MTLPixelFormat formatId,
                        bool filterable,
