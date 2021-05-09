@@ -406,13 +406,21 @@ class VisibilityResultUtils
                                  const BufferRef &renderPassResultBuf,
                                  const BufferRef &finalResultBuf);
 
+    void drawInvisibleFragments(ContextMtl *contextMtl, RenderCommandEncoder *cmdEncoder);
+
   private:
     AutoObjCPtr<id<MTLComputePipelineState>> getVisibilityResultCombPipeline(ContextMtl *contextMtl,
                                                                              bool keepOldValue);
+
+    void ensureInvisibleFragRenderPipelineInitialized(ContextMtl *ctx);
+
     // Visibility combination compute pipeline:
     // - 0: This compute pipeline only combine the new values and discard old value.
     // - 1: This compute pipeline keep the old value and combine with new values.
     std::array<AutoObjCPtr<id<MTLComputePipelineState>>, 2> mVisibilityResultCombPipelines;
+
+    // Render pipeline to draw invisible fragments to force visibility result = 0
+    RenderPipelineCache mNoVisibleFragRenderPipelineCache;
 };
 
 // Util class for handling mipmap generation
@@ -601,6 +609,9 @@ class RenderUtils : public Context, angle::NonCopyable
                                  const VisibilityBufferOffsetsMtl &renderPassResultBufOffsets,
                                  const BufferRef &renderPassResultBuf,
                                  const BufferRef &finalResultBuf);
+
+    // Draw invisible fragments in order to force visibility result = 0
+    void drawInvisibleFragments(ContextMtl *contextMtl, RenderCommandEncoder *cmdEncoder);
 
     // Compute based mipmap generation
     angle::Result generateMipmapCS(ContextMtl *contextMtl,

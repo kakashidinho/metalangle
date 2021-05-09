@@ -465,6 +465,7 @@ class ContextMtl : public ContextImpl, public mtl::Context
     };
 
     mtl::OcclusionQueryPool mOcclusionQueryPool;
+    size_t m_drawCallsSinceLastActiveOcclusionQuery = 0;
 
     mtl::CommandBuffer mCmdBuffer;
     mtl::RenderCommandEncoder mRenderEncoder;

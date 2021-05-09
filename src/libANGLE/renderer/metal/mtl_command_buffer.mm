@@ -972,6 +972,11 @@ RenderCommandEncoder &RenderCommandEncoder::restart(const RenderPassDesc &desc)
     return *this;
 }
 
+id<MTLRenderPipelineState> RenderCommandEncoder::getRenderPipelineState() const
+{
+    return mStateCache.renderPipeline;
+}
+
 RenderCommandEncoder &RenderCommandEncoder::setRenderPipelineState(id<MTLRenderPipelineState> state)
 {
     if (mStateCache.renderPipeline == state)

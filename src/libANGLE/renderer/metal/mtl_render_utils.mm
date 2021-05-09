@@ -1062,6 +1062,11 @@ void RenderUtils::combineVisibilityResult(
         contextMtl, keepOldValue, renderPassResultBufOffsets, renderPassResultBuf, finalResultBuf);
 }
 
+void RenderUtils::drawInvisibleFragments(ContextMtl *contextMtl, RenderCommandEncoder *cmdEncoder)
+{
+    return mVisibilityResultUtils.drawInvisibleFragments(contextMtl, cmdEncoder);
+}
+
 // Compute based mipmap generation
 angle::Result RenderUtils::generateMipmapCS(ContextMtl *contextMtl,
                                             const TextureRef &srcTexture,
@@ -2318,6 +2323,28 @@ AutoObjCPtr<id<MTLComputePipelineState>> VisibilityResultUtils::getVisibilityRes
     return cache;
 }
 
+void VisibilityResultUtils::ensureInvisibleFragRenderPipelineInitialized(ContextMtl *ctx)
+{
+    if (mNoVisibleFragRenderPipelineCache.getVertexShader() &&
+        mNoVisibleFragRenderPipelineCache.getFragmentShader())
+    {
+        // Already initialized.
+        return;
+    }
+
+    ANGLE_MTL_OBJC_SCOPE
+    {
+        id<MTLLibrary> shaderLib = ctx->getDisplay()->getDefaultShadersLib();
+        id<MTLFunction> vertexShader =
+            [[shaderLib newFunctionWithName:@"noFragmentVisibleVS"] ANGLE_MTL_AUTORELEASE];
+        id<MTLFunction> fragmentShader =
+            [[shaderLib newFunctionWithName:@"noFragmentVisibleFS"] ANGLE_MTL_AUTORELEASE];
+
+        mNoVisibleFragRenderPipelineCache.setVertexShader(ctx, vertexShader);
+        mNoVisibleFragRenderPipelineCache.setFragmentShader(ctx, fragmentShader);
+    }
+}
+
 void VisibilityResultUtils::combineVisibilityResult(
     ContextMtl *contextMtl,
     bool keepOldValue,
@@ -2354,6 +2381,33 @@ void VisibilityResultUtils::combineVisibilityResult(
     cmdEncoder->setBufferForWrite(finalResultBuf, 0, 2);
 
     DispatchCompute(contextMtl, cmdEncoder, pipeline, 1);
+}
+
+void VisibilityResultUtils::drawInvisibleFragments(ContextMtl *contextMtl,
+                                                   RenderCommandEncoder *cmdEncoder)
+{
+    ensureInvisibleFragRenderPipelineInitialized(contextMtl);
+
+    RenderPipelineDesc pipelineDesc;
+    const RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
+
+    renderPassDesc.populateRenderPipelineOutputDesc(MTLColorWriteMaskNone,
+                                                    &pipelineDesc.outputDescriptor);
+
+    pipelineDesc.inputPrimitiveTopology = kPrimitiveTopologyClassTriangle;
+
+    id<MTLRenderPipelineState> rpState =
+        mNoVisibleFragRenderPipelineCache.getRenderPipelineState(contextMtl, pipelineDesc);
+    ASSERT(rpState);
+
+    id<MTLRenderPipelineState> oldRpStae = cmdEncoder->getRenderPipelineState();
+
+    cmdEncoder->setRenderPipelineState(rpState);
+    cmdEncoder->draw(MTLPrimitiveTypeTriangle, 0, 3);
+    if (oldRpStae)
+    {
+        cmdEncoder->setRenderPipelineState(oldRpStae);
+    }
 }
 
 // MipmapUtils implementation

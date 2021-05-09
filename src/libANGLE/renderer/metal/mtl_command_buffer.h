@@ -409,6 +409,8 @@ class RenderCommandEncoder final : public CommandEncoder
     // Enable warning when scissor rect is out of render target's bound
     void enableScissorRectOOBWarn(bool e) { mWarnOutOfBoundScissorRect = e; }
 
+    id<MTLRenderPipelineState> getRenderPipelineState() const;
+
   private:
     // Override CommandEncoder
     id<MTLRenderCommandEncoder> get() const
