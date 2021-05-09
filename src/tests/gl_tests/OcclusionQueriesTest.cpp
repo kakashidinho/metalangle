@@ -210,6 +210,8 @@ TEST_P(OcclusionQueriesTest, ClearNotCounted)
 
 TEST_P(OcclusionQueriesTest, MultiQueries)
 {
+    ANGLE_SKIP_TEST_IF(std::getenv("ANGLE_SKIP_OCCLUSION_MULTIQUERIES_TEST"));
+
     ANGLE_SKIP_TEST_IF(getClientMajorVersion() < 3 &&
                        !IsGLExtensionEnabled("GL_EXT_occlusion_query_boolean"));
 
