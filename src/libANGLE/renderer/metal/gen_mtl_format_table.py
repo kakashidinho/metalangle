@@ -398,7 +398,7 @@ def gen_image_map_switch_string(image_table, angle_to_gl):
     switch_data += "#endif\n"
 
     # iOS specific
-    switch_data += "#if TARGET_OS_IOS || TARGET_OS_TV\n"
+    switch_data += "#if (TARGET_OS_IOS && !TARGET_OS_MACCATALYST) || TARGET_OS_TV\n"
     for angle_format in sorted(ios_specific_map.keys()):
         if angle_format in astc_specific_map:
             # ASTC is only supported since Apple GPU 3 (with 3D textures support)
@@ -455,7 +455,8 @@ def gen_image_mtl_to_angle_switch_string(image_table):
     switch_data += "#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST\n"
 
     # iOS + macOS 11.0+ specific
-    switch_data += "#if TARGET_OS_IOS || TARGET_OS_TV || (TARGET_OS_OSX && (__MAC_OS_X_VERSION_MAX_ALLOWED >= 101600))\n"
+    switch_data += "#if (TARGET_OS_IOS && !TARGET_OS_MACCATALYST) || TARGET_OS_TV || \\\n"
+    switch_data += "    (TARGET_OS_OSX && (__MAC_OS_X_VERSION_MAX_ALLOWED >= 101600))\n"
     for angle_format in sorted(ios_specific_map.keys()):
         # ETC1_R8G8B8_UNORM_BLOCK is a duplicated of ETC2_R8G8B8_UNORM_BLOCK
         if angle_format == 'ETC1_R8G8B8_UNORM_BLOCK':

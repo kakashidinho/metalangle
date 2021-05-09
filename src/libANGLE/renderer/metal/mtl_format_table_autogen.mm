@@ -144,7 +144,8 @@ angle::FormatID Format::MetalToAngleFormatID(MTLPixelFormat formatMtl)
         case MTLPixelFormatDepth24Unorm_Stencil8:
             return angle::FormatID::D24_UNORM_S8_UINT;
 #endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
-#if TARGET_OS_IOS || TARGET_OS_TV || (TARGET_OS_OSX && (__MAC_OS_X_VERSION_MAX_ALLOWED >= 101600))
+#if (TARGET_OS_IOS && !TARGET_OS_MACCATALYST) || TARGET_OS_TV || \
+    (TARGET_OS_OSX && (__MAC_OS_X_VERSION_MAX_ALLOWED >= 101600))
         case MTLPixelFormatASTC_10x10_sRGB:
             return angle::FormatID::ASTC_10x10_SRGB_BLOCK;
         case MTLPixelFormatASTC_10x10_LDR:
@@ -1163,7 +1164,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
             break;
 
 #endif
-#if TARGET_OS_IOS || TARGET_OS_TV
+#if (TARGET_OS_IOS && !TARGET_OS_MACCATALYST) || TARGET_OS_TV
         case angle::FormatID::ASTC_10x10_SRGB_BLOCK:
 
             if (display->supportsAppleGPUFamily(3))
