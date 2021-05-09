@@ -4,9 +4,9 @@
   "src/libANGLE/renderer/angle_format_map.json":
     "bca5e686001f6dd0af306af234a36677",
   "src/libANGLE/renderer/metal/gen_mtl_format_table.py":
-    "b9c8b3b196193903a6a81a4696c67340",
+    "4717afbffdb84cd15f6a32fdb6d92833",
   "src/libANGLE/renderer/metal/mtl_format_map.json":
-    "5dfcce3a8130a7e50111f06c06712b7b",
+    "1bd5a07e2fb3da5c057facd95c8c81d4",
   "src/libANGLE/renderer/metal/mtl_format_table_autogen.mm":
-    "c303c89a18a556c72a769c0c64f69367"
+    "7b002f843ecd78e2476b40a8cd2bd910"
 }

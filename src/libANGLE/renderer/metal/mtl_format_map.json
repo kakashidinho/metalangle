@@ -101,7 +101,9 @@
             "EAC_R11_UNORM_BLOCK": "MTLPixelFormatEAC_R11Unorm",
             "EAC_R11_SNORM_BLOCK": "MTLPixelFormatEAC_R11Snorm",
             "EAC_R11G11_UNORM_BLOCK": "MTLPixelFormatEAC_RG11Unorm",
-            "EAC_R11G11_SNORM_BLOCK": "MTLPixelFormatEAC_RG11Snorm",
+            "EAC_R11G11_SNORM_BLOCK": "MTLPixelFormatEAC_RG11Snorm"
+        },
+        "map_ios_astc": {
             "ASTC_4x4_UNORM_BLOCK": "MTLPixelFormatASTC_4x4_LDR",
             "ASTC_4x4_SRGB_BLOCK": "MTLPixelFormatASTC_4x4_sRGB",
             "ASTC_5x4_UNORM_BLOCK": "MTLPixelFormatASTC_5x4_LDR",
@@ -180,7 +182,7 @@
                 "swizzle": ["RGB1", "BC1_RGBA_UNORM_SRGB_BLOCK"]
             }
         },
-        "override_mac_es3": {
+        "override_mac_non_m1": {
             "R5G6B5_UNORM": "R8G8B8A8_UNORM",
             "R5G5B5A1_UNORM": "R8G8B8A8_UNORM",
             "R4G4B4A4_UNORM": "R8G8B8A8_UNORM",

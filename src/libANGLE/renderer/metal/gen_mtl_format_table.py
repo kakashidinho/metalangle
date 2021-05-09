@@ -316,23 +316,32 @@ def gen_image_map_switch_mac_case(angle_format, actual_angle_format_info, angle_
                                      gen_format_assign_code)
 
 
-# Generate format conversion switch case (non-desktop ES 3.0 case)
-def gen_image_map_switch_es3_case(angle_format, actual_angle_format_info, angle_to_gl,
-                                  angle_to_mtl_map, mac_fallbacks):
+# Generate format conversion switch case (with arbitrary fallback)
+def gen_image_map_switch_with_fallback_case(angle_format, actual_angle_format_info, angle_to_gl,
+                                            angle_to_mtl_map, override_fallbacks,
+                                            fallback_condition):
     gl_format = angle_to_gl[angle_format]
 
     def gen_format_assign_code(actual_angle_format, angle_to_mtl_map):
-        actual_angle_format_fallback = mac_fallbacks[actual_angle_format]
+        if actual_angle_format in override_fallbacks:
+            actual_angle_format_fallback = override_fallbacks[actual_angle_format]
+            actual_mtl_format_fallback = angle_to_mtl_map[actual_angle_format_fallback]
+            init_function_fallback = angle_format_utils.get_internal_format_initializer(
+                gl_format, actual_angle_format_fallback)
+        else:
+            actual_angle_format_fallback = "NONE"
+            actual_mtl_format_fallback = "MTLPixelFormatInvalid"
+            init_function_fallback = "nullptr"
+
         return image_format_assign_template2.format(
             actual_angle_format=actual_angle_format,
             mtl_format=angle_to_mtl_map[actual_angle_format],
             init_function=angle_format_utils.get_internal_format_initializer(
                 gl_format, actual_angle_format),
             actual_angle_format_fallback=actual_angle_format_fallback,
-            mtl_format_fallback=angle_to_mtl_map[actual_angle_format_fallback],
-            init_function_fallback=angle_format_utils.get_internal_format_initializer(
-                gl_format, actual_angle_format_fallback),
-            fallback_condition="display->supportsAppleGPUFamily(1)")
+            mtl_format_fallback=actual_mtl_format_fallback,
+            init_function_fallback=init_function_fallback,
+            fallback_condition=fallback_condition)
 
     return gen_image_map_switch_case(angle_format, actual_angle_format_info, angle_to_mtl_map,
                                      gen_format_assign_code)
@@ -340,13 +349,15 @@ def gen_image_map_switch_es3_case(angle_format, actual_angle_format_info, angle_
 
 def gen_image_map_switch_string(image_table, angle_to_gl):
     angle_override = image_table["override"]
-    mac_override_es3 = image_table["override_mac_es3"]
+    mac_override_non_m1 = image_table["override_mac_non_m1"]
     mac_override_bc1 = image_table["override_mac_bc1"]
     ios_override = image_table["override_ios"]
     mac_fallbacks = image_table["d24s8_fallbacks_mac"]
     angle_to_mtl = image_table["map"]
     mac_specific_map = image_table["map_mac"]
     ios_specific_map = image_table["map_ios"]
+    astc_specific_map = image_table["map_ios_astc"]
+    ios_specific_map.update(astc_specific_map)
 
     # mac_specific_map + angle_to_mtl:
     mac_angle_to_mtl = mac_specific_map.copy()
@@ -380,16 +391,23 @@ def gen_image_map_switch_string(image_table, angle_to_gl):
     # Override missing ES 3.0 formats for older macOS SDK or Catalyst
     switch_data += "#if (TARGET_OS_OSX && (__MAC_OS_X_VERSION_MAX_ALLOWED < 101600)) || \\\n"
     switch_data += "TARGET_OS_MACCATALYST\n"
-    for angle_format in sorted(mac_override_es3.keys()):
-        switch_data += gen_image_map_switch_mac_case(angle_format, mac_override_es3[angle_format],
+    for angle_format in sorted(mac_override_non_m1.keys()):
+        switch_data += gen_image_map_switch_mac_case(angle_format,
+                                                     mac_override_non_m1[angle_format],
                                                      angle_to_gl, mac_angle_to_mtl, mac_fallbacks)
     switch_data += "#endif\n"
 
     # iOS specific
     switch_data += "#if TARGET_OS_IOS || TARGET_OS_TV\n"
     for angle_format in sorted(ios_specific_map.keys()):
-        switch_data += gen_image_map_switch_simple_case(angle_format, angle_format, angle_to_gl,
-                                                        ios_specific_map)
+        if angle_format in astc_specific_map:
+            # ASTC is only supported since Apple GPU 3 (with 3D textures support)
+            switch_data += gen_image_map_switch_with_fallback_case(
+                angle_format, angle_format, angle_to_gl, ios_specific_map, [],
+                "display->supportsAppleGPUFamily(3)")
+        else:
+            switch_data += gen_image_map_switch_simple_case(angle_format, angle_format,
+                                                            angle_to_gl, ios_specific_map)
     for angle_format in sorted(ios_override.keys()):
         switch_data += gen_image_map_switch_simple_case(angle_format, ios_override[angle_format],
                                                         angle_to_gl, ios_angle_to_mtl)
@@ -398,14 +416,16 @@ def gen_image_map_switch_string(image_table, angle_to_gl):
     # Try to support all iOS formats on newer macOS with Apple GPU.
     switch_data += "#if (TARGET_OS_OSX && (__MAC_OS_X_VERSION_MAX_ALLOWED >= 101600))\n"
     for angle_format in sorted(ios_specific_map.keys()):
-        if (angle_format in mac_override_es3.keys()):
+        if (angle_format in mac_override_non_m1.keys()):
             # ETC/EAC or packed 16-bit
-            switch_data += gen_image_map_switch_es3_case(angle_format, angle_format, angle_to_gl,
-                                                         ios_angle_to_mtl, mac_override_es3)
+            switch_data += gen_image_map_switch_with_fallback_case(
+                angle_format, angle_format, angle_to_gl, ios_angle_to_mtl, mac_override_non_m1,
+                "display->supportsAppleGPUFamily(1)")
         else:
             # ASTC or PVRTC1
-            switch_data += gen_image_map_switch_simple_case(angle_format, angle_format,
-                                                            angle_to_gl, ios_specific_map)
+            switch_data += gen_image_map_switch_with_fallback_case(
+                angle_format, angle_format, angle_to_gl, ios_specific_map, [],
+                "display->supportsAppleGPUFamily(3)")
     switch_data += "#endif\n"
 
     switch_data += "        default:\n"
@@ -418,6 +438,7 @@ def gen_image_mtl_to_angle_switch_string(image_table):
     angle_to_mtl = image_table["map"]
     mac_specific_map = image_table["map_mac"]
     ios_specific_map = image_table["map_ios"]
+    ios_specific_map.update(image_table["map_ios_astc"])
 
     switch_data = ''
 

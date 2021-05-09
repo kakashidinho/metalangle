@@ -1166,252 +1166,504 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 #if TARGET_OS_IOS || TARGET_OS_TV
         case angle::FormatID::ASTC_10x10_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_10x10_sRGB;
-            this->actualFormatId = angle::FormatID::ASTC_10x10_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_10x10_sRGB;
+                this->actualFormatId = angle::FormatID::ASTC_10x10_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_10x10_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_10x10_LDR;
-            this->actualFormatId = angle::FormatID::ASTC_10x10_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_10x10_LDR;
+                this->actualFormatId = angle::FormatID::ASTC_10x10_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_10x5_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_10x5_sRGB;
-            this->actualFormatId = angle::FormatID::ASTC_10x5_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_10x5_sRGB;
+                this->actualFormatId = angle::FormatID::ASTC_10x5_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_10x5_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_10x5_LDR;
-            this->actualFormatId = angle::FormatID::ASTC_10x5_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_10x5_LDR;
+                this->actualFormatId = angle::FormatID::ASTC_10x5_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_10x6_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_10x6_sRGB;
-            this->actualFormatId = angle::FormatID::ASTC_10x6_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_10x6_sRGB;
+                this->actualFormatId = angle::FormatID::ASTC_10x6_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_10x6_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_10x6_LDR;
-            this->actualFormatId = angle::FormatID::ASTC_10x6_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_10x6_LDR;
+                this->actualFormatId = angle::FormatID::ASTC_10x6_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_10x8_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_10x8_sRGB;
-            this->actualFormatId = angle::FormatID::ASTC_10x8_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_10x8_sRGB;
+                this->actualFormatId = angle::FormatID::ASTC_10x8_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_10x8_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_10x8_LDR;
-            this->actualFormatId = angle::FormatID::ASTC_10x8_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_10x8_LDR;
+                this->actualFormatId = angle::FormatID::ASTC_10x8_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_12x10_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_12x10_sRGB;
-            this->actualFormatId = angle::FormatID::ASTC_12x10_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_12x10_sRGB;
+                this->actualFormatId = angle::FormatID::ASTC_12x10_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_12x10_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_12x10_LDR;
-            this->actualFormatId = angle::FormatID::ASTC_12x10_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_12x10_LDR;
+                this->actualFormatId = angle::FormatID::ASTC_12x10_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_12x12_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_12x12_sRGB;
-            this->actualFormatId = angle::FormatID::ASTC_12x12_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_12x12_sRGB;
+                this->actualFormatId = angle::FormatID::ASTC_12x12_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_12x12_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_12x12_LDR;
-            this->actualFormatId = angle::FormatID::ASTC_12x12_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_12x12_LDR;
+                this->actualFormatId = angle::FormatID::ASTC_12x12_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_4x4_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_4x4_sRGB;
-            this->actualFormatId = angle::FormatID::ASTC_4x4_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_4x4_sRGB;
+                this->actualFormatId = angle::FormatID::ASTC_4x4_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_4x4_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_4x4_LDR;
-            this->actualFormatId = angle::FormatID::ASTC_4x4_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_4x4_LDR;
+                this->actualFormatId = angle::FormatID::ASTC_4x4_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_5x4_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_5x4_sRGB;
-            this->actualFormatId = angle::FormatID::ASTC_5x4_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_5x4_sRGB;
+                this->actualFormatId = angle::FormatID::ASTC_5x4_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_5x4_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_5x4_LDR;
-            this->actualFormatId = angle::FormatID::ASTC_5x4_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_5x4_LDR;
+                this->actualFormatId = angle::FormatID::ASTC_5x4_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_5x5_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_5x5_sRGB;
-            this->actualFormatId = angle::FormatID::ASTC_5x5_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_5x5_sRGB;
+                this->actualFormatId = angle::FormatID::ASTC_5x5_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_5x5_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_5x5_LDR;
-            this->actualFormatId = angle::FormatID::ASTC_5x5_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_5x5_LDR;
+                this->actualFormatId = angle::FormatID::ASTC_5x5_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_6x5_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_6x5_sRGB;
-            this->actualFormatId = angle::FormatID::ASTC_6x5_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_6x5_sRGB;
+                this->actualFormatId = angle::FormatID::ASTC_6x5_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_6x5_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_6x5_LDR;
-            this->actualFormatId = angle::FormatID::ASTC_6x5_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_6x5_LDR;
+                this->actualFormatId = angle::FormatID::ASTC_6x5_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_6x6_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_6x6_sRGB;
-            this->actualFormatId = angle::FormatID::ASTC_6x6_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_6x6_sRGB;
+                this->actualFormatId = angle::FormatID::ASTC_6x6_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_6x6_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_6x6_LDR;
-            this->actualFormatId = angle::FormatID::ASTC_6x6_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_6x6_LDR;
+                this->actualFormatId = angle::FormatID::ASTC_6x6_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_8x5_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_8x5_sRGB;
-            this->actualFormatId = angle::FormatID::ASTC_8x5_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_8x5_sRGB;
+                this->actualFormatId = angle::FormatID::ASTC_8x5_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_8x5_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_8x5_LDR;
-            this->actualFormatId = angle::FormatID::ASTC_8x5_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_8x5_LDR;
+                this->actualFormatId = angle::FormatID::ASTC_8x5_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_8x6_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_8x6_sRGB;
-            this->actualFormatId = angle::FormatID::ASTC_8x6_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_8x6_sRGB;
+                this->actualFormatId = angle::FormatID::ASTC_8x6_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_8x6_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_8x6_LDR;
-            this->actualFormatId = angle::FormatID::ASTC_8x6_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_8x6_LDR;
+                this->actualFormatId = angle::FormatID::ASTC_8x6_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_8x8_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_8x8_sRGB;
-            this->actualFormatId = angle::FormatID::ASTC_8x8_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_8x8_sRGB;
+                this->actualFormatId = angle::FormatID::ASTC_8x8_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_8x8_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_8x8_LDR;
-            this->actualFormatId = angle::FormatID::ASTC_8x8_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_8x8_LDR;
+                this->actualFormatId = angle::FormatID::ASTC_8x8_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
@@ -1636,252 +1888,504 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 #if (TARGET_OS_OSX && (__MAC_OS_X_VERSION_MAX_ALLOWED >= 101600))
         case angle::FormatID::ASTC_10x10_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_10x10_sRGB;
-            this->actualFormatId = angle::FormatID::ASTC_10x10_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_10x10_sRGB;
+                this->actualFormatId = angle::FormatID::ASTC_10x10_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_10x10_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_10x10_LDR;
-            this->actualFormatId = angle::FormatID::ASTC_10x10_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_10x10_LDR;
+                this->actualFormatId = angle::FormatID::ASTC_10x10_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_10x5_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_10x5_sRGB;
-            this->actualFormatId = angle::FormatID::ASTC_10x5_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_10x5_sRGB;
+                this->actualFormatId = angle::FormatID::ASTC_10x5_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_10x5_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_10x5_LDR;
-            this->actualFormatId = angle::FormatID::ASTC_10x5_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_10x5_LDR;
+                this->actualFormatId = angle::FormatID::ASTC_10x5_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_10x6_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_10x6_sRGB;
-            this->actualFormatId = angle::FormatID::ASTC_10x6_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_10x6_sRGB;
+                this->actualFormatId = angle::FormatID::ASTC_10x6_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_10x6_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_10x6_LDR;
-            this->actualFormatId = angle::FormatID::ASTC_10x6_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_10x6_LDR;
+                this->actualFormatId = angle::FormatID::ASTC_10x6_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_10x8_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_10x8_sRGB;
-            this->actualFormatId = angle::FormatID::ASTC_10x8_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_10x8_sRGB;
+                this->actualFormatId = angle::FormatID::ASTC_10x8_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_10x8_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_10x8_LDR;
-            this->actualFormatId = angle::FormatID::ASTC_10x8_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_10x8_LDR;
+                this->actualFormatId = angle::FormatID::ASTC_10x8_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_12x10_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_12x10_sRGB;
-            this->actualFormatId = angle::FormatID::ASTC_12x10_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_12x10_sRGB;
+                this->actualFormatId = angle::FormatID::ASTC_12x10_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_12x10_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_12x10_LDR;
-            this->actualFormatId = angle::FormatID::ASTC_12x10_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_12x10_LDR;
+                this->actualFormatId = angle::FormatID::ASTC_12x10_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_12x12_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_12x12_sRGB;
-            this->actualFormatId = angle::FormatID::ASTC_12x12_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_12x12_sRGB;
+                this->actualFormatId = angle::FormatID::ASTC_12x12_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_12x12_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_12x12_LDR;
-            this->actualFormatId = angle::FormatID::ASTC_12x12_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_12x12_LDR;
+                this->actualFormatId = angle::FormatID::ASTC_12x12_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_4x4_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_4x4_sRGB;
-            this->actualFormatId = angle::FormatID::ASTC_4x4_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_4x4_sRGB;
+                this->actualFormatId = angle::FormatID::ASTC_4x4_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_4x4_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_4x4_LDR;
-            this->actualFormatId = angle::FormatID::ASTC_4x4_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_4x4_LDR;
+                this->actualFormatId = angle::FormatID::ASTC_4x4_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_5x4_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_5x4_sRGB;
-            this->actualFormatId = angle::FormatID::ASTC_5x4_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_5x4_sRGB;
+                this->actualFormatId = angle::FormatID::ASTC_5x4_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_5x4_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_5x4_LDR;
-            this->actualFormatId = angle::FormatID::ASTC_5x4_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_5x4_LDR;
+                this->actualFormatId = angle::FormatID::ASTC_5x4_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_5x5_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_5x5_sRGB;
-            this->actualFormatId = angle::FormatID::ASTC_5x5_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_5x5_sRGB;
+                this->actualFormatId = angle::FormatID::ASTC_5x5_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_5x5_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_5x5_LDR;
-            this->actualFormatId = angle::FormatID::ASTC_5x5_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_5x5_LDR;
+                this->actualFormatId = angle::FormatID::ASTC_5x5_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_6x5_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_6x5_sRGB;
-            this->actualFormatId = angle::FormatID::ASTC_6x5_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_6x5_sRGB;
+                this->actualFormatId = angle::FormatID::ASTC_6x5_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_6x5_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_6x5_LDR;
-            this->actualFormatId = angle::FormatID::ASTC_6x5_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_6x5_LDR;
+                this->actualFormatId = angle::FormatID::ASTC_6x5_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_6x6_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_6x6_sRGB;
-            this->actualFormatId = angle::FormatID::ASTC_6x6_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_6x6_sRGB;
+                this->actualFormatId = angle::FormatID::ASTC_6x6_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_6x6_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_6x6_LDR;
-            this->actualFormatId = angle::FormatID::ASTC_6x6_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_6x6_LDR;
+                this->actualFormatId = angle::FormatID::ASTC_6x6_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_8x5_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_8x5_sRGB;
-            this->actualFormatId = angle::FormatID::ASTC_8x5_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_8x5_sRGB;
+                this->actualFormatId = angle::FormatID::ASTC_8x5_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_8x5_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_8x5_LDR;
-            this->actualFormatId = angle::FormatID::ASTC_8x5_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_8x5_LDR;
+                this->actualFormatId = angle::FormatID::ASTC_8x5_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_8x6_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_8x6_sRGB;
-            this->actualFormatId = angle::FormatID::ASTC_8x6_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_8x6_sRGB;
+                this->actualFormatId = angle::FormatID::ASTC_8x6_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_8x6_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_8x6_LDR;
-            this->actualFormatId = angle::FormatID::ASTC_8x6_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_8x6_LDR;
+                this->actualFormatId = angle::FormatID::ASTC_8x6_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_8x8_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_8x8_sRGB;
-            this->actualFormatId = angle::FormatID::ASTC_8x8_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_8x8_sRGB;
+                this->actualFormatId = angle::FormatID::ASTC_8x8_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::ASTC_8x8_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatASTC_8x8_LDR;
-            this->actualFormatId = angle::FormatID::ASTC_8x8_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatASTC_8x8_LDR;
+                this->actualFormatId = angle::FormatID::ASTC_8x8_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
@@ -2086,72 +2590,144 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
 
         case angle::FormatID::PVRTC1_RGBA_2BPP_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatPVRTC_RGBA_2BPP;
-            this->actualFormatId = angle::FormatID::PVRTC1_RGBA_2BPP_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatPVRTC_RGBA_2BPP;
+                this->actualFormatId = angle::FormatID::PVRTC1_RGBA_2BPP_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::PVRTC1_RGBA_2BPP_UNORM_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatPVRTC_RGBA_2BPP_sRGB;
-            this->actualFormatId = angle::FormatID::PVRTC1_RGBA_2BPP_UNORM_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatPVRTC_RGBA_2BPP_sRGB;
+                this->actualFormatId = angle::FormatID::PVRTC1_RGBA_2BPP_UNORM_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::PVRTC1_RGBA_4BPP_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatPVRTC_RGBA_4BPP;
-            this->actualFormatId = angle::FormatID::PVRTC1_RGBA_4BPP_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatPVRTC_RGBA_4BPP;
+                this->actualFormatId = angle::FormatID::PVRTC1_RGBA_4BPP_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::PVRTC1_RGBA_4BPP_UNORM_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatPVRTC_RGBA_4BPP_sRGB;
-            this->actualFormatId = angle::FormatID::PVRTC1_RGBA_4BPP_UNORM_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatPVRTC_RGBA_4BPP_sRGB;
+                this->actualFormatId = angle::FormatID::PVRTC1_RGBA_4BPP_UNORM_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::PVRTC1_RGB_2BPP_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatPVRTC_RGB_2BPP;
-            this->actualFormatId = angle::FormatID::PVRTC1_RGB_2BPP_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatPVRTC_RGB_2BPP;
+                this->actualFormatId = angle::FormatID::PVRTC1_RGB_2BPP_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::PVRTC1_RGB_2BPP_UNORM_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatPVRTC_RGB_2BPP_sRGB;
-            this->actualFormatId = angle::FormatID::PVRTC1_RGB_2BPP_UNORM_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatPVRTC_RGB_2BPP_sRGB;
+                this->actualFormatId = angle::FormatID::PVRTC1_RGB_2BPP_UNORM_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::PVRTC1_RGB_4BPP_UNORM_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatPVRTC_RGB_4BPP;
-            this->actualFormatId = angle::FormatID::PVRTC1_RGB_4BPP_UNORM_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatPVRTC_RGB_4BPP;
+                this->actualFormatId = angle::FormatID::PVRTC1_RGB_4BPP_UNORM_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
 
         case angle::FormatID::PVRTC1_RGB_4BPP_UNORM_SRGB_BLOCK:
 
-            this->metalFormat    = MTLPixelFormatPVRTC_RGB_4BPP_sRGB;
-            this->actualFormatId = angle::FormatID::PVRTC1_RGB_4BPP_UNORM_SRGB_BLOCK;
-            this->initFunction   = nullptr;
+            if (display->supportsAppleGPUFamily(3))
+            {
+                this->metalFormat    = MTLPixelFormatPVRTC_RGB_4BPP_sRGB;
+                this->actualFormatId = angle::FormatID::PVRTC1_RGB_4BPP_UNORM_SRGB_BLOCK;
+                this->initFunction   = nullptr;
+            }
+            else
+            {
+                this->metalFormat    = MTLPixelFormatInvalid;
+                this->actualFormatId = angle::FormatID::NONE;
+                this->initFunction   = nullptr;
+            }
 
             this->swizzled = false;
             break;
