@@ -5728,6 +5728,9 @@ TEST_P(Texture2DTestES3, UnpackOverlappingRowsFromUnpackBuffer)
     // Incorrect rendering results seen on OSX AMD.
     ANGLE_SKIP_TEST_IF(IsOSX() && IsAMD());
 
+    // Metal doesn't support overlapped rows (stride < row length)
+    ANGLE_SKIP_TEST_IF(IsMetal());
+
     const GLuint width            = 8u;
     const GLuint height           = 8u;
     const GLuint unpackRowLength  = 5u;
