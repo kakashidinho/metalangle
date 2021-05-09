@@ -416,6 +416,12 @@ inline bool IsVMWare()
     return angle::IsVMWare(GetActiveGPUVendorID());
 }
 
+// Check whether the active GPU is Apple.
+inline bool IsApple()
+{
+    return angle::IsApple(GetActiveGPUVendorID());
+}
+
 // Check whether this is a debug build.
 inline bool IsDebug()
 {
@@ -552,6 +558,7 @@ GPUTestConfig::GPUTestConfig()
     mConditions[kConditionAMD]             = IsAMD();
     mConditions[kConditionIntel]           = IsIntel();
     mConditions[kConditionVMWare]          = IsVMWare();
+    mConditions[kConditionApple]           = IsApple();
     mConditions[kConditionRelease]         = IsRelease();
     mConditions[kConditionDebug]           = IsDebug();
     // If no API provided, pass these conditions by default
