@@ -37,7 +37,7 @@ void SyncContent(ContextMtl *context,
                  const std::shared_ptr<T> &resource)
 {
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-    if (blitEncoder)
+    if (resource->get().storageMode == MTLStorageModeManaged && blitEncoder)
     {
         blitEncoder->synchronizeResource(resource);
 
@@ -832,10 +832,18 @@ angle::Result Buffer::reset(ContextMtl *context,
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
     if (!useSharedMem || context->getDisplay()->getFeatures().forceBufferGPUStorage.enabled)
     {
-        options |= MTLResourceStorageModeManaged;
+        // If device has unified memory, don't use managed storage mode.
+        bool unifiedMemory = false;
+#    if defined(__MAC_10_15)
+        if (ANGLE_APPLE_AVAILABLE_XC(10.15, 13.0))
+        {
+            unifiedMemory = context->getMetalDevice().hasUnifiedMemory;
+        }
+#    endif
+        options |= unifiedMemory ? MTLResourceStorageModeShared : MTLResourceStorageModeManaged;
     }
     else
-#endif
+#endif  // TARGET_OS_OSX || TARGET_OS_MACCATALYST
     {
         options |= MTLResourceStorageModeShared;
     }
