@@ -453,3 +453,10 @@
 
 // Crash on M1 Mac
 4235 METAL APPLE : dEQP-GLES2.functional.shaders.random.texture.vertex.1 = SKIP
+
+// Fails on M1 Mac
+// discard at the end of shader failed the metail compiler
+4235 METAL APPLE : dEQP-GLES2.functional.shaders.discard.basic_always = FAIL
+
+// Drawing points without gl_PointSize produced weird results
+4235 METAL APPLE : dEQP-GLES2.functional.fragment_ops.scissor.partial_points = FAIL
