@@ -1500,6 +1500,9 @@ TEST_P(GLSLTest, MaxVaryingVec3AndOneFloat)
 // Only fails on D3D9 because of packing limitations.
 TEST_P(GLSLTest, MaxVaryingVec3ArrayAndOneFloatArray)
 {
+    // spirv-cross bug: https://github.com/KhronosGroup/SPIRV-Cross/issues/1670
+    ANGLE_SKIP_TEST_IF(IsMetal() && IsARM64());
+
     GLint maxVaryings = 0;
     glGetIntegerv(GL_MAX_VARYING_VECTORS, &maxVaryings);
 
@@ -1534,6 +1537,9 @@ TEST_P(GLSLTest, MaxVaryingVec2Arrays)
     // TODO(geofflang): Find out why this doesn't compile on Apple AMD OpenGL drivers
     // (http://anglebug.com/1291)
     ANGLE_SKIP_TEST_IF(IsOSX() && IsAMD() && IsOpenGL());
+
+    // spirv-cross bug: https://github.com/KhronosGroup/SPIRV-Cross/issues/1670
+    ANGLE_SKIP_TEST_IF(IsMetal() && IsARM64());
 
     GLint maxVaryings = 0;
     glGetIntegerv(GL_MAX_VARYING_VECTORS, &maxVaryings);

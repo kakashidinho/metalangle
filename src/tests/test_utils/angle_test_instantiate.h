@@ -26,6 +26,9 @@ bool IsWindows();
 bool IsWindows7();
 bool IsFuchsia();
 
+// CPU architectures
+bool IsARM64();
+
 // Android devices
 bool IsNexus5X();
 bool IsNexus6P();
