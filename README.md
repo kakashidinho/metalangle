@@ -82,7 +82,7 @@ Nevertheless, you still need to setup the required environment and dependencies 
 
 ## Differences between MetalANGLE and Google's ANGLE
 - Before June 2021, most of the Metal back-end code are shared between `MetalANGLE` and `ANGLE`.
-- From July 2021 onward, there are some changes from `Apple` directly to `ANGLE` repo. Those changes might not be
+- From Aug-Sep 2021 onward, there are some changes from `Apple` directly to `ANGLE` repo. Those changes might not be
   included in `MetalANGLE` because of some development conflicts. Most of the Apple's changes benefit the Webkit's
   WebGL standards and might not have optimal performance for normal uses. These changes from Apple include:
     - Rewriting the index buffer on the fly to support last provoking vertex of flat shading. While this helps
