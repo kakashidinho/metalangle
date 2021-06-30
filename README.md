@@ -14,8 +14,7 @@ Preliminary Metal based WebGL benchmarks (based on [gles3-dev branch](https://gi
 - This benchmark runs [https://webglsamples.org/aquarium/aquarium.html](https://webglsamples.org/aquarium/aquarium.html) on Chromium browser using AMD Radeon Pro 560 GPU.
 
 ### Current Metal backend implementation status
-- MetalANGLE is being migrated into official ANGLE repo. So this repo might not get updated for a
-  while. See current [Differences between MetalANGLE and official
+- MetalANGLE has been migrated into official ANGLE repo. See current [Differences between MetalANGLE and official
   ANGLE](#differences-between-metalangle-and-googles-angle).
 - __OpenGL ES 2.0__ functionalities are 100% completed.
 - __OpenGL ES 3.0__ status:
@@ -82,9 +81,14 @@ Nevertheless, you still need to setup the required environment and dependencies 
 [Metal backend's Dev setup instructions](src/libANGLE/renderer/metal/DevSetup.md) first.
 
 ## Differences between MetalANGLE and Google's ANGLE
-- Most of the Metal back-end code are shared between `MetalANGLE` and `ANGLE`.
-- Some Metal's updates and bug fixes will be available in `MetalANGLE` first before being merged
-  into `ANGLE` (it might take a long time some time).
+- Before June 2021, most of the Metal back-end code are shared between `MetalANGLE` and `ANGLE`.
+- From July 2021 onward, there are some changes from `Apple` directly to `ANGLE` repo. Those changes might not be
+  included in `MetalANGLE` because of some development conflicts. Most of the Apple's changes benefit the Webkit's
+  WebGL standards and might not have optimal performance for normal uses. These changes from Apple include:
+    - Rewriting the index buffer on the fly to support last provoking vertex of flat shading. While this helps
+      conforming to OpenGL ES's flat shading's specifications, it makes draw calls using flat shading become
+      slower. In majority of use cases, user wouldn't care whether flat shading uses last or first
+      provoking vertex.
 - `MetalANGLE` includes iOS supports and high level API such as
   [MGLKit](src/libANGLE/renderer/metal/DevSetup.md#MGLKit) that mimics Apple's deprecated `EAGL` &
   `GLKit` API. These features are unlikely to be merged into `ANGLE` since `ANGLE` project doesn't
