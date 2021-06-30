@@ -7,6 +7,11 @@ This is a fork of Google's [ANGLE project](https://chromium.googlesource.com/ang
 Apple announced OpenGL (ES) deprecation in 2018. So the purpose of MetalANGLE is to allow OpenGL ES applications
 to continue operate on Apple platforms by translating OpenGL ES draw calls to Metal draw calls under the hood.
 
+__30 Jun 2021 Update:__ Most of this repo's OpenGL ES 3.0 implementing code in Metal has been merged into official `ANGLE` repo.
+Initially, this was the only place where Metal backend's developments took place. It is not true anymore as `Apple` are also
+making modifications and are in a progress of merging their changes into official `ANGLE`.
+See current [Differences between MetalANGLE and official ANGLE](#differences-between-metalangle-and-googles-angle).
+
 Preliminary Metal based WebGL benchmarks (based on [gles3-dev branch](https://github.com/kakashidinho/metalangle/tree/gles3-dev) code):
 
 - Metal (54 fps) vs native OpenGL (46 fps) drawing 20k fish:
@@ -82,7 +87,7 @@ Nevertheless, you still need to setup the required environment and dependencies 
 
 ## Differences between MetalANGLE and Google's ANGLE
 - Before June 2021, most of the Metal back-end code are shared between `MetalANGLE` and `ANGLE`.
-- From Aug-Sep 2021 onward, there are some changes from `Apple` directly to `ANGLE` repo. Those changes might not be
+- From Aug-Sep 2021 onward, there would be some changes from `Apple` directly to `ANGLE` repo. Those changes might not be
   included in `MetalANGLE` because of some development conflicts. Most of the Apple's changes benefit the Webkit's
   WebGL standards and might not have optimal performance for normal uses. These changes from Apple include:
     - Rewriting the index buffer on the fly to support last provoking vertex of flat shading. While this helps
