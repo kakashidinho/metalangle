@@ -1768,6 +1768,23 @@ void ContextMtl::disableActiveOcclusionQueryInRenderPass()
     }
 
     ASSERT(mRenderEncoder.valid());
+
+    if (m_drawCallsSinceLastActiveOcclusionQuery == 0)
+    {
+        // No draw calls issued since the current visibility result mode was enabled.
+        // We need to issue a dummy draw call
+
+#ifndef NDEBUG
+        mRenderEncoder.pushDebugGroup(@"Reset Visibility Counter");
+#endif
+
+        getDisplay()->getUtils().drawInvisibleFragments(this, &mRenderEncoder);
+
+#ifndef NDEBUG
+        mRenderEncoder.popDebugGroup();
+#endif
+    }
+
     mRenderEncoder.setVisibilityResultMode(MTLVisibilityResultModeDisabled,
                                            mOcclusionQuery->getAllocatedVisibilityOffsets().back());
 }
@@ -1797,6 +1814,9 @@ angle::Result ContextMtl::startOcclusionQueryInRenderPass(QueryMtl *query, bool 
     // actual writing is deferred until the render pass ends and user could try to read the query
     // result before the render pass ends.
     mCmdBuffer.setWriteDependency(query->getVisibilityResultBuffer());
+
+    // Reset draw calls counter
+    m_drawCallsSinceLastActiveOcclusionQuery = 0;
 
     return angle::Result::Continue;
 }
@@ -2012,6 +2032,8 @@ angle::Result ContextMtl::setupDraw(const gl::Context *context,
 
     ANGLE_TRY(mProgram->setupDraw(context, &mRenderEncoder, mRenderPipelineDesc, changedPipeline,
                                   textureChanged, uniformBuffersDirty));
+
+    m_drawCallsSinceLastActiveOcclusionQuery++;
 
     return angle::Result::Continue;
 }

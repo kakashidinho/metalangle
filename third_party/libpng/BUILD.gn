@@ -24,12 +24,14 @@ static_library("libpng") {
     "src/pngwtran.c",
     "src/pngwutil.c",
   ]
+
+  cflags = [ "-DPNG_ARM_NEON_OPT=0" ]
+
   if (is_win) {
-    cflags = [ "/wd4028" ]
+    cflags += [ "/wd4028" ]
   }
+
   configs -= [ "//build/config/compiler:chromium_code" ]
   public_configs = [ ":libpng_config" ]
-  deps = [
-    "//third_party/zlib:zlib",
-  ]
+  deps = [ "//third_party/zlib:zlib" ]
 }

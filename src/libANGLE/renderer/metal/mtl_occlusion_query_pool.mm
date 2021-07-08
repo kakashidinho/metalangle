@@ -25,7 +25,7 @@ OcclusionQueryPool::~OcclusionQueryPool() {}
 angle::Result OcclusionQueryPool::initialize(ContextMtl *contextMtl)
 {
     // https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
-    if (contextMtl->getDisplay()->supportEitherGPUFamily(7, 1))
+    if (contextMtl->getDisplay()->supportsEitherGPUFamily(7, 1))
     {
         mMaxRenderPassResultsPoolSize = 256 * 1024;
     }

@@ -165,6 +165,16 @@ bool IsOSX()
 #endif
 }
 
+bool IsARM64()
+{
+// _M_ARM64 is Windows-specific, while __aarch64__ is for other platforms.
+#if defined(_M_ARM64) || defined(__aarch64__)
+    return true;
+#else
+    return false;
+#endif
+}
+
 bool IsOzone()
 {
 #if defined(USE_OZONE)

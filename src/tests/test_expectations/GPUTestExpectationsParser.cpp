@@ -61,6 +61,7 @@ enum Token
     kConfigAMD,
     kConfigIntel,
     kConfigVMWare,
+    kConfigApple,
     // build type
     kConfigRelease,
     kConfigDebug,
@@ -139,6 +140,7 @@ const TokenInfo kTokenData[kNumberOfTokens] = {
     {"amd", GPUTestConfig::kConditionAMD},
     {"intel", GPUTestConfig::kConditionIntel},
     {"vmware", GPUTestConfig::kConditionVMWare},
+    {"apple", GPUTestConfig::kConditionApple},
     {"release", GPUTestConfig::kConditionRelease},
     {"debug", GPUTestConfig::kConditionDebug},
     {"d3d9", GPUTestConfig::kConditionD3D9},
@@ -389,6 +391,7 @@ bool GPUTestExpectationsParser::parseLine(const GPUTestConfig &config,
             case kConfigAMD:
             case kConfigIntel:
             case kConfigVMWare:
+            case kConfigApple:
             case kConfigRelease:
             case kConfigDebug:
             case kConfigD3D9:

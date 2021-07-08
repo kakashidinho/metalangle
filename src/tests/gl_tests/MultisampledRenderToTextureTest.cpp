@@ -287,12 +287,12 @@ TEST_P(MultisampledRenderToTextureTest, FramebufferCompleteness)
     GLFramebuffer FBO;
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
     glFramebufferTexture2DMultisampleEXT(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
-                                         texture, 0, 4);
+                                         texture, 0, 2);
     EXPECT_GL_FRAMEBUFFER_COMPLETE(GL_FRAMEBUFFER);
 
     GLRenderbuffer renderbuffer;
     glBindRenderbuffer(GL_RENDERBUFFER, renderbuffer);
-    glRenderbufferStorageMultisampleEXT(GL_RENDERBUFFER, 8, GL_DEPTH_COMPONENT16, 64, 64);
+    glRenderbufferStorageMultisampleEXT(GL_RENDERBUFFER, 4, GL_DEPTH_COMPONENT16, 64, 64);
     ASSERT_GL_NO_ERROR();
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, renderbuffer);
     EXPECT_GLENUM_EQ(GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE,

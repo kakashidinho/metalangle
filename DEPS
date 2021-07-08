@@ -52,8 +52,8 @@ deps = {
     'condition': 'checkout_src_internal',
   },
 
-  '{angle_root}/build': {
-    'url': 'https://github.com/kakashidinho/chromium_build.git@7b75d3a6f831f97ede498ea40f3276db0d8f0171',
+  'build': {
+    'url': 'https://github.com/kakashidinho/chromium_build.git@bb60a97b5df3a8b26684b590f9411394d0a0affb',
     'condition': 'not build_with_chromium',
   },
 
@@ -201,12 +201,12 @@ deps = {
   },
 
   '{angle_root}/third_party/zlib': {
-    'url': '{chromium_git}/chromium/src/third_party/zlib@0044d0424c7f7d15436541ed1ecc89479b8bfda4',
+    'url': 'https://github.com/kakashidinho/chromium_zlib.git@1ddb00631d85db69d376c7359de3e2a5b9f193ec',
     'condition': 'not build_with_chromium',
   },
 
   '{angle_root}/tools/clang': {
-    'url': '{chromium_git}/chromium/src/tools/clang.git@d60a6a8084300eb8de99e56b559369dcde4cffa4',
+    'url': '{chromium_git}/chromium/src/tools/clang.git@6e92ef64604dcb6b4b2be4f29e4ba25e9f638116',
     'condition': 'not build_with_chromium',
   },
 

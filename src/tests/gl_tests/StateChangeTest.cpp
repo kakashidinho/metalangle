@@ -1526,6 +1526,9 @@ void SimpleStateChangeTest::simpleDrawWithColor(const GLColor &color)
 // frame.
 TEST_P(SimpleStateChangeTest, DrawArraysThenDrawElements)
 {
+    // swap buffers in loop caused lost framebuffer's content
+    ANGLE_SKIP_TEST_IF(IsMetal());
+
     ANGLE_GL_PROGRAM(program, essl1_shaders::vs::Simple(), essl1_shaders::fs::Blue());
     glUseProgram(program);
 

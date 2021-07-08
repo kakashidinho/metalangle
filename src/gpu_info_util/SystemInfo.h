@@ -90,6 +90,7 @@ constexpr VendorID kVendorID_Intel    = 0x8086;
 constexpr VendorID kVendorID_NVIDIA   = 0x10DE;
 constexpr VendorID kVendorID_Qualcomm = 0x5143;
 constexpr VendorID kVendorID_VMWare   = 0x15ad;
+constexpr VendorID kVendorID_Apple    = 0x106b;
 
 // Known non-PCI (i.e. Khronos-registered) vendor IDs
 constexpr VendorID kVendorID_Vivante     = 0x10001;
@@ -107,6 +108,7 @@ bool IsQualcomm(VendorID vendorId);
 bool IsVeriSilicon(VendorID vendorId);
 bool IsVMWare(VendorID vendorId);
 bool IsVivante(VendorID vendorId);
+bool IsApple(VendorID vendorId);
 
 // Use a heuristic to attempt to find the GPU used for 3D graphics. Sets activeGPUIndex,
 // isOptimus, and isAMDSwitchable.

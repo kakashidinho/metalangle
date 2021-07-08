@@ -51,3 +51,14 @@ kernel void combineVisibilityResult(uint idx [[thread_position_in_grid]],
     }
     finalResults[0] = finalResult16x4;
 }
+
+// Dummy vertex shader & fragment shader to force visibility result = 0
+vertex float4 noFragmentVisibleVS()
+{
+    return float4(-3.0, -3.0, -3.0, 1.0);
+}
+
+fragment void noFragmentVisibleFS()
+{
+    discard_fragment();
+}

@@ -1522,3 +1522,54 @@
 4235 METAL : dEQP-GLES3.functional.texture.specification.texsubimage2d_depth.depth32f_stencil8 = FAIL
 4235 METAL : dEQP-GLES3.functional.texture.specification.texsubimage3d_depth.depth24_stencil8_2d_array = FAIL
 4235 METAL : dEQP-GLES3.functional.texture.specification.texsubimage3d_depth.depth32f_stencil8_2d_array = FAIL
+
+// Crash on M1 Mac
+4235 METAL APPLE : dEQP-GLES3.functional.shaders.random.texture.vertex.1 = SKIP
+
+// Fails on M1 Mac:
+// discard at the end of shader failed the metail compiler
+4235 METAL APPLE : dEQP-GLES3.functional.shaders.discard.basic_always = FAIL
+
+// Weird texturegrad errors
+4235 METAL APPLE : dEQP-GLES3.functional.shaders.texture_functions.texturegrad.samplercube_fixed_vertex = FAIL
+4235 METAL APPLE : dEQP-GLES3.functional.shaders.texture_functions.texturegrad.samplercube_fixed_fragment = FAIL
+4235 METAL APPLE : dEQP-GLES3.functional.shaders.texture_functions.texturegrad.isamplercube_vertex = FAIL
+
+// Depth data not clamped to [0-1]
+4235 METAL APPLE : dEQP-GLES3.functional.texture.specification.teximage2d_depth.depth_component32f = FAIL
+4235 METAL APPLE : dEQP-GLES3.functional.texture.specification.teximage2d_depth_pbo.depth_component32f = FAIL
+4235 METAL APPLE : dEQP-GLES3.functional.texture.specification.teximage2d_depth_pbo.depth32f_stencil8 = FAIL
+4235 METAL APPLE : dEQP-GLES3.functional.texture.specification.texsubimage2d_depth.depth_component32f = FAIL
+4235 METAL APPLE : dEQP-GLES3.functional.texture.specification.teximage3d_depth.depth_component32f_2d_array = FAIL
+4235 METAL APPLE : dEQP-GLES3.functional.texture.specification.teximage3d_depth_pbo.depth_component32f_2d_array = FAIL
+4235 METAL APPLE : dEQP-GLES3.functional.texture.specification.teximage3d_depth_pbo.depth32f_stencil8_2d_array = FAIL
+4235 METAL APPLE : dEQP-GLES3.functional.texture.specification.texsubimage3d_depth.depth_component32f_2d_array = FAIL
+
+// Drawing points without gl_PointSize produced weird results
+4235 METAL APPLE : dEQP-GLES3.functional.fragment_ops.scissor.partial_points = FAIL
+
+// Blit's filtering produced few incorrect pixels
+4235 METAL APPLE : dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_mag = FAIL
+4235 METAL APPLE : dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_mag_reverse_src_x = FAIL
+4235 METAL APPLE : dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_mag_reverse_src_y = FAIL
+4235 METAL APPLE : dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_mag_reverse_dst_x = FAIL
+4235 METAL APPLE : dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_mag_reverse_dst_y = FAIL
+4235 METAL APPLE : dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_mag_reverse_src_dst_x = FAIL
+4235 METAL APPLE : dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_mag_reverse_src_dst_y = FAIL
+4235 METAL APPLE : dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_min_reverse_src_y = FAIL
+4235 METAL APPLE : dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_min_reverse_dst_y = FAIL
+4235 METAL APPLE : dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_mag = FAIL
+4235 METAL APPLE : dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_mag_reverse_src_x = FAIL
+4235 METAL APPLE : dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_mag_reverse_src_y = FAIL
+4235 METAL APPLE : dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_mag_reverse_dst_x = FAIL
+4235 METAL APPLE : dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_mag_reverse_dst_y = FAIL
+4235 METAL APPLE : dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_mag_reverse_src_dst_x = FAIL
+4235 METAL APPLE : dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_mag_reverse_src_dst_y = FAIL
+4235 METAL APPLE : dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_min_reverse_src_y = FAIL
+4235 METAL APPLE : dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_min_reverse_dst_y = FAIL
+
+// Invalidate default fbo's bug (flaky)
+4235 METAL APPLE : dEQP-GLES3.functional.fbo.invalidate.default*bind* = FLAKY
+
+// Few incorrect pixels
+4235 METAL APPLE : dEQP-GLES3.functional.transform_feedback.interpolation.centroid.highp_vec4_triangles_interleaved = FAIL

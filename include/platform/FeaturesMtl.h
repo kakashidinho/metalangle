@@ -91,6 +91,9 @@ struct FeaturesMtl : FeatureSetBase
         "based mipmap generation might cause GPU hang on some older iOS devices.",
         &members};
 
+    Feature forceD24S8AsUnsupported = {"force_d24s8_as_unsupported", FeatureCategory::MetalFeatures,
+                                       "Force Depth24Stencil8 format as unsupported.", &members};
+
     Feature emulateDepthRangeMappingInShader = {
         "emulate_depth_range_mapping", FeatureCategory::MetalFeatures,
         "Enable linear depth range mapping in shader. This is work-around for older GPUs where "
