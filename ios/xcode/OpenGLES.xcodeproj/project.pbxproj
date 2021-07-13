@@ -12569,6 +12569,7 @@
 					"${PROJECT_DIR}/../../third_party/spirv-cross/src",
 					"${PROJECT_DIR}/../../third_party/jsoncpp/overrides/include",
 					"${PROJECT_DIR}/../../third_party/jsoncpp/source/include",
+					"${PROJECT_DIR}/../../samples/sample_util/",
 					"${PROJECT_DIR}/../..",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
@@ -12658,6 +12659,7 @@
 					"${PROJECT_DIR}/../../third_party/spirv-cross/src",
 					"${PROJECT_DIR}/../../third_party/jsoncpp/overrides/include",
 					"${PROJECT_DIR}/../../third_party/jsoncpp/source/include",
+					"${PROJECT_DIR}/../../samples/sample_util/",
 					"${PROJECT_DIR}/../..",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
