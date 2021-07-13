@@ -547,6 +547,9 @@ struct Extensions
 
     // GL_APPLE_clip_distance
     bool clipDistanceAPPLE = false;
+
+    // GL_MGL_timeline_semaphore
+    bool timelineSemaphoreMGL = false;
 };
 
 struct ExtensionInfo

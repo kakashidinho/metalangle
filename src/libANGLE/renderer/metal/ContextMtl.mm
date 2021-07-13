@@ -21,6 +21,7 @@
 #include "libANGLE/renderer/metal/QueryMtl.h"
 #include "libANGLE/renderer/metal/RenderBufferMtl.h"
 #include "libANGLE/renderer/metal/SamplerMtl.h"
+#include "libANGLE/renderer/metal/SemaphoreMtl.h"
 #include "libANGLE/renderer/metal/ShaderMtl.h"
 #include "libANGLE/renderer/metal/SyncMtl.h"
 #include "libANGLE/renderer/metal/TextureMtl.h"
@@ -1182,8 +1183,7 @@ MemoryObjectImpl *ContextMtl::createMemoryObject()
 // Semaphore creation.
 SemaphoreImpl *ContextMtl::createSemaphore()
 {
-    UNIMPLEMENTED();
-    return nullptr;
+    return new SemaphoreMtl();
 }
 
 OverlayImpl *ContextMtl::createOverlay(const gl::OverlayState &state)

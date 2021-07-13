@@ -39,6 +39,9 @@ class SemaphoreImpl : angle::NonCopyable
     virtual angle::Result signal(gl::Context *context,
                                  const gl::BufferBarrierVector &bufferBarriers,
                                  const gl::TextureBarrierVector &textureBarriers) = 0;
+
+    virtual void parameterui64v(GLenum pname, const GLuint64 *params) {}
+    virtual void getParameterui64v(GLenum pname, GLuint64 *params) {}
 };
 
 }  // namespace rx

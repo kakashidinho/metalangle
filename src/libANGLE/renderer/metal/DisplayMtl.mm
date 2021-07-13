@@ -701,6 +701,15 @@ void DisplayMtl::initializeExtensions() const
 
         // GL_OES_EGL_sync
         mNativeExtensions.eglSync = true;
+
+        // GL_EXT_semaphore
+        mNativeExtensions.semaphore = true;
+
+        // GL_EXT_semaphore_fd
+        mNativeExtensions.semaphoreFd = true;
+
+        // GL_MGL_timeline_semaphore
+        mNativeExtensions.timelineSemaphoreMGL = true;
     }
 }
 

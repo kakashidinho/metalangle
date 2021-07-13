@@ -1227,6 +1227,23 @@ bool ValidateES2TexImageParameters(Context *context,
                                              format, type, imageSize, pixels);
 }
 
+bool IsValidSemaphoreParameter(const Context *context, GLenum pname)
+{
+    switch (pname)
+    {
+        case GL_TIMELINE_SEMAPHORE_VALUE_MGL:
+            if (context->getExtensions().timelineSemaphoreMGL)
+            {
+                return true;
+            }
+            break;
+        default:
+            UNIMPLEMENTED();
+    }
+
+    return false;
+}
+
 }  // anonymous namespace
 
 bool ValidateES2TexImageParametersBase(Context *context,
@@ -3539,8 +3556,7 @@ bool ValidateGetSemaphoreParameterui64vEXT(Context *context,
         return false;
     }
 
-    UNIMPLEMENTED();
-    return false;
+    return IsValidSemaphoreParameter(context, pname);
 }
 
 bool ValidateIsSemaphoreEXT(Context *context, SemaphoreID semaphore)
@@ -3565,8 +3581,7 @@ bool ValidateSemaphoreParameterui64vEXT(Context *context,
         return false;
     }
 
-    UNIMPLEMENTED();
-    return false;
+    return IsValidSemaphoreParameter(context, pname);
 }
 
 bool ValidateSignalSemaphoreEXT(Context *context,

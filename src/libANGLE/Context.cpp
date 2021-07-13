@@ -7861,14 +7861,24 @@ GLboolean Context::isSemaphore(SemaphoreID semaphore)
     return ConvertToGLBoolean(getSemaphore(semaphore));
 }
 
-void Context::semaphoreParameterui64v(SemaphoreID semaphore, GLenum pname, const GLuint64 *params)
+void Context::semaphoreParameterui64v(SemaphoreID semaphoreHandle,
+                                      GLenum pname,
+                                      const GLuint64 *params)
 {
-    UNIMPLEMENTED();
+    Semaphore *semaphore = getSemaphore(semaphoreHandle);
+    ASSERT(semaphore);
+
+    semaphore->parameterui64v(pname, params);
 }
 
-void Context::getSemaphoreParameterui64v(SemaphoreID semaphore, GLenum pname, GLuint64 *params)
+void Context::getSemaphoreParameterui64v(SemaphoreID semaphoreHandle,
+                                         GLenum pname,
+                                         GLuint64 *params)
 {
-    UNIMPLEMENTED();
+    Semaphore *semaphore = getSemaphore(semaphoreHandle);
+    ASSERT(semaphore);
+
+    semaphore->getParameterui64v(pname, params);
 }
 
 void Context::waitSemaphore(SemaphoreID semaphoreHandle,

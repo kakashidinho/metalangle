@@ -32,6 +32,8 @@ _metal_backend_sources = [
   "RenderTargetMtl.mm",
   "SamplerMtl.h",
   "SamplerMtl.mm",
+  "SemaphoreMtl.h",
+  "SemaphoreMtl.mm",
   "ShaderMtl.h",
   "ShaderMtl.mm",
   "SyncMtl.h",

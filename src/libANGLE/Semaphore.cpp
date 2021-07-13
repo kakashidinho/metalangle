@@ -44,4 +44,13 @@ angle::Result Semaphore::signal(Context *context,
     return mImplementation->signal(context, bufferBarriers, textureBarriers);
 }
 
+void Semaphore::parameterui64v(GLenum pname, const GLuint64 *params)
+{
+    mImplementation->parameterui64v(pname, params);
+}
+void Semaphore::getParameterui64v(GLenum pname, GLuint64 *params)
+{
+    mImplementation->getParameterui64v(pname, params);
+}
+
 }  // namespace gl

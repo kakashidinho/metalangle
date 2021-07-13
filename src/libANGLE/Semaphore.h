@@ -47,6 +47,9 @@ class Semaphore final : public RefCountObject<SemaphoreID>
                          const BufferBarrierVector &bufferBarriers,
                          const TextureBarrierVector &textureBarriers);
 
+    void parameterui64v(GLenum pname, const GLuint64 *params);
+    void getParameterui64v(GLenum pname, GLuint64 *params);
+
   private:
     std::unique_ptr<rx::SemaphoreImpl> mImplementation;
 };

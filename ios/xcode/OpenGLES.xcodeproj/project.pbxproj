@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 52;
 	objects = {
 
 /* Begin PBXAggregateTarget section */
@@ -2288,6 +2288,10 @@
 		0AC8B2F0241E9761003916D1 /* QueryMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AC8B2EB241E9761003916D1 /* QueryMtl.mm */; };
 		0AC8B2F1241E9761003916D1 /* QueryMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AC8B2EB241E9761003916D1 /* QueryMtl.mm */; };
 		0AC8B2F2241E9761003916D1 /* QueryMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AC8B2EB241E9761003916D1 /* QueryMtl.mm */; };
+		0AE8E090269F6E9800070E82 /* SemaphoreMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AE8E067269F6E9600070E82 /* SemaphoreMtl.mm */; };
+		0AE8E091269F6E9800070E82 /* SemaphoreMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AE8E067269F6E9600070E82 /* SemaphoreMtl.mm */; };
+		0AE8E092269F6E9800070E82 /* SemaphoreMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AE8E067269F6E9600070E82 /* SemaphoreMtl.mm */; };
+		0AE8E093269F6E9800070E82 /* SemaphoreMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AE8E067269F6E9600070E82 /* SemaphoreMtl.mm */; };
 		0AF956AD244C7BF300F59740 /* json_reader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9B83F6234CD0C2008BF16F /* json_reader.cpp */; };
 		0AF956AE244C7BF300F59740 /* json_value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9B83F7234CD0C2008BF16F /* json_value.cpp */; };
 		0AF956AF244C7BF300F59740 /* json_writer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA2FA9C2346F86700E0B98C /* json_writer.cpp */; };
@@ -5044,6 +5048,8 @@
 		0AC8B2EA241E9761003916D1 /* mtl_occlusion_query_pool.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = mtl_occlusion_query_pool.mm; path = ../../src/libANGLE/renderer/metal/mtl_occlusion_query_pool.mm; sourceTree = "<group>"; };
 		0AC8B2EB241E9761003916D1 /* QueryMtl.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = QueryMtl.mm; path = ../../src/libANGLE/renderer/metal/QueryMtl.mm; sourceTree = "<group>"; };
 		0AC8B2EC241E9761003916D1 /* mtl_occlusion_query_pool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mtl_occlusion_query_pool.h; path = ../../src/libANGLE/renderer/metal/mtl_occlusion_query_pool.h; sourceTree = "<group>"; };
+		0AE8E067269F6E9600070E82 /* SemaphoreMtl.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = SemaphoreMtl.mm; path = ../../src/libANGLE/renderer/metal/SemaphoreMtl.mm; sourceTree = "<group>"; };
+		0AE8E068269F6E9600070E82 /* SemaphoreMtl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SemaphoreMtl.h; path = ../../src/libANGLE/renderer/metal/SemaphoreMtl.h; sourceTree = "<group>"; };
 		0AF956B5244C7BF300F59740 /* libjsoncpp_tvos.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libjsoncpp_tvos.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		0AF956C6244C7C5100F59740 /* libspirv-cross_tvos.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libspirv-cross_tvos.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0AF956F8244C7C8700F59740 /* libglslang_tvos.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libglslang_tvos.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -6114,6 +6120,9 @@
 				0A6055CE234655FB005CEA98 /* RenderTargetMtl.mm */,
 				0A9E0A7A242D060000688588 /* SamplerMtl.h */,
 				0A9E0A7B242D060000688588 /* SamplerMtl.mm */,
+				0AE8E068269F6E9600070E82 /* SemaphoreMtl.h */,
+				0AE8E067269F6E9600070E82 /* SemaphoreMtl.mm */,
+				0A9A6AC423911CAD006A152A /* RendererGL.cpp */,
 				0A605604234655FE005CEA98 /* ShaderMtl.h */,
 				0A6055E5234655FD005CEA98 /* ShaderMtl.mm */,
 				0A0546CD242C1DD200FC05D0 /* TransformFeedbackMtl.h */,
@@ -6629,7 +6638,6 @@
 				0A9A6B5823911CB3006A152A /* RenderbufferGL.h */,
 				0A9A6ABE23911CAD006A152A /* renderergl_utils.cpp */,
 				0A9A6B0823911CB1006A152A /* renderergl_utils.h */,
-				0A9A6AC423911CAD006A152A /* RendererGL.cpp */,
 				0A9A6B4623911CB3006A152A /* RendererGL.h */,
 				0A9A6AF623911CB0006A152A /* SamplerGL.cpp */,
 				0A9A6B2023911CB2006A152A /* SamplerGL.h */,
@@ -10280,6 +10288,7 @@
 				0A60565123465667005CEA98 /* mtl_format_utils.mm in Sources */,
 				0A60564923465667005CEA98 /* ContextMtl.mm in Sources */,
 				0A60564C23465667005CEA98 /* mtl_glslang_utils.mm in Sources */,
+				0AE8E090269F6E9800070E82 /* SemaphoreMtl.mm in Sources */,
 				0A60564823465667005CEA98 /* CompilerMtl.mm in Sources */,
 				0AFFDCB624D42F7F0015E16A /* ImageMtl.mm in Sources */,
 				0A60565C23465667005CEA98 /* TextureMtl.mm in Sources */,
@@ -10507,6 +10516,7 @@
 				0A90F76624065B06005BA9A8 /* mtl_format_utils.mm in Sources */,
 				0A90F76724065B06005BA9A8 /* ContextMtl.mm in Sources */,
 				0A90F76824065B06005BA9A8 /* mtl_glslang_utils.mm in Sources */,
+				0AE8E091269F6E9800070E82 /* SemaphoreMtl.mm in Sources */,
 				0A90F76924065B06005BA9A8 /* CompilerMtl.mm in Sources */,
 				0AFFDCB724D42F820015E16A /* ImageMtl.mm in Sources */,
 				0A90F76A24065B06005BA9A8 /* TextureMtl.mm in Sources */,
@@ -11668,6 +11678,7 @@
 				0AA2FFBD234727A400E0B98C /* mtl_format_utils.mm in Sources */,
 				0AA2FFBE234727A400E0B98C /* ContextMtl.mm in Sources */,
 				0AA2FFBF234727A400E0B98C /* mtl_glslang_utils.mm in Sources */,
+				0AE8E093269F6E9800070E82 /* SemaphoreMtl.mm in Sources */,
 				0AA2FFC0234727A400E0B98C /* CompilerMtl.mm in Sources */,
 				0AFFDCB924D42F880015E16A /* ImageMtl.mm in Sources */,
 				0AA2FFC1234727A400E0B98C /* TextureMtl.mm in Sources */,
@@ -11861,6 +11872,7 @@
 				0AF9573F244C7CC300F59740 /* mtl_format_utils.mm in Sources */,
 				0AF95740244C7CC300F59740 /* ContextMtl.mm in Sources */,
 				0AF95741244C7CC300F59740 /* mtl_glslang_utils.mm in Sources */,
+				0AE8E092269F6E9800070E82 /* SemaphoreMtl.mm in Sources */,
 				0AF95742244C7CC300F59740 /* CompilerMtl.mm in Sources */,
 				0AFFDCB824D42F860015E16A /* ImageMtl.mm in Sources */,
 				0AF95743244C7CC300F59740 /* TextureMtl.mm in Sources */,
@@ -12566,6 +12578,8 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				SDKROOT = iphoneos;
 				TVOS_DEPLOYMENT_TARGET = 9.0;
+				USER_HEADER_SEARCH_PATHS = Yes;
+				USE_HEADERMAP = NO;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
 			};
@@ -12652,6 +12666,8 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				SDKROOT = iphoneos;
 				TVOS_DEPLOYMENT_TARGET = 9.0;
+				USER_HEADER_SEARCH_PATHS = Yes;
+				USE_HEADERMAP = NO;
 				VALIDATE_PRODUCT = YES;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
