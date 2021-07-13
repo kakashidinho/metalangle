@@ -212,6 +212,11 @@ EGLContext CreateEGLContext(EGLDisplay display, MGLRenderingAPI api, EGLContext 
     return _renderingApi;
 }
 
+- (EGLDisplay)eglDisplay
+{
+    return _display.eglDisplay;
+}
+
 - (void)dealloc
 {
     [self releaseContext];
