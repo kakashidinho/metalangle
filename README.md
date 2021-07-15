@@ -6,6 +6,7 @@
 This is a fork of Google's [ANGLE project](https://chromium.googlesource.com/angle/angle). It adds Metal API backend support.
 Apple announced OpenGL (ES) deprecation in 2018. So the purpose of MetalANGLE is to allow OpenGL ES applications
 to continue operate on Apple platforms by translating OpenGL ES draw calls to Metal draw calls under the hood.
+It also supports OpenGL ES & Metal's interop.
 
 __30 Jun 2021 Update:__ Most of this repo's OpenGL ES 3.0 implementing code in Metal has been merged into official `ANGLE` repo.
 Initially, this was the only place where Metal backend's developments took place. It is not true anymore as `Apple` are also
@@ -48,6 +49,7 @@ Preliminary Metal based WebGL benchmarks (based on [gles3-dev branch](https://gi
 - [MGLKit](src/libANGLE/renderer/metal/DevSetup.md#MGLKit) utilities classes have been added. Providing kind of similar functionalies to Apples's GLKit.
 - Urho3D engine's demos have been tested using MetalANGLE without issues. See [Urho3D's MetalANGLE integration testing branch](https://github.com/kakashidinho/Urho3D/tree/angle-metal-backend).
 - Irrlicht Engine's integration with MetalANGLE sample: [https://github.com/kakashidinho/irrlicht](https://github.com/kakashidinho/irrlicht).
+- Interop with Metal is supported, see Qt example: https://github.com/kakashidinho/qml-metalangle.
 - ~~No `GL_TRIANGLE_FAN` & `GL_LINE_LOOP` support in draw calls yet.~~
 - Metal doesn't allow buffer offset not being multiple of 4 bytes or multiple of attribute's size.
   Hence, draw calls that use unsupported offsets, strides, and vertex formats will force MetalANGLE
