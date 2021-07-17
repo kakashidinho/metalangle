@@ -26,7 +26,7 @@ Preliminary Metal based WebGL benchmarks (based on [gles3-dev branch](https://gi
 - __OpenGL ES 3.0__ status:
   - [x] Occlusion queries.
   - [x] MSAA.
-  - [x] Multiple render targets.
+  - [x] Multiple render targets (__Not all GL formats are supported on old iOS GPUs__ due to [pixel storage's limits](https://developer.apple.com/documentation/metal/textures/understanding_color-renderable_pixel_format_sizes?language=objc). See [#issue 64](https://github.com/kakashidinho/metalangle/issues/64)).
   - [x] 3D, array, shadow textures.
   - [x] Texture swizzles (__supported on iOS 13.0+, macOS 10.15+ only__).
   - [x] Uniform buffers.
