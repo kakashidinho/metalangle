@@ -404,7 +404,7 @@ def gen_image_map_switch_string(image_table, angle_to_gl):
             # ASTC is only supported since Apple GPU 3 (with 3D textures support)
             switch_data += gen_image_map_switch_with_fallback_case(
                 angle_format, angle_format, angle_to_gl, ios_specific_map, [],
-                "display->supportsAppleGPUFamily(3)")
+                "TARGET_OS_SIMULATOR || display->supportsAppleGPUFamily(3)")
         else:
             switch_data += gen_image_map_switch_simple_case(angle_format, angle_format,
                                                             angle_to_gl, ios_specific_map)
