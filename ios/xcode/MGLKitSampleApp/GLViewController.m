@@ -393,7 +393,12 @@ const Vertex Vertices2[] = {
     [self setupVBOs];
 
 #if TARGET_OS_IOS || TARGET_OS_TV
-    if (strstr((const char *)glGetString(GL_EXTENSIONS), "IMG_texture_compression_pvrtc"))
+    if (strstr((const char *)glGetString(GL_EXTENSIONS), "GL_KHR_texture_compression_astc_ldr"))
+    {
+        _floorTexture = [PVRTexture glTextureWithContentsOfFile:@"tile_floor_astc.pvr"];
+        _fishTexture  = [PVRTexture glTextureWithContentsOfFile:@"item_powerup_fish_astc.pvr"];
+    }
+    else if (strstr((const char *)glGetString(GL_EXTENSIONS), "GL_IMG_texture_compression_pvrtc"))
     {
         _floorTexture = [PVRTexture glTextureWithContentsOfFile:@"tile_floor.pvr"];
         _fishTexture  = [PVRTexture glTextureWithContentsOfFile:@"item_powerup_fish.pvr"];

@@ -51,33 +51,143 @@ Copyright (C) 2014 Apple Inc. All Rights Reserved.
 
 #import <MetalANGLE/GLES2/gl2ext.h>
 
-#define PVR_TEXTURE_FLAG_TYPE_MASK  0xff
-
-static char gPVRTexIdentifier[4] = "PVR!";
+static const uint32_t kPVRVersion3 = 0x03525650;
 
 enum
 {
-    kPVRTextureFlagTypePVRTC_2 = 24,
-    kPVRTextureFlagTypePVRTC_4
+    kPVRTextureFlagTypePVRTC_RGB_2,
+    kPVRTextureFlagTypePVRTC_RGBA_2,
+    kPVRTextureFlagTypePVRTC_RGB_4,
+    kPVRTextureFlagTypePVRTC_RGBA_4,
+
+    kPVRTextureFlagTypeASTC_4x4 = 27,
+    kPVRTextureFlagTypeASTC_8x8 = 34,
+};
+
+enum
+{
+    kPVRTextureColorSpaceLinear,
+    kPVRTextureColorSpaceSRGB,
 };
 
 typedef struct _PVRTexHeader
 {
-    uint32_t headerLength;
+    uint32_t version;
+    uint32_t flags;
+    uint32_t pixelFormat[2];
+    uint32_t colourSpace;
+    uint32_t channelType;
     uint32_t height;
     uint32_t width;
+    uint32_t depth;
+    uint32_t numSurfaces;
+    uint32_t numFaces;
     uint32_t numMipmaps;
-    uint32_t flags;
-    uint32_t dataLength;
-    uint32_t bpp;
-    uint32_t bitmaskRed;
-    uint32_t bitmaskGreen;
-    uint32_t bitmaskBlue;
-    uint32_t bitmaskAlpha;
-    uint32_t pvrTag;
-    uint32_t numSurfs;
+    uint32_t metaDataSize;
 } PVRTexHeader;
 
+static void GetFormatBlockInfo(uint64_t format,
+                               uint32_t *blockWidth,
+                               uint32_t *blockHeight,
+                               uint32_t *bpp,
+                               uint32_t *minBlocks)
+{
+    switch (format)
+    {
+        case kPVRTextureFlagTypePVRTC_RGB_2:
+        case kPVRTextureFlagTypePVRTC_RGBA_2:
+            *blockWidth = 8;
+            *blockHeight = 4;
+            *bpp = 2;
+            *minBlocks = 2;
+            break;
+        case kPVRTextureFlagTypePVRTC_RGB_4:
+        case kPVRTextureFlagTypePVRTC_RGBA_4:
+            *blockWidth = 4;
+            *blockHeight = 4;
+            *bpp = 4;
+            *minBlocks = 2;
+            break;
+        case kPVRTextureFlagTypeASTC_4x4:
+            *blockWidth = 4;
+            *blockHeight = 4;
+            *bpp = 8;
+            *minBlocks = 1;
+            break;
+        case kPVRTextureFlagTypeASTC_8x8:
+            *blockWidth = 8;
+            *blockHeight = 8;
+            *bpp = 2;
+            *minBlocks = 1;
+            break;
+        default:
+            // Not supported;
+            abort();
+    }
+}
+
+static bool GetFormatInfo(uint64_t format,
+                          uint32_t colorSpace,
+                          uint32_t *blockWidth,
+                          uint32_t *blockHeight,
+                          uint32_t *bpp,
+                          uint32_t *minBlocks,
+                          BOOL *hasAlpha,
+                          GLenum *internalFormat)
+{
+    *minBlocks = 0;
+    *hasAlpha = NO;
+    switch (format)
+    {
+        case kPVRTextureFlagTypePVRTC_RGB_2:
+            if (colorSpace == kPVRTextureColorSpaceSRGB)
+                *internalFormat = GL_COMPRESSED_SRGB_PVRTC_2BPPV1_EXT;
+            else
+                *internalFormat = GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG;
+            break;
+        case kPVRTextureFlagTypePVRTC_RGBA_2:
+            *hasAlpha = YES;
+            if (colorSpace == kPVRTextureColorSpaceSRGB)
+                *internalFormat = GL_COMPRESSED_SRGB_ALPHA_PVRTC_2BPPV1_EXT;
+            else
+                *internalFormat = GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG;
+            break;
+        case kPVRTextureFlagTypePVRTC_RGB_4:
+            if (colorSpace == kPVRTextureColorSpaceSRGB)
+                *internalFormat = GL_COMPRESSED_SRGB_PVRTC_4BPPV1_EXT;
+            else
+                *internalFormat = GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG;
+            break;
+        case kPVRTextureFlagTypePVRTC_RGBA_4:
+            *hasAlpha = YES;
+            if (colorSpace == kPVRTextureColorSpaceSRGB)
+                *internalFormat = GL_COMPRESSED_SRGB_ALPHA_PVRTC_4BPPV1_EXT;
+            else
+                *internalFormat = GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG;
+            break;
+        case kPVRTextureFlagTypeASTC_4x4:
+            *hasAlpha = YES;
+            if (colorSpace == kPVRTextureColorSpaceSRGB)
+                *internalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_4x4_KHR;
+            else
+                *internalFormat = GL_COMPRESSED_RGBA_ASTC_4x4_KHR;
+            break;
+        case kPVRTextureFlagTypeASTC_8x8:
+            *hasAlpha = YES;
+            if (colorSpace == kPVRTextureColorSpaceSRGB)
+                *internalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x8_KHR;
+            else
+                *internalFormat = GL_COMPRESSED_RGBA_ASTC_8x8_KHR;
+            break;
+        default:
+            // Not supported;
+            return false;
+    }
+
+    GetFormatBlockInfo(format, blockWidth, blockHeight, bpp, minBlocks);
+
+    return true;
+}
 
 @implementation PVRTexture
 
@@ -91,73 +201,59 @@ typedef struct _PVRTexHeader
 - (BOOL)unpackPVRData:(NSData *)data
 {
     BOOL success = FALSE;
-    PVRTexHeader *header = NULL;
-    uint32_t flags, pvrTag;
+    const PVRTexHeader *header = NULL;
+    uint32_t pvrVersion;
+    uint64_t format;
+    uint32_t colorSpace;
     uint32_t dataLength = 0, dataOffset = 0, dataSize = 0;
     uint32_t blockSize = 0, widthBlocks = 0, heightBlocks = 0;
+    uint32_t blockWidth = 0, blockHeight = 0;
+    uint32_t minBlocks = 0;
     uint32_t width = 0, height = 0, bpp = 4;
-    uint8_t *bytes = NULL;
-    uint32_t formatFlags;
+    uint32_t metaDataSize = 0;
+    uint32_t numMipmaps = 0;
+    const uint8_t *bytes = NULL;
 
-    header = (PVRTexHeader *)[data bytes];
+    header = (const PVRTexHeader *)[data bytes];
 
-    pvrTag = CFSwapInt32LittleToHost(header->pvrTag);
+    pvrVersion = CFSwapInt32LittleToHost(header->version);
 
-    if (gPVRTexIdentifier[0] != ((pvrTag >>  0) & 0xff) ||
-        gPVRTexIdentifier[1] != ((pvrTag >>  8) & 0xff) ||
-        gPVRTexIdentifier[2] != ((pvrTag >> 16) & 0xff) ||
-        gPVRTexIdentifier[3] != ((pvrTag >> 24) & 0xff))
+    if (pvrVersion != kPVRVersion3)
     {
         return FALSE;
     }
 
-    flags = CFSwapInt32LittleToHost(header->flags);
-    formatFlags = flags & PVR_TEXTURE_FLAG_TYPE_MASK;
+    memcpy(&format, header->pixelFormat, sizeof(format));
+    format = CFSwapInt64LittleToHost(format);
+    colorSpace = CFSwapInt32LittleToHost(header->colourSpace);
+    numMipmaps = CFSwapInt32LittleToHost(header->numMipmaps);
+    metaDataSize = CFSwapInt32LittleToHost(header->metaDataSize);
 
-    if (formatFlags == kPVRTextureFlagTypePVRTC_4 || formatFlags == kPVRTextureFlagTypePVRTC_2)
+    if (GetFormatInfo(format, colorSpace, &blockWidth, &blockHeight, &bpp, &minBlocks, &_hasAlpha,
+                      &_internalFormat))
     {
         [_imageData removeAllObjects];
 
         _width = width = CFSwapInt32LittleToHost(header->width);
         _height = height = CFSwapInt32LittleToHost(header->height);
 
-        if (CFSwapInt32LittleToHost(header->bitmaskAlpha))
-            _hasAlpha = TRUE;
-        else
-            _hasAlpha = FALSE;
+        dataLength = (uint32_t)data.length - sizeof(PVRTexHeader) - metaDataSize;
 
-        if (formatFlags == kPVRTextureFlagTypePVRTC_4)
-            _internalFormat = _hasAlpha ? GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG : GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG;
-        else if (formatFlags == kPVRTextureFlagTypePVRTC_2)
-            _internalFormat = _hasAlpha ? GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG : GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG;
+        bytes = ((const uint8_t *)[data bytes]) + sizeof(PVRTexHeader) + metaDataSize;
 
-        dataLength = CFSwapInt32LittleToHost(header->dataLength);
-
-        bytes = ((uint8_t *)[data bytes]) + sizeof(PVRTexHeader);
+        blockSize = blockWidth * blockHeight; // Pixel by pixel block size
 
         // Calculate the data size for each texture level and respect the minimum number of blocks
-        while (dataOffset < dataLength)
+        for (uint32_t mip = 0; mip < numMipmaps; ++mip)
         {
-            if (formatFlags == kPVRTextureFlagTypePVRTC_4)
-            {
-                blockSize = 4 * 4; // Pixel by pixel block size for 4bpp
-                widthBlocks = width / 4;
-                heightBlocks = height / 4;
-                bpp = 4;
-            }
-            else
-            {
-                blockSize = 8 * 4; // Pixel by pixel block size for 2bpp
-                widthBlocks = width / 8;
-                heightBlocks = height / 4;
-                bpp = 2;
-            }
+            widthBlocks = width / blockWidth;
+            heightBlocks = height / blockHeight;
 
             // Clamp to minimum number of blocks
-            if (widthBlocks < 2)
-                widthBlocks = 2;
-            if (heightBlocks < 2)
-                heightBlocks = 2;
+            if (widthBlocks < minBlocks)
+                widthBlocks = minBlocks;
+            if (heightBlocks < minBlocks)
+                heightBlocks = minBlocks;
 
             dataSize = widthBlocks * heightBlocks * ((blockSize  * bpp) / 8);
 

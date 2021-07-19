@@ -43,6 +43,12 @@
 		0A28CD83235789B20081BB84 /* Particle.png in Resources */ = {isa = PBXBuildFile; fileRef = 0A28CD7F235789B20081BB84 /* Particle.png */; };
 		0A28CD88235789DF0081BB84 /* PaintingView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A28CD86235789DE0081BB84 /* PaintingView.mm */; };
 		0A28CD89235789DF0081BB84 /* SoundEffect.m in Sources */ = {isa = PBXBuildFile; fileRef = 0A28CD87235789DE0081BB84 /* SoundEffect.m */; };
+		0A2C24FF26A5E4EA00641DF3 /* tile_floor_astc.pvr in Resources */ = {isa = PBXBuildFile; fileRef = 0A2C24C526A5E4EA00641DF3 /* tile_floor_astc.pvr */; };
+		0A2C250026A5E4EA00641DF3 /* tile_floor_astc.pvr in Resources */ = {isa = PBXBuildFile; fileRef = 0A2C24C526A5E4EA00641DF3 /* tile_floor_astc.pvr */; };
+		0A2C250226A5E4EA00641DF3 /* tile_floor_astc.pvr in Resources */ = {isa = PBXBuildFile; fileRef = 0A2C24C526A5E4EA00641DF3 /* tile_floor_astc.pvr */; };
+		0A2C250426A5E5DD00641DF3 /* item_powerup_fish_astc.pvr in Resources */ = {isa = PBXBuildFile; fileRef = 0A2C250326A5E5DC00641DF3 /* item_powerup_fish_astc.pvr */; };
+		0A2C250526A5E5DD00641DF3 /* item_powerup_fish_astc.pvr in Resources */ = {isa = PBXBuildFile; fileRef = 0A2C250326A5E5DC00641DF3 /* item_powerup_fish_astc.pvr */; };
+		0A2C250626A5E5DD00641DF3 /* item_powerup_fish_astc.pvr in Resources */ = {isa = PBXBuildFile; fileRef = 0A2C250326A5E5DC00641DF3 /* item_powerup_fish_astc.pvr */; };
 		0A3B1775264588CB0066F38D /* AppDelegateMac.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A3B1774264588CB0066F38D /* AppDelegateMac.swift */; };
 		0A3B1777264588CB0066F38D /* GLViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A3B1776264588CB0066F38D /* GLViewController.swift */; };
 		0A3B1779264588CC0066F38D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0A3B1778264588CC0066F38D /* Assets.xcassets */; };
@@ -760,6 +766,8 @@
 		0A28CD86235789DE0081BB84 /* PaintingView.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = PaintingView.mm; sourceTree = "<group>"; };
 		0A28CD87235789DE0081BB84 /* SoundEffect.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SoundEffect.m; sourceTree = "<group>"; };
 		0A28CD8B235795BF0081BB84 /* MGLPaint.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MGLPaint.entitlements; sourceTree = "<group>"; };
+		0A2C24C526A5E4EA00641DF3 /* tile_floor_astc.pvr */ = {isa = PBXFileReference; lastKnownFileType = file; path = tile_floor_astc.pvr; sourceTree = "<group>"; };
+		0A2C250326A5E5DC00641DF3 /* item_powerup_fish_astc.pvr */ = {isa = PBXFileReference; lastKnownFileType = file; path = item_powerup_fish_astc.pvr; sourceTree = "<group>"; };
 		0A3B1772264588CB0066F38D /* MGLKitSampleSwiftApp_mac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MGLKitSampleSwiftApp_mac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A3B1774264588CB0066F38D /* AppDelegateMac.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegateMac.swift; sourceTree = "<group>"; };
 		0A3B1776264588CB0066F38D /* GLViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GLViewController.swift; sourceTree = "<group>"; };
@@ -1130,6 +1138,8 @@
 		0AD9E4982355DECC006F5642 /* Art */ = {
 			isa = PBXGroup;
 			children = (
+				0A2C250326A5E5DC00641DF3 /* item_powerup_fish_astc.pvr */,
+				0A2C24C526A5E4EA00641DF3 /* tile_floor_astc.pvr */,
 				0A0283D8243DD6FE00F4FFCD /* item_powerup_fish.pvr */,
 				0A028402243DD6FE00F4FFCD /* tile_floor.pvr */,
 				0AD9E4992355DECC006F5642 /* item_powerup_fish.png */,
@@ -1836,6 +1846,8 @@
 				0A9A6BBA2391283B006A152A /* item_powerup_fish.png in Resources */,
 				0A028404243DD6FE00F4FFCD /* item_powerup_fish.pvr in Resources */,
 				0A9A6BBB2391283B006A152A /* Assets.xcassets in Resources */,
+				0A2C250526A5E5DD00641DF3 /* item_powerup_fish_astc.pvr in Resources */,
+				0A2C250026A5E4EA00641DF3 /* tile_floor_astc.pvr in Resources */,
 				0AB325F52503710E00AA5079 /* XFBPassthrough.glsl in Resources */,
 				0A9A6BBC2391283B006A152A /* Main.storyboard in Resources */,
 				0A9A6BBD2391283B006A152A /* SimpleVertex.glsl in Resources */,
@@ -1853,6 +1865,8 @@
 				0AD9E49B2355DECC006F5642 /* item_powerup_fish.png in Resources */,
 				0A028403243DD6FE00F4FFCD /* item_powerup_fish.pvr in Resources */,
 				0AAF41552354FAE9000E3CC8 /* Assets.xcassets in Resources */,
+				0A2C250426A5E5DD00641DF3 /* item_powerup_fish_astc.pvr in Resources */,
+				0A2C24FF26A5E4EA00641DF3 /* tile_floor_astc.pvr in Resources */,
 				0AB325F42503710E00AA5079 /* XFBPassthrough.glsl in Resources */,
 				0AAF41532354FAE8000E3CC8 /* Main.storyboard in Resources */,
 				0AD9E49F2355DEDF006F5642 /* SimpleVertex.glsl in Resources */,
@@ -1870,6 +1884,8 @@
 				0A93672D244CC11400B3497E /* Main_tvos.storyboard in Resources */,
 				0AFDDBA9244CBD3D000B60B1 /* item_powerup_fish.png in Resources */,
 				0AFDDBAA244CBD3D000B60B1 /* item_powerup_fish.pvr in Resources */,
+				0A2C250626A5E5DD00641DF3 /* item_powerup_fish_astc.pvr in Resources */,
+				0A2C250226A5E4EA00641DF3 /* tile_floor_astc.pvr in Resources */,
 				0AB325F72503710E00AA5079 /* XFBPassthrough.glsl in Resources */,
 				0AFDDBAB244CBD3D000B60B1 /* Assets.xcassets in Resources */,
 				0AFDDBAD244CBD3D000B60B1 /* SimpleVertex.glsl in Resources */,
