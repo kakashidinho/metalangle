@@ -30,12 +30,7 @@
 
 #include "libANGLE/renderer/gl/DisplayGL.h"
 
-#ifdef __OBJC__
-@class EAGLContext;
-typedef EAGLContext *EAGLContextObj;
-#else
-typedef void *EAGLContextObj;
-#endif
+#include "libANGLE/renderer/gl/eagl/EAGLUtils.h"
 
 namespace rx
 {

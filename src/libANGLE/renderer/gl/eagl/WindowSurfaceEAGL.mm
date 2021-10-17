@@ -38,7 +38,6 @@
 #    import "libANGLE/renderer/gl/StateManagerGL.h"
 #    import "libANGLE/renderer/gl/eagl/DisplayEAGL.h"
 
-#    import <OpenGLES/EAGL.h>
 #    import <QuartzCore/QuartzCore.h>
 
 namespace rx
@@ -86,14 +85,14 @@ egl::Error WindowSurfaceEAGL::initialize(const egl::Display *display)
     unsigned width = mDSBufferWidth = getWidth();
     unsigned height = mDSBufferHeight = getHeight();
 
-    mSwapLayer       = [[CAEAGLLayer alloc] init];
-    mSwapLayer.frame = mLayer.frame;
-    [mLayer addSublayer:mSwapLayer];
-    [mSwapLayer setContentsScale:[mLayer contentsScale]];
+    mSwapLayer = eagl::createCAEAGLLayer();
+    eagl::setCAEAGLLayerFrame(mSwapLayer, mLayer.frame);
+    [mLayer addSublayer:static_cast<CALayer *>(mSwapLayer)];
+    eagl::setCAEAGLContentsScale(mSwapLayer, [mLayer contentsScale]);
 
     mFunctions->genRenderbuffers(1, &mColorRenderbuffer);
     mStateManager->bindRenderbuffer(GL_RENDERBUFFER, mColorRenderbuffer);
-    [mContext renderbufferStorage:GL_RENDERBUFFER fromDrawable:mSwapLayer];
+    eagl::renderbufferStorage(mContext, GL_RENDERBUFFER, mSwapLayer);
 
     mFunctions->genRenderbuffers(1, &mDSRenderbuffer);
     mStateManager->bindRenderbuffer(GL_RENDERBUFFER, mDSRenderbuffer);
@@ -104,13 +103,13 @@ egl::Error WindowSurfaceEAGL::initialize(const egl::Display *display)
 
 egl::Error WindowSurfaceEAGL::makeCurrent(const gl::Context *context)
 {
-    [EAGLContext setCurrentContext:mContext];
+    eagl::setCurrentContext(mContext);
     return egl::Error(EGL_SUCCESS);
 }
 
 egl::Error WindowSurfaceEAGL::unMakeCurrent(const gl::Context *context)
 {
-    [EAGLContext setCurrentContext:nil];
+    eagl::setCurrentContext(nil);
     return egl::Error(EGL_SUCCESS);
 }
 
@@ -122,7 +121,7 @@ egl::Error WindowSurfaceEAGL::swap(const gl::Context *context)
     functions->flush();
 
     stateManager->bindRenderbuffer(GL_RENDERBUFFER, mColorRenderbuffer);
-    [mContext presentRenderbuffer:GL_RENDERBUFFER];
+    eagl::presentRenderbuffer(mContext, GL_RENDERBUFFER);
 
     unsigned width  = getWidth();
     unsigned height = getHeight();
@@ -130,10 +129,10 @@ egl::Error WindowSurfaceEAGL::swap(const gl::Context *context)
     if (mDSBufferWidth != width || mDSBufferHeight != height)
     {
         // Resize color, depth stencil buffer
-        mSwapLayer.frame = mLayer.frame;
+        eagl::setCAEAGLLayerFrame(mSwapLayer, mLayer.frame);
 
         mStateManager->bindRenderbuffer(GL_RENDERBUFFER, mColorRenderbuffer);
-        [mContext renderbufferStorage:GL_RENDERBUFFER fromDrawable:mSwapLayer];
+        eagl::renderbufferStorage(mContext, GL_RENDERBUFFER, mSwapLayer);
 
         stateManager->bindRenderbuffer(GL_RENDERBUFFER, mDSRenderbuffer);
         functions->renderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);

@@ -43,7 +43,6 @@
 #    import "libANGLE/renderer/gl/null_functions.h"
 
 #    import <Foundation/Foundation.h>
-#    import <OpenGLES/EAGL.h>
 #    import <QuartzCore/QuartzCore.h>
 #    import <dlfcn.h>
 
@@ -52,8 +51,8 @@
 namespace
 {
 
-constexpr EAGLRenderingAPI kGLESAPI = kEAGLRenderingAPIOpenGLES3;
-const char *kOpenGLESDylibNames[]   = {"/System/Library/Frameworks/OpenGLES.framework/OpenGLES",
+constexpr eagl::RenderingAPI kGLESAPI = eagl::RenderingAPI::GLES3;
+const char *kOpenGLESDylibNames[]     = {"/System/Library/Frameworks/OpenGLES.framework/OpenGLES",
                                      "OpenGLES.framework/OpenGLES"};
 }
 
@@ -85,39 +84,40 @@ egl::Error DisplayEAGL::initialize(egl::Display *display)
 {
     mEGLDisplay = display;
 
-    mContext = [[EAGLContext alloc] initWithAPI:kGLESAPI];
-    if (mContext == nullptr)
-    {
-        return egl::EglNotInitialized() << "Could not create the EAGL context.";
-    }
-    [EAGLContext setCurrentContext:mContext];
-
     // There is no equivalent getProcAddress in EAGL so we open the dylib directly
-    void *handle = nullptr;
+    void *dlHandle = nullptr;
 
     for (const char *glesLibName : kOpenGLESDylibNames)
     {
-        handle = dlopen(glesLibName, RTLD_NOW);
-        if (handle)
+        dlHandle = dlopen(glesLibName, RTLD_NOW);
+        if (dlHandle)
         {
             break;
         }
     }
-    if (!handle)
+    if (!dlHandle)
     {
         return egl::EglNotInitialized() << "Could not open the OpenGLES Framework.";
     }
 
-    std::unique_ptr<FunctionsGL> functionsGL(new FunctionsGLEAGL(handle));
+    mContext = eagl::createWithAPI(kGLESAPI);
+
+    if (!mContext)
+    {
+        return egl::EglNotInitialized() << "Could not create the EAGL context.";
+    }
+    eagl::setCurrentContext(mContext);
+
+    std::unique_ptr<FunctionsGL> functionsGL(new FunctionsGLEAGL(dlHandle));
     functionsGL->initialize(display->getAttributeMap());
 
     mRenderer.reset(new RendererEAGL(std::move(functionsGL), display->getAttributeMap(), this));
 
     const gl::Version &maxVersion = mRenderer->getMaxSupportedESVersion();
-    if (maxVersion < gl::Version(kGLESAPI, 0))
+    if (maxVersion < gl::Version(static_cast<unsigned int>(kGLESAPI), 0))
     {
         return egl::EglNotInitialized()
-               << "OpenGL ES " << static_cast<int>(kGLESAPI) << ".0 is not supportable.";
+               << "OpenGL ES " << static_cast<unsigned int>(kGLESAPI) << ".0 is not supportable.";
     }
 
     return DisplayGL::initialize(display);
@@ -130,7 +130,7 @@ void DisplayEAGL::terminate()
     mRenderer.reset();
     if (mContext != nullptr)
     {
-        [EAGLContext setCurrentContext:nil];
+        eagl::setCurrentContext(nil);
         [mContext release];
         mContext = nullptr;
     }
@@ -371,7 +371,7 @@ WorkerContextEAGL::~WorkerContextEAGL()
 
 bool WorkerContextEAGL::makeCurrent()
 {
-    if (![EAGLContext setCurrentContext:static_cast<EAGLContext *>(mContext)])
+    if (!eagl::setCurrentContext(mContext))
     {
         ERR() << "Unable to make gl context current.";
         return false;
@@ -381,7 +381,7 @@ bool WorkerContextEAGL::makeCurrent()
 
 void WorkerContextEAGL::unmakeCurrent()
 {
-    [EAGLContext setCurrentContext:nil];
+    eagl::setCurrentContext(nil);
 }
 
 WorkerContext *DisplayEAGL::createWorkerContext(std::string *infoLog)
@@ -390,7 +390,8 @@ WorkerContext *DisplayEAGL::createWorkerContext(std::string *infoLog)
     {
         ASSERT(mContext);
         EAGLContextObj context = nullptr;
-        context = [[EAGLContext alloc] initWithAPI:kGLESAPI sharegroup:mContext.sharegroup];
+        context                = eagl::createWithAPIAndSharedContext(kGLESAPI, mContext);
+
         if (!context)
         {
             *infoLog += "Could not create the EAGL context.";

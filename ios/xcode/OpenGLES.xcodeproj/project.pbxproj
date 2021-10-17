@@ -858,8 +858,6 @@
 		0A90FA292406808F005BA9A8 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A90FA2724068083005BA9A8 /* IOKit.framework */; };
 		0A90FA2B2406831B005BA9A8 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A90FA2A2406831B005BA9A8 /* OpenGL.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		0A90FA2C240683CD005BA9A8 /* IOSurface.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A9A6BE423916BFB006A152A /* IOSurface.framework */; };
-		0A90FA2D2406840B005BA9A8 /* OpenGLES.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AA2014C23474A9000E0B98C /* OpenGLES.framework */; platformFilter = ios; settings = {ATTRIBUTES = (Weak, ); }; };
-		0A90FA3024068473005BA9A8 /* OpenGLES.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AA2014C23474A9000E0B98C /* OpenGLES.framework */; platformFilter = ios; settings = {ATTRIBUTES = (Weak, ); }; };
 		0A90FB422406D025005BA9A8 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A90FA2A2406831B005BA9A8 /* OpenGL.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		0A90FB452406D141005BA9A8 /* samples_env_setup.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A97E48C23485F69007CA616 /* samples_env_setup.mm */; };
 		0A90FB482406D56D005BA9A8 /* system_utils_cocoa.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AA2007923473CB600E0B98C /* system_utils_cocoa.mm */; settings = {COMPILER_FLAGS = "-fvisibility=default"; }; };
@@ -2292,6 +2290,8 @@
 		0AE8E091269F6E9800070E82 /* SemaphoreMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AE8E067269F6E9600070E82 /* SemaphoreMtl.mm */; };
 		0AE8E092269F6E9800070E82 /* SemaphoreMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AE8E067269F6E9600070E82 /* SemaphoreMtl.mm */; };
 		0AE8E093269F6E9800070E82 /* SemaphoreMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AE8E067269F6E9600070E82 /* SemaphoreMtl.mm */; };
+		0ADA2017267FCFF300BC2F34 /* EAGLUtils.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0ADA2015267FCFE500BC2F34 /* EAGLUtils.mm */; };
+		0ADA203F267FCFFF00BC2F34 /* EAGLUtils.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0ADA2015267FCFE500BC2F34 /* EAGLUtils.mm */; };
 		0AF956AD244C7BF300F59740 /* json_reader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9B83F6234CD0C2008BF16F /* json_reader.cpp */; };
 		0AF956AE244C7BF300F59740 /* json_value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9B83F7234CD0C2008BF16F /* json_value.cpp */; };
 		0AF956AF244C7BF300F59740 /* json_writer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA2FA9C2346F86700E0B98C /* json_writer.cpp */; };
@@ -2725,7 +2725,6 @@
 		0AF9598F244C7CD700F59740 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AC2A5212346714A0045B949 /* CoreFoundation.framework */; };
 		0AF95990244C7CD700F59740 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AA2015023474D9700E0B98C /* UIKit.framework */; };
 		0AF95991244C7CD700F59740 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A9A6BA8239126DB006A152A /* CoreGraphics.framework */; };
-		0AF95993244C7CD700F59740 /* OpenGLES.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AA2014C23474A9000E0B98C /* OpenGLES.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		0AF959A5244C7D5800F59740 /* SampleApplication.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA200E82347428200E0B98C /* SampleApplication.cpp */; };
 		0AF959A6244C7D5800F59740 /* samples_env_setup.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A97E48C23485F69007CA616 /* samples_env_setup.mm */; };
 		0AF959A7244C7D5800F59740 /* tga_utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA200EB2347428300E0B98C /* tga_utils.cpp */; };
@@ -5050,6 +5049,8 @@
 		0AC8B2EC241E9761003916D1 /* mtl_occlusion_query_pool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mtl_occlusion_query_pool.h; path = ../../src/libANGLE/renderer/metal/mtl_occlusion_query_pool.h; sourceTree = "<group>"; };
 		0AE8E067269F6E9600070E82 /* SemaphoreMtl.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = SemaphoreMtl.mm; path = ../../src/libANGLE/renderer/metal/SemaphoreMtl.mm; sourceTree = "<group>"; };
 		0AE8E068269F6E9600070E82 /* SemaphoreMtl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SemaphoreMtl.h; path = ../../src/libANGLE/renderer/metal/SemaphoreMtl.h; sourceTree = "<group>"; };
+		0ADA2015267FCFE500BC2F34 /* EAGLUtils.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = EAGLUtils.mm; sourceTree = "<group>"; };
+		0ADA2016267FCFE500BC2F34 /* EAGLUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EAGLUtils.h; sourceTree = "<group>"; };
 		0AF956B5244C7BF300F59740 /* libjsoncpp_tvos.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libjsoncpp_tvos.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		0AF956C6244C7C5100F59740 /* libspirv-cross_tvos.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libspirv-cross_tvos.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0AF956F8244C7C8700F59740 /* libglslang_tvos.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libglslang_tvos.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -5097,7 +5098,6 @@
 				0AC2A5232346714A0045B949 /* CoreFoundation.framework in Frameworks */,
 				0AAF41102354CE9B000E3CC8 /* UIKit.framework in Frameworks */,
 				0A9A6BA9239126DB006A152A /* CoreGraphics.framework in Frameworks */,
-				0A90FA2D2406840B005BA9A8 /* OpenGLES.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -5509,7 +5509,6 @@
 				0AA2FFAE2347273200E0B98C /* QuartzCore.framework in Frameworks */,
 				0AAF41112354CEA7000E3CC8 /* UIKit.framework in Frameworks */,
 				0A9A6BAA239126ED006A152A /* CoreGraphics.framework in Frameworks */,
-				0A90FA3024068473005BA9A8 /* OpenGLES.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -5597,7 +5596,6 @@
 				0AF9598F244C7CD700F59740 /* CoreFoundation.framework in Frameworks */,
 				0AF95990244C7CD700F59740 /* UIKit.framework in Frameworks */,
 				0AF95991244C7CD700F59740 /* CoreGraphics.framework in Frameworks */,
-				0AF95993244C7CD700F59740 /* OpenGLES.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -6664,6 +6662,8 @@
 		0A9A6AF923911CB1006A152A /* eagl */ = {
 			isa = PBXGroup;
 			children = (
+				0ADA2016267FCFE500BC2F34 /* EAGLUtils.h */,
+				0ADA2015267FCFE500BC2F34 /* EAGLUtils.mm */,
 				0A9A6AFA23911CB1006A152A /* WindowSurfaceEAGL.mm */,
 				0A9A6AFB23911CB1006A152A /* WindowSurfaceEAGL.h */,
 				0A9A6AFC23911CB1006A152A /* DisplayEAGL.mm */,
@@ -11491,6 +11491,7 @@
 				0A9A6B6223911CB4006A152A /* RendererGL.cpp in Sources */,
 				0A9A6B7F23911CB4006A152A /* ContextEAGL.cpp in Sources */,
 				0A9A6B7723911CB4006A152A /* VertexArrayGL.cpp in Sources */,
+				0ADA203F267FCFFF00BC2F34 /* EAGLUtils.mm in Sources */,
 				0A9A6B8B23911CB4006A152A /* DisplayGL.cpp in Sources */,
 				0A9A6B6023911CB4006A152A /* ImageGL.cpp in Sources */,
 				0A9A6B6723911CB4006A152A /* ShaderGL.cpp in Sources */,
@@ -11820,6 +11821,7 @@
 				0AF9570A244C7CB200F59740 /* RendererGL.cpp in Sources */,
 				0AF9570B244C7CB200F59740 /* ContextEAGL.cpp in Sources */,
 				0AF9570C244C7CB200F59740 /* VertexArrayGL.cpp in Sources */,
+				0ADA2017267FCFF300BC2F34 /* EAGLUtils.mm in Sources */,
 				0AF9570D244C7CB200F59740 /* DisplayGL.cpp in Sources */,
 				0AF9570E244C7CB200F59740 /* ImageGL.cpp in Sources */,
 				0AF9570F244C7CB200F59740 /* ShaderGL.cpp in Sources */,

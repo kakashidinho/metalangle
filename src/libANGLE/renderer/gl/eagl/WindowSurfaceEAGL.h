@@ -30,16 +30,9 @@
 
 #include "libANGLE/renderer/gl/SurfaceGL.h"
 
-#ifdef __OBJC__
-@class EAGLContext;
-typedef EAGLContext *EAGLContextObj;
-#else
-typedef void *EAGLContextObj;
-#endif
+#include "libANGLE/renderer/gl/eagl/EAGLUtils.h"
+
 @class CALayer;
-@class CAEAGLLayer;
-struct __IOSurface;
-typedef __IOSurface *IOSurfaceRef;
 
 namespace rx
 {
@@ -86,7 +79,7 @@ class WindowSurfaceEAGL : public SurfaceGL
                                               const gl::FramebufferState &state) override;
 
   private:
-    CAEAGLLayer *mSwapLayer;
+    CAEAGLLayerObj mSwapLayer;
     CALayer *mLayer;
     EAGLContextObj mContext;
     const FunctionsGL *mFunctions;
