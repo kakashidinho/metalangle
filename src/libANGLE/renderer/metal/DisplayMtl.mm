@@ -28,6 +28,21 @@ namespace rx
 
 bool IsMetalDisplayAvailable()
 {
+    // If we run mac in a vm that doesn't support Metal, we fallback to OpenGLES.
+#if TARGET_OS_SIMULATOR
+    // This doesn't seem to work always (https://stackoverflow.com/questions/59116802/how-to-check-if-metal-is-supported)
+    if (MTLCreateSystemDefaultDevice() == nil) {
+        return false;
+    }
+#endif
+    
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
+    // On MacOS we need another method to determin whether Metal is supported.
+    if ([MTLCopyAllDevices() count] == 0) {
+        return false;
+    }
+#endif
+    
     // We only support macos 10.13+ and 11 for now. Since they are requirements for Metal 2.0.
 #if TARGET_OS_SIMULATOR
     if (ANGLE_APPLE_AVAILABLE_XCI(10.13, 13.0, 13))
