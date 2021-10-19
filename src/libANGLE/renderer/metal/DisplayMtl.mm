@@ -25,24 +25,14 @@
 
 namespace rx
 {
+static int hasMetalDevice = -1;
 
 bool IsMetalDisplayAvailable()
 {
-    // If we run mac in a vm that doesn't support Metal, we fallback to OpenGLES.
-#if TARGET_OS_SIMULATOR
-    // This doesn't seem to work always (https://stackoverflow.com/questions/59116802/how-to-check-if-metal-is-supported)
-    if (MTLCreateSystemDefaultDevice() == nil) {
-        return false;
+    if (hasMetalDevice != -1)
+    {
+        return hasMetalDevice;
     }
-#endif
-    
-#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-    // On MacOS we need another method to determin whether Metal is supported.
-    if ([MTLCopyAllDevices() count] == 0) {
-        return false;
-    }
-#endif
-    
     // We only support macos 10.13+ and 11 for now. Since they are requirements for Metal 2.0.
 #if TARGET_OS_SIMULATOR
     if (ANGLE_APPLE_AVAILABLE_XCI(10.13, 13.0, 13))
@@ -50,9 +40,31 @@ bool IsMetalDisplayAvailable()
     if (ANGLE_APPLE_AVAILABLE_XCI(10.13, 13.0, 11))
 #endif
     {
-        return true;
+        ANGLE_MTL_OBJC_SCOPE
+        {
+#if TARGET_OS_OSX || TARGET_OS_MACCATALYST
+            // On MacOS we need another method to determin whether Metal is supported.
+            NSArray<id<MTLDevice>> *devices = MTLCopyAllDevices();
+            [devices ANGLE_MTL_AUTORELEASE];
+            if ([devices count] == 0)
+#else
+            // This doesn't seem to work always (https://stackoverflow.com/questions/59116802/how-to-check-if-metal-is-supported)
+            id<MTLDevice> device = MTLCreateSystemDefaultDevice();
+            [device ANGLE_MTL_AUTORELEASE];
+            if (!device)
+#endif
+            {
+                NSLog(@"Can't get Metal device. Falling back to OpenGL.");
+                hasMetalDevice = 0;
+            } else {
+                hasMetalDevice = 1;
+            }
+        }
+        return hasMetalDevice;
     }
-    return false;
+    NSLog(@"The device is to old to support Metal. Falling back to OpenGL.");
+    hasMetalDevice = 0;
+    return hasMetalDevice;
 }
 
 DisplayImpl *CreateMetalDisplay(const egl::DisplayState &state)
