@@ -9,12 +9,14 @@
 #include "libANGLE/renderer/metal/mtl_glslang_utils.h"
 
 #include <regex>
+#include <tuple>
 
 #include <spirv_msl.hpp>
 
 #include "common/apple_platform_utils.h"
 #include "libANGLE/renderer/glslang_wrapper_utils.h"
 #include "libANGLE/renderer/metal/DisplayMtl.h"
+#include "libANGLE/renderer/metal/mtl_msl_vertex_fetch_codegen.h"
 
 namespace rx
 {
@@ -22,6 +24,10 @@ namespace mtl
 {
 namespace
 {
+constexpr char kOverrideVertexEntryName[] = "ANGLEVertexEntry";
+
+// See src/compiler/translator/tree_util/DriverUniform.cpp
+constexpr char kVerticesPerDrawName[] = "ANGLEUniforms.xfbVerticesPerInstance";
 
 constexpr uint32_t kGlslangTextureDescSet              = 0;
 constexpr uint32_t kGlslangDefaultUniformAndXfbDescSet = 1;
@@ -247,8 +253,20 @@ void GetAssignedSamplerBindings(const spirv_cross::CompilerMSL &compilerMsl,
     }
 }
 
-std::string PostProcessTranslatedMsl(const std::string &translatedSource)
+std::string PostProcessTranslatedMsl(gl::ShaderType shaderType,
+                                     const std::string desiredEntryName,
+                                     const std::string &translatedSource)
 {
+    std::string source;
+    if (shaderType == gl::ShaderType::Vertex)
+    {
+        source = AppendVertexFetchingCode(desiredEntryName, kVerticesPerDrawName, translatedSource);
+    }
+    else
+    {
+        source = translatedSource;
+    }
+
     // Add function_constant attribute to gl_SampleMask.
     // Even though this varying is only used when ANGLECoverageMaskEnabled is true,
     // the spirv-cross doesn't assign function_constant attribute to it. Thus it won't be dead-code
@@ -259,7 +277,7 @@ std::string PostProcessTranslatedMsl(const std::string &translatedSource)
     // This replaces "gl_SampleMask [[sample_mask]]"
     //          with "gl_SampleMask [[sample_mask, function_constant(ANGLECoverageMaskEnabled)]]"
     std::regex sampleMaskDeclareRegex(R"(\[\s*\[\s*sample_mask\s*\]\s*\])");
-    return std::regex_replace(translatedSource, sampleMaskDeclareRegex, sampleMaskReplaceStr);
+    return std::regex_replace(source, sampleMaskDeclareRegex, sampleMaskReplaceStr);
 }
 
 // Customized spirv-cross compiler
@@ -337,12 +355,29 @@ class SpirvToMslCompiler : public spirv_cross::CompilerMSL
         spirv_cross::CompilerMSL::set_msl_options(compOpt);
 
         // Actual compilation
-        mslShaderInfoOut->metalShaderSource =
-            PostProcessTranslatedMsl(spirv_cross::CompilerMSL::compile());
+        std::string translatedSrc           = spirv_cross::CompilerMSL::compile();
+        mslShaderInfoOut->metalShaderSource = PostProcessTranslatedMsl(
+            shaderType, spirv_cross::CompilerMSL::to_name(ir.default_entry_point, true),
+            translatedSrc);
 
         // Retrieve automatic texture slot assignments
         GetAssignedSamplerBindings(*this, originalSamplerBindings,
                                    &mslShaderInfoOut->actualSamplerBindings);
+    }
+
+  private:
+    std::string to_name(uint32_t id, bool allow_alias) const override
+    {
+        if (id == ir.default_entry_point)
+        {
+            // Override default name for vertex entry point
+            auto &execution = get_entry_point();
+            if (execution.model == spv::ExecutionModelVertex)
+            {
+                return kOverrideVertexEntryName;
+            }
+        }
+        return spirv_cross::CompilerMSL::to_name(id, allow_alias);
     }
 };
 

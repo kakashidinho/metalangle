@@ -2183,13 +2183,12 @@ angle::Result ContextMtl::fillDriverXFBUniforms(GLint drawCallFirstVertex,
 {
     gl::TransformFeedback *transformFeedback = getState().getCurrentTransformFeedback();
 
-    mDriverUniforms.xfbActiveUnpaused = getState().isTransformFeedbackActiveUnpaused();
+    mDriverUniforms.xfbActiveUnpaused      = getState().isTransformFeedbackActiveUnpaused();
+    mDriverUniforms.xfbVerticesPerInstance = verticesPerInstance;
     if (!transformFeedback || !mDriverUniforms.xfbActiveUnpaused)
     {
         return angle::Result::Continue;
     }
-
-    mDriverUniforms.xfbVerticesPerInstance = verticesPerInstance;
 
     TransformFeedbackMtl *transformFeedbackMtl = mtl::GetImpl(transformFeedback);
 

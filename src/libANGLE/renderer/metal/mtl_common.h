@@ -201,6 +201,22 @@ enum class PixelType
     EnumCount,
 };
 
+enum class VertexAttribType
+{
+    Float,
+    Fixed,
+    Half,
+    XYZW1010102Int,
+    XYZW1010102UInt,
+    Byte,
+    UByte,
+    Short,
+    UShort,
+    Int,
+    UInt,
+    EnumCount,
+};
+
 template <typename T>
 struct ImplTypeHelper;
 
