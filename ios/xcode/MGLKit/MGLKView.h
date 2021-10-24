@@ -23,7 +23,7 @@
 // the drawing method.
 @interface MGLKView : MGLKNativeView
 
-@property(nonatomic) MGLContext *context;
+@property(nonatomic, retain) MGLContext *context;
 @property(nonatomic, assign) IBOutlet id<MGLKViewDelegate> delegate;
 
 // Default value is NO. Setting to YES will keep the framebuffer data after presenting.
