@@ -219,6 +219,10 @@ class ProgramMtl : public ProgramImpl, public mtl::RenderPipelineCacheSpecialize
         // Since the default blocks are laid out in std140, this tells us where to write on a call
         // to a setUniform method. They are arranged in uniform location order.
         std::vector<sh::BlockMemberInfo> uniformLayout;
+
+        // Buffer pool used when size of default uniform data is bigger than
+        // max supported inline data size.
+        mtl::BufferPool bigSizeBufferPool;
     };
 
     gl::ShaderBitSet mDefaultUniformBlocksDirty;

@@ -469,12 +469,18 @@ angle::Result ProgramMtl::resizeDefaultUniformBlocksMemory(
     {
         if (requiredBufferSize[shaderType] > 0)
         {
-            ASSERT(requiredBufferSize[shaderType] <= mtl::kDefaultUniformsMaxSize);
-
             if (!mDefaultUniformBlocks[shaderType].uniformData.resize(
                     requiredBufferSize[shaderType]))
             {
                 ANGLE_MTL_CHECK(contextMtl, false, GL_OUT_OF_MEMORY);
+            }
+
+            if (requiredBufferSize[shaderType] > mtl::kDefaultUniformsMaxSize)
+            {
+                // If required size is too big, use uniform buffer
+                mDefaultUniformBlocks[shaderType].bigSizeBufferPool.reset(
+                    contextMtl, requiredBufferSize[shaderType],
+                    mtl::kUniformBufferSettingOffsetMinAlignment);
             }
 
             // Initialize uniform buffer memory to zero by default.
@@ -1032,8 +1038,29 @@ angle::Result ProgramMtl::commitUniforms(ContextMtl *context, mtl::RenderCommand
         {
             continue;
         }
-        cmdEncoder->setBytes(shaderType, uniformBlock.uniformData.data(),
-                             uniformBlock.uniformData.size(), mtl::kDefaultUniformsBindingIndex);
+
+        if (uniformBlock.uniformData.size() <= mtl::kDefaultUniformsMaxSize)
+        {
+            cmdEncoder->setBytes(shaderType, uniformBlock.uniformData.data(),
+                                 uniformBlock.uniformData.size(),
+                                 mtl::kDefaultUniformsBindingIndex);
+        }
+        else
+        {
+            // TODO: we should disallow shader program using too many default uniform vectors.
+            // Currently if that is the case, we fallback to use uniform buffer instead
+            // of inline uniform data.
+            mtl::BufferRef allocatedBuffer;
+            size_t allocatedOffset;
+            ANGLE_TRY(StreamUniformBufferData(
+                context, &uniformBlock.bigSizeBufferPool, uniformBlock.uniformData.data(),
+                uniformBlock.uniformData.size(), uniformBlock.uniformData.size(), &allocatedBuffer,
+                &allocatedOffset));
+
+            cmdEncoder->setBuffer(shaderType, allocatedBuffer,
+                                  static_cast<uint32_t>(allocatedOffset),
+                                  mtl::kDefaultUniformsBindingIndex);
+        }
 
         mDefaultUniformBlocksDirty.reset(shaderType);
     }
