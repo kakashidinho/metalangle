@@ -124,6 +124,9 @@
 #            define ANGLE_PLATFORM_MACCATALYST
 #        endif
 #    endif
+#    if __LP64__ && !defined(ANGLE_IS_64_BIT_CPU)
+#        define ANGLE_IS_64_BIT_CPU
+#    endif
 #endif
 
 #endif  // COMMON_PLATFORM_H_
