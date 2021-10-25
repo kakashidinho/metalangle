@@ -12,7 +12,7 @@
 #include <regex>
 #include <sstream>
 
-#include "libANGLE/renderer/metal/mtl_common.h"
+#include "libANGLE/renderer/metal/mtl_state_cache.h"
 
 namespace rx
 {
@@ -30,6 +30,7 @@ constexpr int kVertexStrideConstBaseIdx        = 400;
 constexpr int kVertexDivisorConstBaseIdx       = 500;
 constexpr int kVertexNormalizeConstBaseIdx     = 600;
 constexpr int kVertexOffsetAlignedConstBaseIdx = 700;
+constexpr int kVertexIsDefaultConstBaseIdx     = 800;
 
 constexpr char kVertexTypeConstBaseName[]          = "ANGLEVertexAttribType";
 constexpr char kVertexSizeConstBaseName[]          = "ANGLEVertexAttribSize";
@@ -38,14 +39,45 @@ constexpr char kVertexStrideConstBaseName[]        = "ANGLEVertexAttribStride";
 constexpr char kVertexDivisorConstBaseName[]       = "ANGLEVertexAttribDivisor";
 constexpr char kVertexNormalizeConstBaseName[]     = "ANGLEVertexAttribNormalize";
 constexpr char kVertexOffsetAlignedConstBaseName[] = "ANGLEVertexAttribOffsetAligned";
+constexpr char kVertexIsDefaultConstBaseName[]     = "ANGLEVertexAttribIsDefault";
 
 constexpr char kVertexBufferPrefix[] = "ANGLEVertexAttribBuffer";
 
+constexpr char kVertexDefaultBufferNeededConstName[] = "ANGLEVertexAttribDefaultBufferNeeded";
+constexpr char kVertexDefaultBufferName[]            = "ANGLEVertexAttribDefaultBuffer";
+
 #define MSL_TYPE_ENUM_NAME(TYPE) ("ANGLEVertexAttribType" #TYPE)
+
+void SetFunctionConstant(MTLFunctionConstantValues *funcConstants,
+                         const void *data,
+                         MTLDataType dataType,
+                         const std::string &name)
+{
+    ANGLE_MTL_OBJC_SCOPE
+    {
+        NSString *nameObjC = [NSString stringWithUTF8String:name.c_str()];
+        [funcConstants setConstantValue:data type:dataType withName:nameObjC];
+    }
+}
+
+void SetFunctionConstantBool(MTLFunctionConstantValues *funcConstants,
+                             BOOL data,
+                             const std::string &name)
+{
+    SetFunctionConstant(funcConstants, &data, MTLDataTypeBool, name);
+}
+
+void SetFunctionConstantUInt(MTLFunctionConstantValues *funcConstants,
+                             uint32_t data,
+                             const std::string &name)
+{
+    SetFunctionConstant(funcConstants, &data, MTLDataTypeUInt, name);
+}
 
 struct VertexAttribute
 {
     std::string name;
+    std::string typeName;
     int index;
 };
 
@@ -92,6 +124,13 @@ struct FunctionParam
 bool IsSpace(char c)
 {
     return c == ' ' || c == '\t' || c == '\r' || c == '\n';
+}
+
+bool IsAttribScalar(const std::string &typeName)
+{
+    char c = typeName.back();
+    // Doesn't contain vector size suffix
+    return c >= 'a' && c <= 'z';
 }
 
 size_t FindNextNonSpace(const std::string &code, size_t idx)
@@ -236,17 +275,18 @@ std::vector<FunctionParam> ParseMslParams(const std::string &code)
 std::vector<VertexAttribute> ParseMslAttributes(const std::string &code)
 {
     std::vector<VertexAttribute> re;
-    // $1 = name, $2 = attributes
+    // $1 = type, $2 = name, $3 = attributes
     std::regex attribDeclareRegex(
-        R"(([_a-zA-Z0-9<>]+)\s*\[\s*\[\s*attribute\s*\(([0-9]+)\)\s*\]\s*\])");
+        R"(([_a-zA-Z0-9<,>]+)\s+([_a-zA-Z0-9<>]+)\s*\[\s*\[\s*attribute\s*\(([0-9]+)\)\s*\]\s*\])");
     std::smatch matchResults;
     std::string::const_iterator ite = code.begin();
     while (ite != code.end() &&
            std::regex_search(ite, code.end(), matchResults, attribDeclareRegex))
     {
         VertexAttribute attrib;
-        attrib.name                 = matchResults[1];
-        std::string attributeIdxStr = matchResults[2];
+        attrib.typeName             = matchResults[1];
+        attrib.name                 = matchResults[2];
+        std::string attributeIdxStr = matchResults[3];
         attrib.index                = std::atoi(attributeIdxStr.c_str());
 
         re.push_back(std::move(attrib));
@@ -285,6 +325,10 @@ uint32_t GetVertexNormalizeConstantIdx(uint32_t index)
 {
     return kVertexNormalizeConstBaseIdx + index;
 }
+uint32_t GetVertexIsDefaultConstantIdx(uint32_t index)
+{
+    return kVertexIsDefaultConstBaseIdx + index;
+}
 
 std::string GetConstantName(const char *baseName, uint32_t index)
 {
@@ -321,6 +365,10 @@ std::string GetVertexNormalizeConstantName(uint32_t index)
 {
     return GetConstantName(kVertexNormalizeConstBaseName, index);
 }
+std::string GetVertexIsDefaultConstantName(uint32_t index)
+{
+    return GetConstantName(kVertexIsDefaultConstBaseName, index);
+}
 
 std::string GetVertexBufferNamePrefix(uint32_t index)
 {
@@ -334,22 +382,22 @@ std::ostream &EmitConstantDecl(const std::string &name,
                                bool isBool,
                                std::ostream *os)
 {
-    *os << "constant " << (isBool ? "bool " : "int ") << name << " [[function_constant(" << index
+    *os << "constant " << (isBool ? "bool " : "uint ") << name << " [[function_constant(" << index
         << ")]];" << std::endl;
     return *os;
 }
 
 // Convert glVertexAttribPointer type to shader enum value
-int ConvertVertexTypeToShaderEnumValue(VertexAttribType componentType)
+uint32_t ConvertVertexTypeToShaderEnumValue(VertexAttributeType componentType)
 {
-    return static_cast<int>(componentType);
+    return static_cast<uint32_t>(componentType);
 }
 
 std::ostream &EmitHelperFunctions(std::ostream *os)
 {
     *os << R"(
 template <typename Short>
-static inline Short fetchShortFromBytes(device uchar *input, uint offset)
+static inline Short fetchShortFromBytes(const device uchar *input, uint offset)
 {
     Short inputLo = input[offset];
     Short inputHi = input[offset + 1];
@@ -358,7 +406,7 @@ static inline Short fetchShortFromBytes(device uchar *input, uint offset)
 }
 
 template <typename Int>
-static inline Int fetchIntFromBytes(device uchar *input, uint offset)
+static inline Int fetchIntFromBytes(const device uchar *input, uint offset)
 {
     Int input0 = input[offset];
     Int input1 = input[offset + 1];
@@ -504,7 +552,7 @@ static inline T1 normalizedToFloat(T2 input)
                   "T2 must have more bits than or same bits as inputBitCount.");
 
     if (inputBitCount < 32) {
-        const float inverseMax = 1.0f / ((1 << inputBitCount) - 1);
+        const float inverseMax = 1.0f / (static_cast<uint>(0x1 << inputBitCount) - 1);
         return max(static_cast<T1>(input) * inverseMax, T1(-1.0));
     }
     else {
@@ -514,10 +562,10 @@ static inline T1 normalizedToFloat(T2 input)
 }
 
 // uchar
-static inline uchar4 fetchUByte(device uchar *input, int offset, int stride, int index,
-                                uint components)
+static inline uchar4 fetchUByte(const device uchar *input, int offset, int stride, int index,
+                                uint components, uchar defaultAlpha = 1)
 {
-    uchar4 re = uchar4(0, 0, 0, 1);
+    uchar4 re = uchar4(0, 0, 0, defaultAlpha);
     for (uint i = 0; i < components; ++i)
     {
         re[i] = input[offset + stride * index + i];
@@ -526,33 +574,33 @@ static inline uchar4 fetchUByte(device uchar *input, int offset, int stride, int
 }
 
 // uchar normalized
-static inline float4 fetchUByteNorm(device uchar *input, int offset, int stride, int index,
+static inline float4 fetchUByteNorm(const device uchar *input, int offset, int stride, int index,
                                     uint components)
 {
-    uchar4 re = fetchUByte(input, offset, stride, index, components);
+    uchar4 re = fetchUByte(input, offset, stride, index, components, 255);
     return normalizedToFloat<8, float4>(re);
 }
 
 // char
-static inline char4 fetchByte(device uchar *input, int offset, int stride, int index,
+static inline char4 fetchByte(const device uchar *input, int offset, int stride, int index,
                               uint components)
 {
     return as_type<char4>(fetchUByte(input, offset, stride, index, components));
 }
 
 // char normalized
-static inline float4 fetchByteNorm(device uchar *input, int offset, int stride, int index,
+static inline float4 fetchByteNorm(const device uchar *input, int offset, int stride, int index,
                                    uint components)
 {
-    char4 re = as_type<char4>(fetchUByte(input, offset, stride, index, components));
+    char4 re = as_type<char4>(fetchUByte(input, offset, stride, index, components, 127));
     return normalizedToFloat<7, float4>(re);
 }
 
 // ushort
-static inline ushort4 fetchUShort(device uchar *input, int offset, int stride, int index,
-                                  uint components)
+static inline ushort4 fetchUShort(const device uchar *input, int offset, int stride, int index,
+                                  uint components, ushort defaultAlpha = 1)
 {
-    ushort4 re = ushort4(0, 0, 0, 1);
+    ushort4 re = ushort4(0, 0, 0, defaultAlpha);
     for (uint i = 0; i < components; ++i)
     {
         re[i] = fetchShortFromBytes<ushort>(input, offset + stride * index + i * 2);
@@ -561,33 +609,34 @@ static inline ushort4 fetchUShort(device uchar *input, int offset, int stride, i
 }
 
 // ushort normalized
-static inline float4 fetchUShortNorm(device uchar *input, int offset, int stride, int index,
+static inline float4 fetchUShortNorm(const device uchar *input, int offset, int stride, int index,
                                       uint components)
 {
-    ushort4 re = fetchUShort(input, offset, stride, index, components);
+    ushort4 re = fetchUShort(input, offset, stride, index, components, 0xffff);
     return normalizedToFloat<16, float4>(re);
 }
 
 // short
-static inline short4 fetchShort(device uchar *input, int offset, int stride, int index,
+static inline short4 fetchShort(const device uchar *input, int offset, int stride, int index,
                                 uint components)
 {
     return as_type<short4>(fetchUShort(input, offset, stride, index, components));
 }
 
 // short normalized
-static inline float4 fetchShortNorm(device uchar *input, int offset, int stride, int index,
+static inline float4 fetchShortNorm(const device uchar *input, int offset, int stride, int index,
                                      uint components)
 {
-    short4 re = as_type<short4>(fetchUShort(input, offset, stride, index, components));
+    short4 re = as_type<short4>(fetchUShort(input, offset, stride, index, components,
+                                            0x7fff));
     return normalizedToFloat<15, float4>(re);
 }
 
 // uint
-static inline uint4 fetchUInt(device uchar *input, int offset, int stride, int index,
-                              uint components)
+static inline uint4 fetchUInt(const device uchar *input, int offset, int stride, int index,
+                              uint components, uint defaultAlpha = 1)
 {
-    uint4 re = uint4(0, 0, 0, 1);
+    uint4 re = uint4(0, 0, 0, defaultAlpha);
     for (uint i = 0; i < components; ++i)
     {
         re[i] = fetchIntFromBytes<uint>(input, offset + stride * index + i * 4);
@@ -596,44 +645,49 @@ static inline uint4 fetchUInt(device uchar *input, int offset, int stride, int i
 }
 
 // uint normalized
-static inline float4 fetchUIntNorm(device uchar *input, int offset, int stride, int index,
+static inline float4 fetchUIntNorm(const device uchar *input, int offset, int stride, int index,
                                    uint components)
 {
-    uint4 re = fetchUInt(input, offset, stride, index, components);
+    uint4 re = fetchUInt(input, offset, stride, index, components, 0xffffffff);
     return normalizedToFloat<32, float4>(re);
 }
 
 // int
-static inline int4 fetchInt(device uchar *input, int offset, int stride, int index,
+static inline int4 fetchInt(const device uchar *input, int offset, int stride, int index,
                             uint components)
 {
     return as_type<int4>(fetchUInt(input, offset, stride, index, components));
 }
 
 // int normalized
-static inline float4 fetchIntNorm(device uchar *input, int offset, int stride, int index,
+static inline float4 fetchIntNorm(const device uchar *input, int offset, int stride, int index,
                                   uint components)
 {
-    int4 re = as_type<int4>(fetchUInt(input, offset, stride, index, components));
+    int4 re = as_type<int4>(fetchUInt(input, offset, stride, index, components,
+                                      0x7fffffff));
     return normalizedToFloat<31, float4>(re);
 }
 
 // half float
-static inline half4 fetchHalf(device uchar *input, int offset, int stride, int index,
+static inline half4 fetchHalf(const device uchar *input, int offset, int stride, int index,
                                uint components)
 {
-    return as_type<half4>(fetchUShort(input, offset, stride, index, components));
+    constexpr half defaultAlpha = 1.0;
+    return as_type<half4>(fetchUShort(input, offset, stride, index, components,
+                                      as_type<ushort>(defaultAlpha)));
 }
 
 // float
-static inline float4 fetchFloat(device uchar *input, int offset, int stride, int index,
+static inline float4 fetchFloat(const device uchar *input, int offset, int stride, int index,
                                 uint components)
 {
-    return as_type<float4>(fetchUInt(input, offset, stride, index, components));
+    constexpr float defaultAlpha = 1.0;
+    return as_type<float4>(fetchUInt(input, offset, stride, index, components,
+                                     as_type<uint>(defaultAlpha)));
 }
 
 // fixed
-static inline float4 fetchFixed(device uchar *input, int offset, int stride, int index,
+static inline float4 fetchFixed(const device uchar *input, int offset, int stride, int index,
                                 uint components)
 {
     float4 re = float4(0, 0, 0, 1);
@@ -650,7 +704,7 @@ static inline float4 fetchFixed(device uchar *input, int offset, int stride, int
 // uchar aligned
 #define fetchUByte1Aligned(...) fetchUByte(__VA_ARGS__, 1)
 
-static inline uchar4 fetchUByte2Aligned(device uchar2 *input, int offset, int stride, int index)
+static inline uchar4 fetchUByte2Aligned(const device uchar2 *input, int offset, int stride, int index)
 {
     uchar4 re;
     re.xy = input[(offset + stride * index) / 2];
@@ -658,14 +712,14 @@ static inline uchar4 fetchUByte2Aligned(device uchar2 *input, int offset, int st
     re.w = 1;
     return re;
 }
-static inline uchar4 fetchUByte3Aligned(device uchar3 *input, int offset, int stride, int index)
+static inline uchar4 fetchUByte3Aligned(const device uchar3 *input, int offset, int stride, int index)
 {
     uchar4 re;
     re.xyz = input[(offset + stride * index) / 4];
     re.w = 1;
     return re;
 }
-static inline uchar4 fetchUByte4Aligned(device uchar4 *input, int offset, int stride, int index)
+static inline uchar4 fetchUByte4Aligned(const device uchar4 *input, int offset, int stride, int index)
 {
     uchar4 re;
     re = input[(offset + stride * index) / 4];
@@ -675,17 +729,19 @@ static inline uchar4 fetchUByte4Aligned(device uchar4 *input, int offset, int st
 // uchar aligned + normalized
 #define fetchUByte1AlignedNorm(...) fetchUByteNorm(__VA_ARGS__, 1)
 
-static inline float4 fetchUByte2AlignedNorm(device uchar2 *input, int offset, int stride, int index)
+static inline float4 fetchUByte2AlignedNorm(const device uchar2 *input, int offset, int stride, int index)
 {
     uchar4 re = fetchUByte2Aligned(input, offset, stride, index);
+    re.w = 0xff;
     return normalizedToFloat<8, float4>(re);
 }
-static inline float4 fetchUByte3AlignedNorm(device uchar3 *input, int offset, int stride, int index)
+static inline float4 fetchUByte3AlignedNorm(const device uchar3 *input, int offset, int stride, int index)
 {
     uchar4 re = fetchUByte3Aligned(input, offset, stride, index);
+    re.w = 0xff;
     return normalizedToFloat<8, float4>(re);
 }
-static inline float4 fetchUByte4AlignedNorm(device uchar4 *input, int offset, int stride, int index)
+static inline float4 fetchUByte4AlignedNorm(const device uchar4 *input, int offset, int stride, int index)
 {
     uchar4 re = fetchUByte4Aligned(input, offset, stride, index);
     return normalizedToFloat<8, float4>(re);
@@ -694,15 +750,15 @@ static inline float4 fetchUByte4AlignedNorm(device uchar4 *input, int offset, in
 // char aligned
 #define fetchByte1Aligned(...) fetchByte(__VA_ARGS__, 1)
 
-static inline char4 fetchByte2Aligned(device uchar2 *input, int offset, int stride, int index)
+static inline char4 fetchByte2Aligned(const device uchar2 *input, int offset, int stride, int index)
 {
     return as_type<char4>(fetchUByte2Aligned(input, offset, stride, index));
 }
-static inline char4 fetchByte3Aligned(device uchar3 *input, int offset, int stride, int index)
+static inline char4 fetchByte3Aligned(const device uchar3 *input, int offset, int stride, int index)
 {
     return as_type<char4>(fetchUByte3Aligned(input, offset, stride, index));
 }
-static inline char4 fetchByte4Aligned(device uchar4 *input, int offset, int stride, int index)
+static inline char4 fetchByte4Aligned(const device uchar4 *input, int offset, int stride, int index)
 {
     return as_type<char4>(fetchUByte4Aligned(input, offset, stride, index));
 }
@@ -710,24 +766,26 @@ static inline char4 fetchByte4Aligned(device uchar4 *input, int offset, int stri
 // char aligned + normalized
 #define fetchByte1AlignedNorm(...) fetchByteNorm(__VA_ARGS__, 1)
 
-static inline float4 fetchByte2AlignedNorm(device uchar2 *input, int offset, int stride, int index)
+static inline float4 fetchByte2AlignedNorm(const device uchar2 *input, int offset, int stride, int index)
 {
     char4 re = as_type<char4>(fetchUByte2Aligned(input, offset, stride, index));
+    re.w = 0x7f;
     return normalizedToFloat<7, float4>(re);
 }
-static inline float4 fetchByte3AlignedNorm(device uchar3 *input, int offset, int stride, int index)
+static inline float4 fetchByte3AlignedNorm(const device uchar3 *input, int offset, int stride, int index)
 {
     char4 re = as_type<char4>(fetchUByte3Aligned(input, offset, stride, index));
+    re.w = 0x7f;
     return normalizedToFloat<7, float4>(re);
 }
-static inline float4 fetchByte4AlignedNorm(device uchar4 *input, int offset, int stride, int index)
+static inline float4 fetchByte4AlignedNorm(const device uchar4 *input, int offset, int stride, int index)
 {
     char4 re = as_type<char4>(fetchUByte4Aligned(input, offset, stride, index));
     return normalizedToFloat<7, float4>(re);
 }
 
 // ushort aligned
-static inline ushort4 fetchUShort1Aligned(device ushort *input, int offset, int stride, int index)
+static inline ushort4 fetchUShort1Aligned(const device ushort *input, int offset, int stride, int index)
 {
     ushort4 re;
     re.x = input[(offset + stride * index) / 2];
@@ -736,7 +794,7 @@ static inline ushort4 fetchUShort1Aligned(device ushort *input, int offset, int 
     re.w = 1;
     return re;
 }
-static inline ushort4 fetchUShort2Aligned(device ushort2 *input, int offset, int stride, int index)
+static inline ushort4 fetchUShort2Aligned(const device ushort2 *input, int offset, int stride, int index)
 {
     ushort4 re;
     re.xy = input[(offset + stride * index) / 4];
@@ -744,14 +802,14 @@ static inline ushort4 fetchUShort2Aligned(device ushort2 *input, int offset, int
     re.w = 1;
     return re;
 }
-static inline ushort4 fetchUShort3Aligned(device ushort3 *input, int offset, int stride, int index)
+static inline ushort4 fetchUShort3Aligned(const device ushort3 *input, int offset, int stride, int index)
 {
     ushort4 re;
     re.xyz = input[(offset + stride * index) / 8];
     re.w = 1;
     return re;
 }
-static inline ushort4 fetchUShort4Aligned(device ushort4 *input, int offset, int stride, int index)
+static inline ushort4 fetchUShort4Aligned(const device ushort4 *input, int offset, int stride, int index)
 {
     ushort4 re;
     re = input[(offset + stride * index) / 8];
@@ -759,69 +817,69 @@ static inline ushort4 fetchUShort4Aligned(device ushort4 *input, int offset, int
 }
 
 // ushort aligned + normalized
-static inline float4 fetchUShort1AlignedNorm(device ushort *input, int offset, int stride, int index)
+static inline float4 fetchUShort1AlignedNorm(const device ushort *input, int offset, int stride, int index)
 {
     ushort4 re = fetchUShort1Aligned(input, offset, stride, index);
-    return normalizedToFloat<16, float4>(re);
+    return float4(normalizedToFloat<16, float3>(re.xyz), 1.0);
 }
-static inline float4 fetchUShort2AlignedNorm(device ushort2 *input, int offset, int stride, int index)
+static inline float4 fetchUShort2AlignedNorm(const device ushort2 *input, int offset, int stride, int index)
 {
     ushort4 re = fetchUShort2Aligned(input, offset, stride, index);
-    return normalizedToFloat<16, float4>(re);
+    return float4(normalizedToFloat<16, float3>(re.xyz), 1.0);
 }
-static inline float4 fetchUShort3AlignedNorm(device ushort3 *input, int offset, int stride, int index)
+static inline float4 fetchUShort3AlignedNorm(const device ushort3 *input, int offset, int stride, int index)
 {
     ushort4 re = fetchUShort3Aligned(input, offset, stride, index);
-    return normalizedToFloat<16, float4>(re);
+    return float4(normalizedToFloat<16, float3>(re.xyz), 1.0);
 }
-static inline float4 fetchUShort4AlignedNorm(device ushort4 *input, int offset, int stride, int index)
+static inline float4 fetchUShort4AlignedNorm(const device ushort4 *input, int offset, int stride, int index)
 {
     ushort4 re = fetchUShort4Aligned(input, offset, stride, index);
     return normalizedToFloat<16, float4>(re);
 }
 
 // short aligned
-static inline short4 fetchShort1Aligned(device ushort *input, int offset, int stride, int index)
+static inline short4 fetchShort1Aligned(const device ushort *input, int offset, int stride, int index)
 {
     return as_type<short4>(fetchUShort1Aligned(input, offset, stride, index));
 }
-static inline short4 fetchShort2Aligned(device ushort2 *input, int offset, int stride, int index)
+static inline short4 fetchShort2Aligned(const device ushort2 *input, int offset, int stride, int index)
 {
     return as_type<short4>(fetchUShort2Aligned(input, offset, stride, index));
 }
-static inline short4 fetchShort3Aligned(device ushort3 *input, int offset, int stride, int index)
+static inline short4 fetchShort3Aligned(const device ushort3 *input, int offset, int stride, int index)
 {
     return as_type<short4>(fetchUShort3Aligned(input, offset, stride, index));
 }
-static inline short4 fetchShort4Aligned(device ushort4 *input, int offset, int stride, int index)
+static inline short4 fetchShort4Aligned(const device ushort4 *input, int offset, int stride, int index)
 {
     return as_type<short4>(fetchUShort4Aligned(input, offset, stride, index));
 }
 
 // short aligned + normalized
-static inline float4 fetchShort1AlignedNorm(device ushort *input, int offset, int stride, int index)
+static inline float4 fetchShort1AlignedNorm(const device ushort *input, int offset, int stride, int index)
 {
     short4 re = as_type<short4>(fetchUShort1Aligned(input, offset, stride, index));
-    return normalizedToFloat<15, float4>(re);
+    return float4(normalizedToFloat<15, float3>(re.xyz), 1.0);
 }
-static inline float4 fetchShort2AlignedNorm(device ushort2 *input, int offset, int stride, int index)
+static inline float4 fetchShort2AlignedNorm(const device ushort2 *input, int offset, int stride, int index)
 {
     short4 re = as_type<short4>(fetchUShort2Aligned(input, offset, stride, index));
-    return normalizedToFloat<15, float4>(re);
+    return float4(normalizedToFloat<15, float3>(re.xyz), 1.0);
 }
-static inline float4 fetchShort3AlignedNorm(device ushort3 *input, int offset, int stride, int index)
+static inline float4 fetchShort3AlignedNorm(const device ushort3 *input, int offset, int stride, int index)
 {
     short4 re = as_type<short4>(fetchUShort3Aligned(input, offset, stride, index));
-    return normalizedToFloat<15, float4>(re);
+    return float4(normalizedToFloat<15, float3>(re.xyz), 1.0);
 }
-static inline float4 fetchShort4AlignedNorm(device ushort4 *input, int offset, int stride, int index)
+static inline float4 fetchShort4AlignedNorm(const device ushort4 *input, int offset, int stride, int index)
 {
     short4 re = as_type<short4>(fetchUShort4Aligned(input, offset, stride, index));
     return normalizedToFloat<15, float4>(re);
 }
 
 // uint aligned
-static inline uint4 fetchUInt1Aligned(device uint *input, int offset, int stride, int index)
+static inline uint4 fetchUInt1Aligned(const device uint *input, int offset, int stride, int index)
 {
     uint4 re;
     re.x = input[(offset + stride * index) / 4];
@@ -831,7 +889,7 @@ static inline uint4 fetchUInt1Aligned(device uint *input, int offset, int stride
     return re;
 }
 
-static inline uint4 fetchUInt2Aligned(device uint2 *input, int offset, int stride, int index)
+static inline uint4 fetchUInt2Aligned(const device uint2 *input, int offset, int stride, int index)
 {
     uint4 re;
     re.xy = input[(offset + stride * index) / 8];
@@ -840,14 +898,14 @@ static inline uint4 fetchUInt2Aligned(device uint2 *input, int offset, int strid
     return re;
 }
 
-static inline uint4 fetchUInt3Aligned(device uint3 *input, int offset, int stride, int index)
+static inline uint4 fetchUInt3Aligned(const device uint3 *input, int offset, int stride, int index)
 {
     uint4 re;
     re.xyz = input[(offset + stride * index) / 16];
     re.w = 1;
     return re;
 }
-static inline uint4 fetchUInt4Aligned(device uint4 *input, int offset, int stride, int index)
+static inline uint4 fetchUInt4Aligned(const device uint4 *input, int offset, int stride, int index)
 {
     uint4 re;
     re = input[(offset + stride * index) / 16];
@@ -855,105 +913,117 @@ static inline uint4 fetchUInt4Aligned(device uint4 *input, int offset, int strid
 }
 
 // uint aligned normalized
-static inline float4 fetchUInt1AlignedNorm(device uint *input, int offset, int stride, int index)
+static inline float4 fetchUInt1AlignedNorm(const device uint *input, int offset, int stride, int index)
 {
     uint4 re = fetchUInt1Aligned(input, offset, stride, index);
-    return normalizedToFloat<32, float4>(re);
+    return float4(normalizedToFloat<32, float3>(re.xyz), 1.0);
 }
-static inline float4 fetchUInt2AlignedNorm(device uint2 *input, int offset, int stride, int index)
+static inline float4 fetchUInt2AlignedNorm(const device uint2 *input, int offset, int stride, int index)
 {
     uint4 re = fetchUInt2Aligned(input, offset, stride, index);
-    return normalizedToFloat<32, float4>(re);
+    return float4(normalizedToFloat<32, float3>(re.xyz), 1.0);
 }
-static inline float4 fetchUInt3AlignedNorm(device uint3 *input, int offset, int stride, int index)
+static inline float4 fetchUInt3AlignedNorm(const device uint3 *input, int offset, int stride, int index)
 {
     uint4 re = fetchUInt3Aligned(input, offset, stride, index);
-    return normalizedToFloat<32, float4>(re);
+    return float4(normalizedToFloat<32, float3>(re.xyz), 1.0);
 }
-static inline float4 fetchUInt4AlignedNorm(device uint4 *input, int offset, int stride, int index)
+static inline float4 fetchUInt4AlignedNorm(const device uint4 *input, int offset, int stride, int index)
 {
     uint4 re = fetchUInt4Aligned(input, offset, stride, index);
     return normalizedToFloat<32, float4>(re);
 }
 
 // int aligned
-static inline int4 fetchInt1Aligned(device uint *input, int offset, int stride, int index)
+static inline int4 fetchInt1Aligned(const device uint *input, int offset, int stride, int index)
 {
     return as_type<int4>(fetchUInt1Aligned(input, offset, stride, index));
 }
-static inline int4 fetchInt2Aligned(device uint2 *input, int offset, int stride, int index)
+static inline int4 fetchInt2Aligned(const device uint2 *input, int offset, int stride, int index)
 {
     return as_type<int4>(fetchUInt2Aligned(input, offset, stride, index));
 }
-static inline int4 fetchInt3Aligned(device uint3 *input, int offset, int stride, int index)
+static inline int4 fetchInt3Aligned(const device uint3 *input, int offset, int stride, int index)
 {
     return as_type<int4>(fetchUInt3Aligned(input, offset, stride, index));
 }
-static inline int4 fetchInt4Aligned(device uint4 *input, int offset, int stride, int index)
+static inline int4 fetchInt4Aligned(const device uint4 *input, int offset, int stride, int index)
 {
     return as_type<int4>(fetchUInt4Aligned(input, offset, stride, index));
 }
 
 // int aligned + normalized
-static inline float4 fetchInt1AlignedNorm(device uint *input, int offset, int stride, int index)
+static inline float4 fetchInt1AlignedNorm(const device uint *input, int offset, int stride, int index)
 {
     int4 re = as_type<int4>(fetchUInt1Aligned(input, offset, stride, index));
-    return normalizedToFloat<31, float4>(re);
+    return float4(normalizedToFloat<31, float3>(re.xyz), 1.0);
 }
-static inline float4 fetchInt2AlignedNorm(device uint2 *input, int offset, int stride, int index)
+static inline float4 fetchInt2AlignedNorm(const device uint2 *input, int offset, int stride, int index)
 {
     int4 re = as_type<int4>(fetchUInt2Aligned(input, offset, stride, index));
-    return normalizedToFloat<31, float4>(re);
+    return float4(normalizedToFloat<31, float3>(re.xyz), 1.0);
 }
-static inline float4 fetchInt3AlignedNorm(device uint3 *input, int offset, int stride, int index)
+static inline float4 fetchInt3AlignedNorm(const device uint3 *input, int offset, int stride, int index)
 {
     int4 re = as_type<int4>(fetchUInt3Aligned(input, offset, stride, index));
-    return normalizedToFloat<31, float4>(re);
+    return float4(normalizedToFloat<31, float3>(re.xyz), 1.0);
 }
-static inline float4 fetchInt4AlignedNorm(device uint4 *input, int offset, int stride, int index)
+static inline float4 fetchInt4AlignedNorm(const device uint4 *input, int offset, int stride, int index)
 {
     int4 re = as_type<int4>(fetchUInt4Aligned(input, offset, stride, index));
     return normalizedToFloat<31, float4>(re);
 }
 
 // half float aligned
-static inline half4 fetchHalf1Aligned(device ushort *input, int offset, int stride, int index)
+static inline half4 fetchHalf1Aligned(const device ushort *input, int offset, int stride, int index)
 {
-    return as_type<half4>(fetchUShort1Aligned(input, offset, stride, index));
+    auto re = as_type<half4>(fetchUShort1Aligned(input, offset, stride, index));
+    re.w = 1.0;
+    return re;
 }
-static inline half4 fetchHalf2Aligned(device ushort2 *input, int offset, int stride, int index)
+static inline half4 fetchHalf2Aligned(const device ushort2 *input, int offset, int stride, int index)
 {
-    return as_type<half4>(fetchUShort2Aligned(input, offset, stride, index));
+    auto re = as_type<half4>(fetchUShort2Aligned(input, offset, stride, index));
+    re.w = 1.0;
+    return re;
 }
-static inline half4 fetchHalf3Aligned(device ushort3 *input, int offset, int stride, int index)
+static inline half4 fetchHalf3Aligned(const device ushort3 *input, int offset, int stride, int index)
 {
-    return as_type<half4>(fetchUShort3Aligned(input, offset, stride, index));
+    auto re = as_type<half4>(fetchUShort3Aligned(input, offset, stride, index));
+    re.w = 1.0;
+    return re;
 }
-static inline half4 fetchHalf4Aligned(device ushort4 *input, int offset, int stride, int index)
+static inline half4 fetchHalf4Aligned(const device ushort4 *input, int offset, int stride, int index)
 {
     return as_type<half4>(fetchUShort4Aligned(input, offset, stride, index));
 }
 
 // float aligned
-static inline float4 fetchFloat1Aligned(device uint *input, int offset, int stride, int index)
+static inline float4 fetchFloat1Aligned(const device uint *input, int offset, int stride, int index)
 {
-    return as_type<float4>(fetchUInt1Aligned(input, offset, stride, index));
+    auto re = as_type<float4>(fetchUInt1Aligned(input, offset, stride, index));
+    re.w = 1.0;
+    return re;
 }
-static inline float4 fetchFloat2Aligned(device uint2 *input, int offset, int stride, int index)
+static inline float4 fetchFloat2Aligned(const device uint2 *input, int offset, int stride, int index)
 {
-    return as_type<float4>(fetchUInt2Aligned(input, offset, stride, index));
+    auto re = as_type<float4>(fetchUInt2Aligned(input, offset, stride, index));
+    re.w = 1.0;
+    return re;
 }
-static inline float4 fetchFloat3Aligned(device uint3 *input, int offset, int stride, int index)
+static inline float4 fetchFloat3Aligned(const device uint3 *input, int offset, int stride, int index)
 {
-    return as_type<float4>(fetchUInt3Aligned(input, offset, stride, index));
+    auto re = as_type<float4>(fetchUInt3Aligned(input, offset, stride, index));
+    re.w = 1.0;
+    return re;
 }
-static inline float4 fetchFloat4Aligned(device uint4 *input, int offset, int stride, int index)
+static inline float4 fetchFloat4Aligned(const device uint4 *input, int offset, int stride, int index)
 {
     return as_type<float4>(fetchUInt4Aligned(input, offset, stride, index));
 }
 
 // fixed aligned
-static inline float4 fetchFixed1Aligned(device uint *input, int offset, int stride, int index)
+static inline float4 fetchFixed1Aligned(const device uint *input, int offset, int stride, int index)
 {
     float4 re;
     re.x = fixedToFloat<float>(fetchInt1Aligned(input, offset, stride, index).x);
@@ -962,7 +1032,7 @@ static inline float4 fetchFixed1Aligned(device uint *input, int offset, int stri
     re.w = 1;
     return re;
 }
-static inline float4 fetchFixed2Aligned(device uint2 *input, int offset, int stride, int index)
+static inline float4 fetchFixed2Aligned(const device uint2 *input, int offset, int stride, int index)
 {
     float4 re;
     re.xy = fixedToFloat<float2>(fetchInt2Aligned(input, offset, stride, index).xy);
@@ -970,14 +1040,14 @@ static inline float4 fetchFixed2Aligned(device uint2 *input, int offset, int str
     re.w = 1;
     return re;
 }
-static inline float4 fetchFixed3Aligned(device uint3 *input, int offset, int stride, int index)
+static inline float4 fetchFixed3Aligned(const device uint3 *input, int offset, int stride, int index)
 {
     float4 re;
     re.xyz = fixedToFloat<float3>(fetchInt3Aligned(input, offset, stride, index).xyz);
     re.w = 1;
     return re;
 }
-static inline float4 fetchFixed4Aligned(device uint4 *input, int offset, int stride, int index)
+static inline float4 fetchFixed4Aligned(const device uint4 *input, int offset, int stride, int index)
 {
     float4 re;
     re = fixedToFloat<float4>(fetchInt4Aligned(input, offset, stride, index));
@@ -986,21 +1056,21 @@ static inline float4 fetchFixed4Aligned(device uint4 *input, int offset, int str
 
 // packed XYZW1010102
 template <bool isSigned, bool normalized>
-static inline float4 fetchPackedXYZW1010102(device uchar *input, int offset, int stride, int index)
+static inline float4 fetchPackedXYZW1010102(const device uchar *input, int offset, int stride, int index)
 {
     uint packedValue = fetchIntFromBytes<uint>(input, offset + stride * index);
     return packedXYZW1010102ToFloat<isSigned, normalized>(packedValue);
 }
 
 template <bool isSigned, bool normalized>
-static inline float4 fetchPackedXYZW1010102(device uchar *input, int offset, int stride, int index,
+static inline float4 fetchPackedXYZW1010102(const device uchar *input, int offset, int stride, int index,
                                             int components /* ignored */)
 {
     return fetchPackedXYZW1010102<isSigned, normalized>(input, offset, stride, index);
 }
 
 template <bool isSigned, bool normalized>
-static inline float4 fetchPackedXYZW1010102Aligned(device uint *input, int offset, int stride,
+static inline float4 fetchPackedXYZW1010102Aligned(const device uint *input, int offset, int stride,
                                                    int index)
 {
     uint packedValue = input[(offset + stride * index) / 4];
@@ -1090,6 +1160,27 @@ template <typename Vec4>
 static inline uint castTo(Vec4 src, uint)
 {
     return static_cast<uint>(src.x);
+}
+
+template <typename DestT, unsigned int DestComp>
+static inline vec<DestT, DestComp> fetchDefaultAttribVec(constant float4* buffer,
+                                                         uint attribIndex,
+                                                         vec<DestT, DestComp>)
+{
+    vec<DestT, DestComp> re;
+    float4 defaultVec4 = buffer[attribIndex];
+    for (unsigned int i = 0; i < DestComp; ++i)
+    {
+        re[i] = as_type<DestT>(defaultVec4[i]);
+    }
+
+    return re;
+}
+
+template <typename T>
+static inline T fetchDefaultAttribScalar(constant float4* buffer, uint attribIndex, T)
+{
+    return as_type<T>(buffer[attribIndex].x);
 }
 
 // COMP_NUMBER = number of components, must be literal
@@ -1192,12 +1283,7 @@ static inline uint castTo(Vec4 src, uint)
         uint vertexFinalIndex;                                                                     \
         if ((DIVISOR) == 0)                                                                        \
         {                                                                                          \
-            vertexFinalIndex = gl_VertexIndex + gl_InstanceIndex * ANGLEVerticesPerDraw;           \
-        }                                                                                          \
-        else if ((DIVISOR) == -1)                                                                  \
-        {                                                                                          \
-            /* default attrib */                                                                   \
-            vertexFinalIndex = 0;                                                                  \
+            vertexFinalIndex = gl_VertexIndex;                                                     \
         }                                                                                          \
         else                                                                                       \
         {                                                                                          \
@@ -1233,6 +1319,10 @@ static inline uint castTo(Vec4 src, uint)
             break;                                                                                 \
         }                                                                                          \
     }
+
+#define FETCH_DEFAULT_ATTRIB_CODE(BUFFER, ATTRIB_IDX, FETCH_PROC, DEST) \
+    DEST = FETCH_PROC(BUFFER, ATTRIB_IDX, DEST)
+
 )";
     return *os;
 }
@@ -1243,17 +1333,17 @@ std::ostream &EmitConstantsDecls(const std::vector<VertexAttribute> &attribs, st
     *os << "constant int " << CONST_NAME << " = " << ConvertVertexTypeToShaderEnumValue(TYPE) \
         << ";\n"
 
-    DECLARE_TYPE_CONST(MSL_TYPE_ENUM_NAME(Float), VertexAttribType::Float);
-    DECLARE_TYPE_CONST(MSL_TYPE_ENUM_NAME(Fixed), VertexAttribType::Fixed);
-    DECLARE_TYPE_CONST(MSL_TYPE_ENUM_NAME(XYZW1010102Int), VertexAttribType::XYZW1010102Int);
-    DECLARE_TYPE_CONST(MSL_TYPE_ENUM_NAME(XYZW1010102UInt), VertexAttribType::XYZW1010102UInt);
-    DECLARE_TYPE_CONST(MSL_TYPE_ENUM_NAME(Byte), VertexAttribType::Byte);
-    DECLARE_TYPE_CONST(MSL_TYPE_ENUM_NAME(UByte), VertexAttribType::UByte);
-    DECLARE_TYPE_CONST(MSL_TYPE_ENUM_NAME(Short), VertexAttribType::Short);
-    DECLARE_TYPE_CONST(MSL_TYPE_ENUM_NAME(UShort), VertexAttribType::UShort);
-    DECLARE_TYPE_CONST(MSL_TYPE_ENUM_NAME(Int), VertexAttribType::Int);
-    DECLARE_TYPE_CONST(MSL_TYPE_ENUM_NAME(UInt), VertexAttribType::UInt);
-    DECLARE_TYPE_CONST(MSL_TYPE_ENUM_NAME(Half), VertexAttribType::Half);
+    DECLARE_TYPE_CONST(MSL_TYPE_ENUM_NAME(Float), VertexAttributeType::Float);
+    DECLARE_TYPE_CONST(MSL_TYPE_ENUM_NAME(Fixed), VertexAttributeType::Fixed);
+    DECLARE_TYPE_CONST(MSL_TYPE_ENUM_NAME(XYZW1010102Int), VertexAttributeType::XYZW1010102Int);
+    DECLARE_TYPE_CONST(MSL_TYPE_ENUM_NAME(XYZW1010102UInt), VertexAttributeType::XYZW1010102UInt);
+    DECLARE_TYPE_CONST(MSL_TYPE_ENUM_NAME(Byte), VertexAttributeType::Byte);
+    DECLARE_TYPE_CONST(MSL_TYPE_ENUM_NAME(UByte), VertexAttributeType::UByte);
+    DECLARE_TYPE_CONST(MSL_TYPE_ENUM_NAME(Short), VertexAttributeType::Short);
+    DECLARE_TYPE_CONST(MSL_TYPE_ENUM_NAME(UShort), VertexAttributeType::UShort);
+    DECLARE_TYPE_CONST(MSL_TYPE_ENUM_NAME(Int), VertexAttributeType::Int);
+    DECLARE_TYPE_CONST(MSL_TYPE_ENUM_NAME(UInt), VertexAttributeType::UInt);
+    DECLARE_TYPE_CONST(MSL_TYPE_ENUM_NAME(Half), VertexAttributeType::Half);
 
     for (const VertexAttribute &attrib : attribs)
     {
@@ -1271,6 +1361,15 @@ std::ostream &EmitConstantsDecls(const std::vector<VertexAttribute> &attribs, st
                          GetVertexNormalizeConstantIdx(attrib.index), true, os);
         EmitConstantDecl(GetVertexOffsetAlignedConstantName(attrib.index),
                          GetVertexOffsetAlignedConstantIdx(attrib.index), true, os);
+        EmitConstantDecl(GetVertexIsDefaultConstantName(attrib.index),
+                         GetVertexIsDefaultConstantIdx(attrib.index), true, os);
+
+        // constant indicating the format is packed
+        *os << "constant bool ANGLEVertexAttribIsPacked32Bit_" << attrib.index << " = "
+            << GetVertexTypeConstantName(attrib.index)
+            << " == " << MSL_TYPE_ENUM_NAME(XYZW1010102Int) << " || "
+            << GetVertexTypeConstantName(attrib.index)
+            << " == " << MSL_TYPE_ENUM_NAME(XYZW1010102UInt) << ";" << std::endl;
 
         // constants based on num components
         *os << "constant bool ANGLEVertexAttribSizeIs1_" << attrib.index << " = "
@@ -1289,11 +1388,8 @@ std::ostream &EmitConstantsDecls(const std::vector<VertexAttribute> &attribs, st
             << " == " << MSL_TYPE_ENUM_NAME(Fixed) << " || "
             << GetVertexTypeConstantName(attrib.index) << " == " << MSL_TYPE_ENUM_NAME(Int)
             << " || " << GetVertexTypeConstantName(attrib.index)
-            << " == " << MSL_TYPE_ENUM_NAME(UInt) << " || "
-            << GetVertexTypeConstantName(attrib.index)
-            << " == " << MSL_TYPE_ENUM_NAME(XYZW1010102Int) << " || "
-            << GetVertexTypeConstantName(attrib.index)
-            << " == " << MSL_TYPE_ENUM_NAME(XYZW1010102UInt) << ";" << std::endl;
+            << " == " << MSL_TYPE_ENUM_NAME(UInt) << " || ANGLEVertexAttribIsPacked32Bit_"
+            << attrib.index << ";" << std::endl;
 
         *os << "constant bool ANGLEVertexAttribIs2Bytes" << attrib.index << " = "
             << GetVertexTypeConstantName(attrib.index) << " == " << MSL_TYPE_ENUM_NAME(Half)
@@ -1346,26 +1442,47 @@ std::ostream &EmitConstantsDecls(const std::vector<VertexAttribute> &attribs, st
         *os << "constant bool ANGLEVertexAttribSrcUInt1_" << attrib.index << " = "
             << GetVertexOffsetAlignedConstantName(attrib.index) << " && "
             << "ANGLEVertexAttribIs4Bytes" << attrib.index << " && "
-            << "ANGLEVertexAttribSizeIs1_" << attrib.index << ";" << std::endl;
+            << "(ANGLEVertexAttribSizeIs1_" << attrib.index << " || ANGLEVertexAttribIsPacked32Bit_"
+            << attrib.index << ");" << std::endl;
 
         *os << "constant bool ANGLEVertexAttribSrcUInt2_" << attrib.index << " = "
             << GetVertexOffsetAlignedConstantName(attrib.index) << " && "
             << "ANGLEVertexAttribIs4Bytes" << attrib.index << " && "
-            << "ANGLEVertexAttribSizeIs2_" << attrib.index << ";" << std::endl;
+            << "(ANGLEVertexAttribSizeIs2_" << attrib.index
+            << " && !ANGLEVertexAttribIsPacked32Bit_" << attrib.index << ");" << std::endl;
 
         *os << "constant bool ANGLEVertexAttribSrcUInt3_" << attrib.index << " = "
             << GetVertexOffsetAlignedConstantName(attrib.index) << " && "
             << "ANGLEVertexAttribIs4Bytes" << attrib.index << " && "
-            << "ANGLEVertexAttribSizeIs3_" << attrib.index << ";" << std::endl;
+            << "(ANGLEVertexAttribSizeIs3_" << attrib.index
+            << " && !ANGLEVertexAttribIsPacked32Bit_" << attrib.index << ");" << std::endl;
 
         *os << "constant bool ANGLEVertexAttribSrcUInt4_" << attrib.index << " = "
             << GetVertexOffsetAlignedConstantName(attrib.index) << " && "
             << "ANGLEVertexAttribIs4Bytes" << attrib.index << " && "
-            << "ANGLEVertexAttribSizeIs4_" << attrib.index << ";" << std::endl;
+            << "(ANGLEVertexAttribSizeIs4_" << attrib.index
+            << " && !ANGLEVertexAttribIsPacked32Bit_" << attrib.index << ");" << std::endl;
 
         // Unaligned flag
         *os << "constant bool ANGLEVertexAttribIsUnaligned" << attrib.index << " = "
             << "!" << GetVertexOffsetAlignedConstantName(attrib.index) << ";" << std::endl;
+    }
+
+    if (!attribs.empty())
+    {
+        // default atrrib buffer needed flag
+        *os << "constant bool " << kVertexDefaultBufferNeededConstName << " = \n";
+        for (size_t i = 0; i < attribs.size(); ++i)
+        {
+            const VertexAttribute &attrib = attribs[i];
+            if (i > 0)
+            {
+                *os << "|| ";
+            }
+
+            *os << GetVertexIsDefaultConstantName(attrib.index) << '\n';
+        }
+        *os << ";\n";
     }
 
     return *os;
@@ -1388,51 +1505,51 @@ std::ostream &EmitVertexFetchCodeEntryPrototype(const std::string &desiredEntryN
             *os << ",\n";
         }
 
-        *os << "device uchar *" << GetVertexBufferNamePrefix(attrib.index) << "AsByte1 [[buffer("
+        *os << "const device uchar *" << GetVertexBufferNamePrefix(attrib.index) << "AsByte1 [[buffer("
             << attrib.index << "), function_constant(ANGLEVertexAttribIsUnaligned" << attrib.index
             << ")]],\n";
 
-        *os << "device uchar2 *" << GetVertexBufferNamePrefix(attrib.index) << "AsByte2 [[buffer("
+        *os << "const device uchar2 *" << GetVertexBufferNamePrefix(attrib.index) << "AsByte2 [[buffer("
             << attrib.index << "), function_constant(ANGLEVertexAttribSrcUChar2_" << attrib.index
             << ")]],\n";
 
-        *os << "device uchar3 *" << GetVertexBufferNamePrefix(attrib.index) << "AsByte3 [[buffer("
+        *os << "const device uchar3 *" << GetVertexBufferNamePrefix(attrib.index) << "AsByte3 [[buffer("
             << attrib.index << "), function_constant(ANGLEVertexAttribSrcUChar3_" << attrib.index
             << ")]],\n";
 
-        *os << "device uchar4 *" << GetVertexBufferNamePrefix(attrib.index) << "AsByte4 [[buffer("
+        *os << "const device uchar4 *" << GetVertexBufferNamePrefix(attrib.index) << "AsByte4 [[buffer("
             << attrib.index << "), function_constant(ANGLEVertexAttribSrcUChar4_" << attrib.index
             << ")]],\n";
 
-        *os << "device ushort *" << GetVertexBufferNamePrefix(attrib.index) << "AsShort1 [[buffer("
+        *os << "const device ushort *" << GetVertexBufferNamePrefix(attrib.index) << "AsShort1 [[buffer("
             << attrib.index << "), function_constant(ANGLEVertexAttribSrcUShort1_" << attrib.index
             << ")]],\n";
 
-        *os << "device ushort2 *" << GetVertexBufferNamePrefix(attrib.index) << "AsShort2 [[buffer("
+        *os << "const device ushort2 *" << GetVertexBufferNamePrefix(attrib.index) << "AsShort2 [[buffer("
             << attrib.index << "), function_constant(ANGLEVertexAttribSrcUShort2_" << attrib.index
             << ")]],\n";
 
-        *os << "device ushort3 *" << GetVertexBufferNamePrefix(attrib.index) << "AsShort3 [[buffer("
+        *os << "const device ushort3 *" << GetVertexBufferNamePrefix(attrib.index) << "AsShort3 [[buffer("
             << attrib.index << "), function_constant(ANGLEVertexAttribSrcUShort3_" << attrib.index
             << ")]],\n";
 
-        *os << "device ushort4 *" << GetVertexBufferNamePrefix(attrib.index) << "AsShort4 [[buffer("
+        *os << "const device ushort4 *" << GetVertexBufferNamePrefix(attrib.index) << "AsShort4 [[buffer("
             << attrib.index << "), function_constant(ANGLEVertexAttribSrcUShort4_" << attrib.index
             << ")]],\n";
 
-        *os << "device uint *" << GetVertexBufferNamePrefix(attrib.index) << "AsInt1 [[buffer("
+        *os << "const device uint *" << GetVertexBufferNamePrefix(attrib.index) << "AsInt1 [[buffer("
             << attrib.index << "), function_constant(ANGLEVertexAttribSrcUInt1_" << attrib.index
             << ")]],\n";
 
-        *os << "device uint2 *" << GetVertexBufferNamePrefix(attrib.index) << "AsInt2 [[buffer("
+        *os << "const device uint2 *" << GetVertexBufferNamePrefix(attrib.index) << "AsInt2 [[buffer("
             << attrib.index << "), function_constant(ANGLEVertexAttribSrcUInt2_" << attrib.index
             << ")]],\n";
 
-        *os << "device uint3 *" << GetVertexBufferNamePrefix(attrib.index) << "AsInt3 [[buffer("
+        *os << "const device uint3 *" << GetVertexBufferNamePrefix(attrib.index) << "AsInt3 [[buffer("
             << attrib.index << "), function_constant(ANGLEVertexAttribSrcUInt3_" << attrib.index
             << ")]],\n";
 
-        *os << "device uint4 *" << GetVertexBufferNamePrefix(attrib.index) << "AsInt4 [[buffer("
+        *os << "const device uint4 *" << GetVertexBufferNamePrefix(attrib.index) << "AsInt4 [[buffer("
             << attrib.index << "), function_constant(ANGLEVertexAttribSrcUInt4_" << attrib.index
             << ")]]";
 
@@ -1457,6 +1574,19 @@ std::ostream &EmitVertexFetchCodeEntryPrototype(const std::string &desiredEntryN
         *os << param.addressSpace << " " << param.typeName << " " << param.name << " "
             << param.attributes;
 
+        hasArguments = true;
+    }
+
+    if (!attribs.empty())
+    {
+        // Insert default attributes buffer
+        if (hasArguments)
+        {
+            *os << ",\n";
+        }
+        *os << "constant float4* " << kVertexDefaultBufferName << "[[buffer("
+            << kDefaultAttribsBindingIndex << "), function_constant("
+            << kVertexDefaultBufferNeededConstName << ")]]";
         hasArguments = true;
     }
 
@@ -1487,31 +1617,51 @@ std::ostream &EmitVertexFetchCodeEntryPrototype(const std::string &desiredEntryN
 
 std::ostream &EmitVertexFetchCode(const FunctionParam &stageInput,
                                   const VertexAttribute &attrib,
-                                  const std::string &verticesPerInstanceDriverUniformName,
                                   std::ostream *os)
 {
+    // if (ANGLEVertexAttribIsDefault0)
     // {
-    //      const uint ANGLEVerticesPerDraw = ANGLEUniforms.xfbVerticesPerInstance;
-    //      FETCH_CODE(...)
+    //     FETCH_DEFAULT_ATTRIB_CODE(...);
     // }
-    *os << "// fetching code for attribute" << attrib.index << "\n";
+    // else{
+    //     FETCH_CODE(...)
+    // }
+    *os << "\t// fetching code for attribute" << attrib.index << "\n";
+    *os << "\tif (" << GetVertexIsDefaultConstantName(attrib.index) << ")\n";
     *os << "\t{\n";
-    *os << "const uint ANGLEVerticesPerDraw = " << verticesPerInstanceDriverUniformName << ";\n";
 
-    *os << "FETCH_CODE(\n";
-    *os << GetVertexTypeConstantName(attrib.index) << ",\n";
-    *os << GetVertexSizeConstantName(attrib.index) << ",\n";
-    *os << GetVertexBufferNamePrefix(attrib.index) << ",\n";
-    *os << GetVertexOffsetConstantName(attrib.index) << ",\n";
-    *os << GetVertexStrideConstantName(attrib.index) << ",\n";
-    *os << GetVertexNormalizeConstantName(attrib.index) << ",\n";
-    *os << GetVertexOffsetAlignedConstantName(attrib.index) << ",\n";
-    *os << GetVertexDivisorConstantName(attrib.index) << ",\n";
-    *os << stageInput.name << '.' << attrib.name << "\n";
-    *os << ");\n";
+    *os << "\t\tFETCH_DEFAULT_ATTRIB_CODE(\n";
+    *os << "\t\t" << kVertexDefaultBufferName << ",\n";
+    *os << "\t\t" << attrib.index << ",\n\t\t";
+    if (IsAttribScalar(attrib.typeName))
+    {
+        *os << "fetchDefaultAttribScalar";
+    }
+    else
+    {
+        *os << "fetchDefaultAttribVec";
+    }
+    *os << ", " << stageInput.name << '.' << attrib.name << "\n";
+    *os << "\t\t);\n";
 
     *os << "\t}\n";
-    *os << "// end fetching code for attribute" << attrib.index << "\n\n";
+    *os << "\telse\n";
+    *os << "\t{\n";
+
+    *os << "\t\tFETCH_CODE(\n";
+    *os << "\t\t" << GetVertexTypeConstantName(attrib.index) << ",\n";
+    *os << "\t\t" << GetVertexSizeConstantName(attrib.index) << ",\n";
+    *os << "\t\t" << GetVertexBufferNamePrefix(attrib.index) << ",\n";
+    *os << "\t\t" << GetVertexOffsetConstantName(attrib.index) << ",\n";
+    *os << "\t\t" << GetVertexStrideConstantName(attrib.index) << ",\n";
+    *os << "\t\t" << GetVertexNormalizeConstantName(attrib.index) << ",\n";
+    *os << "\t\t" << GetVertexOffsetAlignedConstantName(attrib.index) << ",\n";
+    *os << "\t\t" << GetVertexDivisorConstantName(attrib.index) << ",\n";
+    *os << "\t\t" << stageInput.name << '.' << attrib.name << "\n";
+    *os << "\t\t);\n";
+
+    *os << "\t}\n";
+    *os << "\t// end fetching code for attribute" << attrib.index << "\n\n";
 
     return *os;
 }
@@ -1522,7 +1672,6 @@ std::ostream &EmitVerticesFetchCode(const std::string &desiredEntryName,
                                     const std::vector<FunctionParam> &params,
                                     std::vector<FunctionParam>::const_iterator stageInParamIte,
                                     const std::vector<VertexAttribute> &attribs,
-                                    const std::string &verticesPerInstanceDriverUniformName,
                                     std::ostream *os)
 {
     EmitConstantsDecls(attribs, os);
@@ -1541,7 +1690,7 @@ std::ostream &EmitVerticesFetchCode(const std::string &desiredEntryName,
         // Fetch vertex attributes
         for (const VertexAttribute &attrib : attribs)
         {
-            EmitVertexFetchCode(*stageInParamIte, attrib, verticesPerInstanceDriverUniformName, os);
+            EmitVertexFetchCode(*stageInParamIte, attrib, os);
         }
 
     }  // if (stageInParamIte != params.end())
@@ -1588,7 +1737,6 @@ std::ostream &EmitVerticesFetchCode(const std::string &desiredEntryName,
 }  // namespace
 
 std::string AppendVertexFetchingCode(const std::string &desiredEntryName,
-                                     const std::string &verticesPerInstanceDriverUniformName,
                                      const std::string &mslSource)
 {
     // Find entry point's prototype
@@ -1629,7 +1777,7 @@ std::string AppendVertexFetchingCode(const std::string &desiredEntryName,
 
     std::ostringstream ss;
     EmitVerticesFetchCode(desiredEntryName, wrappedEntryName, returnType, params, stageInIte,
-                          attribs, verticesPerInstanceDriverUniformName, &ss);
+                          attribs, &ss);
 
     std::string convertedSrc = mslSource + ss.str();
 
@@ -1643,5 +1791,37 @@ std::string AppendVertexFetchingCode(const std::string &desiredEntryName,
 
     return convertedSrc;
 }
+
+void PopulateVertexFetchingConstants(const VertexDesc &vertexDesc,
+                                     MTLFunctionConstantValues *funcConstants)
+{
+    for (uint32_t i = 0; i < ArraySize(vertexDesc.attributes); ++i)
+    {
+        const VertexAttributeDesc &attribDesc = vertexDesc.attributes[i];
+        if (attribDesc.source == VertexAttributeSource::None)
+        {
+            continue;
+        }
+
+        uint32_t type        = ConvertVertexTypeToShaderEnumValue(attribDesc.type);
+        uint32_t components  = attribDesc.channels;
+        uint32_t offset      = attribDesc.offset;
+        uint32_t stride      = attribDesc.stride;
+        uint32_t divisor     = attribDesc.divisor;
+        BOOL aligned         = attribDesc.isAligned ? YES : NO;
+        BOOL normalize       = attribDesc.isNorm ? YES : NO;
+        BOOL isDefaultAttrib = attribDesc.source == VertexAttributeSource::DefaultAttrib;
+
+        SetFunctionConstantUInt(funcConstants, type, GetVertexTypeConstantName(i));
+        SetFunctionConstantUInt(funcConstants, components, GetVertexSizeConstantName(i));
+        SetFunctionConstantUInt(funcConstants, offset, GetVertexOffsetConstantName(i));
+        SetFunctionConstantUInt(funcConstants, stride, GetVertexStrideConstantName(i));
+        SetFunctionConstantUInt(funcConstants, divisor, GetVertexDivisorConstantName(i));
+        SetFunctionConstantBool(funcConstants, aligned, GetVertexOffsetAlignedConstantName(i));
+        SetFunctionConstantBool(funcConstants, normalize, GetVertexNormalizeConstantName(i));
+        SetFunctionConstantBool(funcConstants, isDefaultAttrib, GetVertexIsDefaultConstantName(i));
+    }
+}
+
 }  // namespace mtl
 }  // namespace rx

@@ -21,6 +21,7 @@
 #include "libANGLE/renderer/metal/DisplayMtl.h"
 #include "libANGLE/renderer/metal/TextureMtl.h"
 #include "libANGLE/renderer/metal/mtl_glslang_utils.h"
+#include "libANGLE/renderer/metal/mtl_msl_vertex_fetch_codegen.h"
 #include "libANGLE/renderer/metal/mtl_utils.h"
 #include "libANGLE/renderer/renderer_utils.h"
 
@@ -223,6 +224,25 @@ void ProgramShaderObjVariantMtl::reset(ContextMtl *contextMtl)
     translatedSrcInfo = nullptr;
 }
 
+// ProgramVertexShaderVariantsMapMtl implementation
+ProgramShaderObjVariantMtl &ProgramVertexShaderVariantsMapMtl::operator[](
+    const mtl::RenderPipelineDesc &pipelineDesc)
+{
+    return mVariants[pipelineDesc.rasterizationType][pipelineDesc.vertexDescriptor];
+}
+
+void ProgramVertexShaderVariantsMapMtl::reset(ContextMtl *contextMtl)
+{
+    for (VertexDescMap &vertexDescMap : mVariants)
+    {
+        for (auto &entry : vertexDescMap)
+        {
+            entry.second.reset(contextMtl);
+        }
+        vertexDescMap.clear();
+    }
+}
+
 // ProgramMtl implementation
 ProgramMtl::DefaultUniformBlock::DefaultUniformBlock() {}
 
@@ -254,10 +274,8 @@ void ProgramMtl::reset(ContextMtl *context)
     }
     mMslXfbOnlyVertexShaderInfo.reset();
 
-    for (ProgramShaderObjVariantMtl &var : mVertexShaderVariants)
-    {
-        var.reset(context);
-    }
+    mVertexShaderVariants.reset(context);
+
     for (ProgramShaderObjVariantMtl &var : mFragmentShaderVariants)
     {
         var.reset(context);
@@ -457,7 +475,7 @@ angle::Result ProgramMtl::getSpecializedShader(mtl::Context *context,
     {
         // For vertex shader, we need to create 3 variants, one with emulated rasterization
         // discard, one with true rasterization discard and one without.
-        shaderVariant = &mVertexShaderVariants[renderPipelineDesc.rasterizationType];
+        shaderVariant = &mVertexShaderVariants[renderPipelineDesc];
         if (shaderVariant->metalShader)
         {
             // Already created.
@@ -493,6 +511,9 @@ angle::Result ProgramMtl::getSpecializedShader(mtl::Context *context,
             [funcConstants setConstantValue:&emulateDiscard
                                        type:MTLDataTypeBool
                                    withName:discardEnabledStr];
+
+            mtl::PopulateVertexFetchingConstants(renderPipelineDesc.vertexDescriptor,
+                                                 funcConstants);
         }
     }  // if (shaderType == gl::ShaderType::Vertex)
     else if (shaderType == gl::ShaderType::Fragment)
@@ -892,8 +913,7 @@ angle::Result ProgramMtl::setupDraw(const gl::Context *glContext,
         mSamplerBindingsDirty.set();
 
         // Cache current shader variant references for easier querying.
-        mCurrentShaderVariants[gl::ShaderType::Vertex] =
-            &mVertexShaderVariants[pipelineDesc.rasterizationType];
+        mCurrentShaderVariants[gl::ShaderType::Vertex] = &mVertexShaderVariants[pipelineDesc];
         mCurrentShaderVariants[gl::ShaderType::Fragment] =
             pipelineDesc.rasterizationEnabled()
                 ? &mFragmentShaderVariants[pipelineDesc.emulateCoverageMask]

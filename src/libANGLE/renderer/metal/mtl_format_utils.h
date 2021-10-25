@@ -11,14 +11,13 @@
 #ifndef LIBANGLE_RENDERER_METAL_MTL_FORMAT_UTILS_H_
 #define LIBANGLE_RENDERER_METAL_MTL_FORMAT_UTILS_H_
 
-#import <Metal/Metal.h>
-
 #include <unordered_map>
 
 #include "common/angleutils.h"
 #include "libANGLE/Caps.h"
 #include "libANGLE/formatutils.h"
 #include "libANGLE/renderer/copyvertex.h"
+#include "libANGLE/renderer/metal/mtl_common.h"
 #include "libANGLE/renderer/renderer_utils.h"
 
 namespace rx
@@ -99,12 +98,13 @@ struct Format : public FormatBase
     friend class FormatTable;
 };
 
-// Vertex format
 struct VertexFormat : public FormatBase
 {
     VertexFormat() = default;
 
-    MTLVertexFormat metalFormat = MTLVertexFormatInvalid;
+    VertexAttributeType type = VertexAttributeType::Invalid;
+
+    uint32_t alignment = 1;
 
     VertexCopyFunction vertexLoadFunction = nullptr;
 

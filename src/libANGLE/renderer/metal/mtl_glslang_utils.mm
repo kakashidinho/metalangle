@@ -26,9 +26,6 @@ namespace
 {
 constexpr char kOverrideVertexEntryName[] = "ANGLEVertexEntry";
 
-// See src/compiler/translator/tree_util/DriverUniform.cpp
-constexpr char kVerticesPerDrawName[] = "ANGLEUniforms.xfbVerticesPerInstance";
-
 constexpr uint32_t kGlslangTextureDescSet              = 0;
 constexpr uint32_t kGlslangDefaultUniformAndXfbDescSet = 1;
 constexpr uint32_t kGlslangDriverUniformsDescSet       = 2;
@@ -260,7 +257,7 @@ std::string PostProcessTranslatedMsl(gl::ShaderType shaderType,
     std::string source;
     if (shaderType == gl::ShaderType::Vertex)
     {
-        source = AppendVertexFetchingCode(desiredEntryName, kVerticesPerDrawName, translatedSource);
+        source = AppendVertexFetchingCode(desiredEntryName, translatedSource);
     }
     else
     {

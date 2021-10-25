@@ -161,11 +161,6 @@ constexpr uint32_t kUBOArgumentBufferBindingIndex = kDefaultUniformsBindingIndex
 
 constexpr uint32_t kStencilMaskAll = 0xff;  // Only 8 bits stencil is supported
 
-// This special constant is used to indicate that a particular vertex descriptor's buffer layout
-// index is unused.
-constexpr MTLVertexStepFunction kVertexStepFunctionInvalid =
-    static_cast<MTLVertexStepFunction>(0xff);
-
 constexpr int kEmulatedAlphaValue = 1;
 
 constexpr size_t kOcclusionQueryResultSize = sizeof(uint64_t);
@@ -201,7 +196,7 @@ enum class PixelType
     EnumCount,
 };
 
-enum class VertexAttribType
+enum class VertexAttributeType : uint8_t
 {
     Float,
     Fixed,
@@ -214,6 +209,7 @@ enum class VertexAttribType
     UShort,
     Int,
     UInt,
+    Invalid,
     EnumCount,
 };
 

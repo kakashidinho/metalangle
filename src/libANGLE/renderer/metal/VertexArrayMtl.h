@@ -62,7 +62,7 @@ class VertexArrayMtl : public VertexArrayImpl
     void reset(ContextMtl *context);
 
     void getVertexAttribFormatAndArraySize(const sh::ShaderVariable &var,
-                                           MTLVertexFormat *formatOut,
+                                           mtl::VertexAttributeType *typeOut,
                                            uint32_t *arraySizeOut);
 
     angle::Result syncDirtyAttrib(const gl::Context *glContext,

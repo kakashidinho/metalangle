@@ -32,6 +32,8 @@ GLsizei TypeStride(GLenum attribType)
         case GL_FLOAT:
         case GL_UNSIGNED_INT_10_10_10_2_OES:
         case GL_INT_10_10_10_2_OES:
+        case GL_UNSIGNED_INT_2_10_10_10_REV:
+        case GL_INT_2_10_10_10_REV:
             return 4;
         default:
             EXPECT_TRUE(false);
@@ -134,6 +136,39 @@ DestT Pack1010102(std::array<SrcT, 4> input)
         // Need to apply bit mask to account for sign extension
         return (0xFFC00000u & rOut << 22) | (0x003FF000u & gOut << 12) | (0x00000FFCu & bOut << 2) |
                (0x00000003u & aOut);
+    }
+}
+
+template <typename DestT, typename SrcT>
+DestT Pack1010102Rev(std::array<SrcT, 4> input)
+{
+    static_assert(std::is_integral<SrcT>::value, "Integer required.");
+    static_assert(std::is_integral<DestT>::value, "Integer required.");
+    static_assert(std::is_unsigned<SrcT>::value == std::is_unsigned<DestT>::value,
+                  "Signedness should be equal.");
+    DestT rOut, gOut, bOut, aOut;
+    rOut = static_cast<DestT>(input[0]);
+    gOut = static_cast<DestT>(input[1]);
+    bOut = static_cast<DestT>(input[2]);
+    aOut = static_cast<DestT>(input[3]);
+
+    constexpr uint32_t rgbMask  = 0x3FF;  // 1 set in bits 0 through 9
+    constexpr size_t redShift   = 0;      // red is bits 0 through 9
+    constexpr size_t greenShift = 10;     // green is bits 10 through 19
+    constexpr size_t blueShift  = 20;     // blue is bits 20 through 29
+
+    constexpr uint32_t alphaMask = 0x3;  // 1 set in bits 0 and 1
+    constexpr size_t alphaShift  = 30;   // Alpha is the 30 and 31 bits
+
+    if (std::is_unsigned<SrcT>::value)
+    {
+        return rOut << redShift | gOut << greenShift | bOut << blueShift | aOut << alphaShift;
+    }
+    else
+    {
+        // Need to apply bit mask to account for sign extension
+        return ((rgbMask & rOut) << redShift) | ((rgbMask & gOut) << greenShift) |
+               ((rgbMask & bOut) << blueShift) | ((alphaMask & aOut) << alphaShift);
     }
 }
 
@@ -935,6 +970,177 @@ TEST_P(VertexAttributeTest, UnsignedPacked1010102ExtensionNormalized)
     };
 }
 
+// Verify signed unnormalized GL_INT_2_10_10_10_REV vertex type
+TEST_P(VertexAttributeTest, SignedPacked1010102RevUnnormalized)
+{
+    ANGLE_SKIP_TEST_IF(getClientMajorVersion() < 3);
+
+    // RGB channels are 10-bits, alpha is 2-bits
+    std::array<std::array<GLshort, 4>, kVertexCount / 4> unpackedInput = {{{0, 1, 2, 0},
+                                                                           {254, 255, 256, 1},
+                                                                           {256, 255, 254, -2},
+                                                                           {511, 510, 509, -1},
+                                                                           {-512, -511, -500, -2},
+                                                                           {-1, -2, -3, 1}}};
+
+    std::array<GLint, kVertexCount> packedInput;
+    std::array<GLfloat, kVertexCount> expectedTypeSize4;
+
+    for (size_t i = 0; i < kVertexCount / 4; i++)
+    {
+        packedInput[i] = Pack1010102Rev<GLint, GLshort>(unpackedInput[i]);
+
+        expectedTypeSize4[i * 4 + 0] = unpackedInput[i][0];
+        expectedTypeSize4[i * 4 + 1] = unpackedInput[i][1];
+        expectedTypeSize4[i * 4 + 2] = unpackedInput[i][2];
+        expectedTypeSize4[i * 4 + 3] = unpackedInput[i][3];
+    }
+
+    TestData data4(GL_INT_2_10_10_10_REV, GL_FALSE, Source::IMMEDIATE, packedInput.data(),
+                   expectedTypeSize4.data());
+    TestData bufferedData4(GL_INT_2_10_10_10_REV, GL_FALSE, Source::BUFFER, packedInput.data(),
+                           expectedTypeSize4.data());
+
+    std::array<std::pair<const TestData &, GLint>, 2> dataSet = {{{data4, 4}, {bufferedData4, 4}}};
+
+    for (auto data : dataSet)
+    {
+        setupTest(data.first, data.second);
+        drawQuad(mProgram, "position", 0.5f);
+        glDisableVertexAttribArray(mTestAttrib);
+        glDisableVertexAttribArray(mExpectedAttrib);
+        checkPixels();
+    }
+}
+
+// Verify signed normalized GL_INT_2_10_10_10_REV vertex type
+TEST_P(VertexAttributeTest, SignedPacked1010102RevExtensionNormalized)
+{
+    ANGLE_SKIP_TEST_IF(getClientMajorVersion() < 3);
+
+    // RGB channels are 10-bits, alpha is 2-bits
+    std::array<std::array<GLshort, 4>, kVertexCount / 4> unpackedInput = {{{0, 1, 2, 0},
+                                                                           {254, 255, 256, 1},
+                                                                           {256, 255, 254, -2},
+                                                                           {511, 510, 509, -1},
+                                                                           {-512, -511, -500, -2},
+                                                                           {-1, -2, -3, 1}}};
+    std::array<GLint, kVertexCount> packedInput;
+    std::array<GLfloat, kVertexCount> expectedNormalizedTypeSize4;
+
+    for (size_t i = 0; i < kVertexCount / 4; i++)
+    {
+        packedInput[i] = Pack1010102Rev<GLint, GLshort>(unpackedInput[i]);
+
+        expectedNormalizedTypeSize4[i * 4 + 0] = Normalize10<GLshort>(unpackedInput[i][0]);
+        expectedNormalizedTypeSize4[i * 4 + 1] = Normalize10<GLshort>(unpackedInput[i][1]);
+        expectedNormalizedTypeSize4[i * 4 + 2] = Normalize10<GLshort>(unpackedInput[i][2]);
+        expectedNormalizedTypeSize4[i * 4 + 3] = Normalize2<GLshort>(unpackedInput[i][3]);
+    }
+
+    TestData data4(GL_INT_2_10_10_10_REV, GL_TRUE, Source::IMMEDIATE, packedInput.data(),
+                   expectedNormalizedTypeSize4.data());
+    TestData bufferedData4(GL_INT_2_10_10_10_REV, GL_TRUE, Source::BUFFER, packedInput.data(),
+                           expectedNormalizedTypeSize4.data());
+
+    std::array<std::pair<const TestData &, GLint>, 2> dataSet = {{{data4, 4}, {bufferedData4, 4}}};
+
+    for (auto data : dataSet)
+    {
+        setupTest(data.first, data.second);
+        drawQuad(mProgram, "position", 0.5f);
+        glDisableVertexAttribArray(mTestAttrib);
+        glDisableVertexAttribArray(mExpectedAttrib);
+        checkPixels();
+    }
+}
+
+// Verify unsigned unnormalized GL_UNSIGNED_INT_2_10_10_10_REV vertex type
+TEST_P(VertexAttributeTest, UnsignedPacked1010102RevUnnormalized)
+{
+    ANGLE_SKIP_TEST_IF(getClientMajorVersion() < 3);
+
+    // RGB channels are 10-bits, alpha is 2-bits
+    std::array<std::array<GLushort, 4>, kVertexCount / 4> unpackedInput = {{{0, 1, 2, 0},
+                                                                            {511, 512, 513, 1},
+                                                                            {1023, 1022, 1021, 3},
+                                                                            {513, 512, 511, 2},
+                                                                            {2, 1, 0, 3},
+                                                                            {1023, 1022, 1022, 0}}};
+
+    std::array<GLuint, kVertexCount> packedInput;
+    std::array<GLfloat, kVertexCount> expectedTypeSize4;
+
+    for (size_t i = 0; i < kVertexCount / 4; i++)
+    {
+        packedInput[i] = Pack1010102Rev<GLuint, GLushort>(unpackedInput[i]);
+
+        expectedTypeSize4[i * 4 + 0] = unpackedInput[i][0];
+        expectedTypeSize4[i * 4 + 1] = unpackedInput[i][1];
+        expectedTypeSize4[i * 4 + 2] = unpackedInput[i][2];
+        expectedTypeSize4[i * 4 + 3] = unpackedInput[i][3];
+    }
+
+    TestData data4(GL_UNSIGNED_INT_2_10_10_10_REV, GL_FALSE, Source::IMMEDIATE, packedInput.data(),
+                   expectedTypeSize4.data());
+    TestData bufferedData4(GL_UNSIGNED_INT_2_10_10_10_REV, GL_FALSE, Source::BUFFER,
+                           packedInput.data(), expectedTypeSize4.data());
+
+    std::array<std::pair<const TestData &, GLint>, 2> dataSet = {{{data4, 4}, {bufferedData4, 4}}};
+
+    for (auto data : dataSet)
+    {
+        setupTest(data.first, data.second);
+        drawQuad(mProgram, "position", 0.5f);
+        glDisableVertexAttribArray(mTestAttrib);
+        glDisableVertexAttribArray(mExpectedAttrib);
+        checkPixels();
+    }
+}
+
+// Verify unsigned normalized GL_UNSIGNED_INT_2_10_10_10_REV vertex type
+TEST_P(VertexAttributeTest, UnsignedPacked1010102RevNormalized)
+{
+    ANGLE_SKIP_TEST_IF(getClientMajorVersion() < 3);
+
+    // RGB channels are 10-bits, alpha is 2-bits
+    std::array<std::array<GLushort, 4>, kVertexCount / 4> unpackedInput = {{{0, 1, 2, 0},
+                                                                            {511, 512, 513, 1},
+                                                                            {1023, 1022, 1021, 3},
+                                                                            {513, 512, 511, 2},
+                                                                            {2, 1, 0, 3},
+                                                                            {1023, 1022, 1022, 0}}};
+
+    std::array<GLuint, kVertexCount> packedInput;
+    std::array<GLfloat, kVertexCount> expectedTypeSize4;
+
+    for (size_t i = 0; i < kVertexCount / 4; i++)
+    {
+        packedInput[i] = Pack1010102Rev<GLuint, GLushort>(unpackedInput[i]);
+
+        expectedTypeSize4[i * 4 + 0] = Normalize10<GLushort>(unpackedInput[i][0]);
+        expectedTypeSize4[i * 4 + 1] = Normalize10<GLushort>(unpackedInput[i][1]);
+        expectedTypeSize4[i * 4 + 2] = Normalize10<GLushort>(unpackedInput[i][2]);
+        expectedTypeSize4[i * 4 + 3] = Normalize2<GLushort>(unpackedInput[i][3]);
+    }
+
+    TestData data4(GL_UNSIGNED_INT_2_10_10_10_REV, GL_TRUE, Source::IMMEDIATE, packedInput.data(),
+                   expectedTypeSize4.data());
+    TestData bufferedData4(GL_UNSIGNED_INT_2_10_10_10_REV, GL_TRUE, Source::BUFFER,
+                           packedInput.data(), expectedTypeSize4.data());
+
+    std::array<std::pair<const TestData &, GLint>, 2> dataSet = {{{data4, 4}, {bufferedData4, 4}}};
+
+    for (auto data : dataSet)
+    {
+        setupTest(data.first, data.second);
+        drawQuad(mProgram, "position", 0.5f);
+        glDisableVertexAttribArray(mTestAttrib);
+        glDisableVertexAttribArray(mExpectedAttrib);
+        checkPixels();
+    };
+}
+
 class VertexAttributeTestES3 : public VertexAttributeTest
 {
   protected:
@@ -1363,13 +1569,13 @@ TEST_P(VertexAttributeTest, DrawArraysWithUnalignedShortBufferOffset)
     std::array<GLfloat, 3 * kVertexCount> expectedData;
     for (size_t i = 0; i < kVertexCount; ++i)
     {
-        inputData[4 * i]     = 3 * i;
-        inputData[4 * i + 1] = 3 * i + 1;
-        inputData[4 * i + 2] = 3 * i + 2;
+        inputData[4 * i]     = 3 * i + 30001;
+        inputData[4 * i + 1] = 3 * i + 1 + 30001;
+        inputData[4 * i + 2] = 3 * i + 2 + 30001;
 
-        expectedData[3 * i]     = 3 * i;
-        expectedData[3 * i + 1] = 3 * i + 1;
-        expectedData[3 * i + 2] = 3 * i + 2;
+        expectedData[3 * i]     = 3 * i + 30001;
+        expectedData[3 * i + 1] = 3 * i + 1 + 30001;
+        expectedData[3 * i + 2] = 3 * i + 2 + 30001;
     }
 
     GLBuffer quadBuffer;
@@ -1380,13 +1586,13 @@ TEST_P(VertexAttributeTest, DrawArraysWithUnalignedShortBufferOffset)
     glVertexAttribPointer(positionLocation, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
     glEnableVertexAttribArray(positionLocation);
 
-    // Unaligned buffer offset (8)
-    GLsizei dataSize = 3 * kVertexCount * TypeStride(GL_SHORT) + 8;
+    // Unaligned buffer offset (11)
+    GLsizei dataSize = 3 * kVertexCount * TypeStride(GL_SHORT) + 11;
     glBindBuffer(GL_ARRAY_BUFFER, mBuffer);
     glBufferData(GL_ARRAY_BUFFER, dataSize, nullptr, GL_STATIC_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, 8, dataSize - 8, inputData.data());
+    glBufferSubData(GL_ARRAY_BUFFER, 11, dataSize - 11, inputData.data());
     glVertexAttribPointer(mTestAttrib, 3, GL_SHORT, GL_FALSE, /* stride */ 8,
-                          reinterpret_cast<void *>(8));
+                          reinterpret_cast<void *>(11));
     glEnableVertexAttribArray(mTestAttrib);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
