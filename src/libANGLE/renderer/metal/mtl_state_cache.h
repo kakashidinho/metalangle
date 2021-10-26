@@ -121,44 +121,61 @@ struct alignas(4) SamplerDesc
     uint8_t compareFunction : 3;
 };
 
+enum class VertexAttributeSource : uint8_t
+{
+    // Vertex attribute is not used
+    None,
+    // Vertex attribute is from buffer
+    Buffer,
+    // Vertex attribute is from default attributes
+    DefaultAttrib,
+
+    EnumCount,
+};
+
 struct VertexAttributeDesc
 {
-    inline bool operator==(const VertexAttributeDesc &rhs) const
-    {
-        return format == rhs.format && offset == rhs.offset && bufferIndex == rhs.bufferIndex;
-    }
+    bool operator==(const VertexAttributeDesc &rhs) const;
     inline bool operator!=(const VertexAttributeDesc &rhs) const { return !(*this == rhs); }
 
-    // Use uint8_t instead of MTLVertexFormat to compact space
-    uint8_t format : 6;
-    // Offset is only used for default attributes buffer. So 8 bits are enough.
-    uint8_t offset : 8;
-    uint8_t bufferIndex : 5;
+    uint32_t divisor;
+
+    uint8_t channels;
+    VertexAttributeType type : 8;
+    VertexAttributeSource source : 4;
+    bool isNorm : 2;     // normalized
+    bool isAligned : 2;  // offset & stride's alignments are valid
+
+    const uint8_t padding = 0;
 };
 
-struct VertexBufferLayoutDesc
-{
-    inline bool operator==(const VertexBufferLayoutDesc &rhs) const
-    {
-        return stepFunction == rhs.stepFunction && stepRate == rhs.stepRate && stride == rhs.stride;
-    }
-    inline bool operator!=(const VertexBufferLayoutDesc &rhs) const { return !(*this == rhs); }
-
-    uint32_t stepRate;
-    uint32_t stride;
-
-    // Use uint8_t instead of MTLVertexStepFunction to compact space
-    uint8_t stepFunction;
-};
+static_assert(sizeof(VertexAttributeDesc) == sizeof(uint64_t),
+              "Unexpected paddings in VertexAttributeDesc");
 
 struct VertexDesc
 {
     VertexAttributeDesc attributes[kMaxVertexAttribs];
-    VertexBufferLayoutDesc layouts[kMaxVertexAttribs];
-
-    uint8_t numAttribs;
-    uint8_t numBufferLayouts;
 };
+static_assert(sizeof(VertexDesc) == sizeof(VertexAttributeDesc) * kMaxVertexAttribs,
+              "Unexpected paddings in VertexDesc");
+
+struct alignas(4) HashableVertexDesc : public VertexDesc
+{
+    HashableVertexDesc();
+    HashableVertexDesc(const HashableVertexDesc &src);
+    HashableVertexDesc(const VertexDesc &src);
+    HashableVertexDesc(HashableVertexDesc &&src);
+
+    HashableVertexDesc &operator=(const HashableVertexDesc &src);
+    HashableVertexDesc &operator=(const VertexDesc &src);
+
+    bool operator==(const HashableVertexDesc &rhs) const;
+
+    size_t hash() const;
+};
+
+static_assert(sizeof(HashableVertexDesc) == sizeof(VertexDesc),
+              "Unexpected paddings in HashableVertexDesc");
 
 struct BlendDesc
 {
@@ -463,6 +480,12 @@ struct hash<rx::mtl::SamplerDesc>
 };
 
 template <>
+struct hash<rx::mtl::HashableVertexDesc>
+{
+    size_t operator()(const rx::mtl::HashableVertexDesc &key) const { return key.hash(); }
+};
+
+template <>
 struct hash<rx::mtl::RenderPipelineDesc>
 {
     size_t operator()(const rx::mtl::RenderPipelineDesc &key) const { return key.hash(); }
@@ -534,18 +557,14 @@ class RenderPipelineCache final : angle::NonCopyable
     void recreatePipelineStates(Context *context);
     AutoObjCPtr<id<MTLRenderPipelineState>> insertRenderPipelineState(
         Context *context,
-        const RenderPipelineDesc &desc,
-        bool insertDefaultAttribLayout);
+        const RenderPipelineDesc &desc);
     AutoObjCPtr<id<MTLRenderPipelineState>> createRenderPipelineState(
         Context *context,
-        const RenderPipelineDesc &desc,
-        bool insertDefaultAttribLayout);
-
-    bool hasDefaultAttribs(const RenderPipelineDesc &desc) const;
+        const RenderPipelineDesc &desc);
 
     // One table with default attrib and one table without.
     std::unordered_map<RenderPipelineDesc, AutoObjCPtr<id<MTLRenderPipelineState>>>
-        mRenderPipelineStates[2];
+        mRenderPipelineStates;
 
     RenderPipelineCacheSpecializeShaderFactory *mSpecializedShaderFactory;
 };
@@ -592,20 +611,9 @@ using ClientIndexBufferCache =
 
 static inline bool operator==(const rx::mtl::VertexDesc &lhs, const rx::mtl::VertexDesc &rhs)
 {
-    if (lhs.numAttribs != rhs.numAttribs || lhs.numBufferLayouts != rhs.numBufferLayouts)
-    {
-        return false;
-    }
-    for (uint8_t i = 0; i < lhs.numAttribs; ++i)
+    for (uint8_t i = 0; i < ArraySize(lhs.attributes); ++i)
     {
         if (lhs.attributes[i] != rhs.attributes[i])
-        {
-            return false;
-        }
-    }
-    for (uint8_t i = 0; i < lhs.numBufferLayouts; ++i)
-    {
-        if (lhs.layouts[i] != rhs.layouts[i])
         {
             return false;
         }

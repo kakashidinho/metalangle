@@ -80,52 +80,6 @@ MTLSamplerDescriptor *ToObjC(const SamplerDesc &desc)
     return [objCDesc ANGLE_MTL_AUTORELEASE];
 }
 
-MTLVertexAttributeDescriptor *ToObjC(const VertexAttributeDesc &desc)
-{
-    MTLVertexAttributeDescriptor *objCDesc = [[MTLVertexAttributeDescriptor alloc] init];
-
-    ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, format);
-    ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, offset);
-    ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, bufferIndex);
-
-    ASSERT(desc.bufferIndex >= kVboBindingIndexStart);
-
-    return [objCDesc ANGLE_MTL_AUTORELEASE];
-}
-
-MTLVertexBufferLayoutDescriptor *ToObjC(const VertexBufferLayoutDesc &desc)
-{
-    MTLVertexBufferLayoutDescriptor *objCDesc = [[MTLVertexBufferLayoutDescriptor alloc] init];
-
-    ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, stepFunction);
-    ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, stepRate);
-    ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, stride);
-
-    return [objCDesc ANGLE_MTL_AUTORELEASE];
-}
-
-MTLVertexDescriptor *ToObjC(const VertexDesc &desc)
-{
-    MTLVertexDescriptor *objCDesc = [[MTLVertexDescriptor alloc] init];
-    [objCDesc reset];
-
-    for (uint8_t i = 0; i < desc.numAttribs; ++i)
-    {
-        [objCDesc.attributes setObject:ToObjC(desc.attributes[i]) atIndexedSubscript:i];
-    }
-
-    for (uint8_t i = 0; i < desc.numBufferLayouts; ++i)
-    {
-        // Ignore if stepFunction is kVertexStepFunctionInvalid.
-        if (desc.layouts[i].stepFunction != kVertexStepFunctionInvalid)
-        {
-            [objCDesc.layouts setObject:ToObjC(desc.layouts[i]) atIndexedSubscript:i];
-        }
-    }
-
-    return [objCDesc ANGLE_MTL_AUTORELEASE];
-}
-
 MTLRenderPipelineColorAttachmentDescriptor *ToObjC(const RenderPipelineColorAttachmentDesc &desc)
 {
     MTLRenderPipelineColorAttachmentDescriptor *objCDesc =
@@ -150,8 +104,6 @@ MTLRenderPipelineDescriptor *ToObjC(id<MTLFunction> vertexShader,
 {
     MTLRenderPipelineDescriptor *objCDesc = [[MTLRenderPipelineDescriptor alloc] init];
     [objCDesc reset];
-
-    ANGLE_OBJC_CP_PROPERTY(objCDesc, desc, vertexDescriptor);
 
     for (uint8_t i = 0; i < desc.outputDescriptor.numColorAttachments; ++i)
     {
@@ -509,6 +461,57 @@ bool SamplerDesc::operator==(const SamplerDesc &rhs) const
 }
 
 size_t SamplerDesc::hash() const
+{
+    return angle::ComputeGenericHash(*this);
+}
+
+// VertexAttributeDesc implementation
+bool VertexAttributeDesc::operator==(const VertexAttributeDesc &rhs) const
+{
+    return ANGLE_PROP_EQ(*this, rhs, type) && ANGLE_PROP_EQ(*this, rhs, channels) &&
+           ANGLE_PROP_EQ(*this, rhs, divisor) && ANGLE_PROP_EQ(*this, rhs, source) &&
+           ANGLE_PROP_EQ(*this, rhs, isAligned) && ANGLE_PROP_EQ(*this, rhs, isNorm);
+}
+
+// HashableVertexDesc implementation
+HashableVertexDesc::HashableVertexDesc()
+{
+    // We need to zeroize the padding
+    memset(this, 0, sizeof(*this));
+}
+HashableVertexDesc::HashableVertexDesc(const HashableVertexDesc &src)
+{
+    memcpy(this, &src, sizeof(*this));
+}
+HashableVertexDesc::HashableVertexDesc(HashableVertexDesc &&src)
+{
+    memcpy(this, &src, sizeof(*this));
+}
+HashableVertexDesc::HashableVertexDesc(const VertexDesc &src)
+{
+    memcpy(this, &src, sizeof(*this));
+}
+
+HashableVertexDesc &HashableVertexDesc::operator=(const HashableVertexDesc &src)
+{
+    memcpy(this, &src, sizeof(*this));
+    return *this;
+}
+HashableVertexDesc &HashableVertexDesc::operator=(const VertexDesc &src)
+{
+    memcpy(this, &src, sizeof(*this));
+    return *this;
+}
+
+bool HashableVertexDesc::operator==(const HashableVertexDesc &rhs) const
+{
+    // NOTE(hqle): Use a faster way to compare, i.e take into account
+    // the number of active vertex attributes & render targets.
+    // If that way is used, hash() method must be changed also.
+    return memcmp(this, &rhs, sizeof(*this)) == 0;
+}
+
+size_t HashableVertexDesc::hash() const
 {
     return angle::ComputeGenericHash(*this);
 }
@@ -902,31 +905,14 @@ void RenderPipelineCache::setFragmentShader(Context *context, id<MTLFunction> sh
     recreatePipelineStates(context);
 }
 
-bool RenderPipelineCache::hasDefaultAttribs(const RenderPipelineDesc &rpdesc) const
-{
-    const VertexDesc &desc = rpdesc.vertexDescriptor;
-    for (uint8_t i = 0; i < desc.numAttribs; ++i)
-    {
-        if (desc.attributes[i].bufferIndex == kDefaultAttribsBindingIndex)
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 AutoObjCPtr<id<MTLRenderPipelineState>> RenderPipelineCache::getRenderPipelineState(
     ContextMtl *context,
     const RenderPipelineDesc &desc)
 {
-    auto insertDefaultAttribLayout = hasDefaultAttribs(desc);
-    int tableIdx                   = insertDefaultAttribLayout ? 1 : 0;
-    auto &table                    = mRenderPipelineStates[tableIdx];
-    auto ite                       = table.find(desc);
-    if (ite == table.end())
+    auto ite = mRenderPipelineStates.find(desc);
+    if (ite == mRenderPipelineStates.end())
     {
-        return insertRenderPipelineState(context, desc, insertDefaultAttribLayout);
+        return insertRenderPipelineState(context, desc);
     }
 
     return ite->second;
@@ -934,18 +920,15 @@ AutoObjCPtr<id<MTLRenderPipelineState>> RenderPipelineCache::getRenderPipelineSt
 
 AutoObjCPtr<id<MTLRenderPipelineState>> RenderPipelineCache::insertRenderPipelineState(
     Context *context,
-    const RenderPipelineDesc &desc,
-    bool insertDefaultAttribLayout)
+    const RenderPipelineDesc &desc)
 {
-    AutoObjCPtr<id<MTLRenderPipelineState>> newState =
-        createRenderPipelineState(context, desc, insertDefaultAttribLayout);
+    AutoObjCPtr<id<MTLRenderPipelineState>> newState = createRenderPipelineState(context, desc);
     if (!newState)
     {
         return nil;
     }
 
-    int tableIdx = insertDefaultAttribLayout ? 1 : 0;
-    auto re      = mRenderPipelineStates[tableIdx].insert(std::make_pair(desc, newState));
+    auto re = mRenderPipelineStates.insert(std::make_pair(desc, newState));
     if (!re.second)
     {
         return nil;
@@ -956,8 +939,7 @@ AutoObjCPtr<id<MTLRenderPipelineState>> RenderPipelineCache::insertRenderPipelin
 
 AutoObjCPtr<id<MTLRenderPipelineState>> RenderPipelineCache::createRenderPipelineState(
     Context *context,
-    const RenderPipelineDesc &originalDesc,
-    bool insertDefaultAttribLayout)
+    const RenderPipelineDesc &originalDesc)
 {
     ANGLE_MTL_OBJC_SCOPE
     {
@@ -1015,19 +997,16 @@ AutoObjCPtr<id<MTLRenderPipelineState>> RenderPipelineCache::createRenderPipelin
         // Convert to Objective-C desc:
         AutoObjCObj<MTLRenderPipelineDescriptor> objCDesc = ToObjC(vertShader, fragShader, desc);
 
-        // Special attribute slot for default attribute
-        if (insertDefaultAttribLayout)
+        // Set buffer immunity
+        for (uint32_t i = 0; i < ArraySize(desc.vertexDescriptor.attributes); ++i)
         {
-            MTLVertexBufferLayoutDescriptor *defaultAttribLayoutObjCDesc =
-                [[MTLVertexBufferLayoutDescriptor alloc] init];
-            defaultAttribLayoutObjCDesc.stepFunction = MTLVertexStepFunctionConstant;
-            defaultAttribLayoutObjCDesc.stepRate     = 0;
-            defaultAttribLayoutObjCDesc.stride       = kDefaultAttributeSize * kMaxVertexAttribs;
-
-            [objCDesc.get().vertexDescriptor.layouts
-                         setObject:[defaultAttribLayoutObjCDesc ANGLE_MTL_AUTORELEASE]
-                atIndexedSubscript:kDefaultAttribsBindingIndex];
+            const VertexAttributeDesc &attrib = desc.vertexDescriptor.attributes[i];
+            if (attrib.source == VertexAttributeSource::Buffer)
+            {
+                objCDesc.get().vertexBuffers[i].mutability = MTLMutabilityImmutable;
+            }
         }
+
         // Create pipeline state
         NSError *err = nil;
         id<MTLRenderPipelineState> newState =
@@ -1044,17 +1023,14 @@ AutoObjCPtr<id<MTLRenderPipelineState>> RenderPipelineCache::createRenderPipelin
 
 void RenderPipelineCache::recreatePipelineStates(Context *context)
 {
-    for (int hasDefaultAttrib = 0; hasDefaultAttrib <= 1; ++hasDefaultAttrib)
+    for (auto &ite : mRenderPipelineStates)
     {
-        for (auto &ite : mRenderPipelineStates[hasDefaultAttrib])
+        if (ite.second == nil)
         {
-            if (ite.second == nil)
-            {
-                continue;
-            }
-
-            ite.second = createRenderPipelineState(context, ite.first, hasDefaultAttrib);
+            continue;
         }
+
+        ite.second = createRenderPipelineState(context, ite.first);
     }
 }
 
@@ -1067,8 +1043,7 @@ void RenderPipelineCache::clear()
 
 void RenderPipelineCache::clearPipelineStates()
 {
-    mRenderPipelineStates[0].clear();
-    mRenderPipelineStates[1].clear();
+    mRenderPipelineStates.clear();
 }
 
 // ClientIndexArrayKey implementation

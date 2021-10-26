@@ -27,9 +27,6 @@ namespace
 {
 constexpr char kOverrideVertexEntryName[] = "ANGLEVertexEntry";
 
-// See src/compiler/translator/tree_util/DriverUniform.cpp
-constexpr char kVerticesPerDrawName[] = "ANGLEUniforms.xfbVerticesPerInstance";
-
 constexpr uint32_t kGlslangTextureDescSet              = 0;
 constexpr uint32_t kGlslangDefaultUniformAndXfbDescSet = 1;
 constexpr uint32_t kGlslangDriverUniformsDescSet       = 2;
@@ -265,7 +262,7 @@ std::string PostProcessTranslatedMsl(gl::ShaderType shaderType,
     std::string source;
     if (shaderType == gl::ShaderType::Vertex)
     {
-        source = AppendVertexFetchingCode(desiredEntryName, kVerticesPerDrawName, translatedSource);
+        source = AppendVertexFetchingCode(desiredEntryName, translatedSource);
     }
     else
     {
@@ -281,11 +278,7 @@ std::string PostProcessTranslatedMsl(gl::ShaderType shaderType,
         std::string mainDeclareReplaceStr = std::string("$1constant uniform<uint> *") +
                                             kShadowSamplerCompareModesVarName + "[[buffer(" +
                                             Str(kShadowSamplerCompareModesBindingIndex) + ")]], ";
-        source = std::regex_replace(translatedSource, mainDeclareRegex, mainDeclareReplaceStr);
-    }
-    else
-    {
-        source = translatedSource;
+        source = std::regex_replace(source, mainDeclareRegex, mainDeclareReplaceStr);
     }
 
     // Add function_constant attribute to gl_SampleMask.
@@ -391,7 +384,7 @@ class SpirvToMslCompiler : public spirv_cross::CompilerMSL
 
   private:
     // Override CompilerMSL
-    std::string to_name(uint32_t id, bool allow_alias) const override
+    std::string to_name(uint32_t id, bool allow_alias = true) const override
     {
         if (id == ir.default_entry_point)
         {

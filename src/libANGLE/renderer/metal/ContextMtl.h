@@ -201,7 +201,7 @@ class ContextMtl : public ContextImpl, public mtl::Context
     using ContextImpl::handleError;
 
     void invalidateState(const gl::Context *context);
-    void invalidateDefaultAttribute(size_t attribIndex);
+    void invalidateAllDefaultAttributes();
     void invalidateDefaultAttributes(const gl::AttributesMask &dirtyMask);
     void invalidateCurrentTextures();
     void invalidateDriverUniforms();
@@ -459,11 +459,6 @@ class ContextMtl : public ContextImpl, public mtl::Context
         float adjustedDepthRange[4];
     };
 
-    struct DefaultAttribute
-    {
-        float values[4];
-    };
-
     mtl::OcclusionQueryPool mOcclusionQueryPool;
     size_t m_drawCallsSinceLastActiveOcclusionQuery = 0;
 
@@ -518,8 +513,6 @@ class ContextMtl : public ContextImpl, public mtl::Context
     mtl::TextureRef mDummyXFBRenderTexture;
 
     DriverUniforms mDriverUniforms;
-
-    DefaultAttribute mDefaultAttributes[mtl::kMaxVertexAttribs];
 
     IncompleteTextureSet mIncompleteTextures;
     bool mIncompleteTexturesInitialized = false;

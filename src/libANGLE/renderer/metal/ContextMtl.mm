@@ -1257,9 +1257,9 @@ void ContextMtl::invalidateState(const gl::Context *context)
     invalidateDefaultAttributes(context->getStateCache().getActiveDefaultAttribsMask());
 }
 
-void ContextMtl::invalidateDefaultAttribute(size_t attribIndex)
+void ContextMtl::invalidateAllDefaultAttributes()
 {
-    mDirtyDefaultAttribsMask.set(attribIndex);
+    mDirtyDefaultAttribsMask.set();
     mDirtyBits.set(DIRTY_BIT_DEFAULT_ATTRIBS);
 }
 
@@ -1886,8 +1886,10 @@ angle::Result ContextMtl::updateDefaultAttribute(size_t attribIndex)
 
     static_assert(kDefaultGLAttributeValueSize == mtl::kDefaultAttributeSize,
                   "Unexpected default attribute size");
-    memcpy(mDefaultAttributes[attribIndex].values, &defaultValue.Values,
-           mtl::kDefaultAttributeSize);
+
+    ASSERT(mRenderEncoder.valid());
+    mRenderEncoder.setVertexData(defaultValue.Values,
+                                 mtl::kVboBindingIndexStart + static_cast<uint32_t>(attribIndex));
 
     return angle::Result::Continue;
 }
@@ -1953,6 +1955,11 @@ angle::Result ContextMtl::setupDraw(const gl::Context *context,
 
     bool changedPipeline;
     ANGLE_TRY(checkIfPipelineChanged(context, mode, xfbPass, &changedPipeline));
+    if (changedPipeline)
+    {
+        // Need to re-apply the default attributes needed by current vertex array setup
+        invalidateAllDefaultAttributes();
+    }
 
     bool uniformBuffersDirty = false;
 
@@ -2123,13 +2130,21 @@ angle::Result ContextMtl::handleDirtyActiveTextures(const gl::Context *context)
 
 angle::Result ContextMtl::handleDirtyDefaultAttribs(const gl::Context *context)
 {
-    for (size_t attribIndex : mDirtyDefaultAttribsMask)
+    const gl::AttributesMask &programActiveAttribsMask =
+        context->getState().getProgram()->getState().getActiveAttribLocationsMask();
+
+    const std::vector<gl::VertexAttribute> &attribs =
+        mVertexArray->getState().getVertexAttributes();
+
+    for (size_t attribIndex : (mDirtyDefaultAttribsMask & programActiveAttribsMask))
     {
+        if (attribs[attribIndex].enabled && mVertexArray->hasBuffer(attribIndex))
+        {
+            // default attribute is not needed at this index
+            continue;
+        }
         ANGLE_TRY(updateDefaultAttribute(attribIndex));
     }
-
-    ASSERT(mRenderEncoder.valid());
-    mRenderEncoder.setVertexData(mDefaultAttributes, mtl::kDefaultAttribsBindingIndex);
 
     mDirtyDefaultAttribsMask.reset();
     return angle::Result::Continue;

@@ -51,6 +51,23 @@ struct ProgramShaderObjVariantMtl
     const mtl::TranslatedShaderInfo *translatedSrcInfo;
 };
 
+// Table to store a map of vertex shader variants
+class ProgramVertexShaderVariantsMapMtl
+{
+  public:
+    ProgramShaderObjVariantMtl &operator[](const mtl::RenderPipelineDesc &pipelineDesc);
+
+    // Reset and clear all variants
+    void reset(ContextMtl *contextMtl);
+
+  private:
+    using VertexDescMap = std::unordered_map<mtl::HashableVertexDesc, ProgramShaderObjVariantMtl>;
+    // Two levels of mapping:
+    //  - level 1: rasterization discard state
+    //  - level 2: vertex attribute descriptors
+    mtl::RenderPipelineRasterStateMap<VertexDescMap> mVariants;
+};
+
 class ProgramMtl : public ProgramImpl, public mtl::RenderPipelineCacheSpecializeShaderFactory
 {
   public:
@@ -239,8 +256,8 @@ class ProgramMtl : public ProgramImpl, public mtl::RenderPipelineCacheSpecialize
     // Compiled native shader object variants:
     // - Vertex shader: One with emulated rasterization discard, one with true rasterization
     // discard, one without.
-    mtl::RenderPipelineRasterStateMap<ProgramShaderObjVariantMtl> mVertexShaderVariants;
-    // - Fragment shader: One for sample coverage mask enabled, one with it disabled.
+    ProgramVertexShaderVariantsMapMtl mVertexShaderVariants;
+    // - Fragment shader: One with sample coverage mask enabled, one with it disabled.
     std::array<ProgramShaderObjVariantMtl, 2> mFragmentShaderVariants;
 
     // Cached references of current shader variants.

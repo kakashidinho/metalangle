@@ -156,23 +156,19 @@ constexpr uint32_t kMaxGLUBOBindings     = 2 * kMaxShaderUBOs;
 // Binding index start for vertex data buffers:
 constexpr uint32_t kVboBindingIndexStart = 0;
 
-// Binding index for default attribute buffer:
-constexpr uint32_t kDefaultAttribsBindingIndex = kVboBindingIndexStart + kMaxVertexAttribs;
+// Binding index for attribute's offset & stride buffer:
+constexpr uint32_t kAttribsOffsetStrideBufferBindingIndex =
+    kVboBindingIndexStart + kMaxVertexAttribs;
 // Binding index for driver uniforms:
-constexpr uint32_t kDriverUniformsBindingIndex = kDefaultAttribsBindingIndex + 1;
+constexpr uint32_t kDriverUniformsBindingIndex = kAttribsOffsetStrideBufferBindingIndex + 1;
 // Binding index for default uniforms:
-constexpr uint32_t kDefaultUniformsBindingIndex = kDefaultAttribsBindingIndex + 3;
+constexpr uint32_t kDefaultUniformsBindingIndex = kAttribsOffsetStrideBufferBindingIndex + 3;
 // Binding index for shadow samplers' compare modes
 constexpr uint32_t kShadowSamplerCompareModesBindingIndex = kDefaultUniformsBindingIndex + 1;
 // Binding index for UBO's argument buffer
 constexpr uint32_t kUBOArgumentBufferBindingIndex = kShadowSamplerCompareModesBindingIndex + 1;
 
 constexpr uint32_t kStencilMaskAll = 0xff;  // Only 8 bits stencil is supported
-
-// This special constant is used to indicate that a particular vertex descriptor's buffer layout
-// index is unused.
-constexpr MTLVertexStepFunction kVertexStepFunctionInvalid =
-    static_cast<MTLVertexStepFunction>(0xff);
 
 constexpr int kEmulatedAlphaValue = 1;
 
@@ -242,7 +238,7 @@ struct ClearColorValue
     }
 };
 
-enum class VertexAttribType
+enum class VertexAttributeType : uint8_t
 {
     Float,
     Fixed,
@@ -255,6 +251,7 @@ enum class VertexAttribType
     UShort,
     Int,
     UInt,
+    Invalid,
     EnumCount,
 };
 
