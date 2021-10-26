@@ -133,8 +133,6 @@ struct VertexAttributeDesc
     bool operator==(const VertexAttributeDesc &rhs) const;
     inline bool operator!=(const VertexAttributeDesc &rhs) const { return !(*this == rhs); }
 
-    uint32_t offset;
-    uint32_t stride;
     uint32_t divisor;
 
     uint8_t channels;
@@ -146,7 +144,7 @@ struct VertexAttributeDesc
     const uint8_t padding = 0;
 };
 
-static_assert(sizeof(VertexAttributeDesc) == sizeof(uint64_t) * 2,
+static_assert(sizeof(VertexAttributeDesc) == sizeof(uint64_t),
               "Unexpected paddings in VertexAttributeDesc");
 
 struct VertexDesc

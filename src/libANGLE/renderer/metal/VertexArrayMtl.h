@@ -58,6 +58,9 @@ class VertexArrayMtl : public VertexArrayImpl
                                  size_t *idxBufferOffsetOut,
                                  gl::DrawElementsType *indexTypeOut);
 
+    // Check whether the given attribute is backed by buffer or client data
+    bool hasBuffer(size_t attribIndex) const;
+
   private:
     void reset(ContextMtl *context);
 
@@ -116,9 +119,22 @@ class VertexArrayMtl : public VertexArrayImpl
     // These can point to real BufferMtl or converted buffer in mConvertedArrayBufferHolders
     gl::AttribArray<BufferHolderMtl *> mCurrentArrayBuffers;
     gl::AttribArray<SimpleWeakBufferHolderMtl> mConvertedArrayBufferHolders;
-    gl::AttribArray<size_t> mCurrentArrayBufferOffsets;
-    gl::AttribArray<GLuint> mCurrentArrayBufferStrides;
+    gl::AttribArray<uint32_t> mCurrentArrayBufferOffsets;
+    gl::AttribArray<uint32_t> mCurrentArrayBufferStrides;
     gl::AttribArray<const mtl::VertexFormat *> mCurrentArrayBufferFormats;
+
+    // packed array containing each attribute's offset in 1st element, and stride in 2nd element.
+    // Note that the offsets and strides might not be the same as mCurrentArrayBufferOffsets
+    // or mCurrentArrayBufferStrides if the respective attributes are disabled (i.e default
+    // attributes are used).
+    // This array is intended to be passed to shader.
+    struct OffsetAndStride
+    {
+        uint32_t offset;
+        uint32_t stride;
+    };
+    static_assert(sizeof(OffsetAndStride) == 2 * sizeof(uint32_t), "Unexpected size");
+    gl::AttribArray<OffsetAndStride> mCurrentAttribOffsetsAndStrides;
 
     const mtl::VertexFormat &mDefaultFloatVertexFormat;
     const mtl::VertexFormat &mDefaultIntVertexFormat;

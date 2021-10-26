@@ -258,7 +258,7 @@ class ContextMtl : public ContextImpl, public mtl::Context
     using ContextImpl::handleError;
 
     void invalidateState(const gl::Context *context);
-    void invalidateDefaultAttribute(size_t attribIndex);
+    void invalidateAllDefaultAttributes();
     void invalidateDefaultAttributes(const gl::AttributesMask &dirtyMask);
     void invalidateCurrentTextures();
     void invalidateDriverUniforms();
@@ -497,11 +497,6 @@ class ContextMtl : public ContextImpl, public mtl::Context
         uint32_t padding;
     };
 
-    struct DefaultAttribute
-    {
-        uint8_t values[sizeof(float) * 4];
-    };
-
     mtl::OcclusionQueryPool mOcclusionQueryPool;
 
     mtl::CommandBuffer mCmdBuffer;
@@ -546,8 +541,6 @@ class ContextMtl : public ContextImpl, public mtl::Context
     mtl::TextureRef mDummyXFBRenderTexture;
 
     DriverUniforms mDriverUniforms;
-
-    DefaultAttribute mDefaultAttributes[mtl::kMaxVertexAttribs];
 
     IncompleteTextureSet mIncompleteTextures;
     bool mIncompleteTexturesInitialized = false;

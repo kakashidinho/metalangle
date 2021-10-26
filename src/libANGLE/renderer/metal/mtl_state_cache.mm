@@ -458,7 +458,6 @@ size_t SamplerDesc::hash() const
 bool VertexAttributeDesc::operator==(const VertexAttributeDesc &rhs) const
 {
     return ANGLE_PROP_EQ(*this, rhs, type) && ANGLE_PROP_EQ(*this, rhs, channels) &&
-           ANGLE_PROP_EQ(*this, rhs, offset) && ANGLE_PROP_EQ(*this, rhs, stride) &&
            ANGLE_PROP_EQ(*this, rhs, divisor) && ANGLE_PROP_EQ(*this, rhs, source) &&
            ANGLE_PROP_EQ(*this, rhs, isAligned) && ANGLE_PROP_EQ(*this, rhs, isNorm);
 }

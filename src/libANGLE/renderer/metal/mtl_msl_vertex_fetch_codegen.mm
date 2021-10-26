@@ -25,26 +25,19 @@ namespace
 // Type = component type
 constexpr int kVertexTypeConstBaseIdx          = 100;
 constexpr int kVertexSizeConstBaseIdx          = 200;
-constexpr int kVertexOffsetConstBaseIdx        = 300;
-constexpr int kVertexStrideConstBaseIdx        = 400;
 constexpr int kVertexDivisorConstBaseIdx       = 500;
 constexpr int kVertexNormalizeConstBaseIdx     = 600;
 constexpr int kVertexOffsetAlignedConstBaseIdx = 700;
-constexpr int kVertexIsDefaultConstBaseIdx     = 800;
 
 constexpr char kVertexTypeConstBaseName[]          = "ANGLEVertexAttribType";
 constexpr char kVertexSizeConstBaseName[]          = "ANGLEVertexAttribSize";
-constexpr char kVertexOffsetConstBaseName[]        = "ANGLEVertexAttribOffset";
-constexpr char kVertexStrideConstBaseName[]        = "ANGLEVertexAttribStride";
 constexpr char kVertexDivisorConstBaseName[]       = "ANGLEVertexAttribDivisor";
 constexpr char kVertexNormalizeConstBaseName[]     = "ANGLEVertexAttribNormalize";
 constexpr char kVertexOffsetAlignedConstBaseName[] = "ANGLEVertexAttribOffsetAligned";
-constexpr char kVertexIsDefaultConstBaseName[]     = "ANGLEVertexAttribIsDefault";
 
 constexpr char kVertexBufferPrefix[] = "ANGLEVertexAttribBuffer";
 
-constexpr char kVertexDefaultBufferNeededConstName[] = "ANGLEVertexAttribDefaultBufferNeeded";
-constexpr char kVertexDefaultBufferName[]            = "ANGLEVertexAttribDefaultBuffer";
+constexpr char kVertexOffsetStrideBufferName[] = "ANGLEVertexAttribOffsetStrideBuffer";
 
 #define MSL_TYPE_ENUM_NAME(TYPE) ("ANGLEVertexAttribType" #TYPE)
 
@@ -124,13 +117,6 @@ struct FunctionParam
 bool IsSpace(char c)
 {
     return c == ' ' || c == '\t' || c == '\r' || c == '\n';
-}
-
-bool IsAttribScalar(const std::string &typeName)
-{
-    char c = typeName.back();
-    // Doesn't contain vector size suffix
-    return c >= 'a' && c <= 'z';
 }
 
 size_t FindNextNonSpace(const std::string &code, size_t idx)
@@ -305,14 +291,6 @@ uint32_t GetVertexSizeConstantIdx(uint32_t index)
 {
     return kVertexSizeConstBaseIdx + index;
 }
-uint32_t GetVertexOffsetConstantIdx(uint32_t index)
-{
-    return kVertexOffsetConstBaseIdx + index;
-}
-uint32_t GetVertexStrideConstantIdx(uint32_t index)
-{
-    return kVertexStrideConstBaseIdx + index;
-}
 uint32_t GetVertexDivisorConstantIdx(uint32_t index)
 {
     return kVertexDivisorConstBaseIdx + index;
@@ -324,10 +302,6 @@ uint32_t GetVertexOffsetAlignedConstantIdx(uint32_t index)
 uint32_t GetVertexNormalizeConstantIdx(uint32_t index)
 {
     return kVertexNormalizeConstBaseIdx + index;
-}
-uint32_t GetVertexIsDefaultConstantIdx(uint32_t index)
-{
-    return kVertexIsDefaultConstBaseIdx + index;
 }
 
 std::string GetConstantName(const char *baseName, uint32_t index)
@@ -345,14 +319,6 @@ std::string GetVertexSizeConstantName(uint32_t index)
 {
     return GetConstantName(kVertexSizeConstBaseName, index);
 }
-std::string GetVertexOffsetConstantName(uint32_t index)
-{
-    return GetConstantName(kVertexOffsetConstBaseName, index);
-}
-std::string GetVertexStrideConstantName(uint32_t index)
-{
-    return GetConstantName(kVertexStrideConstBaseName, index);
-}
 std::string GetVertexDivisorConstantName(uint32_t index)
 {
     return GetConstantName(kVertexDivisorConstBaseName, index);
@@ -364,10 +330,6 @@ std::string GetVertexOffsetAlignedConstantName(uint32_t index)
 std::string GetVertexNormalizeConstantName(uint32_t index)
 {
     return GetConstantName(kVertexNormalizeConstBaseName, index);
-}
-std::string GetVertexIsDefaultConstantName(uint32_t index)
-{
-    return GetConstantName(kVertexIsDefaultConstBaseName, index);
 }
 
 std::string GetVertexBufferNamePrefix(uint32_t index)
@@ -1162,27 +1124,6 @@ static inline uint castTo(Vec4 src, uint)
     return static_cast<uint>(src.x);
 }
 
-template <typename DestT, unsigned int DestComp>
-static inline vec<DestT, DestComp> fetchDefaultAttribVec(constant float4* buffer,
-                                                         uint attribIndex,
-                                                         vec<DestT, DestComp>)
-{
-    vec<DestT, DestComp> re;
-    float4 defaultVec4 = buffer[attribIndex];
-    for (unsigned int i = 0; i < DestComp; ++i)
-    {
-        re[i] = as_type<DestT>(defaultVec4[i]);
-    }
-
-    return re;
-}
-
-template <typename T>
-static inline T fetchDefaultAttribScalar(constant float4* buffer, uint attribIndex, T)
-{
-    return as_type<T>(buffer[attribIndex].x);
-}
-
 // COMP_NUMBER = number of components, must be literal
 #define FETCH_ALIGNED(TYPE, COMP_NUMBER, INPUT, OFFSET, STRIDE, INDEX) \
     fetch##TYPE##COMP_NUMBER##Aligned(INPUT, OFFSET, STRIDE, INDEX)
@@ -1320,9 +1261,6 @@ static inline T fetchDefaultAttribScalar(constant float4* buffer, uint attribInd
         }                                                                                          \
     }
 
-#define FETCH_DEFAULT_ATTRIB_CODE(BUFFER, ATTRIB_IDX, FETCH_PROC, DEST) \
-    DEST = FETCH_PROC(BUFFER, ATTRIB_IDX, DEST)
-
 )";
     return *os;
 }
@@ -1351,18 +1289,12 @@ std::ostream &EmitConstantsDecls(const std::vector<VertexAttribute> &attribs, st
                          GetVertexTypeConstantIdx(attrib.index), false, os);
         EmitConstantDecl(GetVertexSizeConstantName(attrib.index),
                          GetVertexSizeConstantIdx(attrib.index), false, os);
-        EmitConstantDecl(GetVertexOffsetConstantName(attrib.index),
-                         GetVertexOffsetConstantIdx(attrib.index), false, os);
-        EmitConstantDecl(GetVertexStrideConstantName(attrib.index),
-                         GetVertexStrideConstantIdx(attrib.index), false, os);
         EmitConstantDecl(GetVertexDivisorConstantName(attrib.index),
                          GetVertexDivisorConstantIdx(attrib.index), false, os);
         EmitConstantDecl(GetVertexNormalizeConstantName(attrib.index),
                          GetVertexNormalizeConstantIdx(attrib.index), true, os);
         EmitConstantDecl(GetVertexOffsetAlignedConstantName(attrib.index),
                          GetVertexOffsetAlignedConstantIdx(attrib.index), true, os);
-        EmitConstantDecl(GetVertexIsDefaultConstantName(attrib.index),
-                         GetVertexIsDefaultConstantIdx(attrib.index), true, os);
 
         // constant indicating the format is packed
         *os << "constant bool ANGLEVertexAttribIsPacked32Bit_" << attrib.index << " = "
@@ -1468,23 +1400,6 @@ std::ostream &EmitConstantsDecls(const std::vector<VertexAttribute> &attribs, st
             << "!" << GetVertexOffsetAlignedConstantName(attrib.index) << ";" << std::endl;
     }
 
-    if (!attribs.empty())
-    {
-        // default atrrib buffer needed flag
-        *os << "constant bool " << kVertexDefaultBufferNeededConstName << " = \n";
-        for (size_t i = 0; i < attribs.size(); ++i)
-        {
-            const VertexAttribute &attrib = attribs[i];
-            if (i > 0)
-            {
-                *os << "|| ";
-            }
-
-            *os << GetVertexIsDefaultConstantName(attrib.index) << '\n';
-        }
-        *os << ";\n";
-    }
-
     return *os;
 }
 
@@ -1505,53 +1420,53 @@ std::ostream &EmitVertexFetchCodeEntryPrototype(const std::string &desiredEntryN
             *os << ",\n";
         }
 
-        *os << "const device uchar *" << GetVertexBufferNamePrefix(attrib.index) << "AsByte1 [[buffer("
-            << attrib.index << "), function_constant(ANGLEVertexAttribIsUnaligned" << attrib.index
-            << ")]],\n";
+        *os << "const device uchar *" << GetVertexBufferNamePrefix(attrib.index)
+            << "AsByte1 [[buffer(" << attrib.index
+            << "), function_constant(ANGLEVertexAttribIsUnaligned" << attrib.index << ")]],\n";
 
-        *os << "const device uchar2 *" << GetVertexBufferNamePrefix(attrib.index) << "AsByte2 [[buffer("
-            << attrib.index << "), function_constant(ANGLEVertexAttribSrcUChar2_" << attrib.index
-            << ")]],\n";
+        *os << "const device uchar2 *" << GetVertexBufferNamePrefix(attrib.index)
+            << "AsByte2 [[buffer(" << attrib.index
+            << "), function_constant(ANGLEVertexAttribSrcUChar2_" << attrib.index << ")]],\n";
 
-        *os << "const device uchar3 *" << GetVertexBufferNamePrefix(attrib.index) << "AsByte3 [[buffer("
-            << attrib.index << "), function_constant(ANGLEVertexAttribSrcUChar3_" << attrib.index
-            << ")]],\n";
+        *os << "const device uchar3 *" << GetVertexBufferNamePrefix(attrib.index)
+            << "AsByte3 [[buffer(" << attrib.index
+            << "), function_constant(ANGLEVertexAttribSrcUChar3_" << attrib.index << ")]],\n";
 
-        *os << "const device uchar4 *" << GetVertexBufferNamePrefix(attrib.index) << "AsByte4 [[buffer("
-            << attrib.index << "), function_constant(ANGLEVertexAttribSrcUChar4_" << attrib.index
-            << ")]],\n";
+        *os << "const device uchar4 *" << GetVertexBufferNamePrefix(attrib.index)
+            << "AsByte4 [[buffer(" << attrib.index
+            << "), function_constant(ANGLEVertexAttribSrcUChar4_" << attrib.index << ")]],\n";
 
-        *os << "const device ushort *" << GetVertexBufferNamePrefix(attrib.index) << "AsShort1 [[buffer("
-            << attrib.index << "), function_constant(ANGLEVertexAttribSrcUShort1_" << attrib.index
-            << ")]],\n";
+        *os << "const device ushort *" << GetVertexBufferNamePrefix(attrib.index)
+            << "AsShort1 [[buffer(" << attrib.index
+            << "), function_constant(ANGLEVertexAttribSrcUShort1_" << attrib.index << ")]],\n";
 
-        *os << "const device ushort2 *" << GetVertexBufferNamePrefix(attrib.index) << "AsShort2 [[buffer("
-            << attrib.index << "), function_constant(ANGLEVertexAttribSrcUShort2_" << attrib.index
-            << ")]],\n";
+        *os << "const device ushort2 *" << GetVertexBufferNamePrefix(attrib.index)
+            << "AsShort2 [[buffer(" << attrib.index
+            << "), function_constant(ANGLEVertexAttribSrcUShort2_" << attrib.index << ")]],\n";
 
-        *os << "const device ushort3 *" << GetVertexBufferNamePrefix(attrib.index) << "AsShort3 [[buffer("
-            << attrib.index << "), function_constant(ANGLEVertexAttribSrcUShort3_" << attrib.index
-            << ")]],\n";
+        *os << "const device ushort3 *" << GetVertexBufferNamePrefix(attrib.index)
+            << "AsShort3 [[buffer(" << attrib.index
+            << "), function_constant(ANGLEVertexAttribSrcUShort3_" << attrib.index << ")]],\n";
 
-        *os << "const device ushort4 *" << GetVertexBufferNamePrefix(attrib.index) << "AsShort4 [[buffer("
-            << attrib.index << "), function_constant(ANGLEVertexAttribSrcUShort4_" << attrib.index
-            << ")]],\n";
+        *os << "const device ushort4 *" << GetVertexBufferNamePrefix(attrib.index)
+            << "AsShort4 [[buffer(" << attrib.index
+            << "), function_constant(ANGLEVertexAttribSrcUShort4_" << attrib.index << ")]],\n";
 
-        *os << "const device uint *" << GetVertexBufferNamePrefix(attrib.index) << "AsInt1 [[buffer("
-            << attrib.index << "), function_constant(ANGLEVertexAttribSrcUInt1_" << attrib.index
-            << ")]],\n";
+        *os << "const device uint *" << GetVertexBufferNamePrefix(attrib.index)
+            << "AsInt1 [[buffer(" << attrib.index
+            << "), function_constant(ANGLEVertexAttribSrcUInt1_" << attrib.index << ")]],\n";
 
-        *os << "const device uint2 *" << GetVertexBufferNamePrefix(attrib.index) << "AsInt2 [[buffer("
-            << attrib.index << "), function_constant(ANGLEVertexAttribSrcUInt2_" << attrib.index
-            << ")]],\n";
+        *os << "const device uint2 *" << GetVertexBufferNamePrefix(attrib.index)
+            << "AsInt2 [[buffer(" << attrib.index
+            << "), function_constant(ANGLEVertexAttribSrcUInt2_" << attrib.index << ")]],\n";
 
-        *os << "const device uint3 *" << GetVertexBufferNamePrefix(attrib.index) << "AsInt3 [[buffer("
-            << attrib.index << "), function_constant(ANGLEVertexAttribSrcUInt3_" << attrib.index
-            << ")]],\n";
+        *os << "const device uint3 *" << GetVertexBufferNamePrefix(attrib.index)
+            << "AsInt3 [[buffer(" << attrib.index
+            << "), function_constant(ANGLEVertexAttribSrcUInt3_" << attrib.index << ")]],\n";
 
-        *os << "const device uint4 *" << GetVertexBufferNamePrefix(attrib.index) << "AsInt4 [[buffer("
-            << attrib.index << "), function_constant(ANGLEVertexAttribSrcUInt4_" << attrib.index
-            << ")]]";
+        *os << "const device uint4 *" << GetVertexBufferNamePrefix(attrib.index)
+            << "AsInt4 [[buffer(" << attrib.index
+            << "), function_constant(ANGLEVertexAttribSrcUInt4_" << attrib.index << ")]]";
 
         hasArguments = true;
     }
@@ -1577,16 +1492,14 @@ std::ostream &EmitVertexFetchCodeEntryPrototype(const std::string &desiredEntryN
         hasArguments = true;
     }
 
-    if (!attribs.empty())
     {
-        // Insert default attributes buffer
+        // Insert buffer containing offset & stride for each attribute
         if (hasArguments)
         {
             *os << ",\n";
         }
-        *os << "constant float4* " << kVertexDefaultBufferName << "[[buffer("
-            << kDefaultAttribsBindingIndex << "), function_constant("
-            << kVertexDefaultBufferNeededConstName << ")]]";
+        *os << "constant uint2* " << kVertexOffsetStrideBufferName << "[[buffer("
+            << kAttribsOffsetStrideBufferBindingIndex << ")]]";
         hasArguments = true;
     }
 
@@ -1619,41 +1532,18 @@ std::ostream &EmitVertexFetchCode(const FunctionParam &stageInput,
                                   const VertexAttribute &attrib,
                                   std::ostream *os)
 {
-    // if (ANGLEVertexAttribIsDefault0)
-    // {
-    //     FETCH_DEFAULT_ATTRIB_CODE(...);
-    // }
-    // else{
-    //     FETCH_CODE(...)
-    // }
     *os << "\t// fetching code for attribute" << attrib.index << "\n";
-    *os << "\tif (" << GetVertexIsDefaultConstantName(attrib.index) << ")\n";
     *os << "\t{\n";
 
-    *os << "\t\tFETCH_DEFAULT_ATTRIB_CODE(\n";
-    *os << "\t\t" << kVertexDefaultBufferName << ",\n";
-    *os << "\t\t" << attrib.index << ",\n\t\t";
-    if (IsAttribScalar(attrib.typeName))
-    {
-        *os << "fetchDefaultAttribScalar";
-    }
-    else
-    {
-        *os << "fetchDefaultAttribVec";
-    }
-    *os << ", " << stageInput.name << '.' << attrib.name << "\n";
-    *os << "\t\t);\n";
-
-    *os << "\t}\n";
-    *os << "\telse\n";
-    *os << "\t{\n";
+    *os << "\t\t  uint2 ANGLEOffsetStride_tmp = " << kVertexOffsetStrideBufferName << "["
+        << attrib.index << "];\n";
 
     *os << "\t\tFETCH_CODE(\n";
     *os << "\t\t" << GetVertexTypeConstantName(attrib.index) << ",\n";
     *os << "\t\t" << GetVertexSizeConstantName(attrib.index) << ",\n";
     *os << "\t\t" << GetVertexBufferNamePrefix(attrib.index) << ",\n";
-    *os << "\t\t" << GetVertexOffsetConstantName(attrib.index) << ",\n";
-    *os << "\t\t" << GetVertexStrideConstantName(attrib.index) << ",\n";
+    *os << "\t\tANGLEOffsetStride_tmp.x,\n";
+    *os << "\t\tANGLEOffsetStride_tmp.y,\n";
     *os << "\t\t" << GetVertexNormalizeConstantName(attrib.index) << ",\n";
     *os << "\t\t" << GetVertexOffsetAlignedConstantName(attrib.index) << ",\n";
     *os << "\t\t" << GetVertexDivisorConstantName(attrib.index) << ",\n";
@@ -1803,23 +1693,17 @@ void PopulateVertexFetchingConstants(const VertexDesc &vertexDesc,
             continue;
         }
 
-        uint32_t type        = ConvertVertexTypeToShaderEnumValue(attribDesc.type);
-        uint32_t components  = attribDesc.channels;
-        uint32_t offset      = attribDesc.offset;
-        uint32_t stride      = attribDesc.stride;
-        uint32_t divisor     = attribDesc.divisor;
-        BOOL aligned         = attribDesc.isAligned ? YES : NO;
-        BOOL normalize       = attribDesc.isNorm ? YES : NO;
-        BOOL isDefaultAttrib = attribDesc.source == VertexAttributeSource::DefaultAttrib;
+        uint32_t type       = ConvertVertexTypeToShaderEnumValue(attribDesc.type);
+        uint32_t components = attribDesc.channels;
+        uint32_t divisor    = attribDesc.divisor;
+        BOOL aligned        = attribDesc.isAligned ? YES : NO;
+        BOOL normalize      = attribDesc.isNorm ? YES : NO;
 
         SetFunctionConstantUInt(funcConstants, type, GetVertexTypeConstantName(i));
         SetFunctionConstantUInt(funcConstants, components, GetVertexSizeConstantName(i));
-        SetFunctionConstantUInt(funcConstants, offset, GetVertexOffsetConstantName(i));
-        SetFunctionConstantUInt(funcConstants, stride, GetVertexStrideConstantName(i));
         SetFunctionConstantUInt(funcConstants, divisor, GetVertexDivisorConstantName(i));
         SetFunctionConstantBool(funcConstants, aligned, GetVertexOffsetAlignedConstantName(i));
         SetFunctionConstantBool(funcConstants, normalize, GetVertexNormalizeConstantName(i));
-        SetFunctionConstantBool(funcConstants, isDefaultAttrib, GetVertexIsDefaultConstantName(i));
     }
 }
 
