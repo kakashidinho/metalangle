@@ -144,15 +144,14 @@ class VertexArrayMtl : public VertexArrayImpl
     size_t mInlineDataMaxSize;
 
     // Stride per vertex attribute
-    gl::AttribArray<uint32_t> mCurrentArrayBufferStrides;
+    gl::AttribArray<uint32_t> mCurrentArrayStrides;
     // Format per vertex attribute
-    gl::AttribArray<const mtl::VertexFormat *> mCurrentArrayBufferFormats;
+    gl::AttribArray<const mtl::VertexFormat *> mCurrentArrayFormats;
 
     // packed array containing each attribute's offset in 1st element, and stride in 2nd element.
     // Note that the offsets and strides might not be the same as mCurrentArrayBufferOffsets
-    // or mCurrentArrayBufferStrides if the respective attributes are disabled (i.e default
-    // attributes are used).
-    // This array is intended to be passed to shader.
+    // or mCurrentArrayStrides if the respective attributes are disabled (i.e default attributes are
+    // used). This array is intended to be passed to shader.
     struct OffsetAndStride
     {
         uint32_t offset;

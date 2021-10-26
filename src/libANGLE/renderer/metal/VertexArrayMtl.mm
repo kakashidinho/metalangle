@@ -194,11 +194,11 @@ void VertexArrayMtl::reset(ContextMtl *context)
     {
         offset = 0;
     }
-    for (uint32_t &stride : mCurrentArrayBufferStrides)
+    for (uint32_t &stride : mCurrentArrayStrides)
     {
         stride = 0;
     }
-    for (const mtl::VertexFormat *&format : mCurrentArrayBufferFormats)
+    for (const mtl::VertexFormat *&format : mCurrentArrayFormats)
     {
         format = &mDefaultFloatVertexFormat;
     }
@@ -432,20 +432,16 @@ angle::Result VertexArrayMtl::setupDraw(const gl::Context *glContext,
             {
                 uint32_t bufferIdx = mtl::kVboBindingIndexStart + v;
 
-                const angle::Format &angleFormat =
-                    mCurrentArrayBufferFormats[v]->actualAngleFormat();
-                desc.attributes[v].type     = mCurrentArrayBufferFormats[v]->type;
-                desc.attributes[v].channels = angleFormat.channelCount;
-                desc.attributes[v].divisor  = binding.getDivisor();
-                desc.attributes[v].source   = mtl::VertexAttributeSource::Buffer;
-                desc.attributes[v].isNorm   = angleFormat.isNorm();
+                const angle::Format &angleFormat = mCurrentArrayFormats[v]->actualAngleFormat();
+                desc.attributes[v].type          = mCurrentArrayFormats[v]->type;
+                desc.attributes[v].channels      = angleFormat.channelCount;
+                desc.attributes[v].divisor       = binding.getDivisor();
+                desc.attributes[v].source        = mtl::VertexAttributeSource::Buffer;
+                desc.attributes[v].isNorm        = angleFormat.isNorm();
                 desc.attributes[v].isAligned =
-                    (mCurrentArrayBufferOffsets[v] % mCurrentArrayBufferFormats[v]->alignment) ==
-                        0 &&
-                    (mCurrentArrayBufferStrides[v] % mCurrentArrayBufferFormats[v]->alignment) == 0;
+                    (mCurrentArrayStrides[v] % mCurrentArrayFormats[v]->alignment) == 0;
 
-                mCurrentAttribOffsetsAndStrides[v] = {mCurrentArrayBufferOffsets[v],
-                                                      mCurrentArrayBufferStrides[v]};
+                mCurrentAttribOffsetsAndStrides[v].stride = mCurrentArrayStrides[v];
 
                 ASSERT(bufferIdx < mtl::kMaxVertexAttribs);
                 if (binding.getDivisor() != 0 &&
@@ -460,11 +456,20 @@ angle::Result VertexArrayMtl::setupDraw(const gl::Context *glContext,
 
                 if (mCurrentArrayBuffers[v])
                 {
+                    // For buffer access, aligned means both offset & stride are aligned.
+                    desc.attributes[v].isAligned =
+                        desc.attributes[v].isAligned &&
+                        (mCurrentArrayBufferOffsets[v] % mCurrentArrayFormats[v]->alignment) == 0;
+
+                    mCurrentAttribOffsetsAndStrides[v].offset = mCurrentArrayBufferOffsets[v];
+
                     cmdEncoder->setVertexBuffer(mCurrentArrayBuffers[v]->getCurrentBuffer(), 0,
                                                 bufferIdx);
                 }
                 else
                 {
+                    mCurrentAttribOffsetsAndStrides[v].offset = 0;
+
                     // No buffer specified, use the client memory directly as inline constant data
                     ASSERT(mCurrentArrayBufferOffsets[v] == 0);
                     ASSERT(mCurrentArrayInlineDataSizes[v] <= mInlineDataMaxSize);
@@ -498,7 +503,7 @@ void VertexArrayMtl::emulateInstanceDrawStep(mtl::RenderCommandEncoder *cmdEncod
         const auto &attrib               = attribs[instanceAttribIdx];
         const gl::VertexBinding &binding = bindings[attrib.bindingIndex];
         uint32_t offset =
-            instanceId / binding.getDivisor() * mCurrentArrayBufferStrides[instanceAttribIdx];
+            instanceId / binding.getDivisor() * mCurrentArrayStrides[instanceAttribIdx];
         if (mCurrentArrayBuffers[instanceAttribIdx])
         {
             offset += mCurrentArrayBufferOffsets[instanceAttribIdx];
@@ -588,8 +593,8 @@ angle::Result VertexArrayMtl::updateClientAttribs(const gl::Context *context,
             mCurrentArrayInlineDataPointers[attribIndex] = src;
             mCurrentArrayInlineDataSizes[attribIndex]    = bytesIntendedToUse;
             mCurrentArrayBufferOffsets[attribIndex]      = 0;
-            mCurrentArrayBufferFormats[attribIndex]      = &format;
-            mCurrentArrayBufferStrides[attribIndex]      = binding.getStride();
+            mCurrentArrayFormats[attribIndex]            = &format;
+            mCurrentArrayStrides[attribIndex]            = binding.getStride();
         }
         else
         {
@@ -605,8 +610,8 @@ angle::Result VertexArrayMtl::updateClientAttribs(const gl::Context *context,
             src += startElement * binding.getStride();
             size_t destOffset = startElement * convertedStride;
 
-            mCurrentArrayBufferFormats[attribIndex] = &streamFormat;
-            mCurrentArrayBufferStrides[attribIndex] = convertedStride;
+            mCurrentArrayFormats[attribIndex] = &streamFormat;
+            mCurrentArrayStrides[attribIndex] = convertedStride;
 
             if (bytesToAllocate <= mInlineDataMaxSize)
             {
@@ -671,9 +676,9 @@ angle::Result VertexArrayMtl::syncDirtyAttrib(const gl::Context *glContext,
             mCurrentArrayBuffers[attribIndex] = bufferMtl;
             ANGLE_MTL_SAFE_CAST_OFFSET(contextMtl, binding.getOffset(),
                                        mCurrentArrayBufferOffsets[attribIndex]);
-            mCurrentArrayBufferStrides[attribIndex] = binding.getStride();
+            mCurrentArrayStrides[attribIndex] = binding.getStride();
 
-            mCurrentArrayBufferFormats[attribIndex] = &format;
+            mCurrentArrayFormats[attribIndex] = &format;
         }
         else
         {
@@ -685,8 +690,8 @@ angle::Result VertexArrayMtl::syncDirtyAttrib(const gl::Context *glContext,
         // Use default attribute value. Handled in setupDraw().
         mCurrentArrayBuffers[attribIndex]       = nullptr;
         mCurrentArrayBufferOffsets[attribIndex] = 0;
-        mCurrentArrayBufferStrides[attribIndex] = 0;
-        mCurrentArrayBufferFormats[attribIndex] =
+        mCurrentArrayStrides[attribIndex]       = 0;
+        mCurrentArrayFormats[attribIndex] =
             &contextMtl->getVertexFormat(angle::FormatID::NONE, false);
     }
 
@@ -859,9 +864,9 @@ angle::Result VertexArrayMtl::convertVertexBuffer(const gl::Context *glContext,
         // Out of bound buffer access, can return any values.
         // See KHR_robust_buffer_access_behavior
         mCurrentArrayBuffers[attribIndex]       = srcBuffer;
-        mCurrentArrayBufferFormats[attribIndex] = &srcVertexFormat;
+        mCurrentArrayFormats[attribIndex]       = &srcVertexFormat;
         mCurrentArrayBufferOffsets[attribIndex] = 0;
-        mCurrentArrayBufferStrides[attribIndex] = 16;
+        mCurrentArrayStrides[attribIndex]       = 16;
         return angle::Result::Continue;
     }
 
@@ -881,10 +886,10 @@ angle::Result VertexArrayMtl::convertVertexBuffer(const gl::Context *glContext,
         mConvertedArrayBufferHolders[attribIndex].set(conversion->convertedBuffer);
         mCurrentArrayBufferOffsets[attribIndex] =
             static_cast<uint32_t>(conversion->convertedOffset);
-        mCurrentArrayBufferStrides[attribIndex] = stride;
+        mCurrentArrayStrides[attribIndex] = stride;
 
-        mCurrentArrayBuffers[attribIndex]       = &mConvertedArrayBufferHolders[attribIndex];
-        mCurrentArrayBufferFormats[attribIndex] = &convertedFormat;
+        mCurrentArrayBuffers[attribIndex] = &mConvertedArrayBufferHolders[attribIndex];
+        mCurrentArrayFormats[attribIndex] = &convertedFormat;
         return angle::Result::Continue;
     }
 
@@ -917,9 +922,9 @@ angle::Result VertexArrayMtl::convertVertexBuffer(const gl::Context *glContext,
                                          convertedFormat, stride, numVertices, conversion));
     }
 
-    mCurrentArrayBuffers[attribIndex]       = &mConvertedArrayBufferHolders[attribIndex];
-    mCurrentArrayBufferFormats[attribIndex] = &convertedFormat;
-    mCurrentArrayBufferStrides[attribIndex] = stride;
+    mCurrentArrayBuffers[attribIndex] = &mConvertedArrayBufferHolders[attribIndex];
+    mCurrentArrayFormats[attribIndex] = &convertedFormat;
+    mCurrentArrayStrides[attribIndex] = stride;
 
     // Cache the last converted results to be re-used later if the buffer's content won't ever be
     // changed.
