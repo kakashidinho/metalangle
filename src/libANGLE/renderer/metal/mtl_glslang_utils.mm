@@ -9,6 +9,7 @@
 #include "libANGLE/renderer/metal/mtl_glslang_utils.h"
 
 #include <regex>
+#include <tuple>
 
 #include <spirv_msl.hpp>
 
@@ -16,6 +17,7 @@
 #include "compiler/translator/TranslatorMetal.h"
 #include "libANGLE/renderer/glslang_wrapper_utils.h"
 #include "libANGLE/renderer/metal/DisplayMtl.h"
+#include "libANGLE/renderer/metal/mtl_msl_vertex_fetch_codegen.h"
 
 namespace rx
 {
@@ -23,6 +25,10 @@ namespace mtl
 {
 namespace
 {
+constexpr char kOverrideVertexEntryName[] = "ANGLEVertexEntry";
+
+// See src/compiler/translator/tree_util/DriverUniform.cpp
+constexpr char kVerticesPerDrawName[] = "ANGLEUniforms.xfbVerticesPerInstance";
 
 constexpr uint32_t kGlslangTextureDescSet              = 0;
 constexpr uint32_t kGlslangDefaultUniformAndXfbDescSet = 1;
@@ -251,9 +257,21 @@ void GetAssignedSamplerBindings(const spirv_cross::CompilerMSL &compilerMsl,
     }
 }
 
-std::string PostProcessTranslatedMsl(bool hasDepthSampler, const std::string &translatedSource)
+std::string PostProcessTranslatedMsl(gl::ShaderType shaderType,
+                                     bool hasDepthSampler,
+                                     const std::string desiredEntryName,
+                                     const std::string &translatedSource)
 {
     std::string source;
+    if (shaderType == gl::ShaderType::Vertex)
+    {
+        source = AppendVertexFetchingCode(desiredEntryName, kVerticesPerDrawName, translatedSource);
+    }
+    else
+    {
+        source = translatedSource;
+    }
+
     if (hasDepthSampler)
     {
         // Add ANGLEShadowCompareModes variable to main(), We need to add here because it is the
@@ -361,8 +379,10 @@ class SpirvToMslCompiler : public spirv_cross::CompilerMSL
         analyzeShaderVariables();
 
         // Actual compilation
-        mslShaderInfoOut->metalShaderSource =
-            PostProcessTranslatedMsl(mHasDepthSampler, spirv_cross::CompilerMSL::compile());
+        std::string translatedSrc           = spirv_cross::CompilerMSL::compile();
+        mslShaderInfoOut->metalShaderSource = PostProcessTranslatedMsl(
+            shaderType, mHasDepthSampler,
+            spirv_cross::CompilerMSL::to_name(ir.default_entry_point, true), translatedSrc);
 
         // Retrieve automatic texture slot assignments
         GetAssignedSamplerBindings(*this, originalSamplerBindings,
@@ -371,6 +391,20 @@ class SpirvToMslCompiler : public spirv_cross::CompilerMSL
 
   private:
     // Override CompilerMSL
+    std::string to_name(uint32_t id, bool allow_alias) const override
+    {
+        if (id == ir.default_entry_point)
+        {
+            // Override default name for vertex entry point
+            auto &execution = get_entry_point();
+            if (execution.model == spv::ExecutionModelVertex)
+            {
+                return kOverrideVertexEntryName;
+            }
+        }
+        return spirv_cross::CompilerMSL::to_name(id, allow_alias);
+    }
+
     void emit_header() override
     {
         spirv_cross::CompilerMSL::emit_header();
