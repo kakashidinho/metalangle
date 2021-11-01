@@ -25,13 +25,13 @@
 
 namespace rx
 {
-static int hasMetalDevice = -1;
-
 bool IsMetalDisplayAvailable()
 {
-    if (hasMetalDevice != -1)
+    static int sHasMetalDevice = -1;
+
+    if (sHasMetalDevice != -1)
     {
-        return hasMetalDevice;
+        return sHasMetalDevice;
     }
     // We only support macos 10.13+ and 11 for now. Since they are requirements for Metal 2.0.
 #if TARGET_OS_SIMULATOR
@@ -48,23 +48,26 @@ bool IsMetalDisplayAvailable()
             [devices ANGLE_MTL_AUTORELEASE];
             if ([devices count] == 0)
 #else
-            // This doesn't seem to work always (https://stackoverflow.com/questions/59116802/how-to-check-if-metal-is-supported)
+            // This doesn't seem to work always
+            // (https://stackoverflow.com/questions/59116802/how-to-check-if-metal-is-supported)
             id<MTLDevice> device = MTLCreateSystemDefaultDevice();
             [device ANGLE_MTL_AUTORELEASE];
             if (!device)
 #endif
             {
-                NSLog(@"Can't get Metal device. Falling back to OpenGL.");
-                hasMetalDevice = 0;
-            } else {
-                hasMetalDevice = 1;
+                NSLog(@"Can't get Metal device. Metal Display won't be available.");
+                sHasMetalDevice = 0;
+            }
+            else
+            {
+                sHasMetalDevice = 1;
             }
         }
-        return hasMetalDevice;
+        return sHasMetalDevice;
     }
-    NSLog(@"The device is to old to support Metal. Falling back to OpenGL.");
-    hasMetalDevice = 0;
-    return hasMetalDevice;
+    NSLog(@"The device is too old to support Metal. Falling back to OpenGL.");
+    sHasMetalDevice = 0;
+    return sHasMetalDevice;
 }
 
 DisplayImpl *CreateMetalDisplay(const egl::DisplayState &state)
