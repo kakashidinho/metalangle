@@ -58,6 +58,7 @@ void Format::init(const DisplayMtl *display, angle::FormatID intendedFormatId_)
     this->intendedFormatId = intendedFormatId_;
 
     id<MTLDevice> metalDevice = display->getMetalDevice();
+    bool isIOSSimulator = TARGET_OS_IOS && TARGET_OS_SIMULATOR;
 
     // Actual conversion
     switch (this->intendedFormatId)
@@ -87,6 +88,8 @@ void FormatTable::initNativeFormatCapsAutogen(const DisplayMtl *display)
     bool supportStencilAutoResolve = featuresMtl.hasStencilAutoResolve.enabled &&
                                      featuresMtl.allowMultisampleStoreAndResolve.enabled;
     bool supportDepthStencilAutoResolve = supportDepthAutoResolve && supportStencilAutoResolve;
+
+    bool isIOSSimulator = TARGET_OS_IOS && TARGET_OS_SIMULATOR;
 
     // Source: https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
     {metal_format_caps}
@@ -404,7 +407,7 @@ def gen_image_map_switch_string(image_table, angle_to_gl):
             # ASTC is only supported since Apple GPU 3 (with 3D textures support)
             switch_data += gen_image_map_switch_with_fallback_case(
                 angle_format, angle_format, angle_to_gl, ios_specific_map, [],
-                "display->supportsAppleGPUFamily(3)")
+                "display->supportsAppleGPUFamily(3) || isIOSSimulator")
         else:
             switch_data += gen_image_map_switch_simple_case(angle_format, angle_format,
                                                             angle_to_gl, ios_specific_map)
