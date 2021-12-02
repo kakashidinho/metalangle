@@ -654,6 +654,7 @@ void DisplayMtl::initializeExtensions() const
     mNativeExtensions.mapBufferRange         = true;
     mNativeExtensions.textureStorage         = true;
     mNativeExtensions.drawBuffers            = true;
+    mNativeExtensions.shaderFramebufferFetch = true;
     mNativeExtensions.fragDepth              = true;
     mNativeExtensions.framebufferBlit        = true;
     mNativeExtensions.framebufferMultisample = true;
