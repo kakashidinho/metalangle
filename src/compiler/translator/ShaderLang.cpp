@@ -23,6 +23,9 @@
 namespace sh
 {
 
+// EXT_shader_framebuffer_fetch / EXT_shader_framebuffer_fetch_non_coherent
+const char kInputAttachmentName[] = "ANGLEInputAttachment";
+
 namespace
 {
 

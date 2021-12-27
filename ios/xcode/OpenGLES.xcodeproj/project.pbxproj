@@ -21,6 +21,20 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		03A9001C2779A35500ACAD83 /* ReplaceForShaderFramebufferFetch.h in Headers */ = {isa = PBXBuildFile; fileRef = 03A9001A2779A35500ACAD83 /* ReplaceForShaderFramebufferFetch.h */; };
+		03A9001D2779A35500ACAD83 /* ReplaceForShaderFramebufferFetch.h in Headers */ = {isa = PBXBuildFile; fileRef = 03A9001A2779A35500ACAD83 /* ReplaceForShaderFramebufferFetch.h */; };
+		03A9001E2779A35500ACAD83 /* ReplaceForShaderFramebufferFetch.h in Headers */ = {isa = PBXBuildFile; fileRef = 03A9001A2779A35500ACAD83 /* ReplaceForShaderFramebufferFetch.h */; };
+		03A9001F2779A35500ACAD83 /* ReplaceForShaderFramebufferFetch.h in Headers */ = {isa = PBXBuildFile; fileRef = 03A9001A2779A35500ACAD83 /* ReplaceForShaderFramebufferFetch.h */; };
+		03A900242779A37400ACAD83 /* ReplaceForShaderFramebufferFetch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 03A9001B2779A35500ACAD83 /* ReplaceForShaderFramebufferFetch.cpp */; };
+		03A900252779A37600ACAD83 /* ReplaceForShaderFramebufferFetch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 03A9001B2779A35500ACAD83 /* ReplaceForShaderFramebufferFetch.cpp */; };
+		03A900262779A37900ACAD83 /* ReplaceForShaderFramebufferFetch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 03A9001B2779A35500ACAD83 /* ReplaceForShaderFramebufferFetch.cpp */; };
+		03A9002D2779A43400ACAD83 /* RunAtTheBeginningOfShader.h in Headers */ = {isa = PBXBuildFile; fileRef = 03A900282779A43400ACAD83 /* RunAtTheBeginningOfShader.h */; };
+		03A9002E2779A43400ACAD83 /* RunAtTheBeginningOfShader.h in Headers */ = {isa = PBXBuildFile; fileRef = 03A900282779A43400ACAD83 /* RunAtTheBeginningOfShader.h */; };
+		03A9002F2779A43400ACAD83 /* RunAtTheBeginningOfShader.h in Headers */ = {isa = PBXBuildFile; fileRef = 03A900282779A43400ACAD83 /* RunAtTheBeginningOfShader.h */; };
+		03A900302779A43400ACAD83 /* RunAtTheBeginningOfShader.h in Headers */ = {isa = PBXBuildFile; fileRef = 03A900282779A43400ACAD83 /* RunAtTheBeginningOfShader.h */; };
+		03A900312779A43C00ACAD83 /* RunAtTheBeginningOfShader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 03A900272779A43400ACAD83 /* RunAtTheBeginningOfShader.cpp */; };
+		03A900322779A43F00ACAD83 /* RunAtTheBeginningOfShader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 03A900272779A43400ACAD83 /* RunAtTheBeginningOfShader.cpp */; };
+		03A900332779A44100ACAD83 /* RunAtTheBeginningOfShader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 03A900272779A43400ACAD83 /* RunAtTheBeginningOfShader.cpp */; };
 		0A03A9B5244C84EE00E5E114 /* Matrix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA20002234734F400E0B98C /* Matrix.cpp */; };
 		0A03A9B6244C84EE00E5E114 /* egl_loader_autogen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AA2015723474EBF00E0B98C /* egl_loader_autogen.cpp */; };
 		0A03A9B7244C84EE00E5E114 /* Timer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9B83E6234CCE1B008BF16F /* Timer.cpp */; };
@@ -3977,6 +3991,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		03A9001A2779A35500ACAD83 /* ReplaceForShaderFramebufferFetch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ReplaceForShaderFramebufferFetch.h; sourceTree = "<group>"; };
+		03A9001B2779A35500ACAD83 /* ReplaceForShaderFramebufferFetch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ReplaceForShaderFramebufferFetch.cpp; sourceTree = "<group>"; };
+		03A900272779A43400ACAD83 /* RunAtTheBeginningOfShader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RunAtTheBeginningOfShader.cpp; sourceTree = "<group>"; };
+		03A900282779A43400ACAD83 /* RunAtTheBeginningOfShader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RunAtTheBeginningOfShader.h; sourceTree = "<group>"; };
 		0A03A9C7244C84EE00E5E114 /* libangle_util_tvos.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libangle_util_tvos.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A03A9E5244C850000E5E114 /* libangle_common_tvos.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libangle_common_tvos.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A0546CD242C1DD200FC05D0 /* TransformFeedbackMtl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TransformFeedbackMtl.h; path = ../../src/libANGLE/renderer/metal/TransformFeedbackMtl.h; sourceTree = "<group>"; };
@@ -4007,7 +4025,7 @@
 		0A605361234651CB005CEA98 /* HashNames.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = HashNames.cpp; sourceTree = "<group>"; };
 		0A605362234651CB005CEA98 /* FunctionLookup.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FunctionLookup.h; sourceTree = "<group>"; };
 		0A605363234651CB005CEA98 /* ExtensionGLSL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ExtensionGLSL.h; sourceTree = "<group>"; };
-		0A605366234651CB005CEA98 /* SymbolTable_autogen.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SymbolTable_autogen.cpp; sourceTree = "<group>"; };
+		0A605366234651CB005CEA98 /* SymbolTable_autogen.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SymbolTable_autogen.cpp; sourceTree = "<group>"; usesTabs = 0; };
 		0A605367234651CB005CEA98 /* Symbol.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Symbol.cpp; sourceTree = "<group>"; };
 		0A605368234651CB005CEA98 /* IntermNode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = IntermNode.cpp; sourceTree = "<group>"; };
 		0A605369234651CB005CEA98 /* glslang_lex.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = glslang_lex.cpp; sourceTree = "<group>"; };
@@ -4069,7 +4087,7 @@
 		0A6053AD234651CB005CEA98 /* VariablePacker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VariablePacker.h; sourceTree = "<group>"; };
 		0A6053AE234651CB005CEA98 /* Severity.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Severity.h; sourceTree = "<group>"; };
 		0A6053AF234651CB005CEA98 /* ValidateVaryingLocations.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ValidateVaryingLocations.cpp; sourceTree = "<group>"; };
-		0A6053B0234651CB005CEA98 /* BaseTypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BaseTypes.h; sourceTree = "<group>"; };
+		0A6053B0234651CB005CEA98 /* BaseTypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BaseTypes.h; sourceTree = "<group>"; usesTabs = 0; };
 		0A6053B1234651CB005CEA98 /* Declarator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Declarator.cpp; sourceTree = "<group>"; };
 		0A6053B2234651CB005CEA98 /* ExtensionBehavior.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ExtensionBehavior.cpp; sourceTree = "<group>"; };
 		0A6053B3234651CB005CEA98 /* ValidateSwitch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ValidateSwitch.cpp; sourceTree = "<group>"; };
@@ -4080,7 +4098,7 @@
 		0A6053BB234651CB005CEA98 /* InitializeDll.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InitializeDll.cpp; sourceTree = "<group>"; };
 		0A6053BC234651CB005CEA98 /* blocklayout.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = blocklayout.h; sourceTree = "<group>"; };
 		0A6053BD234651CB005CEA98 /* PoolAlloc.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PoolAlloc.cpp; sourceTree = "<group>"; };
-		0A6053BF234651CB005CEA98 /* ShaderLang.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ShaderLang.cpp; sourceTree = "<group>"; };
+		0A6053BF234651CB005CEA98 /* ShaderLang.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ShaderLang.cpp; sourceTree = "<group>"; usesTabs = 0; };
 		0A6053C0234651CB005CEA98 /* SymbolUniqueId.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SymbolUniqueId.cpp; sourceTree = "<group>"; };
 		0A6053C1234651CB005CEA98 /* SymbolTable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SymbolTable.h; sourceTree = "<group>"; };
 		0A6053C2234651CB005CEA98 /* FlagStd140Structs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FlagStd140Structs.h; sourceTree = "<group>"; };
@@ -4212,7 +4230,7 @@
 		0A605453234651CB005CEA98 /* IsASTDepthBelowLimit.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = IsASTDepthBelowLimit.cpp; sourceTree = "<group>"; };
 		0A605454234651CB005CEA98 /* BuiltInFunctionEmulator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuiltInFunctionEmulator.cpp; sourceTree = "<group>"; };
 		0A605455234651CB005CEA98 /* PoolAlloc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PoolAlloc.h; sourceTree = "<group>"; };
-		0A605456234651CB005CEA98 /* TranslatorVulkan.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TranslatorVulkan.cpp; sourceTree = "<group>"; };
+		0A605456234651CB005CEA98 /* TranslatorVulkan.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TranslatorVulkan.cpp; sourceTree = "<group>"; usesTabs = 0; };
 		0A605457234651CB005CEA98 /* OutputVulkanGLSL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OutputVulkanGLSL.h; sourceTree = "<group>"; };
 		0A605458234651CB005CEA98 /* ValidateGlobalInitializer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ValidateGlobalInitializer.cpp; sourceTree = "<group>"; };
 		0A60545B234651CB005CEA98 /* OutputESSL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OutputESSL.h; sourceTree = "<group>"; };
@@ -4224,7 +4242,7 @@
 		0A605462234651CB005CEA98 /* FlagStd140Structs.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FlagStd140Structs.cpp; sourceTree = "<group>"; };
 		0A605463234651CB005CEA98 /* TranslatorVulkan.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TranslatorVulkan.h; sourceTree = "<group>"; };
 		0A605464234651CB005CEA98 /* ValidateMaxParameters.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ValidateMaxParameters.h; sourceTree = "<group>"; };
-		0A605465234651CB005CEA98 /* ShaderVars.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ShaderVars.cpp; sourceTree = "<group>"; };
+		0A605465234651CB005CEA98 /* ShaderVars.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ShaderVars.cpp; sourceTree = "<group>"; usesTabs = 0; };
 		0A605466234651CB005CEA98 /* ValidateOutputs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ValidateOutputs.h; sourceTree = "<group>"; };
 		0A605467234651CB005CEA98 /* IsASTDepthBelowLimit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IsASTDepthBelowLimit.h; sourceTree = "<group>"; };
 		0A605468234651CB005CEA98 /* ParseContext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ParseContext.h; sourceTree = "<group>"; };
@@ -5903,6 +5921,8 @@
 				0A60537F234651CB005CEA98 /* FindMain.h */,
 				0A605380234651CB005CEA98 /* FindMain.cpp */,
 				0A605381234651CB005CEA98 /* IntermNodePatternMatcher.h */,
+				03A900272779A43400ACAD83 /* RunAtTheBeginningOfShader.cpp */,
+				03A900282779A43400ACAD83 /* RunAtTheBeginningOfShader.h */,
 				0A605382234651CB005CEA98 /* RunAtTheEndOfShader.cpp */,
 				0A7C2E10244390B000B75BA0 /* ReplaceClipDistanceVariable.cpp */,
 				0A7C2E11244390B000B75BA0 /* ReplaceClipDistanceVariable.h */,
@@ -5969,6 +5989,8 @@
 				0A60541A234651CB005CEA98 /* RemoveSwitchFallThrough.h */,
 				0A6053F1234651CB005CEA98 /* RemoveUnreferencedVariables.cpp */,
 				0A605425234651CB005CEA98 /* RemoveUnreferencedVariables.h */,
+				03A9001B2779A35500ACAD83 /* ReplaceForShaderFramebufferFetch.cpp */,
+				03A9001A2779A35500ACAD83 /* ReplaceForShaderFramebufferFetch.h */,
 				0A9B840D234CD587008BF16F /* RewriteAtomicCounters.cpp */,
 				0A9B8405234CD586008BF16F /* RewriteAtomicCounters.h */,
 				0A60542B234651CB005CEA98 /* RewriteAtomicFunctionExpressions.cpp */,
@@ -7420,6 +7442,7 @@
 				0A605581234651CC005CEA98 /* OutputVulkanGLSL.h in Headers */,
 				0A605F32234667CC005CEA98 /* validationGL12_autogen.h in Headers */,
 				0A605591234651CC005CEA98 /* IsASTDepthBelowLimit.h in Headers */,
+				03A9002D2779A43400ACAD83 /* RunAtTheBeginningOfShader.h in Headers */,
 				0A6054BB234651CB005CEA98 /* length_limits.h in Headers */,
 				0A60553F234651CC005CEA98 /* RemoveInvariantDeclaration.h in Headers */,
 				0A605F44234667CC005CEA98 /* Context_gl_1_1_autogen.h in Headers */,
@@ -7461,6 +7484,7 @@
 				0A605FBF234667CE005CEA98 /* Context_gles_1_0_autogen.h in Headers */,
 				0A605F5C234667CD005CEA98 /* validationEGL.h in Headers */,
 				0A605F89234667CD005CEA98 /* Display.h in Headers */,
+				03A9001C2779A35500ACAD83 /* ReplaceForShaderFramebufferFetch.h in Headers */,
 				0A605B9D234667C5005CEA98 /* Context_gles_3_0_autogen.h in Headers */,
 				0A605B8E234667C5005CEA98 /* Error.h in Headers */,
 				0A605524234651CC005CEA98 /* ClampFragDepth.h in Headers */,
@@ -7726,6 +7750,7 @@
 				0A90F7E324065C0C005BA9A8 /* OutputVulkanGLSL.h in Headers */,
 				0A90F7E424065C0C005BA9A8 /* validationGL12_autogen.h in Headers */,
 				0A90F7E524065C0C005BA9A8 /* IsASTDepthBelowLimit.h in Headers */,
+				03A9002E2779A43400ACAD83 /* RunAtTheBeginningOfShader.h in Headers */,
 				0A90F7E624065C0C005BA9A8 /* length_limits.h in Headers */,
 				0A90F7E724065C0C005BA9A8 /* RemoveInvariantDeclaration.h in Headers */,
 				0A90F7E824065C0C005BA9A8 /* Context_gl_1_1_autogen.h in Headers */,
@@ -7767,6 +7792,7 @@
 				0A90F80D24065C0C005BA9A8 /* Context_gles_1_0_autogen.h in Headers */,
 				0A90F80E24065C0C005BA9A8 /* validationEGL.h in Headers */,
 				0A90F80F24065C0C005BA9A8 /* Display.h in Headers */,
+				03A9001D2779A35500ACAD83 /* ReplaceForShaderFramebufferFetch.h in Headers */,
 				0A90F81024065C0C005BA9A8 /* Context_gles_3_0_autogen.h in Headers */,
 				0A90F81124065C0C005BA9A8 /* Error.h in Headers */,
 				0A90F81224065C0C005BA9A8 /* ClampFragDepth.h in Headers */,
@@ -8046,6 +8072,7 @@
 				0AA2FDBA2347260000E0B98C /* OutputVulkanGLSL.h in Headers */,
 				0AA2FDBB2347260000E0B98C /* validationGL12_autogen.h in Headers */,
 				0AA2FDBC2347260000E0B98C /* IsASTDepthBelowLimit.h in Headers */,
+				03A900302779A43400ACAD83 /* RunAtTheBeginningOfShader.h in Headers */,
 				0AA2FDBD2347260000E0B98C /* length_limits.h in Headers */,
 				0AA2FDBE2347260000E0B98C /* RemoveInvariantDeclaration.h in Headers */,
 				0AA2FDBF2347260000E0B98C /* Context_gl_1_1_autogen.h in Headers */,
@@ -8087,6 +8114,7 @@
 				0AA2FDE82347260000E0B98C /* Context_gles_1_0_autogen.h in Headers */,
 				0AA2FDE92347260000E0B98C /* validationEGL.h in Headers */,
 				0AA2FDEA2347260000E0B98C /* Display.h in Headers */,
+				03A9001F2779A35500ACAD83 /* ReplaceForShaderFramebufferFetch.h in Headers */,
 				0AA2FDEB2347260000E0B98C /* Context_gles_3_0_autogen.h in Headers */,
 				0AA2FDEC2347260000E0B98C /* Error.h in Headers */,
 				0AA2FDED2347260000E0B98C /* ClampFragDepth.h in Headers */,
@@ -8352,6 +8380,7 @@
 				0AF957C1244C7CD700F59740 /* OutputVulkanGLSL.h in Headers */,
 				0AF957C2244C7CD700F59740 /* validationGL12_autogen.h in Headers */,
 				0AF957C3244C7CD700F59740 /* IsASTDepthBelowLimit.h in Headers */,
+				03A9002F2779A43400ACAD83 /* RunAtTheBeginningOfShader.h in Headers */,
 				0AF957C4244C7CD700F59740 /* length_limits.h in Headers */,
 				0AF957C5244C7CD700F59740 /* RemoveInvariantDeclaration.h in Headers */,
 				0AF957C6244C7CD700F59740 /* Context_gl_1_1_autogen.h in Headers */,
@@ -8393,6 +8422,7 @@
 				0AF957EB244C7CD700F59740 /* Context_gles_1_0_autogen.h in Headers */,
 				0AF957EC244C7CD700F59740 /* validationEGL.h in Headers */,
 				0AF957ED244C7CD700F59740 /* Display.h in Headers */,
+				03A9001E2779A35500ACAD83 /* ReplaceForShaderFramebufferFetch.h in Headers */,
 				0AF957EE244C7CD700F59740 /* Context_gles_3_0_autogen.h in Headers */,
 				0AF957EF244C7CD700F59740 /* Error.h in Headers */,
 				0AF957F0244C7CD700F59740 /* ClampFragDepth.h in Headers */,
@@ -10816,6 +10846,7 @@
 				0A936E80244CEFA800B3497E /* WorkerThread.cpp in Sources */,
 				0A936E81244CEFA800B3497E /* VectorizeVectorScalarArithmetic.cpp in Sources */,
 				0A936E82244CEFA800B3497E /* ClampPointSize.cpp in Sources */,
+				03A900242779A37400ACAD83 /* ReplaceForShaderFramebufferFetch.cpp in Sources */,
 				0A936E83244CEFA800B3497E /* IntermNode_util.cpp in Sources */,
 				0A936E84244CEFA800B3497E /* Stream.cpp in Sources */,
 				0A936E85244CEFA800B3497E /* ImmutableString_autogen.cpp in Sources */,
@@ -10934,6 +10965,7 @@
 				0A936EFF244CEFA800B3497E /* OutputGLSLBase.cpp in Sources */,
 				0A936F00244CEFA800B3497E /* load_functions_table_autogen.cpp in Sources */,
 				0A936F02244CEFA800B3497E /* FindSymbolNode.cpp in Sources */,
+				03A900312779A43C00ACAD83 /* RunAtTheBeginningOfShader.cpp in Sources */,
 				0A936F04244CEFA800B3497E /* validationES.cpp in Sources */,
 				0A936F05244CEFA800B3497E /* ValidateSwitch.cpp in Sources */,
 				0A936F06244CEFA800B3497E /* EmulateMultiDrawShaderBuiltins.cpp in Sources */,
@@ -11028,6 +11060,7 @@
 				0A936F83244CF03700B3497E /* UnfoldShortCircuitToIf.cpp in Sources */,
 				0A936F84244CF03700B3497E /* EmulateGLFragColorBroadcast.cpp in Sources */,
 				0A936F85244CF03700B3497E /* SplitSequenceOperator.cpp in Sources */,
+				03A900252779A37600ACAD83 /* ReplaceForShaderFramebufferFetch.cpp in Sources */,
 				0A936F86244CF03700B3497E /* InitializeVariables.cpp in Sources */,
 				0A936F87244CF03700B3497E /* queryconversions.cpp in Sources */,
 				0A936F8A244CF03700B3497E /* renderer_utils.cpp in Sources */,
@@ -11039,6 +11072,7 @@
 				0A936F90244CF03700B3497E /* validationEGL.cpp in Sources */,
 				0A936F91244CF03700B3497E /* DiagnosticsBase.cpp in Sources */,
 				0A936F92244CF03700B3497E /* FoldExpressions.cpp in Sources */,
+				03A900322779A43F00ACAD83 /* RunAtTheBeginningOfShader.cpp in Sources */,
 				0A936F93244CF03700B3497E /* queryutils.cpp in Sources */,
 				0A936F94244CF03700B3497E /* Platform.cpp in Sources */,
 				0A936F96244CF03700B3497E /* IntermNode.cpp in Sources */,
@@ -11276,6 +11310,7 @@
 				0A9370B2244CF04900B3497E /* WorkerThread.cpp in Sources */,
 				0A9370B3244CF04900B3497E /* VectorizeVectorScalarArithmetic.cpp in Sources */,
 				0A9370B4244CF04900B3497E /* ClampPointSize.cpp in Sources */,
+				03A900262779A37900ACAD83 /* ReplaceForShaderFramebufferFetch.cpp in Sources */,
 				0A9370B5244CF04900B3497E /* IntermNode_util.cpp in Sources */,
 				0A9370B6244CF04900B3497E /* Stream.cpp in Sources */,
 				0A9370B7244CF04900B3497E /* ImmutableString_autogen.cpp in Sources */,
@@ -11394,6 +11429,7 @@
 				0A937131244CF04900B3497E /* OutputGLSLBase.cpp in Sources */,
 				0A937132244CF04900B3497E /* load_functions_table_autogen.cpp in Sources */,
 				0A937134244CF04900B3497E /* FindSymbolNode.cpp in Sources */,
+				03A900332779A44100ACAD83 /* RunAtTheBeginningOfShader.cpp in Sources */,
 				0A937136244CF04900B3497E /* validationES.cpp in Sources */,
 				0A937137244CF04900B3497E /* ValidateSwitch.cpp in Sources */,
 				0A937138244CF04900B3497E /* EmulateMultiDrawShaderBuiltins.cpp in Sources */,

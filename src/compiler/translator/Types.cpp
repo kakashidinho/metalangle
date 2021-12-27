@@ -114,6 +114,18 @@ const char *getBasicString(TBasicType t)
             return "uimageCube";
         case EbtAtomicCounter:
             return "atomic_uint";
+        case EbtSubpassInput:
+            return "subpassInput";
+        case EbtISubpassInput:
+            return "isubpassInput";
+        case EbtUSubpassInput:
+            return "usubpassInput";
+        case EbtSubpassInputMS:
+            return "subpassInputMS";
+        case EbtISubpassInputMS:
+            return "isubpassInputMS";
+        case EbtUSubpassInputMS:
+            return "usubpassInputMS";
         default:
             UNREACHABLE();
             return "unknown type";

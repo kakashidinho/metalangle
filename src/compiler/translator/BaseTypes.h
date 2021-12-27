@@ -920,6 +920,8 @@ enum TQualifier
     EvqVertexOut,    // Vertex shader output
     EvqFragmentIn,   // Fragment shader input
 
+    EvqFragmentInOut,  // EXT_shader_framebuffer_fetch qualifier
+
     // parameters
     EvqIn,
     EvqOut,
@@ -1081,7 +1083,7 @@ struct TLayoutQualifier
                matrixPacking == EmpUnspecified && blockStorage == EbsUnspecified &&
                !localSize.isAnyValueSet() && imageInternalFormat == EiifUnspecified &&
                primitiveType == EptUndefined && invocations == 0 && maxVertices == -1 &&
-               index == -1;
+               index == -1 && inputAttachmentIndex == -1 && noncoherent == false;
     }
 
     bool isCombinationValid() const
@@ -1090,6 +1092,7 @@ struct TLayoutQualifier
         bool numViewsSet       = (numViews != -1);
         bool geometryShaderSpecified =
             (primitiveType != EptUndefined) || (invocations != 0) || (maxVertices != -1);
+        bool subpassInputSpecified = (inputAttachmentIndex != -1);
         bool otherLayoutQualifiersSpecified =
             (location != -1 || binding != -1 || index != -1 || matrixPacking != EmpUnspecified ||
              blockStorage != EbsUnspecified || imageInternalFormat != EiifUnspecified);
@@ -1097,7 +1100,8 @@ struct TLayoutQualifier
         // we can have either the work group size specified, or number of views,
         // or yuv layout qualifier, or the other layout qualifiers.
         return (workSizeSpecified ? 1 : 0) + (numViewsSet ? 1 : 0) + (yuv ? 1 : 0) +
-                   (otherLayoutQualifiersSpecified ? 1 : 0) + (geometryShaderSpecified ? 1 : 0) <=
+                   (otherLayoutQualifiersSpecified ? 1 : 0) + (geometryShaderSpecified ? 1 : 0) +
+                   (subpassInputSpecified ? 1 : 0) + (noncoherent ? 1 : 0) <=
                1;
     }
 
@@ -1134,6 +1138,10 @@ struct TLayoutQualifier
     // EXT_blend_func_extended fragment output layout qualifier
     int index;
 
+    // EXT_shader_framebuffer_fetch layout qualifiers.
+    int inputAttachmentIndex;
+    bool noncoherent;
+
   private:
     explicit constexpr TLayoutQualifier(int /*placeholder*/)
         : location(-1),
@@ -1149,7 +1157,9 @@ struct TLayoutQualifier
           primitiveType(EptUndefined),
           invocations(0),
           maxVertices(-1),
-          index(-1)
+          index(-1),
+          inputAttachmentIndex(-1),
+          noncoherent(false)
     {}
 };
 

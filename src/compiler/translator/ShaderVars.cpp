@@ -45,6 +45,7 @@ ShaderVariable::ShaderVariable(GLenum typeIn)
       offset(-1),
       readonly(false),
       writeonly(false),
+      isFragmentInOut(false),
       index(-1),
       interpolation(INTERPOLATION_SMOOTH),
       isInvariant(false),
@@ -76,6 +77,7 @@ ShaderVariable::ShaderVariable(const ShaderVariable &other)
       offset(other.offset),
       readonly(other.readonly),
       writeonly(other.writeonly),
+      isFragmentInOut(other.isFragmentInOut),
       index(other.index),
       interpolation(other.interpolation),
       isInvariant(other.isInvariant),
@@ -101,6 +103,7 @@ ShaderVariable &ShaderVariable::operator=(const ShaderVariable &other)
     offset                        = other.offset;
     readonly                      = other.readonly;
     writeonly                     = other.writeonly;
+    isFragmentInOut               = other.isFragmentInOut;
     index                         = other.index;
     interpolation                 = other.interpolation;
     isInvariant                   = other.isInvariant;
@@ -117,7 +120,7 @@ bool ShaderVariable::operator==(const ShaderVariable &other) const
         binding != other.binding || imageUnitFormat != other.imageUnitFormat ||
         offset != other.offset || readonly != other.readonly || writeonly != other.writeonly ||
         index != other.index || interpolation != other.interpolation ||
-        isInvariant != other.isInvariant)
+        isInvariant != other.isInvariant || isFragmentInOut != other.isFragmentInOut)
     {
         return false;
     }
