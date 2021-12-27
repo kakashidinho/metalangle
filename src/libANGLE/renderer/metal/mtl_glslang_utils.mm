@@ -355,6 +355,12 @@ class SpirvToMslCompiler : public spirv_cross::CompilerMSL
             compOpt.argument_buffers = false;
         }
 
+        if (compOpt.is_ios())
+        {
+            // Enable framebuffer fetch
+            compOpt.ios_use_framebuffer_fetch_subpasses = true;
+        }
+
         spirv_cross::CompilerMSL::set_msl_options(compOpt);
 
         addBuiltInResources();
