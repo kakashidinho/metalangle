@@ -129,6 +129,22 @@ class IntermediateShaderSource final : angle::NonCopyable
     //
     void insertQualifierSpecifier(const std::string &name, const std::string &specifier);
 
+    // Find @@ QUALIFIER-name(other qualifiers) @@ and replace it with:
+    //
+    //      layout(layoutSpecifier) qualifierSpecifier other qualifiers
+    //
+    // or if |layoutSpecifier| is empty:
+    //
+    //      qualifierSpecifier other qualifiers
+    //
+    // or if |qualifierSpecifier| is empty:
+    //
+    //      layout(specifier)
+    //
+    void insertLayoutAndQualifierSpecifier(const std::string &name,
+                                           const std::string &layoutSpecifier,
+                                           const std::string &qualifierSpecifier);
+
     // Replace @@ XFB-DECL @@ with |decl|.
     void insertTransformFeedbackDeclaration(const std::string &&decl);
 
@@ -327,6 +343,26 @@ void IntermediateShaderSource::insertQualifierSpecifier(const std::string &name,
             block.type = TokenType::Text;
             block.text = specifier;
             if (!specifier.empty() && !block.args.empty())
+            {
+                block.text += " " + block.args;
+            }
+            break;
+        }
+    }
+}
+
+void IntermediateShaderSource::insertLayoutAndQualifierSpecifier(
+    const std::string &name,
+    const std::string &layoutSpecifier,
+    const std::string &qualifierSpecifier)
+{
+    for (Token &block : mTokens)
+    {
+        if (block.type == TokenType::Qualifier && block.text == name)
+        {
+            block.type = TokenType::Text;
+            block.text = "layout(" + layoutSpecifier + ") " + qualifierSpecifier;
+            if (!qualifierSpecifier.empty() && !block.args.empty())
             {
                 block.text += " " + block.args;
             }
@@ -725,6 +761,52 @@ void AssignResourceBinding(gl::ShaderBitSet activeShaders,
     }
 }
 
+uint32_t AssignInputAttachmentBindings(const GlslangSourceOptions &options,
+                                       const std::vector<gl::LinkedUniform> &uniforms,
+                                       const gl::RangeUI &inputAttachmentUniformRange,
+                                       uint32_t bindingStart,
+                                       gl::ShaderMap<IntermediateShaderSource> *shaderSources)
+{
+    const std::string resourcesDescriptorSet =
+        "set = " + Str(options.shaderResourceDescriptorSetIndex);
+
+    uint32_t bindingIndex = bindingStart;
+    for (unsigned int uniformIndex : inputAttachmentUniformRange)
+    {
+        std::string mappedInputAttachmentName;
+        const gl::LinkedUniform &inputAttachmentUniform = uniforms[uniformIndex];
+        mappedInputAttachmentName                       = inputAttachmentUniform.mappedName;
+        uint32_t inputAttachmentBindingIndex = bindingIndex + inputAttachmentUniform.location;
+
+        const std::string bindingString =
+            resourcesDescriptorSet + ", binding = " + Str(bindingIndex++) +
+            ", input_attachment_index = " + Str(inputAttachmentBindingIndex);
+
+        gl::ShaderBitSet activeShaders = inputAttachmentUniform.activeShaders();
+        for (const gl::ShaderType shaderType : gl::AllShaderTypes())
+        {
+            IntermediateShaderSource &shaderSource = (*shaderSources)[shaderType];
+            if (!shaderSource.empty())
+            {
+                if (activeShaders[shaderType])
+                {
+                    shaderSource.insertLayoutAndQualifierSpecifier(
+                        mappedInputAttachmentName, bindingString, kUniformQualifier);
+                }
+                else
+                {
+                    shaderSource.eraseLayoutAndQualifierSpecifiers(mappedInputAttachmentName,
+                                                                   kUnusedUniformSubstitution);
+                }
+            }
+        }
+    }
+
+    // TODO: This is adding up, but may not be allocated.
+    bindingIndex += gl::IMPLEMENTATION_MAX_DRAW_BUFFERS;
+    return bindingIndex;
+}
+
 uint32_t AssignInterfaceBlockBindings(const GlslangSourceOptions &options,
                                       const std::vector<gl::InterfaceBlock> &blocks,
                                       const char *qualifier,
@@ -814,6 +896,11 @@ void AssignNonTextureBindings(const GlslangSourceOptions &options,
 {
     uint32_t bindingStart = 0;
 
+    const std::vector<gl::LinkedUniform> &uniforms = programState.getUniforms();
+    const gl::RangeUI &inputAttachmentUniformRange = programState.getFragmentInoutRange();
+    bindingStart = AssignInputAttachmentBindings(options, uniforms, inputAttachmentUniformRange,
+                                                 bindingStart, shaderSources);
+
     const std::vector<gl::InterfaceBlock> &uniformBlocks = programState.getUniformBlocks();
     bindingStart = AssignInterfaceBlockBindings(options, uniformBlocks, kUniformQualifier,
                                                 bindingStart, shaderSources);
@@ -827,8 +914,7 @@ void AssignNonTextureBindings(const GlslangSourceOptions &options,
     bindingStart = AssignAtomicCounterBufferBindings(options, atomicCounterBuffers, kSSBOQualifier,
                                                      bindingStart, shaderSources);
 
-    const std::vector<gl::LinkedUniform> &uniforms = programState.getUniforms();
-    const gl::RangeUI &imageUniformRange           = programState.getImageUniformRange();
+    const gl::RangeUI &imageUniformRange = programState.getImageUniformRange();
     bindingStart =
         AssignImageBindings(options, uniforms, imageUniformRange, bindingStart, shaderSources);
 }
