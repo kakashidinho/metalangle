@@ -358,7 +358,7 @@ class SpirvToMslCompiler : public spirv_cross::CompilerMSL
         if (compOpt.is_ios())
         {
             // Enable framebuffer fetch
-            compOpt.ios_use_framebuffer_fetch_subpasses = true;
+            compOpt.use_framebuffer_fetch_subpasses = true;
         }
 
         spirv_cross::CompilerMSL::set_msl_options(compOpt);
@@ -753,54 +753,23 @@ class SpirvToMslCompiler : public spirv_cross::CompilerMSL
         statement("");
     }
 
-    std::string to_function_name(spirv_cross::VariableID img,
-                                 const spirv_cross::SPIRType &imgType,
-                                 bool isFetch,
-                                 bool isGather,
-                                 bool isProj,
-                                 bool hasArrayOffsets,
-                                 bool hasOffset,
-                                 bool hasGrad,
-                                 bool hasDref,
-                                 uint32_t lod,
-                                 uint32_t minLod) override
+    std::string to_function_name(const TextureFunctionNameArguments &args) override
     {
-        if (!hasDref)
+        if (!args.has_dref)
         {
-            return spirv_cross::CompilerMSL::to_function_name(img, imgType, isFetch, isGather,
-                                                              isProj, hasArrayOffsets, hasOffset,
-                                                              hasGrad, hasDref, lod, minLod);
+            return spirv_cross::CompilerMSL::to_function_name(args);
         }
 
         // Use custom ANGLEtexture function instead of using built-in sample_compare()
         return "ANGLEtexture";
     }
 
-    std::string to_function_args(spirv_cross::VariableID img,
-                                 const spirv_cross::SPIRType &imgType,
-                                 bool isFetch,
-                                 bool isGather,
-                                 bool isProj,
-                                 uint32_t coord,
-                                 uint32_t coordComponents,
-                                 uint32_t dref,
-                                 uint32_t gradX,
-                                 uint32_t gradY,
-                                 uint32_t lod,
-                                 uint32_t coffset,
-                                 uint32_t offset,
-                                 uint32_t bias,
-                                 uint32_t comp,
-                                 uint32_t sample,
-                                 uint32_t minlod,
-                                 bool *pForward) override
+    std::string to_function_args(const TextureFunctionArguments &args, bool *pForward) override
     {
         bool forward;
-        std::string argsWithoutDref = spirv_cross::CompilerMSL::to_function_args(
-            img, imgType, isFetch, isGather, isProj, coord, coordComponents, 0, gradX, gradY, lod,
-            coffset, offset, bias, comp, sample, minlod, &forward);
+        std::string argsWithoutDref = spirv_cross::CompilerMSL::to_function_args(args, &forward);
 
-        if (!dref)
+        if (!args.dref)
         {
             if (pForward)
             {
@@ -809,16 +778,16 @@ class SpirvToMslCompiler : public spirv_cross::CompilerMSL
             return argsWithoutDref;
         }
         // Convert to arguments to ANGLEtexture.
-        std::string args = to_expression(img);
-        args += ", ";
-        args += argsWithoutDref;
-        args += ", ";
+        std::string str = to_expression(args.base.img);
+        str += ", ";
+        str += argsWithoutDref;
+        str += ", ";
 
-        forward                               = forward && should_forward(dref);
-        const spirv_cross::SPIRType &drefType = expression_type(dref);
+        forward                               = forward && should_forward(args.dref);
+        const spirv_cross::SPIRType &drefType = expression_type(args.dref);
         std::string drefExpr;
         uint32_t altCoordComponent = 0;
-        switch (imgType.image.dim)
+        switch (args.base.imgtype->image.dim)
         {
             case spv::Dim2D:
                 altCoordComponent = 2;
@@ -831,25 +800,25 @@ class SpirvToMslCompiler : public spirv_cross::CompilerMSL
                 UNREACHABLE();
                 break;
         }
-        if (isProj)
-            drefExpr = spirv_cross::join(to_enclosed_expression(dref), " / ",
-                                         to_extract_component_expression(coord, altCoordComponent));
+        if (args.base.is_proj)
+            drefExpr = spirv_cross::join(to_enclosed_expression(args.dref), " / ",
+                                         to_extract_component_expression(args.coord, altCoordComponent));
         else
-            drefExpr = to_expression(dref);
+            drefExpr = to_expression(args.dref);
 
         if (drefType.basetype == spirv_cross::SPIRType::Half)
             drefExpr = convert_to_f32(drefExpr, 1);
 
-        args += drefExpr;
-        args += ", ";
-        args += toShadowCompareModeExpression(img);
+        str += drefExpr;
+        str += ", ";
+        str += toShadowCompareModeExpression(args.base.img);
 
         if (pForward)
         {
             *pForward = forward;
         }
 
-        return args;
+        return str;
     }
 
     // Override function prototype emitter to insert shadow compare mode flag to come
@@ -962,7 +931,7 @@ class SpirvToMslCompiler : public spirv_cross::CompilerMSL
 
                 // Manufacture automatic sampler arg for SampledImage texture
                 if (arg_type.image.dim != DimBuffer)
-                    decl += join(", thread const ", sampler_type(arg_type), " ", to_sampler_expression(arg.id));
+                    decl += join(", thread const ", sampler_type(arg_type, arg.id), " ", to_sampler_expression(arg.id));
             }
 
             // Manufacture automatic swizzle arg.
