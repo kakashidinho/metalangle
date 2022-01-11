@@ -654,7 +654,9 @@ void DisplayMtl::initializeExtensions() const
     mNativeExtensions.mapBufferRange         = true;
     mNativeExtensions.textureStorage         = true;
     mNativeExtensions.drawBuffers            = true;
+#if !TARGET_OS_OSX && !TARGET_OS_MACCATALYST && !defined(ANGLE_PLATFORM_IOS_SIMULATOR)
     mNativeExtensions.shaderFramebufferFetch = true;
+#endif
     mNativeExtensions.fragDepth              = true;
     mNativeExtensions.framebufferBlit        = true;
     mNativeExtensions.framebufferMultisample = true;
