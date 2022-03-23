@@ -10176,7 +10176,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "python ${PROJECT_DIR}/../../src/commit_id.py \\\n    gen \\\n    ${PROJECT_DIR}/../.. \\\n    ${PROJECT_DIR}/gen/id/commit.h\n";
+			shellScript = "${PROJECT_DIR}/../../src/commit_id.sh \\\n    gen \\\n    ${PROJECT_DIR}/../.. \\\n    ${PROJECT_DIR}/gen/id/commit.h\n";
 		};
 		0AF95996244C7CD700F59740 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
