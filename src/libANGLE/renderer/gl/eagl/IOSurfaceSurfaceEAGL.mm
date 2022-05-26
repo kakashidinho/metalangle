@@ -179,8 +179,8 @@ egl::Error IOSurfaceSurfaceEAGL::bindTexImage(const gl::Context *context,
     stateManager->bindTexture(gl::TextureType::_2D, textureID);
     const auto &format = kIOSurfaceFormats[mFormatIndex];
 
-    if (!texImageIOSurface(mEAGLContext, mIOSurface, GL_TEXTURE_2D, format.nativeInternalFormat,
-                           mWidth, mHeight, format.nativeFormat, format.nativeType, mPlane))
+    if (!eagl::texImageIOSurface(mEAGLContext, mIOSurface, GL_TEXTURE_2D, format.nativeInternalFormat,
+                                 mWidth, mHeight, format.nativeFormat, format.nativeType, mPlane))
     {
         return egl::EglContextLost() << "EAGLContext texImageIOSurface2D failed.";
     }
@@ -315,8 +315,8 @@ FramebufferImpl *IOSurfaceSurfaceEAGL::createDefaultFramebuffer(const gl::Contex
 #    if !defined(ANGLE_PLATFORM_IOS_SIMULATOR)
     const auto &format = kIOSurfaceFormats[mFormatIndex];
 
-    if (!texImageIOSurface(mEAGLContext, mIOSurface, GL_TEXTURE_2D, format.nativeInternalFormat,
-                           mWidth, mHeight, format.nativeFormat, format.nativeType, mPlane))
+    if (!eagl::texImageIOSurface(mEAGLContext, mIOSurface, GL_TEXTURE_2D, format.nativeInternalFormat,
+                                 mWidth, mHeight, format.nativeFormat, format.nativeType, mPlane))
     {
         ERR() << "[EAGLContext texImageIOSurface] failed";
         return nullptr;
