@@ -680,10 +680,14 @@ GLint LinkProgram(GLuint program)
     if (rx::IsMetalDisplayAvailable())
     {
         // Resize the metal layer
+        [CATransaction begin];
+        [CATransaction setValue:(id)kCFBooleanTrue
+                         forKey:kCATransactionDisableActions];
         _metalLayer.frame = self.bounds;
         _metalLayer.drawableSize =
             CGSizeMake(_metalLayer.bounds.size.width * _metalLayer.contentsScale,
                        _metalLayer.bounds.size.height * _metalLayer.contentsScale);
+        [CATransaction commit];
     }
     else
     {

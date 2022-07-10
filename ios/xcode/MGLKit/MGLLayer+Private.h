@@ -10,6 +10,7 @@
 #import "MGLLayer.h"
 
 #import <QuartzCore/CAMetalLayer.h>
+#import <QuartzCore/QuartzCore.h>
 
 #include <EGL/egl.h>
 #include <GLES2/gl2.h>
