@@ -13,6 +13,10 @@ Initially, this was the only place where Metal backend's developments took place
 making modifications and are in a progress of merging their changes into official `ANGLE`.
 See current [Differences between MetalANGLE and official ANGLE](#differences-between-metalangle-and-googles-angle).
 
+__2023 Update:__ This repo is currently not in active development. Because I officially joined Google last year. As such, all the ANGLE
+related developments should be redirected to official ANGLE repo instead. In future I am planning to create a separate repo containing
+only the high level wrapper layer `MGLKit` + iOS Xcode project. See https://github.com/kakashidinho/metalangle/issues/79.
+
 Preliminary Metal based WebGL benchmarks (based on [gles3-dev branch](https://github.com/kakashidinho/metalangle/tree/gles3-dev) code):
 
 - Metal (54 fps) vs native OpenGL (46 fps) drawing 20k fish:
