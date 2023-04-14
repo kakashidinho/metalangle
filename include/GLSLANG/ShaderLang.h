@@ -529,6 +529,9 @@ using ShHandle = void *;
 namespace sh
 {
 
+// EXT_shader_framebuffer_fetch and EXT_shader_framebuffer_fetch_non_coherent
+extern const char kInputAttachmentName[];
+
 //
 // Driver must call this first, once, before doing any other compiler operations.
 // If the function succeeds, the return value is true, else false.

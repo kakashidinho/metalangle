@@ -346,6 +346,7 @@ class ProgramState final : angle::NonCopyable
     const std::vector<SamplerBinding> &getSamplerBindings() const { return mSamplerBindings; }
     const std::vector<ImageBinding> &getImageBindings() const { return mImageBindings; }
     const sh::WorkGroupSize &getComputeShaderLocalSize() const { return mComputeShaderLocalSize; }
+    const RangeUI &getFragmentInoutRange() const { return mFragmentInoutRange; }
     const RangeUI &getSamplerUniformRange() const { return mSamplerUniformRange; }
     const RangeUI &getImageUniformRange() const { return mImageUniformRange; }
     const RangeUI &getAtomicCounterUniformRange() const { return mAtomicCounterUniformRange; }
@@ -455,6 +456,7 @@ class ProgramState final : angle::NonCopyable
     std::vector<BufferVariable> mBufferVariables;
     std::vector<InterfaceBlock> mShaderStorageBlocks;
     std::vector<AtomicCounterBuffer> mAtomicCounterBuffers;
+    RangeUI mFragmentInoutRange;
     RangeUI mSamplerUniformRange;
     RangeUI mImageUniformRange;
     RangeUI mAtomicCounterUniformRange;

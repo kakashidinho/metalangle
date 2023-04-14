@@ -811,6 +811,7 @@ const ExtensionInfoMap &GetExtensionInfoMap()
         map["GL_EXT_texture_storage"] = enableableExtension(&Extensions::textureStorage);
         map["GL_OES_texture_npot"] = enableableExtension(&Extensions::textureNPOT);
         map["GL_EXT_draw_buffers"] = enableableExtension(&Extensions::drawBuffers);
+        map["GL_EXT_shader_framebuffer_fetch"] = enableableExtension(&Extensions::shaderFramebufferFetch);
         map["GL_EXT_texture_filter_anisotropic"] = enableableExtension(&Extensions::textureFilterAnisotropic);
         map["GL_EXT_occlusion_query_boolean"] = enableableExtension(&Extensions::occlusionQueryBoolean);
         map["GL_NV_fence"] = esOnlyExtension(&Extensions::fence);

@@ -34,7 +34,7 @@ git_pull()
 }
 
 glslang_revision="7d65f09b83112c1ec9e29313cb9913ed2b850aa0"
-spirv_cross_revision="f38cbeb814c73510b85697adbe5e894f9eac978f"
+spirv_cross_revision="0e5078dc0cfb84767b0470150d9e46fc8ffdfd36"
 jsoncpp_revision="48246a099549ab325c01f69f24a34fc72e5c42e4"
 jsoncpp_src_revision="645250b6690785be60ab6780ce4b58698d884d11"
 

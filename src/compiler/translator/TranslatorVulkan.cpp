@@ -19,6 +19,7 @@
 #include "compiler/translator/StaticType.h"
 #include "compiler/translator/tree_ops/NameEmbeddedUniformStructs.h"
 #include "compiler/translator/tree_ops/NameNamelessUniformBuffers.h"
+#include "compiler/translator/tree_ops/ReplaceForShaderFramebufferFetch.h"
 #include "compiler/translator/tree_ops/RewriteAtomicCounters.h"
 #include "compiler/translator/tree_ops/RewriteCubeMapSamplersAs2DArray.h"
 #include "compiler/translator/tree_ops/RewriteDfdy.h"
@@ -815,8 +816,9 @@ bool TranslatorVulkan::translateImpl(TIntermBlock *root,
     // if it's core profile shaders and they are used.
     if (getShaderType() == GL_FRAGMENT_SHADER)
     {
-        bool usesPointCoord = false;
-        bool usesFragCoord  = false;
+        bool usesPointCoord   = false;
+        bool usesFragCoord    = false;
+        bool usesLastFragData = false;
 
         // Search for the gl_PointCoord usage, if its used, we need to flip the y coordinate.
         for (const ShaderVariable &inputVarying : mInputVaryings)
@@ -835,6 +837,12 @@ bool TranslatorVulkan::translateImpl(TIntermBlock *root,
             if (inputVarying.name == "gl_FragCoord")
             {
                 usesFragCoord = true;
+                break;
+            }
+
+            if (inputVarying.name == "gl_LastFragData")
+            {
+                usesLastFragData = true;
                 break;
             }
         }
@@ -896,6 +904,16 @@ bool TranslatorVulkan::translateImpl(TIntermBlock *root,
             {
                 return false;
             }
+        }
+
+        if (usesLastFragData && !ReplaceLastFragData(this, root, &getSymbolTable(), &mUniforms))
+        {
+            return false;
+        }
+
+        if (!ReplaceInOutVariables(this, root, &getSymbolTable(), &mUniforms))
+        {
+            return false;
         }
 
         {

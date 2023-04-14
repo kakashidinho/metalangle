@@ -3508,11 +3508,20 @@ void Program::linkSamplerAndImageBindings(GLuint *combinedImageUniforms)
 {
     ASSERT(combinedImageUniforms);
 
+    auto iter         = mState.mUniforms.rbegin();
     unsigned int high = static_cast<unsigned int>(mState.mUniforms.size());
     unsigned int low  = high;
 
-    for (auto counterIter = mState.mUniforms.rbegin();
-         counterIter != mState.mUniforms.rend() && counterIter->isAtomicCounter(); ++counterIter)
+    for (; iter != mState.mUniforms.rend() && iter->isFragmentInOut; ++iter)
+    {
+        --low;
+    }
+
+    mState.mFragmentInoutRange = RangeUI(low, high);
+
+    high = low;
+
+    for (; iter != mState.mUniforms.rend() && iter->isAtomicCounter(); ++iter)
     {
         --low;
     }
@@ -3521,8 +3530,7 @@ void Program::linkSamplerAndImageBindings(GLuint *combinedImageUniforms)
 
     high = low;
 
-    for (auto imageIter = mState.mUniforms.rbegin();
-         imageIter != mState.mUniforms.rend() && imageIter->isImage(); ++imageIter)
+    for (; iter != mState.mUniforms.rend() && iter->isImage(); ++iter)
     {
         --low;
     }
@@ -3554,8 +3562,7 @@ void Program::linkSamplerAndImageBindings(GLuint *combinedImageUniforms)
 
     high = low;
 
-    for (auto samplerIter = mState.mUniforms.rbegin() + mState.mImageUniformRange.length();
-         samplerIter != mState.mUniforms.rend() && samplerIter->isSampler(); ++samplerIter)
+    for (; iter != mState.mUniforms.rend() && iter->isSampler(); ++iter)
     {
         --low;
     }

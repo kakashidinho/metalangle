@@ -601,7 +601,8 @@ void TraverseShaderVariable(const ShaderVariable &variable,
     {
         TraverseArrayOfArraysVariable(variable, 0u, isRowMajor, visitor);
     }
-    else if (gl::IsSamplerType(variable.type))
+    else if (gl::IsSamplerType(variable.type) || gl::IsImageType(variable.type) ||
+             variable.isFragmentInOut)
     {
         visitor->visitSampler(variable);
     }

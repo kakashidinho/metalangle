@@ -89,6 +89,7 @@ Compiler::Compiler(rx::GLImplFactory *implFactory, const State &state)
     mResources.MaxDrawBuffers               = caps.maxDrawBuffers;
     mResources.OES_standard_derivatives     = extensions.standardDerivatives;
     mResources.EXT_draw_buffers             = extensions.drawBuffers;
+    mResources.EXT_shader_framebuffer_fetch = extensions.shaderFramebufferFetch;
     mResources.EXT_shader_texture_lod       = extensions.shaderTextureLOD;
     mResources.OES_EGL_image_external       = extensions.eglImageExternal;
     mResources.OES_EGL_image_external_essl3 = extensions.eglImageExternalEssl3;
