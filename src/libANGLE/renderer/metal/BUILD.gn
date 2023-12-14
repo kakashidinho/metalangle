@@ -21,6 +21,8 @@ _metal_backend_sources = [
   "DisplayMtl_api.h",
   "FrameBufferMtl.h",
   "FrameBufferMtl.mm",
+  "ImageMtl.h",
+  "ImageMtl.mm",
   "ProgramMtl.h",
   "ProgramMtl.mm",
   "QueryMtl.h",
@@ -64,7 +66,7 @@ _metal_backend_sources = [
   "mtl_state_cache.mm",
   "mtl_utils.h",
   "mtl_utils.mm",
-  "shaders/compiled/mtl_default_shaders_autogen.inc",
+  "shaders/compiled/mtl_default_shaders.inc",
   "shaders/constants.h",
 ]
 

@@ -626,6 +626,17 @@ class ContextVk : public ContextImpl, public vk::Context
         double cpuTimestampS;
     };
 
+    angle::Result flushAndGetPrimaryCommandBuffer(vk::PrimaryCommandBuffer **primaryCommands)
+    {
+        flushOutsideRenderPassCommands();
+        ANGLE_TRY(endRenderPass());
+        *primaryCommands = &mPrimaryCommands;
+
+        // We assume any calling code is going to record primary commands.
+        mHasPrimaryCommands = true;
+        return angle::Result::Continue;
+    }
+
     angle::Result setupDraw(const gl::Context *context,
                             gl::PrimitiveMode mode,
                             GLint firstVertexOrInvalid,

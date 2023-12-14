@@ -130,6 +130,8 @@ class BufferMtl : public BufferImpl, public BufferHolderMtl
                                 bool primitiveRestartEnabled,
                                 gl::IndexRange *outRange) override;
 
+    void onDataChanged() override;
+
     angle::Result getFirstLastIndices(ContextMtl *contextMtl,
                                       gl::DrawElementsType type,
                                       size_t offset,

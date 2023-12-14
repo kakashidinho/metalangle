@@ -99,6 +99,7 @@ ANGLEPlatform::ANGLEPlatform(angle::LogErrorFunc logErrorFunc)
             featuresMtl->overrideFeatures({"allow_runtime_sampler_compare_mode"}, false);
             featuresMtl->overrideFeatures({"allow_buffer_read_write"}, false);
             featuresMtl->overrideFeatures({"break_render_pass_is_cheap"}, false);
+            featuresMtl->overrideFeatures({"emulate_depth_range_mapping"}, true);
         };
         bool platformAttribExist = false;
         for (size_t i = 0; i < glAttribs.size(); ++i)

@@ -91,8 +91,7 @@ class SurfaceMtl : public SurfaceImpl
     // Implicit multisample texture
     mtl::TextureRef mMSColorTexture;
 
-    bool mUsePackedDepthStencil = false;
-    // Auto resolve MS texture at the end of render pass or requires a separate blitting pass?
+    bool mUsePackedDepthStencil     = false;
     bool mAutoResolveMSColorTexture = false;
 
     mtl::Format mColorFormat;

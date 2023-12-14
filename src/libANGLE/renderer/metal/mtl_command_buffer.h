@@ -145,8 +145,6 @@ class CommandBuffer final : public WrappedObject<id<MTLCommandBuffer>>, angle::N
 
     uint64_t mQueueSerial = 0;
 
-    mutable std::mutex mLock;
-
     std::vector<std::string> mPendingDebugSigns;
     std::vector<std::pair<mtl::SharedEventRef, uint64_t>> mPendingSignalEvents;
 
@@ -262,11 +260,11 @@ struct RenderCommandEncoderShaderStates
 
     void reset();
 
-    std::array<id<MTLBuffer>, kMaxShaderBuffers> buffers;
+    std::array<AutoObjCPtr<id<MTLBuffer>>, kMaxShaderBuffers> buffers;
     std::array<uint32_t, kMaxShaderBuffers> bufferOffsets;
-    std::array<id<MTLSamplerState>, kMaxShaderSamplers> samplers;
+    std::array<AutoObjCPtr<id<MTLSamplerState>>, kMaxShaderSamplers> samplers;
     std::array<Optional<std::pair<float, float>>, kMaxShaderSamplers> samplerLodClamps;
-    std::array<id<MTLTexture>, kMaxShaderSamplers> textures;
+    std::array<AutoObjCPtr<id<MTLTexture>>, kMaxShaderSamplers> textures;
 };
 
 // Per render pass's states
@@ -276,13 +274,13 @@ struct RenderCommandEncoderStates
 
     void reset();
 
-    id<MTLRenderPipelineState> renderPipeline;
+    AutoObjCPtr<id<MTLRenderPipelineState>> renderPipeline;
 
     MTLTriangleFillMode triangleFillMode;
     MTLWinding winding;
     MTLCullMode cullMode;
 
-    id<MTLDepthStencilState> depthStencilState;
+    AutoObjCPtr<id<MTLDepthStencilState>> depthStencilState;
     float depthBias, depthSlopeScale, depthClamp;
 
     uint32_t stencilFrontRef, stencilBackRef;
@@ -437,7 +435,7 @@ class RenderCommandEncoder final : public CommandEncoder
 
     RenderCommandEncoder &useResource(const BufferRef &resource,
                                       MTLResourceUsage usage,
-                                      mtl::RenderStages states);
+                                      mtl::RenderStages stages);
 
     RenderCommandEncoder &memoryBarrierWithResource(const BufferRef &resource,
                                                     mtl::RenderStages after,
@@ -452,8 +450,11 @@ class RenderCommandEncoder final : public CommandEncoder
     RenderCommandEncoder &setDepthStoreAction(MTLStoreAction action);
     RenderCommandEncoder &setStencilStoreAction(MTLStoreAction action);
 
-    // Change the render pass's loadAction. Note that this operation is only allowed when there
-    // is no draw call recorded yet.
+    // Set storeaction for every color & depth & stencil attachment.
+    RenderCommandEncoder &setStoreAction(MTLStoreAction action);
+
+    // Change the render pass's loadAction. Note that this operation is only allowed when
+    // canChangeLoadAction() returns true.
     RenderCommandEncoder &setColorLoadAction(MTLLoadAction action,
                                              const MTLClearColor &clearValue,
                                              uint32_t colorAttachmentIndex);
@@ -463,12 +464,18 @@ class RenderCommandEncoder final : public CommandEncoder
     void pushDebugGroup(NSString *label);
     void popDebugGroup();
 
+    void setLabel(NSString *label);
+
     const RenderPassDesc &renderPassDesc() const { return mRenderPassDesc; }
+    bool canChangeLoadAction() const { return get() == nil; }
+
+    // Enable warning when scissor rect is out of render target's bound
+    void enableScissorRectOOBWarn(bool e) { mWarnOutOfBoundScissorRect = e; }
     bool hasDrawCalls() const { return mHasDrawCalls; }
 
   private:
     // Override CommandEncoder
-    id<MTLRenderCommandEncoder> get()
+    id<MTLRenderCommandEncoder> get() const
     {
         return static_cast<id<MTLRenderCommandEncoder>>(CommandEncoder::get());
     }
@@ -476,32 +483,116 @@ class RenderCommandEncoder final : public CommandEncoder
 
     void initAttachmentWriteDependencyAndScissorRect(const RenderPassAttachmentDesc &attachment);
 
+    MTLStoreAction correctStoreAction(MTLRenderPassAttachmentDescriptor *objCRenderPassAttachment,
+                                      MTLStoreAction finalStoreAction);
+
+    void ensureMetalEncoderStarted();
+    void simulateDiscardFramebuffer();
+    void endEncodingImpl(bool considerDiscardSimulation);
+    void applyStates();
+
     void finalizeLoadStoreAction(MTLRenderPassAttachmentDescriptor *objCRenderPassAttachment);
 
     void encodeMetalEncoder();
-    void simulateDiscardFramebuffer();
-    void endEncodingImpl(bool considerDiscardSimulation);
 
     RenderCommandEncoder &commonSetBuffer(gl::ShaderType shaderType,
                                           id<MTLBuffer> mtlBuffer,
                                           uint32_t offset,
                                           uint32_t index);
 
+    RenderCommandEncoder &mtlSetRenderPipelineState(id<MTLRenderPipelineState> state);
+    RenderCommandEncoder &mtlSetTriangleFillMode(MTLTriangleFillMode mode);
+    RenderCommandEncoder &mtlSetFrontFacingWinding(MTLWinding winding);
+    RenderCommandEncoder &mtlSetCullMode(MTLCullMode mode);
+
+    RenderCommandEncoder &mtlSetDepthStencilState(id<MTLDepthStencilState> state);
+    RenderCommandEncoder &mtlSetDepthBias(float depthBias, float slopeScale, float clamp);
+    RenderCommandEncoder &mtlSetStencilRefVals(uint32_t frontRef, uint32_t backRef);
+
+    RenderCommandEncoder &mtlSetViewport(const MTLViewport &viewport);
+    RenderCommandEncoder &mtlSetScissorRect(const MTLScissorRect &rect);
+
+    RenderCommandEncoder &mtlSetBlendColor(float r, float g, float b, float a);
+
+    RenderCommandEncoder &mtlSetVertexBuffer(id<MTLBuffer> buffer, uint32_t offset, uint32_t index);
+    RenderCommandEncoder &mtlSetVertexBufferOffset(uint32_t offset, uint32_t index);
+    RenderCommandEncoder &mtlSetVertexBytes(const uint8_t *bytes, size_t size, uint32_t index);
+    RenderCommandEncoder &mtlSetVertexSamplerState(id<MTLSamplerState> state, uint32_t index);
+    RenderCommandEncoder &mtlSetVertexSamplerState(id<MTLSamplerState> state,
+                                                   float lodMinClamp,
+                                                   float lodMaxClamp,
+                                                   uint32_t index);
+    RenderCommandEncoder &mtlSetVertexTexture(id<MTLTexture> texture, uint32_t index);
+
+    RenderCommandEncoder &mtlSetFragmentBuffer(id<MTLBuffer> buffer,
+                                               uint32_t offset,
+                                               uint32_t index);
+    RenderCommandEncoder &mtlSetFragmentBufferOffset(uint32_t offset, uint32_t index);
+    RenderCommandEncoder &mtlSetFragmentBytes(const uint8_t *bytes, size_t size, uint32_t index);
+    RenderCommandEncoder &mtlSetFragmentSamplerState(id<MTLSamplerState> state, uint32_t index);
+    RenderCommandEncoder &mtlSetFragmentSamplerState(id<MTLSamplerState> state,
+                                                     float lodMinClamp,
+                                                     float lodMaxClamp,
+                                                     uint32_t index);
+    RenderCommandEncoder &mtlSetFragmentTexture(id<MTLTexture> texture, uint32_t index);
+
+    RenderCommandEncoder &mtlSetVisibilityResultMode(MTLVisibilityResultMode mode, size_t offset);
+
+    RenderCommandEncoder &mtlUseResource(id<MTLBuffer> resource,
+                                         MTLResourceUsage usage,
+                                         mtl::RenderStages stages);
+
+    RenderCommandEncoder &mtlMemoryBarrierWithResource(id<MTLBuffer> resource,
+                                                       mtl::RenderStages after,
+                                                       mtl::RenderStages before);
+
+    RenderCommandEncoder &mtlInsertDebugSign(NSString *label);
+
+    RenderCommandEncoder &mtlPushDebugGroup(NSString *label);
+    RenderCommandEncoder &mtlPopDebugGroup();
+
+    RenderCommandEncoder &mtlSetLabel(NSString *label);
+
     RenderPassDesc mRenderPassDesc;
     // Cached Objective-C render pass desc to avoid re-allocate every frame.
     mtl::AutoObjCObj<MTLRenderPassDescriptor> mCachedRenderPassDescObjC;
     MTLScissorRect mRenderPassMaxScissorRect;
 
-    const OcclusionQueryPool &mOcclusionQueryPool;
     bool mRecording    = false;
     bool mHasDrawCalls = false;
     IntermediateCommandStream mCommands;
 
-    gl::ShaderMap<uint8_t> mSetBufferCmds;
-    gl::ShaderMap<uint8_t> mSetBufferOffsetCmds;
-    gl::ShaderMap<uint8_t> mSetBytesCmds;
-    gl::ShaderMap<uint8_t> mSetTextureCmds;
-    gl::ShaderMap<uint8_t> mSetSamplerCmds;
+    mtl::AutoObjCObj<NSString> mDeferredLabel;
+
+    mtl::AutoObjCObj<NSString> mDeferredDebugSign;
+    std::vector<mtl::AutoObjCObj<NSString>> mDeferredDebugGroups;
+
+    bool mWarnOutOfBoundScissorRect;
+
+    const OcclusionQueryPool &mOcclusionQueryPool;
+
+    using SetBufferFunc       = RenderCommandEncoder &(RenderCommandEncoder::*)(id<MTLBuffer>,
+                                                                          uint32_t,
+                                                                          uint32_t);
+    using SetBufferOffsetFunc = RenderCommandEncoder &(RenderCommandEncoder::*)(uint32_t, uint32_t);
+    using SetBytesFunc        = RenderCommandEncoder &(RenderCommandEncoder::*)(const uint8_t *,
+                                                                         size_t,
+                                                                         uint32_t);
+    using SetSamplerStateWithoutLodFunc =
+        RenderCommandEncoder &(RenderCommandEncoder::*)(id<MTLSamplerState>, uint32_t);
+    using SetSamplerStateFunc = RenderCommandEncoder &(RenderCommandEncoder::*)(id<MTLSamplerState>,
+                                                                                float,
+                                                                                float,
+                                                                                uint32_t);
+    using SetTextureFunc      = RenderCommandEncoder &(RenderCommandEncoder::*)(id<MTLTexture>,
+                                                                           uint32_t);
+
+    gl::ShaderMap<SetBufferFunc> mSetBufferFuncs;
+    gl::ShaderMap<SetBufferOffsetFunc> mSetBufferOffsetFuncs;
+    gl::ShaderMap<SetBytesFunc> mSetBytesFuncs;
+    gl::ShaderMap<SetTextureFunc> mSetTextureFuncs;
+    gl::ShaderMap<SetSamplerStateFunc> mSetSamplerFuncs;
+    gl::ShaderMap<SetSamplerStateWithoutLodFunc> mSetSamplerWithoutLodFuncs;
 
     RenderCommandEncoderStates mStateCache = {};
 };

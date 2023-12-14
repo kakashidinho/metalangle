@@ -10,13 +10,6 @@
 - The visibility result buffer will always be reset to zeros within the render pass.
 
 ### Previous implementation
-- Metal back-end object `RenderCommandEncoder`'s method restart() will create an instance of Metal
-  framework's native object `MTLRenderCommandEncoder` immediately to start encoding a render pass.
-- Afterwards, calling `RenderCommandEncoder`'s functions such as draw(), setBuffer(), setTexture(),
-  etc will invoke the equivalent `MTLRenderCommandEncoder`'s methods.
-- The render pass's encoding ends when `RenderCommandEncoder.endEncoding()` is called.
-
-### Current implementation
 
 - `MTLRenderCommandEncoder` creation will be deferred until all information about the render pass
   have been recorded and known to the Metal backend.
@@ -48,12 +41,9 @@
       in a render pass. Only the value stored in the 2nd offset will be copied back to the query at
       the end of the render pass though.
 
-### Future improvements
-- One could simply allocates an offset within the visibility result buffer permanently for a query.
-  Then the extra copy step at the end of the render pass could be removed.
-- However, doing so means the visibility result buffer would be very large in order to store every
-  query object created. Even if the query object might never be activated in a render pass.
-- Furthermore, in order for the client to read back the result of a query, a host memory
-  synchronization for the visibility result buffer must be inserted. This could be slow if the
-  buffer is huge, and there are some offsets within the buffer are inactive within a render pass,
-  thus it is a wasteful synchronization.
+### Current implementation
+
+- `MTLRenderCommandEncoder` creation is not deferred anymore. When first occlusion query begins, a
+  visibility result buffer will be created with maximum number of possible query offsets.
+- If there are more than maximum query offsets allocated for a particular render pass, the render
+  pass will be ended and restarted.

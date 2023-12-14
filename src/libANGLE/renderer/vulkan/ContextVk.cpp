@@ -4294,6 +4294,7 @@ angle::Result ContextVk::endRenderPass()
 
     mRenderPassCommands->pauseTransformFeedbackIfStarted();
 
+<<<<<<< HEAD
     if (mRenderer->getFeatures().enableCommandProcessingThread.enabled)
     {
         vk::CommandProcessorTask task = {this, &mPrimaryCommands, mRenderPassCommands};

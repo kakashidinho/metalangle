@@ -955,13 +955,6 @@ class ProgramBinaryTransformFeedbackTest : public ANGLETest
 
     void testSetUp() override
     {
-        // TODO(hqle): Metal doesn't implement XFB yet. http://anglebug.com/4565
-        if (IsMetal())
-        {
-            GTEST_SKIP();
-            return;
-        }
-
         constexpr char kVS[] = R"(#version 300 es
 in vec4 inputAttribute;
 out vec4 outputVarying;

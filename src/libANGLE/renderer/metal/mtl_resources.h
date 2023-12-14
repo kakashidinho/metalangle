@@ -63,9 +63,6 @@ class Resource : angle::NonCopyable
     bool isCPUReadMemNeedSync() const { return mUsageRef->cpuReadMemNeedSync; }
     void resetCPUReadMemNeedSync() { mUsageRef->cpuReadMemNeedSync = false; }
 
-    bool isCPUReadMemDirty() const { return mUsageRef->cpuReadMemDirty; }
-    void resetCPUReadMemDirty() { mUsageRef->cpuReadMemDirty = false; }
-
   protected:
     Resource();
     // Share the GPU usage ref with other resource
@@ -82,9 +79,6 @@ class Resource : angle::NonCopyable
         // This flag means the resource was issued to be modified by GPU, if CPU wants to read
         // its content, explicit synchronization call must be invoked.
         bool cpuReadMemNeedSync = false;
-
-        // This flag is useful for BufferMtl to know whether it should update the shadow copy
-        bool cpuReadMemDirty = false;
     };
 
     // One resource object might just be a view of another resource. For example, a texture 2d
@@ -203,6 +197,7 @@ class Texture final : public Resource,
     uint32_t mipmapLevels() const;
     uint32_t arrayLength() const;
     uint32_t cubeFacesOrArrayLength() const;
+    uint32_t cubeFacesOrArrayLengthOrDepth() const;
 
     uint32_t width(uint32_t level = 0) const;
     uint32_t height(uint32_t level = 0) const;
@@ -212,6 +207,8 @@ class Texture final : public Resource,
     gl::Extents size(const gl::ImageIndex &index) const;
 
     uint32_t samples() const;
+
+    angle::Result resize(ContextMtl *context, uint32_t width, uint32_t height);
 
     // For render target
     MTLColorWriteMask getColorWritableMask() const { return *mColorWritableMask; }
@@ -280,6 +277,8 @@ class Texture final : public Resource,
     Texture(Texture *original, MTLPixelFormat format);
     Texture(Texture *original, MTLTextureType type, NSRange mipmapLevelRange, NSRange slices);
     Texture(Texture *original, const TextureSwizzleChannels &swizzle);
+
+    AutoObjCObj<MTLTextureDescriptor> mCreationDesc;
 
     // This property is shared between this object and its views:
     std::shared_ptr<MTLColorWriteMask> mColorWritableMask;

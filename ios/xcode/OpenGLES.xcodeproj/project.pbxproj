@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 52;
+	objectVersion = 50;
 	objects = {
 
 /* Begin PBXAggregateTarget section */
@@ -60,10 +60,6 @@
 		0A0546D0242C1DD200FC05D0 /* TransformFeedbackMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A0546CE242C1DD200FC05D0 /* TransformFeedbackMtl.mm */; };
 		0A0546D1242C1DD200FC05D0 /* TransformFeedbackMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A0546CE242C1DD200FC05D0 /* TransformFeedbackMtl.mm */; };
 		0A117E302347B3FE00211C71 /* MetalANGLE.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0A60525323464F51005CEA98 /* MetalANGLE.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		0A13249E24BBA13800020D00 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A13249D24BBA13700020D00 /* libz.tbd */; };
-		0A13249F24BBA14500020D00 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A13249D24BBA13700020D00 /* libz.tbd */; };
-		0A1324A124BBA15200020D00 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A1324A024BBA15100020D00 /* libz.tbd */; };
-		0A1324A224BBA16100020D00 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A13249D24BBA13700020D00 /* libz.tbd */; };
 		0A4B692C2456752F009D5842 /* EarlyFragmentTestsOptimization.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A4B69282456752E009D5842 /* EarlyFragmentTestsOptimization.cpp */; };
 		0A4B692D2456752F009D5842 /* EarlyFragmentTestsOptimization.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A4B69282456752E009D5842 /* EarlyFragmentTestsOptimization.cpp */; };
 		0A4B692E2456752F009D5842 /* EarlyFragmentTestsOptimization.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A4B69282456752E009D5842 /* EarlyFragmentTestsOptimization.cpp */; };
@@ -903,7 +899,6 @@
 		0A90F7FE24065C0C005BA9A8 /* GLES1Renderer.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A605B14234667C3005CEA98 /* GLES1Renderer.h */; };
 		0A90F7FF24065C0C005BA9A8 /* TranslatorVulkan.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A605463234651CB005CEA98 /* TranslatorVulkan.h */; };
 		0A90F80024065C0C005BA9A8 /* FoldExpressions.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A605426234651CB005CEA98 /* FoldExpressions.h */; };
-		0A90F80124065C0C005BA9A8 /* OutputVulkanGLSLForMetal.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A9DB585234A4FA400A35262 /* OutputVulkanGLSLForMetal.h */; };
 		0A90F80224065C0C005BA9A8 /* ValidateMaxParameters.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A605464234651CB005CEA98 /* ValidateMaxParameters.h */; };
 		0A90F80324065C0C005BA9A8 /* validationGL14_autogen.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A6056B9234667BF005CEA98 /* validationGL14_autogen.h */; };
 		0A90F80424065C0C005BA9A8 /* validationES1.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A605AFD234667C3005CEA98 /* validationES1.h */; };
@@ -1285,7 +1280,6 @@
 		0A936E5A244CEFA800B3497E /* FindMain.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A605380234651CB005CEA98 /* FindMain.cpp */; };
 		0A936E5B244CEFA800B3497E /* RewriteDfdy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A6053FC234651CB005CEA98 /* RewriteDfdy.cpp */; };
 		0A936E5C244CEFA800B3497E /* Overlay.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9B8422234CD68C008BF16F /* Overlay.cpp */; };
-		0A936E5D244CEFA800B3497E /* OutputVulkanGLSLForMetal.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A9DB584234A4FA400A35262 /* OutputVulkanGLSLForMetal.mm */; };
 		0A936E5E244CEFA800B3497E /* ReplaceVariable.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A605379234651CB005CEA98 /* ReplaceVariable.cpp */; };
 		0A936E5F244CEFA800B3497E /* Display.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A605ACA234667C2005CEA98 /* Display.cpp */; };
 		0A936E60244CEFA800B3497E /* TransformFeedback.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A605B0C234667C3005CEA98 /* TransformFeedback.cpp */; };
@@ -1331,7 +1325,7 @@
 		0A936E8D244CEFA800B3497E /* TranslatorGLSL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A60536E234651CB005CEA98 /* TranslatorGLSL.cpp */; };
 		0A936E8E244CEFA800B3497E /* DeclareAndInitBuiltinsForInstancedMultiview.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A6053DA234651CB005CEA98 /* DeclareAndInitBuiltinsForInstancedMultiview.cpp */; };
 		0A936E8F244CEFA800B3497E /* Format_table_autogen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A60572F234667BF005CEA98 /* Format_table_autogen.cpp */; };
-		0A936E90244CEFA800B3497E /* TranslatorMetal.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A6053A9234651CB005CEA98 /* TranslatorMetal.cpp */; };
+		0A936E90244CEFA800B3497E /* TranslatorMetal.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A6053A9234651CB005CEA98 /* TranslatorMetal.mm */; };
 		0A936E91244CEFA800B3497E /* RewriteDoWhile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A6053F7234651CB005CEA98 /* RewriteDoWhile.cpp */; };
 		0A936E92244CEFA800B3497E /* RemoveArrayLengthMethod.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A605403234651CB005CEA98 /* RemoveArrayLengthMethod.cpp */; };
 		0A936E93244CEFA800B3497E /* Compiler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A605394234651CB005CEA98 /* Compiler.cpp */; };
@@ -1501,7 +1495,6 @@
 		0A936F72244CF03700B3497E /* FindMain.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A605380234651CB005CEA98 /* FindMain.cpp */; };
 		0A936F73244CF03700B3497E /* RewriteDfdy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A6053FC234651CB005CEA98 /* RewriteDfdy.cpp */; };
 		0A936F74244CF03700B3497E /* Overlay.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9B8422234CD68C008BF16F /* Overlay.cpp */; };
-		0A936F75244CF03700B3497E /* OutputVulkanGLSLForMetal.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A9DB584234A4FA400A35262 /* OutputVulkanGLSLForMetal.mm */; };
 		0A936F76244CF03700B3497E /* ReplaceVariable.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A605379234651CB005CEA98 /* ReplaceVariable.cpp */; };
 		0A936F77244CF03700B3497E /* Display.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A605ACA234667C2005CEA98 /* Display.cpp */; };
 		0A936F78244CF03700B3497E /* TransformFeedback.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A605B0C234667C3005CEA98 /* TransformFeedback.cpp */; };
@@ -1547,7 +1540,7 @@
 		0A936FA5244CF03700B3497E /* TranslatorGLSL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A60536E234651CB005CEA98 /* TranslatorGLSL.cpp */; };
 		0A936FA6244CF03700B3497E /* DeclareAndInitBuiltinsForInstancedMultiview.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A6053DA234651CB005CEA98 /* DeclareAndInitBuiltinsForInstancedMultiview.cpp */; };
 		0A936FA7244CF03700B3497E /* Format_table_autogen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A60572F234667BF005CEA98 /* Format_table_autogen.cpp */; };
-		0A936FA8244CF03700B3497E /* TranslatorMetal.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A6053A9234651CB005CEA98 /* TranslatorMetal.cpp */; };
+		0A936FA8244CF03700B3497E /* TranslatorMetal.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A6053A9234651CB005CEA98 /* TranslatorMetal.mm */; };
 		0A936FA9244CF03700B3497E /* RewriteDoWhile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A6053F7234651CB005CEA98 /* RewriteDoWhile.cpp */; };
 		0A936FAA244CF03700B3497E /* RemoveArrayLengthMethod.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A605403234651CB005CEA98 /* RemoveArrayLengthMethod.cpp */; };
 		0A936FAB244CF03700B3497E /* Compiler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A605394234651CB005CEA98 /* Compiler.cpp */; };
@@ -1717,7 +1710,6 @@
 		0A93708C244CF04900B3497E /* FindMain.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A605380234651CB005CEA98 /* FindMain.cpp */; };
 		0A93708D244CF04900B3497E /* RewriteDfdy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A6053FC234651CB005CEA98 /* RewriteDfdy.cpp */; };
 		0A93708E244CF04900B3497E /* Overlay.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A9B8422234CD68C008BF16F /* Overlay.cpp */; };
-		0A93708F244CF04900B3497E /* OutputVulkanGLSLForMetal.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A9DB584234A4FA400A35262 /* OutputVulkanGLSLForMetal.mm */; };
 		0A937090244CF04900B3497E /* ReplaceVariable.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A605379234651CB005CEA98 /* ReplaceVariable.cpp */; };
 		0A937091244CF04900B3497E /* Display.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A605ACA234667C2005CEA98 /* Display.cpp */; };
 		0A937092244CF04900B3497E /* TransformFeedback.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A605B0C234667C3005CEA98 /* TransformFeedback.cpp */; };
@@ -1763,7 +1755,7 @@
 		0A9370BF244CF04900B3497E /* TranslatorGLSL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A60536E234651CB005CEA98 /* TranslatorGLSL.cpp */; };
 		0A9370C0244CF04900B3497E /* DeclareAndInitBuiltinsForInstancedMultiview.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A6053DA234651CB005CEA98 /* DeclareAndInitBuiltinsForInstancedMultiview.cpp */; };
 		0A9370C1244CF04900B3497E /* Format_table_autogen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A60572F234667BF005CEA98 /* Format_table_autogen.cpp */; };
-		0A9370C2244CF04900B3497E /* TranslatorMetal.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A6053A9234651CB005CEA98 /* TranslatorMetal.cpp */; };
+		0A9370C2244CF04900B3497E /* TranslatorMetal.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A6053A9234651CB005CEA98 /* TranslatorMetal.mm */; };
 		0A9370C3244CF04900B3497E /* RewriteDoWhile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A6053F7234651CB005CEA98 /* RewriteDoWhile.cpp */; };
 		0A9370C4244CF04900B3497E /* RemoveArrayLengthMethod.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A605403234651CB005CEA98 /* RemoveArrayLengthMethod.cpp */; };
 		0A9370C5244CF04900B3497E /* Compiler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A605394234651CB005CEA98 /* Compiler.cpp */; };
@@ -2088,8 +2080,6 @@
 		0A9B845D234CD97B008BF16F /* FramebufferAttachment.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A605A94234667C2005CEA98 /* FramebufferAttachment.h */; };
 		0A9D1320235261C400ED98F9 /* glslang_wrapper_utils.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A9D131E235261C400ED98F9 /* glslang_wrapper_utils.h */; };
 		0A9D1321235261C400ED98F9 /* glslang_wrapper_utils.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A9D131E235261C400ED98F9 /* glslang_wrapper_utils.h */; };
-		0A9DB588234A4FA500A35262 /* OutputVulkanGLSLForMetal.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A9DB585234A4FA400A35262 /* OutputVulkanGLSLForMetal.h */; };
-		0A9DB589234A4FA500A35262 /* OutputVulkanGLSLForMetal.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A9DB585234A4FA400A35262 /* OutputVulkanGLSLForMetal.h */; };
 		0A9E0A7C242D060000688588 /* SamplerMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A9E0A7B242D060000688588 /* SamplerMtl.mm */; };
 		0A9E0A7D242D060000688588 /* SamplerMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A9E0A7B242D060000688588 /* SamplerMtl.mm */; };
 		0A9E0A7E242D060000688588 /* SamplerMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A9E0A7B242D060000688588 /* SamplerMtl.mm */; };
@@ -2760,7 +2750,6 @@
 		0AF957DC244C7CD700F59740 /* GLES1Renderer.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A605B14234667C3005CEA98 /* GLES1Renderer.h */; };
 		0AF957DD244C7CD700F59740 /* TranslatorVulkan.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A605463234651CB005CEA98 /* TranslatorVulkan.h */; };
 		0AF957DE244C7CD700F59740 /* FoldExpressions.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A605426234651CB005CEA98 /* FoldExpressions.h */; };
-		0AF957DF244C7CD700F59740 /* OutputVulkanGLSLForMetal.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A9DB585234A4FA400A35262 /* OutputVulkanGLSLForMetal.h */; };
 		0AF957E0244C7CD700F59740 /* ValidateMaxParameters.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A605464234651CB005CEA98 /* ValidateMaxParameters.h */; };
 		0AF957E1244C7CD700F59740 /* validationGL14_autogen.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A6056B9234667BF005CEA98 /* validationGL14_autogen.h */; };
 		0AF957E2244C7CD700F59740 /* validationES1.h in Headers */ = {isa = PBXBuildFile; fileRef = 0A605AFD234667C3005CEA98 /* validationES1.h */; };
@@ -2971,6 +2960,10 @@
 		0AFDDB91244C9DE1000B60B1 /* libglslang_tvos.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AF956F8244C7C8700F59740 /* libglslang_tvos.a */; };
 		0AFDDB92244C9DE1000B60B1 /* libjsoncpp_tvos.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AF956B5244C7BF300F59740 /* libjsoncpp_tvos.a */; };
 		0AFDDB93244C9DE1000B60B1 /* libspirv-cross_tvos.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AF956C6244C7C5100F59740 /* libspirv-cross_tvos.a */; };
+		0AFFDCB624D42F7F0015E16A /* ImageMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AFFDCB524D42F760015E16A /* ImageMtl.mm */; };
+		0AFFDCB724D42F820015E16A /* ImageMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AFFDCB524D42F760015E16A /* ImageMtl.mm */; };
+		0AFFDCB824D42F860015E16A /* ImageMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AFFDCB524D42F760015E16A /* ImageMtl.mm */; };
+		0AFFDCB924D42F880015E16A /* ImageMtl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0AFFDCB524D42F760015E16A /* ImageMtl.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -4262,8 +4255,6 @@
 		0A03A9E5244C850000E5E114 /* libangle_common_tvos.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libangle_common_tvos.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A0546CD242C1DD200FC05D0 /* TransformFeedbackMtl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TransformFeedbackMtl.h; path = ../../src/libANGLE/renderer/metal/TransformFeedbackMtl.h; sourceTree = "<group>"; };
 		0A0546CE242C1DD200FC05D0 /* TransformFeedbackMtl.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = TransformFeedbackMtl.mm; path = ../../src/libANGLE/renderer/metal/TransformFeedbackMtl.mm; sourceTree = "<group>"; };
-		0A13249D24BBA13700020D00 /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk/usr/lib/libz.tbd; sourceTree = DEVELOPER_DIR; };
-		0A1324A024BBA15100020D00 /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = Platforms/AppleTVOS.platform/Developer/SDKs/AppleTVOS13.4.sdk/usr/lib/libz.tbd; sourceTree = DEVELOPER_DIR; };
 		0A28CCD0235717C30081BB84 /* MGLContext+Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MGLContext+Private.h"; sourceTree = "<group>"; };
 		0A28CCD1235719CC0081BB84 /* MGLLayer+Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MGLLayer+Private.h"; sourceTree = "<group>"; };
 		0A4B69262456752E009D5842 /* EarlyFragmentTestsOptimization.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EarlyFragmentTestsOptimization.h; sourceTree = "<group>"; };
@@ -4507,7 +4498,7 @@
 		0A6053A6234651CB005CEA98 /* ParseContext.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ParseContext.cpp; sourceTree = "<group>"; };
 		0A6053A7234651CB005CEA98 /* Declarator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Declarator.h; sourceTree = "<group>"; };
 		0A6053A8234651CB005CEA98 /* StaticType.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = StaticType.h; sourceTree = "<group>"; };
-		0A6053A9234651CB005CEA98 /* TranslatorMetal.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TranslatorMetal.cpp; sourceTree = "<group>"; };
+		0A6053A9234651CB005CEA98 /* TranslatorMetal.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = TranslatorMetal.mm; sourceTree = "<group>"; };
 		0A6053AA234651CB005CEA98 /* OutputTree.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OutputTree.h; sourceTree = "<group>"; };
 		0A6053AB234651CB005CEA98 /* Operator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Operator.cpp; sourceTree = "<group>"; };
 		0A6053AC234651CB005CEA98 /* InitializeDll.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = InitializeDll.h; sourceTree = "<group>"; };
@@ -4718,7 +4709,7 @@
 		0A6055E1234655FC005CEA98 /* mtl_format_table_autogen.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = mtl_format_table_autogen.mm; path = ../../src/libANGLE/renderer/metal/mtl_format_table_autogen.mm; sourceTree = "<group>"; };
 		0A6055E4234655FD005CEA98 /* BufferMtl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BufferMtl.h; path = ../../src/libANGLE/renderer/metal/BufferMtl.h; sourceTree = "<group>"; };
 		0A6055E5234655FD005CEA98 /* ShaderMtl.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = ShaderMtl.mm; path = ../../src/libANGLE/renderer/metal/ShaderMtl.mm; sourceTree = "<group>"; };
-		0A6055EE234655FD005CEA98 /* mtl_default_shaders_autogen.inc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.pascal; path = mtl_default_shaders_autogen.inc; sourceTree = "<group>"; };
+		0A6055EE234655FD005CEA98 /* mtl_default_shaders.inc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.pascal; path = mtl_default_shaders.inc; sourceTree = "<group>"; };
 		0A6055F1234655FD005CEA98 /* ProgramMtl.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = ProgramMtl.mm; path = ../../src/libANGLE/renderer/metal/ProgramMtl.mm; sourceTree = "<group>"; };
 		0A6055F2234655FD005CEA98 /* mtl_state_cache.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = mtl_state_cache.mm; path = ../../src/libANGLE/renderer/metal/mtl_state_cache.mm; sourceTree = "<group>"; };
 		0A6055F3234655FD005CEA98 /* TextureMtl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TextureMtl.h; path = ../../src/libANGLE/renderer/metal/TextureMtl.h; sourceTree = "<group>"; };
@@ -5209,8 +5200,6 @@
 		0A9D131E235261C400ED98F9 /* glslang_wrapper_utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = glslang_wrapper_utils.h; sourceTree = "<group>"; };
 		0A9D131F235261C400ED98F9 /* glslang_wrapper_utils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = glslang_wrapper_utils.cpp; sourceTree = "<group>"; };
 		0A9D1D8F23467034008D63F7 /* entry_points_gles_3_1_autogen.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = entry_points_gles_3_1_autogen.cpp; sourceTree = "<group>"; };
-		0A9DB584234A4FA400A35262 /* OutputVulkanGLSLForMetal.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = OutputVulkanGLSLForMetal.mm; sourceTree = "<group>"; };
-		0A9DB585234A4FA400A35262 /* OutputVulkanGLSLForMetal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OutputVulkanGLSLForMetal.h; sourceTree = "<group>"; };
 		0A9E0A7A242D060000688588 /* SamplerMtl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SamplerMtl.h; path = ../../src/libANGLE/renderer/metal/SamplerMtl.h; sourceTree = "<group>"; };
 		0A9E0A7B242D060000688588 /* SamplerMtl.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = SamplerMtl.mm; path = ../../src/libANGLE/renderer/metal/SamplerMtl.mm; sourceTree = "<group>"; };
 		0AA20000234734F400E0B98C /* random_utils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = random_utils.cpp; path = ../../util/random_utils.cpp; sourceTree = "<group>"; };
@@ -5489,6 +5478,8 @@
 		0AF959B3244C7D5800F59740 /* sample_util_tvos.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = sample_util_tvos.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		0AF959EB244C7EE900F59740 /* simple_vertex_shader_tvos.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = simple_vertex_shader_tvos.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0AF959ED244C7FF800F59740 /* Info_tvos.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; name = Info_tvos.plist; path = samples/Info_tvos.plist; sourceTree = "<group>"; };
+		0AFFDCB424D42F760015E16A /* ImageMtl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ImageMtl.h; path = ../../src/libANGLE/renderer/metal/ImageMtl.h; sourceTree = "<group>"; };
+		0AFFDCB524D42F760015E16A /* ImageMtl.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = ImageMtl.mm; path = ../../src/libANGLE/renderer/metal/ImageMtl.mm; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -5540,7 +5531,6 @@
 				0A60604823466FB8005CEA98 /* libangle_image_util.a in Frameworks */,
 				0A9A6AB523911C23006A152A /* libangle_gl_backend.a in Frameworks */,
 				0A60604923466FB8005CEA98 /* libangle_metal_backend.a in Frameworks */,
-				0A13249E24BBA13800020D00 /* libz.tbd in Frameworks */,
 				0AA2FFAF2347274900E0B98C /* QuartzCore.framework in Frameworks */,
 				0AC2A524234671670045B949 /* Metal.framework in Frameworks */,
 				0AC2A5222346714A0045B949 /* Foundation.framework in Frameworks */,
@@ -5636,7 +5626,6 @@
 				0A90F9D524065DC9005BA9A8 /* libspirv-cross_mac.a in Frameworks */,
 				0A4B6CC52456A1ED009D5842 /* libspirv-tools_mac.a in Frameworks */,
 				0A4B6CDC2456A98C009D5842 /* libjsoncpp_mac.a in Frameworks */,
-				0A13249F24BBA14500020D00 /* libz.tbd in Frameworks */,
 				0A90FA1E24067E9A005BA9A8 /* AppKit.framework in Frameworks */,
 				0A90FA1324067CCD005BA9A8 /* Cocoa.framework in Frameworks */,
 				0A90FA292406808F005BA9A8 /* IOKit.framework in Frameworks */,
@@ -5958,7 +5947,6 @@
 				0AA2FF9F2347260000E0B98C /* libjsoncpp.a in Frameworks */,
 				0AA2FFA02347260000E0B98C /* libspirv-cross.a in Frameworks */,
 				0AA2FFA42347260000E0B98C /* libangle_image_util.a in Frameworks */,
-				0A1324A224BBA16100020D00 /* libz.tbd in Frameworks */,
 				0AA2FFA12347260000E0B98C /* Metal.framework in Frameworks */,
 				0AA2FFA22347260000E0B98C /* Foundation.framework in Frameworks */,
 				0AA2FFA32347260000E0B98C /* CoreFoundation.framework in Frameworks */,
@@ -6048,7 +6036,6 @@
 				0AFDDB92244C9DE1000B60B1 /* libjsoncpp_tvos.a in Frameworks */,
 				0AFDDB93244C9DE1000B60B1 /* libspirv-cross_tvos.a in Frameworks */,
 				0A4B6CCB2456A220009D5842 /* libspirv-tools_tvos.a in Frameworks */,
-				0A1324A124BBA15200020D00 /* libz.tbd in Frameworks */,
 				0AF9598C244C7CD700F59740 /* QuartzCore.framework in Frameworks */,
 				0AF9598D244C7CD700F59740 /* Metal.framework in Frameworks */,
 				0AF9598E244C7CD700F59740 /* Foundation.framework in Frameworks */,
@@ -6471,8 +6458,6 @@
 				0A6053AA234651CB005CEA98 /* OutputTree.h */,
 				0A605433234651CB005CEA98 /* OutputVulkanGLSL.cpp */,
 				0A605457234651CB005CEA98 /* OutputVulkanGLSL.h */,
-				0A9DB585234A4FA400A35262 /* OutputVulkanGLSLForMetal.h */,
-				0A9DB584234A4FA400A35262 /* OutputVulkanGLSLForMetal.mm */,
 				0A6053A6234651CB005CEA98 /* ParseContext.cpp */,
 				0A605468234651CB005CEA98 /* ParseContext.h */,
 				0A6053BD234651CB005CEA98 /* PoolAlloc.cpp */,
@@ -6497,7 +6482,7 @@
 				0A9A6BDE239132E8006A152A /* TranslatorESSL.h */,
 				0A60536E234651CB005CEA98 /* TranslatorGLSL.cpp */,
 				0A60545F234651CB005CEA98 /* TranslatorGLSL.h */,
-				0A6053A9234651CB005CEA98 /* TranslatorMetal.cpp */,
+				0A6053A9234651CB005CEA98 /* TranslatorMetal.mm */,
 				0A60545E234651CB005CEA98 /* TranslatorMetal.h */,
 				0A605456234651CB005CEA98 /* TranslatorVulkan.cpp */,
 				0A605463234651CB005CEA98 /* TranslatorVulkan.h */,
@@ -6737,6 +6722,8 @@
 				0A605609234655FF005CEA98 /* DisplayMtl.mm */,
 				0A6055D1234655FC005CEA98 /* FrameBufferMtl.h */,
 				0A605603234655FE005CEA98 /* FrameBufferMtl.mm */,
+				0AFFDCB424D42F760015E16A /* ImageMtl.h */,
+				0AFFDCB524D42F760015E16A /* ImageMtl.mm */,
 				0A605601234655FE005CEA98 /* mtl_glslang_utils.h */,
 				0A6055D5234655FC005CEA98 /* mtl_glslang_utils.mm */,
 				0A6055D0234655FC005CEA98 /* mtl_buffer_pool.h */,
@@ -6807,7 +6794,7 @@
 		0A6055E7234655FD005CEA98 /* compiled */ = {
 			isa = PBXGroup;
 			children = (
-				0A6055EE234655FD005CEA98 /* mtl_default_shaders_autogen.inc */,
+				0A6055EE234655FD005CEA98 /* mtl_default_shaders.inc */,
 			);
 			path = compiled;
 			sourceTree = "<group>";
@@ -6815,8 +6802,6 @@
 		0A60565F23465AED005CEA98 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				0A13249D24BBA13700020D00 /* libz.tbd */,
-				0A1324A024BBA15100020D00 /* libz.tbd */,
 				0A90FA2A2406831B005BA9A8 /* OpenGL.framework */,
 				0A90FA2724068083005BA9A8 /* IOKit.framework */,
 				0A90FA1D24067E9A005BA9A8 /* AppKit.framework */,
@@ -8091,7 +8076,6 @@
 				0A605FC2234667CE005CEA98 /* GLES1Renderer.h in Headers */,
 				0A60558D234651CC005CEA98 /* TranslatorVulkan.h in Headers */,
 				0A605550234651CC005CEA98 /* FoldExpressions.h in Headers */,
-				0A9DB588234A4FA500A35262 /* OutputVulkanGLSLForMetal.h in Headers */,
 				0A60558E234651CC005CEA98 /* ValidateMaxParameters.h in Headers */,
 				0A605B87234667C5005CEA98 /* validationGL14_autogen.h in Headers */,
 				0A605FAB234667CD005CEA98 /* validationES1.h in Headers */,
@@ -8394,7 +8378,6 @@
 				0A90F7FE24065C0C005BA9A8 /* GLES1Renderer.h in Headers */,
 				0A90F7FF24065C0C005BA9A8 /* TranslatorVulkan.h in Headers */,
 				0A90F80024065C0C005BA9A8 /* FoldExpressions.h in Headers */,
-				0A90F80124065C0C005BA9A8 /* OutputVulkanGLSLForMetal.h in Headers */,
 				0A90F80224065C0C005BA9A8 /* ValidateMaxParameters.h in Headers */,
 				0A90F80324065C0C005BA9A8 /* validationGL14_autogen.h in Headers */,
 				0A90F80424065C0C005BA9A8 /* validationES1.h in Headers */,
@@ -8711,7 +8694,6 @@
 				0AA2FDD72347260000E0B98C /* GLES1Renderer.h in Headers */,
 				0AA2FDD82347260000E0B98C /* TranslatorVulkan.h in Headers */,
 				0AA2FDD92347260000E0B98C /* FoldExpressions.h in Headers */,
-				0A9DB589234A4FA500A35262 /* OutputVulkanGLSLForMetal.h in Headers */,
 				0AA2FDDA2347260000E0B98C /* ValidateMaxParameters.h in Headers */,
 				0AA2FDDB2347260000E0B98C /* validationGL14_autogen.h in Headers */,
 				0AA2FDDC2347260000E0B98C /* validationES1.h in Headers */,
@@ -9014,7 +8996,6 @@
 				0AF957DC244C7CD700F59740 /* GLES1Renderer.h in Headers */,
 				0AF957DD244C7CD700F59740 /* TranslatorVulkan.h in Headers */,
 				0AF957DE244C7CD700F59740 /* FoldExpressions.h in Headers */,
-				0AF957DF244C7CD700F59740 /* OutputVulkanGLSLForMetal.h in Headers */,
 				0AF957E0244C7CD700F59740 /* ValidateMaxParameters.h in Headers */,
 				0AF957E1244C7CD700F59740 /* validationGL14_autogen.h in Headers */,
 				0AF957E2244C7CD700F59740 /* validationES1.h in Headers */,
@@ -11210,6 +11191,7 @@
 				0A60564923465667005CEA98 /* ContextMtl.mm in Sources */,
 				0A60564C23465667005CEA98 /* mtl_glslang_utils.mm in Sources */,
 				0A60564823465667005CEA98 /* CompilerMtl.mm in Sources */,
+				0AFFDCB624D42F7F0015E16A /* ImageMtl.mm in Sources */,
 				0A60565C23465667005CEA98 /* TextureMtl.mm in Sources */,
 				0A60565A23465667005CEA98 /* mtl_state_cache.mm in Sources */,
 				0A60565D23465667005CEA98 /* mtl_render_utils.mm in Sources */,
@@ -11435,6 +11417,7 @@
 				0A90F76724065B06005BA9A8 /* ContextMtl.mm in Sources */,
 				0A90F76824065B06005BA9A8 /* mtl_glslang_utils.mm in Sources */,
 				0A90F76924065B06005BA9A8 /* CompilerMtl.mm in Sources */,
+				0AFFDCB724D42F820015E16A /* ImageMtl.mm in Sources */,
 				0A90F76A24065B06005BA9A8 /* TextureMtl.mm in Sources */,
 				0A90F76B24065B06005BA9A8 /* mtl_state_cache.mm in Sources */,
 				0A90F76C24065B06005BA9A8 /* mtl_render_utils.mm in Sources */,
@@ -11705,7 +11688,6 @@
 				0A936E5C244CEFA800B3497E /* Overlay.cpp in Sources */,
 				0A4B692C2456752F009D5842 /* EarlyFragmentTestsOptimization.cpp in Sources */,
 				0A4B69572456770D009D5842 /* validationES32.cpp in Sources */,
-				0A936E5D244CEFA800B3497E /* OutputVulkanGLSLForMetal.mm in Sources */,
 				0A936E5E244CEFA800B3497E /* ReplaceVariable.cpp in Sources */,
 				0A936E5F244CEFA800B3497E /* Display.cpp in Sources */,
 				0A936E60244CEFA800B3497E /* TransformFeedback.cpp in Sources */,
@@ -11752,7 +11734,7 @@
 				0A936E8D244CEFA800B3497E /* TranslatorGLSL.cpp in Sources */,
 				0A936E8E244CEFA800B3497E /* DeclareAndInitBuiltinsForInstancedMultiview.cpp in Sources */,
 				0A936E8F244CEFA800B3497E /* Format_table_autogen.cpp in Sources */,
-				0A936E90244CEFA800B3497E /* TranslatorMetal.cpp in Sources */,
+				0A936E90244CEFA800B3497E /* TranslatorMetal.mm in Sources */,
 				0A4B6CD62456A86F009D5842 /* SystemInfo.cpp in Sources */,
 				0A936E91244CEFA800B3497E /* RewriteDoWhile.cpp in Sources */,
 				0A936E92244CEFA800B3497E /* RemoveArrayLengthMethod.cpp in Sources */,
@@ -11942,7 +11924,6 @@
 				0A936F72244CF03700B3497E /* FindMain.cpp in Sources */,
 				0A936F73244CF03700B3497E /* RewriteDfdy.cpp in Sources */,
 				0A936F74244CF03700B3497E /* Overlay.cpp in Sources */,
-				0A936F75244CF03700B3497E /* OutputVulkanGLSLForMetal.mm in Sources */,
 				0A936F76244CF03700B3497E /* ReplaceVariable.cpp in Sources */,
 				0A936F77244CF03700B3497E /* Display.cpp in Sources */,
 				0A936F78244CF03700B3497E /* TransformFeedback.cpp in Sources */,
@@ -11991,7 +11972,7 @@
 				0A936FA5244CF03700B3497E /* TranslatorGLSL.cpp in Sources */,
 				0A936FA6244CF03700B3497E /* DeclareAndInitBuiltinsForInstancedMultiview.cpp in Sources */,
 				0A936FA7244CF03700B3497E /* Format_table_autogen.cpp in Sources */,
-				0A936FA8244CF03700B3497E /* TranslatorMetal.cpp in Sources */,
+				0A936FA8244CF03700B3497E /* TranslatorMetal.mm in Sources */,
 				0A4B6CD82456A873009D5842 /* SystemInfo.cpp in Sources */,
 				0A936FA9244CF03700B3497E /* RewriteDoWhile.cpp in Sources */,
 				0A4B693C24567613009D5842 /* glslang_tab_autogen.cpp in Sources */,
@@ -12184,7 +12165,6 @@
 				0A93708E244CF04900B3497E /* Overlay.cpp in Sources */,
 				0A4B692E2456752F009D5842 /* EarlyFragmentTestsOptimization.cpp in Sources */,
 				0A4B69592456770D009D5842 /* validationES32.cpp in Sources */,
-				0A93708F244CF04900B3497E /* OutputVulkanGLSLForMetal.mm in Sources */,
 				0A937090244CF04900B3497E /* ReplaceVariable.cpp in Sources */,
 				0A937091244CF04900B3497E /* Display.cpp in Sources */,
 				0A937092244CF04900B3497E /* TransformFeedback.cpp in Sources */,
@@ -12231,7 +12211,7 @@
 				0A9370BF244CF04900B3497E /* TranslatorGLSL.cpp in Sources */,
 				0A9370C0244CF04900B3497E /* DeclareAndInitBuiltinsForInstancedMultiview.cpp in Sources */,
 				0A9370C1244CF04900B3497E /* Format_table_autogen.cpp in Sources */,
-				0A9370C2244CF04900B3497E /* TranslatorMetal.cpp in Sources */,
+				0A9370C2244CF04900B3497E /* TranslatorMetal.mm in Sources */,
 				0A4B6CD72456A872009D5842 /* SystemInfo.cpp in Sources */,
 				0A9370C3244CF04900B3497E /* RewriteDoWhile.cpp in Sources */,
 				0A9370C4244CF04900B3497E /* RemoveArrayLengthMethod.cpp in Sources */,
@@ -12627,6 +12607,7 @@
 				0AA2FFBE234727A400E0B98C /* ContextMtl.mm in Sources */,
 				0AA2FFBF234727A400E0B98C /* mtl_glslang_utils.mm in Sources */,
 				0AA2FFC0234727A400E0B98C /* CompilerMtl.mm in Sources */,
+				0AFFDCB924D42F880015E16A /* ImageMtl.mm in Sources */,
 				0AA2FFC1234727A400E0B98C /* TextureMtl.mm in Sources */,
 				0AA2FFC2234727A400E0B98C /* mtl_state_cache.mm in Sources */,
 				0AA2FFC4234727A400E0B98C /* mtl_render_utils.mm in Sources */,
@@ -12820,6 +12801,7 @@
 				0AF95740244C7CC300F59740 /* ContextMtl.mm in Sources */,
 				0AF95741244C7CC300F59740 /* mtl_glslang_utils.mm in Sources */,
 				0AF95742244C7CC300F59740 /* CompilerMtl.mm in Sources */,
+				0AFFDCB824D42F860015E16A /* ImageMtl.mm in Sources */,
 				0AF95743244C7CC300F59740 /* TextureMtl.mm in Sources */,
 				0AF95744244C7CC300F59740 /* mtl_state_cache.mm in Sources */,
 				0AF95745244C7CC300F59740 /* mtl_render_utils.mm in Sources */,
@@ -15228,7 +15210,6 @@
 					LIBEGL_IMPLEMENTATION,
 					LIBGLESV2_IMPLEMENTATION,
 					LIBANGLE_IMPLEMENTATION,
-					USE_SYSTEM_ZLIB,
 					ANGLE_ENABLE_DEBUG_ANNOTATIONS,
 					SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS,
 					"GL_GLES_PROTOTYPES=1",
@@ -15269,7 +15250,6 @@
 					LIBEGL_IMPLEMENTATION,
 					LIBGLESV2_IMPLEMENTATION,
 					LIBANGLE_IMPLEMENTATION,
-					USE_SYSTEM_ZLIB,
 					SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS,
 					"GL_GLES_PROTOTYPES=1",
 					"EGL_EGL_PROTOTYPES=1",
@@ -15309,7 +15289,6 @@
 					LIBEGL_IMPLEMENTATION,
 					LIBGLESV2_IMPLEMENTATION,
 					LIBANGLE_IMPLEMENTATION,
-					USE_SYSTEM_ZLIB,
 					ANGLE_ENABLE_DEBUG_ANNOTATIONS,
 					SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS,
 					"GL_GLES_PROTOTYPES=1",
@@ -15351,7 +15330,6 @@
 					LIBEGL_IMPLEMENTATION,
 					LIBGLESV2_IMPLEMENTATION,
 					LIBANGLE_IMPLEMENTATION,
-					USE_SYSTEM_ZLIB,
 					SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS,
 					"GL_GLES_PROTOTYPES=1",
 					"EGL_EGL_PROTOTYPES=1",
@@ -15392,7 +15370,6 @@
 					LIBEGL_IMPLEMENTATION,
 					LIBGLESV2_IMPLEMENTATION,
 					LIBANGLE_IMPLEMENTATION,
-					USE_SYSTEM_ZLIB,
 					ANGLE_ENABLE_DEBUG_ANNOTATIONS,
 					SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS,
 					"GL_GLES_PROTOTYPES=1",
@@ -15433,7 +15410,6 @@
 					LIBEGL_IMPLEMENTATION,
 					LIBGLESV2_IMPLEMENTATION,
 					LIBANGLE_IMPLEMENTATION,
-					USE_SYSTEM_ZLIB,
 					SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS,
 					"GL_GLES_PROTOTYPES=1",
 					"EGL_EGL_PROTOTYPES=1",

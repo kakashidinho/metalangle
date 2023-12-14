@@ -54,6 +54,9 @@ namespace
 constexpr char kXfbDeclMarker[]    = "@@ XFB-DECL @@";
 constexpr char kXfbOutMarker[]     = "@@ XFB-OUT @@;";
 constexpr char kXfbBuiltInPrefix[] = "xfbANGLE";
+constexpr char kVersionDefine[]    = "#version 450 core\n";
+constexpr char kXfbEmuMacro[]      = "ANGLE_ENABLE_XFB_EMULATION";
+constexpr char kXfbEmuDefine[]     = "#version 450 core\n#define ANGLE_ENABLE_XFB_EMULATION\n";
 
 template <size_t N>
 constexpr size_t ConstStrLen(const char (&)[N])
@@ -344,7 +347,10 @@ void GenerateTransformFeedbackEmulationOutputs(GlslangSourceOptions &options,
     const std::string xfbSet = Str(programInterfaceInfo->uniformsAndXfbDescriptorSetIndex);
     std::vector<std::string> xfbIndices(bufferCount);
 
-    std::string xfbDecl;
+    const std::string ifdef = "#ifdef " + std::string(kXfbEmuMacro) + "\n";
+
+    // Wrap XFB emulation in #ifdef guard.
+    std::string xfbDecl = ifdef;
 
     for (uint32_t bufferIndex = 0; bufferIndex < bufferCount; ++bufferIndex)
     {
@@ -363,8 +369,10 @@ void GenerateTransformFeedbackEmulationOutputs(GlslangSourceOptions &options,
                         programInterfaceInfo->currentUniformBindingIndex, gl::ShaderType::Vertex);
         ++programInterfaceInfo->currentUniformBindingIndex;
     }
+    xfbDecl += "#endif\n";
 
-    std::string xfbOut =
+    std::string xfbOut = ifdef;
+    xfbOut +=
         "if (" + std::string(sh::vk::kDriverUniformsVarName) + ".xfbActiveUnpaused != 0)\n{\n";
     size_t outputOffset = 0;
     for (size_t varyingIndex = 0; varyingIndex < varyings.size(); ++varyingIndex)
@@ -384,6 +392,7 @@ void GenerateTransformFeedbackEmulationOutputs(GlslangSourceOptions &options,
         }
     }
     xfbOut += "}\n";
+    xfbOut += "#endif\n";
 
     *vertexShader = SubstituteTransformFeedbackMarkers(*vertexShader, xfbDecl, xfbOut);
 }
@@ -1888,6 +1897,7 @@ angle::Result GlslangTransformSpirvCode(const GlslangErrorCallback &callback,
 angle::Result GlslangGetShaderSpirvCode(const GlslangErrorCallback &callback,
                                         const gl::ShaderBitSet &linkedShaderStages,
                                         const gl::Caps &glCaps,
+                                        bool keepXfbEmulation,
                                         const gl::ShaderMap<std::string> &shaderSources,
                                         const ShaderMapInterfaceVariableInfoMap &variableInfoMap,
                                         gl::ShaderMap<SpirvBlob> *spirvBlobsOut)
@@ -1911,15 +1921,32 @@ angle::Result GlslangGetShaderSpirvCode(const GlslangErrorCallback &callback,
     };
     glslang::TProgram program;
 
+    const gl::ShaderMap<std::string>* _patchedSources = &shaderSources;
+    if (keepXfbEmulation && linkedShaderStages.test(gl::ShaderType::Vertex) &&
+        !shaderSources[gl::ShaderType::Vertex].empty())
+    {
+        gl::ShaderMap<std::string> patchedSources;
+        for (const gl::ShaderType shaderType : linkedShaderStages)
+        {
+            patchedSources[shaderType] = shaderSources[shaderType];
+        }
+
+        ANGLE_GLSLANG_CHECK(callback,
+                            angle::ReplaceSubstring(&patchedSources[gl::ShaderType::Vertex],
+                                                    kVersionDefine, kXfbEmuDefine),
+                            GlslangError::InvalidShader);
+        _patchedSources = &patchedSources;
+    }
+
     for (const gl::ShaderType shaderType : gl::AllShaderTypes())
     {
-        if (shaderSources[shaderType].empty())
+        if ((*_patchedSources)[shaderType].empty())
         {
             continue;
         }
 
-        const char *shaderString = shaderSources[shaderType].c_str();
-        int shaderLength         = static_cast<int>(shaderSources[shaderType].size());
+        const char *shaderString = (*_patchedSources)[shaderType].c_str();
+        int shaderLength         = static_cast<int>((*_patchedSources)[shaderType].size());
 
         glslang::TShader *shader = shaders[shaderType];
         shader->setStringsWithLengths(&shaderString, &shaderLength, 1);

@@ -49,6 +49,7 @@
         CGDisplayModeRelease(displayModeRef);
 
         // Call resume to reset display link's window
+        [self pause];
         [self resume];
 
         // Register callback to be called when this window is closed.
@@ -105,7 +106,12 @@ static CVReturn CVFrameDisplayCallback(CVDisplayLinkRef displayLink,
 
 - (void)pause
 {
+    if (_paused)
+    {
+        return;
+    }
     NSLog(@"MGLKViewController pause");
+
     if (_displayLink)
     {
         CVDisplayLinkStop(_displayLink);
@@ -115,10 +121,17 @@ static CVReturn CVFrameDisplayCallback(CVDisplayLinkRef displayLink,
         [_displayTimer invalidate];
         _displayTimer = nil;
     }
+
+    _paused = YES;
 }
 
 - (void)resume
 {
+    if (!_paused)
+    {
+        return;
+    }
+
     [self pause];
     NSLog(@"MGLKViewController resume");
 
@@ -183,4 +196,6 @@ static CVReturn CVFrameDisplayCallback(CVDisplayLinkRef displayLink,
         [[NSRunLoop currentRunLoop] addTimer:_displayTimer forMode:NSDefaultRunLoopMode];
         [[NSRunLoop currentRunLoop] addTimer:_displayTimer forMode:NSModalPanelRunLoopMode];
     }
+
+    _paused = NO;
 }

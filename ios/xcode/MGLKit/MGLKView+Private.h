@@ -14,7 +14,6 @@
 @interface MGLKView ()
 
 @property(atomic) BOOL drawing;
-@property(nonatomic, weak) MGLLayer *glLayer;
 @property(nonatomic, weak) MGLKViewController *controller;
 
 @end
