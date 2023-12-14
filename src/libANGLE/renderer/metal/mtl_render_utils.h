@@ -36,6 +36,8 @@ struct ClearRectParams
     Optional<float> clearDepth;
     Optional<uint32_t> clearStencil;
 
+    MTLColorWriteMask clearColorMask = MTLColorWriteMaskAll;
+
     const mtl::Format *colorFormat = nullptr;
     gl::Extents dstTextureSize;
 
@@ -221,6 +223,7 @@ class ColorBlitUtils
     void onDestroy();
 
     // Blit texture data to current framebuffer
+
     angle::Result blitColorWithDraw(const gl::Context *context,
                                     RenderCommandEncoder *cmdEncoder,
                                     const ColorBlitParams &params);
@@ -564,21 +567,25 @@ class RenderUtils : public Context, angle::NonCopyable
                                 RenderCommandEncoder *cmdEncoder,
                                 const ClearRectParams &params);
     // Blit texture data to current framebuffer
+    angle::Result blitWithDraw(const gl::Context *context,
+                               RenderCommandEncoder *cmdEncoder,
+                               const BlitParams &params);
+
     angle::Result blitColorWithDraw(const gl::Context *context,
                                     RenderCommandEncoder *cmdEncoder,
                                     const angle::Format &srcAngleFormat,
                                     const ColorBlitParams &params);
+    angle::Result copyTextureWithDraw(const gl::Context *context,
+                                      RenderCommandEncoder *cmdEncoder,
+                                      const angle::Format &srcAngleFormat,
+                                      const angle::Format &dstAngleFormat,
+                                      const ColorBlitParams &params);
     // Same as above but blit the whole texture to the whole of current framebuffer.
     // This function assumes the framebuffer and the source texture have same size.
     angle::Result blitColorWithDraw(const gl::Context *context,
                                     RenderCommandEncoder *cmdEncoder,
                                     const angle::Format &srcAngleFormat,
                                     const TextureRef &srcTexture);
-    angle::Result copyTextureWithDraw(const gl::Context *context,
-                                      RenderCommandEncoder *cmdEncoder,
-                                      const angle::Format &srcAngleFormat,
-                                      const angle::Format &dstAngleFormat,
-                                      const ColorBlitParams &params);
 
     angle::Result blitDepthStencilWithDraw(const gl::Context *context,
                                            RenderCommandEncoder *cmdEncoder,

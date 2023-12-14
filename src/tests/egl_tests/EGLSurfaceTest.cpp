@@ -1106,7 +1106,8 @@ ANGLE_INSTANTIATE_TEST(EGLSurfaceTest,
                        WithNoFixture(ES2_VULKAN()),
                        WithNoFixture(ES3_VULKAN()),
                        WithNoFixture(ES2_VULKAN_SWIFTSHADER()),
-                       WithNoFixture(ES3_VULKAN_SWIFTSHADER()));
+                       WithNoFixture(ES3_VULKAN_SWIFTSHADER()),
+                       WithNoFixture(ES2_METAL()));
 ANGLE_INSTANTIATE_TEST(EGLFloatSurfaceTest,
                        WithNoFixture(ES2_OPENGL()),
                        WithNoFixture(ES3_OPENGL()),

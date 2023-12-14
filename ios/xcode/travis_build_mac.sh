@@ -51,6 +51,7 @@ invoke_xcodebuild()
 
 invoke_xcodebuild MetalANGLE_static_mac
 invoke_xcodebuild MGLKitSampleApp_mac
+invoke_xcodebuild MGLKitSampleSwiftApp_mac
 invoke_xcodebuild hello_triangle_mac
 invoke_xcodebuild multi_texture_mac
 invoke_xcodebuild particle_system_mac

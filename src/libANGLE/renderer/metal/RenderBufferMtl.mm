@@ -10,6 +10,7 @@
 #include "libANGLE/renderer/metal/RenderBufferMtl.h"
 
 #include "libANGLE/renderer/metal/ContextMtl.h"
+#include "libANGLE/renderer/metal/ImageMtl.h"
 #include "libANGLE/renderer/metal/mtl_format_utils.h"
 #include "libANGLE/renderer/metal/mtl_utils.h"
 
@@ -129,7 +130,7 @@ angle::Result RenderbufferMtl::setStorageImpl(const gl::Context *context,
                 ANGLE_TRY(mtl::InitializeTextureContents(context, mImplicitMSTexture, mFormat,
                                                          gl::ImageIndex::Make2DMultisample()));
             }
-        }
+        }  // if (emulatedChannels)
     }
 
     return angle::Result::Continue;
@@ -155,9 +156,20 @@ angle::Result RenderbufferMtl::setStorageMultisample(const gl::Context *context,
 angle::Result RenderbufferMtl::setStorageEGLImageTarget(const gl::Context *context,
                                                         egl::Image *image)
 {
-    // NOTE(hqle): Support EGLimage
-    UNIMPLEMENTED();
-    return angle::Result::Stop;
+    releaseTexture();
+
+    ContextMtl *contextMtl = mtl::GetImpl(context);
+
+    ImageMtl *imageMtl = mtl::GetImpl(image);
+    mTexture           = imageMtl->getTexture();
+
+    const angle::FormatID angleFormatId =
+        angle::Format::InternalFormatToID(image->getFormat().info->sizedInternalFormat);
+    mFormat = contextMtl->getPixelFormat(angleFormatId);
+
+    mRenderTarget.set(mTexture, nullptr, 0, 0, mFormat);
+
+    return angle::Result::Continue;
 }
 
 angle::Result RenderbufferMtl::getAttachmentRenderTarget(const gl::Context *context,

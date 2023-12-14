@@ -125,16 +125,20 @@ void CopyTextureNoScale(ContextMtl *contextMtl,
     contextMtl->endEncoding(true);
 }
 
-angle::Result CreateTexture(const gl::Context *context,
-                            const mtl::Format &format,
-                            uint32_t width,
-                            uint32_t height,
-                            uint32_t samples,
-                            bool renderTargetOnly,
-                            mtl::TextureRef *textureOut)
+angle::Result CreateOrResizeTexture(const gl::Context *context,
+                                    const mtl::Format &format,
+                                    uint32_t width,
+                                    uint32_t height,
+                                    uint32_t samples,
+                                    bool renderTargetOnly,
+                                    mtl::TextureRef *textureOut)
 {
     ContextMtl *contextMtl = mtl::GetImpl(context);
-    if (samples > 1)
+    if (*textureOut)
+    {
+        ANGLE_TRY((*textureOut)->resize(contextMtl, width, height));
+    }
+    else if (samples > 1)
     {
         ANGLE_TRY(mtl::Texture::Make2DMSTexture(contextMtl, format, width, height, samples,
                                                 /** renderTargetOnly */ renderTargetOnly,
@@ -516,9 +520,9 @@ angle::Result SurfaceMtl::ensureCompanionTexturesSizeCorrect(const gl::Context *
     {
         mAutoResolveMSColorTexture =
             contextMtl->getDisplay()->getFeatures().allowMultisampleStoreAndResolve.enabled;
-        ANGLE_TRY(CreateTexture(context, mColorFormat, size.width, size.height, mSamples,
-                                /** renderTargetOnly */ mAutoResolveMSColorTexture,
-                                &mMSColorTexture));
+        ANGLE_TRY(CreateOrResizeTexture(context, mColorFormat, size.width, size.height, mSamples,
+                                        /** renderTargetOnly */ mAutoResolveMSColorTexture,
+                                        &mMSColorTexture));
 
         if (mAutoResolveMSColorTexture)
         {
@@ -533,8 +537,8 @@ angle::Result SurfaceMtl::ensureCompanionTexturesSizeCorrect(const gl::Context *
 
     if (mDepthFormat.valid() && (!mDepthTexture || mDepthTexture->size() != size))
     {
-        ANGLE_TRY(CreateTexture(context, mDepthFormat, size.width, size.height, mSamples,
-                                /** renderTargetOnly */ true, &mDepthTexture));
+        ANGLE_TRY(CreateOrResizeTexture(context, mDepthFormat, size.width, size.height, mSamples,
+                                        /** renderTargetOnly */ true, &mDepthTexture));
 
         mDepthRenderTarget.set(mDepthTexture, 0, 0, mDepthFormat);
     }
@@ -547,8 +551,9 @@ angle::Result SurfaceMtl::ensureCompanionTexturesSizeCorrect(const gl::Context *
         }
         else
         {
-            ANGLE_TRY(CreateTexture(context, mStencilFormat, size.width, size.height, mSamples,
-                                    /** renderTargetOnly */ true, &mStencilTexture));
+            ANGLE_TRY(CreateOrResizeTexture(context, mStencilFormat, size.width, size.height,
+                                            mSamples,
+                                            /** renderTargetOnly */ true, &mStencilTexture));
         }
 
         mStencilRenderTarget.set(mStencilTexture, 0, 0, mStencilFormat);
@@ -640,15 +645,15 @@ egl::Error WindowSurfaceMtl::initialize(const egl::Display *display)
         mMetalLayer.get().autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
 #endif
 
-        // ensure drawableSize is set to correct value:
-        mMetalLayer.get().drawableSize = mCurrentKnownDrawableSize = calcExpectedDrawableSize();
-
         if (mMetalLayer.get() != mLayer)
         {
             mMetalLayer.get().contentsScale = mLayer.contentsScale;
 
             [mLayer addSublayer:mMetalLayer.get()];
         }
+
+        // ensure drawableSize is set to correct value:
+        mMetalLayer.get().drawableSize = mCurrentKnownDrawableSize = calcExpectedDrawableSize();
     }
 
     return egl::NoError();
@@ -733,8 +738,8 @@ angle::Result WindowSurfaceMtl::ensureCompanionTexturesSizeCorrect(const gl::Con
     {
         // Create retained color texture (only if multisample texture is not used since multisample
         // texture can preserve the content also).
-        ANGLE_TRY(CreateTexture(context, mColorFormat, size.width, size.height, 1,
-                                /** renderTargetOnly */ true, &mRetainedColorTexture));
+        ANGLE_TRY(CreateOrResizeTexture(context, mColorFormat, size.width, size.height, 1,
+                                        /** renderTargetOnly */ true, &mRetainedColorTexture));
 
         // All drawing will be drawn to this texture instead of the main one.
         mColorRenderTarget.setTexture(mRetainedColorTexture);
@@ -755,13 +760,15 @@ CGSize WindowSurfaceMtl::calcExpectedDrawableSize() const
 
 bool WindowSurfaceMtl::checkIfLayerResized(const gl::Context *context)
 {
+    if (mMetalLayer.get() != mLayer && mMetalLayer.get().contentsScale != mLayer.contentsScale)
+    {
+        // Parent layer's content scale has changed, update Metal layer's scale factor.
+        mMetalLayer.get().contentsScale = mLayer.contentsScale;
+    }
+
     CGSize currentLayerDrawableSize = mMetalLayer.get().drawableSize;
     CGSize expectedDrawableSize     = calcExpectedDrawableSize();
 
-    // NOTE(hqle): We need to compare the size against mCurrentKnownDrawableSize also.
-    // That is because metal framework might internally change the drawableSize property of
-    // metal layer, and it might become equal to expectedDrawableSize. If that happens, we cannot
-    // know whether the layer has been resized or not.
     if (currentLayerDrawableSize.width != expectedDrawableSize.width ||
         currentLayerDrawableSize.height != expectedDrawableSize.height ||
         mCurrentKnownDrawableSize.width != expectedDrawableSize.width ||
@@ -1049,8 +1056,8 @@ angle::Result OffscreenSurfaceMtl::ensureTexturesSizeCorrect(const gl::Context *
 {
     if (!mColorTexture || mColorTexture->size() != mSize)
     {
-        ANGLE_TRY(CreateTexture(context, mColorFormat, mSize.width, mSize.height, 1,
-                                /** renderTargetOnly */ false, &mColorTexture));
+        ANGLE_TRY(CreateOrResizeTexture(context, mColorFormat, mSize.width, mSize.height, 1,
+                                        /** renderTargetOnly */ false, &mColorTexture));
 
         mColorRenderTarget.set(mColorTexture, 0, 0, mColorFormat);
     }
@@ -1253,6 +1260,7 @@ ExternalTextureSurfaceMtl::ExternalTextureSurfaceMtl(DisplayMtl *display,
     : OffscreenSurfaceMtl(display, state, attribs)
 {
     mColorTexture = mtl::Texture::MakeFromMetal((__bridge id<MTLTexture>)(buffer));
+    mSize         = mColorTexture->size();
 
     EGLAttrib internalFormat = attribs.get(EGL_TEXTURE_INTERNAL_FORMAT_ANGLE);
     EGLAttrib type           = attribs.get(EGL_TEXTURE_TYPE_ANGLE);

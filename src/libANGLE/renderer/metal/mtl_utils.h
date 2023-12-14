@@ -32,6 +32,18 @@ angle::Result InitializeTextureContents(const gl::Context *context,
                                         const TextureRef &texture,
                                         const Format &textureObjFormat,
                                         const gl::ImageIndex &index);
+// Same as above but using GPU clear operation instead of CPU.
+// - channelsToInit parameter controls which channels will get their content initialized.
+angle::Result InitializeTextureContentsGPU(const gl::Context *context,
+                                           const TextureRef &texture,
+                                           const Format &textureObjFormat,
+                                           const gl::ImageIndex &index,
+                                           MTLColorWriteMask channelsToInit);
+// Same as above but for a depth/stencil texture.
+angle::Result InitializeDepthStencilTextureContentsGPU(const gl::Context *context,
+                                                       const TextureRef &texture,
+                                                       const Format &textureObjFormat,
+                                                       const gl::ImageIndex &index);
 
 // Unified texture's per slice/depth texel reading function
 angle::Result ReadTexturePerSliceBytes(const gl::Context *context,
@@ -116,8 +128,9 @@ MTLTextureSwizzle GetTextureSwizzle(GLenum swizzle);
 
 // Get color write mask for a specified format. Some formats such as RGB565 doesn't have alpha
 // channel but is emulated by a RGBA8 format, we need to disable alpha write for this format.
-// - isFormatEmulated: if the format is emulated, this pointer will store a true value.
-MTLColorWriteMask GetEmulatedColorWriteMask(const mtl::Format &mtlFormat, bool *isFormatEmulated);
+// - emulatedChannelsOut: if the format is emulated, this pointer will store a true value.
+MTLColorWriteMask GetEmulatedColorWriteMask(const mtl::Format &mtlFormat,
+                                            bool *emulatedChannelsOut);
 MTLColorWriteMask GetEmulatedColorWriteMask(const mtl::Format &mtlFormat);
 bool IsFormatEmulated(const mtl::Format &mtlFormat);
 
@@ -150,6 +163,12 @@ static inline gl::Rectangle MTLRegionToGLRectangle(const MTLRegion &mtlRegion)
                          static_cast<int>(mtlRegion.size.width),
                          static_cast<int>(mtlRegion.size.height));
 }
+
+
+angle::Result TriangleFanBoundCheck(ContextMtl *context, size_t numTris);
+angle::Result GetTriangleFanIndicesCount(ContextMtl *context,
+                                         GLsizei vetexCount,
+                                         uint32_t *numElemsOut);
 
 NS_ASSUME_NONNULL_END
 }  // namespace mtl

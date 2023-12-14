@@ -105,13 +105,12 @@ bool RunApp(const std::vector<const char *> &args,
 class FrameworkLibrary : public Library
 {
   public:
-    FrameworkLibrary(const char *libraryName, bool alreadyHasExtension)
+    FrameworkLibrary(const char *libraryName)
     {
         char buffer[4096];
-        std::string extensionToAdd = alreadyHasExtension ? "" : ".framework";
-        int ret                    = snprintf(buffer, 4096, "%s/%s%s/%s",
+        int ret = snprintf(buffer, 4096, "%s/%s.framework/%s",
                            [[NSBundle mainBundle] privateFrameworksPath].UTF8String, libraryName,
-                           extensionToAdd.c_str(), libraryName);
+                           libraryName);
         if (ret > 0 && ret < 4096)
         {
             mModule = dlopen(buffer, RTLD_NOW);
@@ -144,12 +143,7 @@ class FrameworkLibrary : public Library
 
 Library *OpenSharedLibrary(const char *libraryName, SearchType searchType)
 {
-    return new FrameworkLibrary(libraryName, false);
-}
-
-Library *OpenSharedLibraryWithExtension(const char *libraryName)
-{
-    return new FrameworkLibrary(libraryName, true);
+    return new FrameworkLibrary(libraryName);
 }
 
 bool IsDirectory(const char *filename)

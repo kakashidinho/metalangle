@@ -31,7 +31,12 @@ class OcclusionQueryPool
     OcclusionQueryPool();
     ~OcclusionQueryPool();
 
+    angle::Result initialize(ContextMtl *contextMtl);
     void destroy(ContextMtl *contextMtl);
+
+    bool canAllocateQueryOffset() const;
+
+    angle::Result reserveForMaxPossibleQueryOffsets(ContextMtl *contextMtl);
 
     // Allocate an offset in visibility buffer for a query in a render pass.
     // - clearOldValue = true, if the old value of query will be cleared before combining in the
@@ -52,6 +57,8 @@ class OcclusionQueryPool
   private:
     // Buffer to hold the visibility results for current render pass
     BufferRef mRenderPassResultsPool;
+
+    size_t mMaxRenderPassResultsPoolSize = 0;
 
     // List of allocated queries per render pass
     std::vector<QueryMtl *> mAllocatedQueries;

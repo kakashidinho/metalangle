@@ -1617,9 +1617,6 @@ TEST_P(GLSLTest_ES3, MaxVaryingWithFeedbackAndGLline)
     // http://anglebug.com/4446
     ANGLE_SKIP_TEST_IF(IsOSX() && IsOpenGL());
 
-    // TODO(hqle): Metal doesn't implement XFB yet. http://anglebug.com/4565
-    ANGLE_SKIP_TEST_IF(IsMetal());
-
     GLint maxVaryings = 0;
     glGetIntegerv(GL_MAX_VARYING_VECTORS, &maxVaryings);
 

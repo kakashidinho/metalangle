@@ -22,7 +22,6 @@ namespace rx
 {
 namespace
 {
-constexpr size_t kDynamicIndexDataSize = 1024 * 8;
 
 angle::Result StreamVertexData(ContextMtl *contextMtl,
                                mtl::BufferPool *dynamicBuffer,
@@ -83,8 +82,6 @@ angle::Result StreamIndexData(ContextMtl *contextMtl,
                               mtl::BufferRef *bufferOut,
                               size_t *bufferOffsetOut)
 {
-    dynamicBuffer->releaseInFlightBuffers(contextMtl);
-
     const size_t amount = GetIndexConvertedBufferSize(indexType, indexCount);
     GLubyte *dst        = nullptr;
 
@@ -174,10 +171,7 @@ VertexArrayMtl::VertexArrayMtl(const gl::VertexArrayState &state, ContextMtl *co
 {
     reset(context);
 
-    mDynamicVertexData.initialize(context, 0, mtl::kVertexAttribBufferStrideAlignment,
-                                  /** maxBuffers */ 10 * mtl::kMaxVertexAttribs);
-
-    mDynamicIndexData.initialize(context, kDynamicIndexDataSize, mtl::kIndexBufferOffsetAlignment);
+    mDynamicVertexData.initialize(context, 0, mtl::kVertexAttribBufferStrideAlignment);
 }
 VertexArrayMtl::~VertexArrayMtl() {}
 
@@ -188,7 +182,6 @@ void VertexArrayMtl::destroy(const gl::Context *context)
     reset(contextMtl);
 
     mDynamicVertexData.destroy(contextMtl);
-    mDynamicIndexData.destroy(contextMtl);
 }
 
 void VertexArrayMtl::reset(ContextMtl *context)
@@ -293,6 +286,53 @@ angle::Result VertexArrayMtl::syncState(const gl::Context *context,
     return angle::Result::Continue;
 }
 
+ANGLE_INLINE void VertexArrayMtl::getVertexAttribFormatAndArraySize(const sh::ShaderVariable &var,
+                                                                    MTLVertexFormat *formatOut,
+                                                                    uint32_t *arraySizeOut)
+{
+    uint32_t arraySize = var.getArraySizeProduct();
+
+    MTLVertexFormat format;
+    switch (var.type)
+    {
+        case GL_INT:
+        case GL_INT_VEC2:
+        case GL_INT_VEC3:
+        case GL_INT_VEC4:
+            format = mDefaultIntVertexFormat.metalFormat;
+            break;
+        case GL_UNSIGNED_INT:
+        case GL_UNSIGNED_INT_VEC2:
+        case GL_UNSIGNED_INT_VEC3:
+        case GL_UNSIGNED_INT_VEC4:
+            format = mDefaultUIntVertexFormat.metalFormat;
+            break;
+        case GL_FLOAT_MAT2:
+        case GL_FLOAT_MAT2x3:
+        case GL_FLOAT_MAT2x4:
+            arraySize *= 2;
+            format = mDefaultFloatVertexFormat.metalFormat;
+            break;
+        case GL_FLOAT_MAT3:
+        case GL_FLOAT_MAT3x2:
+        case GL_FLOAT_MAT3x4:
+            arraySize *= 3;
+            format = mDefaultFloatVertexFormat.metalFormat;
+            break;
+        case GL_FLOAT_MAT4:
+        case GL_FLOAT_MAT4x2:
+        case GL_FLOAT_MAT4x3:
+            arraySize *= 4;
+            format = mDefaultFloatVertexFormat.metalFormat;
+            break;
+        default:
+            format = mDefaultFloatVertexFormat.metalFormat;
+    }
+
+    *arraySizeOut = arraySize;
+    *formatOut    = format;
+}
+
 // vertexDescChanged is both input and output, the input value if is true, will force new
 // mtl::VertexDesc to be returned via vertexDescOut. This typically happens when active shader
 // program is changed.
@@ -352,8 +392,7 @@ angle::Result VertexArrayMtl::setupDraw(const gl::Context *glContext,
 
             if (!attribEnabled)
             {
-                desc.attributes[v].bufferIndex = mtl::kDefaultAttribsBindingIndex;
-                desc.attributes[v].offset      = v * mtl::kDefaultAttributeSize;
+                // Use default attribute
                 // Need to find the attribute having the exact binding location = v in the program
                 // inputs list to retrieve its coresponding data type:
                 const std::vector<sh::ShaderVariable> &programInputs =
@@ -362,23 +401,24 @@ angle::Result VertexArrayMtl::setupDraw(const gl::Context *glContext,
                     begin(programInputs), end(programInputs), [v](const sh::ShaderVariable &sv) {
                         return static_cast<uint32_t>(sv.location) == v;
                     });
-                ASSERT(attribInfoIte != end(programInputs));
-                switch (attribInfoIte->type)
+
+                if (attribInfoIte == end(programInputs))
                 {
-                    case GL_INT:
-                    case GL_INT_VEC2:
-                    case GL_INT_VEC3:
-                    case GL_INT_VEC4:
-                        desc.attributes[v].format = mDefaultIntVertexFormat.metalFormat;
-                        break;
-                    case GL_UNSIGNED_INT:
-                    case GL_UNSIGNED_INT_VEC2:
-                    case GL_UNSIGNED_INT_VEC3:
-                    case GL_UNSIGNED_INT_VEC4:
-                        desc.attributes[v].format = mDefaultUIntVertexFormat.metalFormat;
-                        break;
-                    default:
-                        desc.attributes[v].format = mDefaultFloatVertexFormat.metalFormat;
+                    // Most likely this is array element with index > 0.
+                    // Already handled when encounter first element.
+                    continue;
+                }
+
+                uint32_t arraySize;
+                MTLVertexFormat format;
+
+                getVertexAttribFormatAndArraySize(*attribInfoIte, &format, &arraySize);
+
+                for (uint32_t vaIdx = v; vaIdx < v + arraySize; ++vaIdx)
+                {
+                    desc.attributes[vaIdx].bufferIndex = mtl::kDefaultAttribsBindingIndex;
+                    desc.attributes[vaIdx].offset      = vaIdx * mtl::kDefaultAttributeSize;
+                    desc.attributes[vaIdx].format      = format;
                 }
             }
             else
@@ -518,10 +558,15 @@ angle::Result VertexArrayMtl::updateClientAttribs(const gl::Context *context,
             startElement = 0;
             elementCount = UnsignedCeilDivide(instanceCount, binding.getDivisor());
         }
-        size_t bytesIntendedToUse = (startElement + elementCount) * binding.getStride();
 
+        ASSERT(elementCount);
         const mtl::VertexFormat &format = contextMtl->getVertexFormat(attrib.format->id, false);
-        bool needStreaming              = format.actualFormatId != format.intendedFormatId ||
+
+        // Actual bytes to use: the last element doesn't need to be full stride
+        size_t bytesIntendedToUse = (startElement + elementCount - 1) * binding.getStride() +
+                                    format.actualAngleFormat().pixelBytes;
+
+        bool needStreaming = format.actualFormatId != format.intendedFormatId ||
                              (binding.getStride() % mtl::kVertexAttribBufferStrideAlignment) != 0 ||
                              (binding.getStride() < format.actualAngleFormat().pixelBytes) ||
                              bytesIntendedToUse > mInlineDataMaxSize;
@@ -731,6 +776,7 @@ angle::Result VertexArrayMtl::convertIndexBuffer(const gl::Context *glContext,
         contextMtl->getRenderCommandEncoder())
     {
         // We shouldn't use GPU to convert when we are in a middle of a render pass.
+        conversion->data.releaseInFlightBuffers(contextMtl);
         ANGLE_TRY(StreamIndexData(contextMtl, &conversion->data,
                                   idxBuffer->getClientShadowCopyData(contextMtl) + offsetModulo,
                                   indexType, indexCount, glState.isPrimitiveRestartEnabled(),
@@ -791,10 +837,11 @@ angle::Result VertexArrayMtl::streamIndexBufferFromClient(const gl::Context *con
     ASSERT(getState().getElementArrayBuffer() == nullptr);
     ContextMtl *contextMtl = mtl::GetImpl(context);
 
+    // Generate index buffer
     auto srcData = static_cast<const uint8_t *>(sourcePointer);
-    ANGLE_TRY(StreamIndexData(contextMtl, &mDynamicIndexData, srcData, indexType, indexCount,
-                              context->getState().isPrimitiveRestartEnabled(), idxBufferOut,
-                              idxBufferOffsetOut));
+    ANGLE_TRY(StreamIndexData(
+        contextMtl, &contextMtl->getClientIndexBufferPool(), srcData, indexType, indexCount,
+        context->getState().isPrimitiveRestartEnabled(), idxBufferOut, idxBufferOffsetOut));
 
     return angle::Result::Continue;
 }

@@ -51,6 +51,10 @@ invoke_xcodebuild()
 
 invoke_xcodebuild MetalANGLE_static
 invoke_xcodebuild MGLKitSampleApp
+if [ ! "$SDK" = "macosx" ]; then
+    # MGLKitSampleSwiftApp doesn't support mac Catalyst yet
+    invoke_xcodebuild MGLKitSampleSwiftApp
+fi
 invoke_xcodebuild MGLPaint
 invoke_xcodebuild MGLKitSampleApp_ios9.0
 invoke_xcodebuild hello_triangle

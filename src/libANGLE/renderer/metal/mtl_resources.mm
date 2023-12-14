@@ -266,7 +266,7 @@ angle::Result Texture::MakeTexture(ContextMtl *context,
 {
     refOut->reset(new Texture(context, desc, mips, renderTargetOnly, allowFormatView, memoryLess));
 
-    if (!refOut || !refOut->get())
+    if (!(*refOut) || !(*refOut)->get())
     {
         ANGLE_MTL_CHECK(context, false, GL_OUT_OF_MEMORY);
     }
@@ -353,6 +353,8 @@ Texture::Texture(ContextMtl *context,
         }
 
         set([[metalDevice newTextureWithDescriptor:desc] ANGLE_MTL_AUTORELEASE]);
+
+        mCreationDesc.retainAssign(desc);
     }
 }
 
@@ -605,6 +607,15 @@ uint32_t Texture::cubeFacesOrArrayLength() const
     return arrayLength();
 }
 
+uint32_t Texture::cubeFacesOrArrayLengthOrDepth() const
+{
+    if (textureType() == MTLTextureType3D)
+    {
+        return depth();
+    }
+    return cubeFacesOrArrayLength();
+}
+
 uint32_t Texture::width(uint32_t level) const
 {
     return static_cast<uint32_t>(GetMipSize(get().width, level));
@@ -646,6 +657,32 @@ gl::Extents Texture::size(const gl::ImageIndex &index) const
 uint32_t Texture::samples() const
 {
     return static_cast<uint32_t>(get().sampleCount);
+}
+
+angle::Result Texture::resize(ContextMtl *context, uint32_t width, uint32_t height)
+{
+    // Resizing texture view is not supported.
+    ASSERT(mCreationDesc);
+
+    ANGLE_MTL_OBJC_SCOPE
+    {
+        MTLTextureDescriptor *newDesc = [[mCreationDesc.get() copy] ANGLE_MTL_AUTORELEASE];
+        newDesc.width                 = width;
+        newDesc.height                = height;
+        id<MTLTexture> newTexture =
+            [[get().device newTextureWithDescriptor:newDesc] ANGLE_MTL_AUTORELEASE];
+
+        ANGLE_CHECK_GL_ALLOC(context, newTexture);
+
+        mCreationDesc.retainAssign(newDesc);
+
+        set(newTexture);
+
+        // Reset reference counter
+        Resource::reset();
+    }
+
+    return angle::Result::Continue;
 }
 
 TextureRef Texture::getStencilView()
@@ -745,7 +782,7 @@ angle::Result Buffer::MakeBuffer(ContextMtl *context,
 {
     bufferOut->reset(new Buffer(context, useSharedMem, size, data));
 
-    if (!bufferOut || !bufferOut->get())
+    if (!(*bufferOut) || !(*bufferOut)->get())
     {
         ANGLE_MTL_CHECK(context, false, GL_OUT_OF_MEMORY);
     }
@@ -761,7 +798,7 @@ angle::Result Buffer::MakeBuffer(ContextMtl *context,
 {
     bufferOut->reset(new Buffer(context, options, size, data));
 
-    if (!bufferOut || !bufferOut->get())
+    if (!(*bufferOut) || !(*bufferOut)->get())
     {
         ANGLE_MTL_CHECK(context, false, GL_OUT_OF_MEMORY);
     }
@@ -903,7 +940,13 @@ void Buffer::flush(ContextMtl *context, size_t offsetWritten, size_t sizeWritten
     {
         if (get().storageMode == MTLStorageModeManaged)
         {
-            [get() didModifyRange:NSMakeRange(offsetWritten, sizeWritten)];
+            size_t startOffset = std::min(offsetWritten, size());
+            size_t endOffset   = std::min(offsetWritten + sizeWritten, size());
+            size_t clampedSize = endOffset - startOffset;
+            if (clampedSize > 0)
+            {
+                [get() didModifyRange:NSMakeRange(startOffset, clampedSize)];
+            }
         }
     }
 #endif

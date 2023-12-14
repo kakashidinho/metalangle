@@ -301,9 +301,9 @@ TEST_P(MultisampleTest, Triangle)
 // interruption.
 TEST_P(MultisampleTest, ContentPresevedAfterInterruption)
 {
-    ANGLE_SKIP_TEST_IF(!mMultisampledConfigExists);
     ANGLE_SKIP_TEST_IF(!IsGLExtensionEnabled("GL_ANGLE_framebuffer_blit"));
     ANGLE_SKIP_TEST_IF(!IsGLExtensionEnabled("GL_OES_rgb8_rgba8"));
+    ANGLE_SKIP_TEST_IF(!mMultisampledConfigExists);
     // http://anglebug.com/3470
     ANGLE_SKIP_TEST_IF(IsAndroid() && IsNVIDIAShield() && IsOpenGLES());
 

@@ -90,6 +90,12 @@ struct FeaturesMtl : FeatureSetBase
         "Turn this feature on to disallow Compute Shader based mipmap generation. Compute Shader "
         "based mipmap generation might cause GPU hang on some older iOS devices.",
         &members};
+
+    Feature emulateDepthRangeMappingInShader = {
+        "emulate_depth_range_mapping", FeatureCategory::MetalFeatures,
+        "Enable linear depth range mapping in shader. This is work-around for older GPUs where "
+        "viewport's depth range is simply a clamp instead of a map",
+        &members};
 };
 
 }  // namespace angle

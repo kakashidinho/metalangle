@@ -14,10 +14,12 @@
 #include "libANGLE/renderer/DeviceImpl.h"
 #include "libANGLE/renderer/glslang_wrapper_utils.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
+#include "libANGLE/renderer/metal/ImageMtl.h"
 #include "libANGLE/renderer/metal/SurfaceMtl.h"
 #include "libANGLE/renderer/metal/SyncMtl.h"
 #include "libANGLE/renderer/metal/mtl_common.h"
-#include "libANGLE/renderer/metal/shaders/compiled/mtl_default_shaders_autogen.inc"
+#include "libANGLE/renderer/metal/shaders/compiled/mtl_default_shaders.inc"
+#include "libANGLE/renderer/metal/shaders/mtl_default_shaders_src_autogen.inc"
 #include "platform/Platform.h"
 
 #include "EGL/eglext.h"
@@ -129,8 +131,8 @@ void DisplayMtl::terminate()
 {
     mUtils.onDestroy();
     mCmdQueue.reset();
-    mDefaultShaders = nil;
-    mMetalDevice    = nil;
+    mDefaultShaders  = nil;
+    mMetalDevice     = nil;
 #if defined(__IPHONE_12_0) || defined(__MAC_10_14)
     mSharedEventListener = nil;
 #endif
@@ -237,8 +239,7 @@ ImageImpl *DisplayMtl::createImage(const egl::ImageState &state,
                                    EGLenum target,
                                    const egl::AttributeMap &attribs)
 {
-    UNIMPLEMENTED();
-    return nullptr;
+    return new ImageMtl(state, context);
 }
 
 rx::ContextImpl *DisplayMtl::createContext(const gl::State &state,
@@ -261,6 +262,22 @@ StreamProducerImpl *DisplayMtl::createStreamProducerD3DTexture(
 ShareGroupImpl *DisplayMtl::createShareGroup()
 {
     return new ShareGroupMtl();
+}
+
+ExternalImageSiblingImpl *DisplayMtl::createExternalImageSibling(const gl::Context *context,
+                                                                 EGLenum target,
+                                                                 EGLClientBuffer buffer,
+                                                                 const egl::AttributeMap &attribs)
+{
+    switch (target)
+    {
+        case EGL_MTL_TEXTURE_MGL:
+            return new TextureImageSiblingMtl(buffer);
+
+        default:
+            UNREACHABLE();
+            return nullptr;
+    }
 }
 
 gl::Version DisplayMtl::getMaxSupportedESVersion() const
@@ -293,9 +310,15 @@ egl::Error DisplayMtl::makeCurrent(egl::Surface *drawSurface,
 void DisplayMtl::generateExtensions(egl::DisplayExtensions *outExtensions) const
 {
     outExtensions->flexibleSurfaceCompatibility = true;
-    outExtensions->fenceSync                    = true;
-    outExtensions->waitSync                     = true;
     outExtensions->glColorspace                 = true;
+
+    if (ANGLE_APPLE_AVAILABLE_XCI(10.14, 13.0, 12.0))
+    {
+        // MTLSharedEvent is only available since Metal 2.1
+        outExtensions->fenceSync = true;
+        outExtensions->waitSync  = true;
+    }
+
 #if defined(ANGLE_DISABLE_IOSURFACE)
     outExtensions->iosurfaceClientBuffer = false;
 #else
@@ -307,6 +330,10 @@ void DisplayMtl::generateExtensions(egl::DisplayExtensions *outExtensions) const
     outExtensions->robustResourceInitialization = true;
     outExtensions->displayTextureShareGroup     = true;
     outExtensions->deviceQuery                  = true;
+
+    // EGL_KHR_image
+    outExtensions->image     = true;
+    outExtensions->imageBase = true;
 }
 
 void DisplayMtl::generateCaps(egl::Caps *outCaps) const {}
@@ -356,8 +383,8 @@ egl::ConfigSet DisplayMtl::generateConfigs()
     config.minSwapInterval = 0;
     config.maxSwapInterval = 1;
 #else
-    config.minSwapInterval = 1;
-    config.maxSwapInterval = 1;
+    config.minSwapInterval               = 1;
+    config.maxSwapInterval               = 1;
 #endif
 
     config.renderTargetFormat = GL_RGBA8;
@@ -449,6 +476,26 @@ egl::Error DisplayMtl::validateClientBuffer(const egl::Config *configuration,
     return egl::NoError();
 }
 
+egl::Error DisplayMtl::validateImageClientBuffer(const gl::Context *context,
+                                                 EGLenum target,
+                                                 EGLClientBuffer clientBuffer,
+                                                 const egl::AttributeMap &attribs) const
+{
+    switch (target)
+    {
+        case EGL_MTL_TEXTURE_MGL:
+            if (!TextureImageSiblingMtl::ValidateClientBuffer(this, clientBuffer))
+            {
+                return egl::EglBadAttribute();
+            }
+            break;
+        default:
+            UNREACHABLE();
+            return egl::EglBadAttribute();
+    }
+    return egl::NoError();
+}
+
 std::string DisplayMtl::getRendererDescription() const
 {
     ANGLE_MTL_OBJC_SCOPE
@@ -501,9 +548,10 @@ void DisplayMtl::ensureCapsInitialized() const
     mNativeCaps.maxElementIndex  = std::numeric_limits<GLuint>::max() - 1;
     mNativeCaps.max3DTextureSize = 2048;
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-    mNativeCaps.max2DTextureSize          = 16384;
-    mNativeCaps.maxVaryingVectors         = 31;
-    mNativeCaps.maxVertexOutputComponents = mNativeCaps.maxFragmentInputComponents = 124;
+    mNativeCaps.max2DTextureSize = 16384;
+    // On macOS exclude [[position]] from maxVaryingVectors.
+    mNativeCaps.maxVaryingVectors         = 31 - 1;
+    mNativeCaps.maxVertexOutputComponents = mNativeCaps.maxFragmentInputComponents = 124 - 4;
 #else
     if (supportiOSGPUFamily(3))
     {
@@ -672,10 +720,13 @@ void DisplayMtl::initializeExtensions() const
     // Enable EXT_blend_minmax
     mNativeExtensions.blendMinMax = true;
 
-    mNativeExtensions.eglImageOES         = false;
+    mNativeExtensions.eglImageOES         = true;
     mNativeExtensions.eglImageExternalOES = false;
     // NOTE(hqle): Support GL_OES_EGL_image_external_essl3.
     mNativeExtensions.eglImageExternalEssl3OES = false;
+
+    // MGL_EGL_image_cube
+    mNativeExtensions.eglImageCubeMGL = true;
 
     mNativeExtensions.memoryObject   = false;
     mNativeExtensions.memoryObjectFd = false;
@@ -716,11 +767,16 @@ void DisplayMtl::initializeExtensions() const
     // GL_NV_pixel_buffer_object
     mNativeExtensions.pixelBufferObjectNV = true;
 
-    // GL_NV_fence
-    mNativeExtensions.fenceNV = true;
+    if (ANGLE_APPLE_AVAILABLE_XCI(10.14, 13.0, 12.0))
+    {
+        // MTLSharedEvent is only available since Metal 2.1
 
-    // GL_OES_EGL_sync
-    mNativeExtensions.eglSyncOES = true;
+        // GL_NV_fence
+        mNativeExtensions.fenceNV = true;
+
+        // GL_OES_EGL_sync
+        mNativeExtensions.eglSyncOES = true;
+    }
 
     // GL_ANGLE_texture_rectangle
     mNativeExtensions.textureRectangle = true;
@@ -763,6 +819,7 @@ void DisplayMtl::initializeFeatures()
     mFeatures.allowInlineConstVertexData.enabled        = true;
     mFeatures.allowSeparatedDepthStencilBuffers.enabled = false;
     mFeatures.forceBufferGPUStorage.enabled             = false;
+    mFeatures.emulateDepthRangeMappingInShader.enabled  = true;
 
     ANGLE_FEATURE_CONDITION((&mFeatures), hasDepthAutoResolve, supportEitherGPUFamily(3, 2));
     ANGLE_FEATURE_CONDITION((&mFeatures), hasStencilAutoResolve, supportEitherGPUFamily(5, 2));
@@ -787,7 +844,10 @@ void DisplayMtl::initializeFeatures()
 
     if (ANGLE_APPLE_AVAILABLE_XCI(10.14, 13.0, 12.0))
     {
-        mFeatures.hasStencilOutput.enabled = true;
+        mFeatures.hasStencilOutput.enabled                 = true;
+        mFeatures.emulateDepthRangeMappingInShader.enabled = false;
+        ANGLE_FEATURE_CONDITION((&mFeatures), hasExplicitMemBarrier,
+                                (TARGET_OS_OSX || TARGET_OS_MACCATALYST) && !ANGLE_MTL_ARM);
     }
     if (ANGLE_APPLE_AVAILABLE_XCI(10.15, 13.0, 13.0))
     {
@@ -795,13 +855,8 @@ void DisplayMtl::initializeFeatures()
     }
 
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
-    mFeatures.hasDepthTextureFiltering.enabled = true;
-    mFeatures.breakRenderPassIsCheap.enabled   = true;
-
-    if (ANGLE_APPLE_AVAILABLE_XC(10.14, 13.0))
-    {
-        mFeatures.hasExplicitMemBarrier.enabled = true;
-    }
+    mFeatures.hasDepthTextureFiltering.enabled = !ANGLE_MTL_ARM;
+    mFeatures.breakRenderPassIsCheap.enabled   = !ANGLE_MTL_ARM;
 
 #elif TARGET_OS_IOS || TARGET_OS_TV
     mFeatures.breakRenderPassIsCheap.enabled = false;
@@ -851,8 +906,13 @@ angle::Result DisplayMtl::initializeShaderLibrary()
     }
 #endif
 
-    mDefaultShaders = CreateShaderLibraryFromBinary(getMetalDevice(), compiled_shader_binary,
-                                                    compiled_shader_binary_len, &err);
+#if defined(ANGLE_MTL_DEBUG_INTERNAL_SHADERS)
+    mDefaultShaders = CreateShaderLibrary(getMetalDevice(), default_metallib_src,
+                                          sizeof(default_metallib_src), &err);
+#else
+    mDefaultShaders = CreateShaderLibraryFromBinary(getMetalDevice(), compiled_default_metallib,
+                                                    compiled_default_metallib_len, &err);
+#endif
 
     if (err && !mDefaultShaders)
     {
@@ -864,6 +924,18 @@ angle::Result DisplayMtl::initializeShaderLibrary()
     }
 
     return angle::Result::Continue;
+}
+
+id<MTLLibrary> DisplayMtl::getDefaultShadersLib()
+{
+    if (!mDefaultShaders)
+    {
+        if (initializeShaderLibrary() != angle::Result::Continue)
+        {
+            return nil;
+        }
+    }
+    return mDefaultShaders;
 }
 
 bool DisplayMtl::supportiOSGPUFamily(uint8_t iOSFamily) const

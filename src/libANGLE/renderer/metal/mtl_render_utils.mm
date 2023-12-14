@@ -241,13 +241,17 @@ angle::Result GenTriFanFromClientElements(ContextMtl *contextMtl,
                                           uint32_t dstOffset)
 {
     ASSERT(count > 2);
+
+    uint32_t genIndicesCount;
+    ANGLE_TRY(mtl::GetTriangleFanIndicesCount(contextMtl, count, &genIndicesCount));
+
     constexpr T kSrcPrimitiveRestartIndex    = std::numeric_limits<T>::max();
     const uint32_t kDstPrimitiveRestartIndex = std::numeric_limits<uint32_t>::max();
 
     uint32_t *dstPtr = reinterpret_cast<uint32_t *>(dstBuffer->map(contextMtl) + dstOffset);
-    T triFirstIdx, srcPrevIdx;
+    T triFirstIdx = 0;  // Vertex index of trianlge's 1st vertex
+    T srcPrevIdx  = 0;  // Vertex index of trianlge's 2nd vertex
     memcpy(&triFirstIdx, indices, sizeof(triFirstIdx));
-    memcpy(&srcPrevIdx, indices + 1, sizeof(srcPrevIdx));
 
     if (primitiveRestartEnabled)
     {
@@ -266,6 +270,10 @@ angle::Result GenTriFanFromClientElements(ContextMtl *contextMtl,
             {
                 memcpy(&dstPtr[i], &kDstPrimitiveRestartIndex, sizeof(kDstPrimitiveRestartIndex));
             }
+        }
+        else if (triFirstIdxLoc + 1 < count)
+        {
+            memcpy(&srcPrevIdx, indices + triFirstIdxLoc + 1, sizeof(srcPrevIdx));
         }
 
         for (GLsizei i = triFirstIdxLoc + 2; i < count; ++i)
@@ -303,6 +311,8 @@ angle::Result GenTriFanFromClientElements(ContextMtl *contextMtl,
     }
     else
     {
+        memcpy(&srcPrevIdx, indices + 1, sizeof(srcPrevIdx));
+
         for (GLsizei i = 2; i < count; ++i)
         {
             T srcIdx;
@@ -317,7 +327,7 @@ angle::Result GenTriFanFromClientElements(ContextMtl *contextMtl,
             memcpy(dstPtr + 3 * (i - 2), triIndices, sizeof(triIndices));
         }
     }
-    dstBuffer->unmap(contextMtl);
+    dstBuffer->unmap(contextMtl, dstOffset, genIndicesCount * sizeof(uint32_t));
 
     return angle::Result::Continue;
 }
@@ -402,7 +412,7 @@ angle::Result GenLineLoopFromClientElements(ContextMtl *contextMtl,
 
         *indicesGenerated = count + 1;
     }
-    dstBuffer->unmap(contextMtl);
+    dstBuffer->unmap(contextMtl, dstOffset, (*indicesGenerated) * sizeof(uint32_t));
 
     return angle::Result::Continue;
 }
@@ -611,7 +621,7 @@ RenderPipelineDesc GetComputingVertexShaderOnlyRenderPipelineDesc(RenderCommandE
     const RenderPassDesc &renderPassDesc = cmdEncoder->renderPassDesc();
 
     renderPassDesc.populateRenderPipelineOutputDesc(&pipelineDesc.outputDescriptor);
-    pipelineDesc.rasterizationEnabled   = false;
+    pipelineDesc.rasterizationType      = RenderPipelineRasterization::Disabled;
     pipelineDesc.inputPrimitiveTopology = kPrimitiveTopologyClassPoint;
 
     return pipelineDesc;
@@ -963,6 +973,21 @@ angle::Result RenderUtils::blitColorWithDraw(const gl::Context *context,
     return mColorBlitUtils[index].blitColorWithDraw(context, cmdEncoder, params);
 }
 
+angle::Result RenderUtils::copyTextureWithDraw(const gl::Context *context,
+                                               RenderCommandEncoder *cmdEncoder,
+                                               const angle::Format &srcAngleFormat,
+                                               const angle::Format &dstAngleFormat,
+                                               const ColorBlitParams &params)
+{
+    if (!srcAngleFormat.isInt() && dstAngleFormat.isUint())
+    {
+        return mCopyTextureFloatToUIntUtils.blitColorWithDraw(context, cmdEncoder, params);
+    }
+    ASSERT(srcAngleFormat.isSint() == dstAngleFormat.isSint() &&
+           srcAngleFormat.isUint() == dstAngleFormat.isUint());
+    return blitColorWithDraw(context, cmdEncoder, srcAngleFormat, params);
+}
+
 angle::Result RenderUtils::blitColorWithDraw(const gl::Context *context,
                                              RenderCommandEncoder *cmdEncoder,
                                              const angle::Format &srcAngleFormat,
@@ -981,21 +1006,6 @@ angle::Result RenderUtils::blitColorWithDraw(const gl::Context *context,
     params.dstRect = params.dstScissorRect = params.srcRect =
         gl::Rectangle(0, 0, params.dstTextureSize.width, params.dstTextureSize.height);
 
-    return blitColorWithDraw(context, cmdEncoder, srcAngleFormat, params);
-}
-
-angle::Result RenderUtils::copyTextureWithDraw(const gl::Context *context,
-                                               RenderCommandEncoder *cmdEncoder,
-                                               const angle::Format &srcAngleFormat,
-                                               const angle::Format &dstAngleFormat,
-                                               const ColorBlitParams &params)
-{
-    if (!srcAngleFormat.isInt() && dstAngleFormat.isUint())
-    {
-        return mCopyTextureFloatToUIntUtils.blitColorWithDraw(context, cmdEncoder, params);
-    }
-    ASSERT(srcAngleFormat.isSint() == dstAngleFormat.isSint() &&
-           srcAngleFormat.isUint() == dstAngleFormat.isUint());
     return blitColorWithDraw(context, cmdEncoder, srcAngleFormat, params);
 }
 
@@ -1191,15 +1201,8 @@ id<MTLDepthStencilState> ClearUtils::getClearDepthStencilState(const gl::Context
     DepthStencilDesc desc;
     desc.reset();
 
-    if (params.clearDepth.valid())
-    {
-        // Clear depth state
-        desc.depthWriteEnabled = true;
-    }
-    else
-    {
-        desc.depthWriteEnabled = false;
-    }
+    // Invalidate current context's state
+    contextMtl->invalidateState(context);
 
     if (params.clearStencil.valid())
     {
@@ -1220,7 +1223,7 @@ id<MTLRenderPipelineState> ClearUtils::getClearRenderPipelineState(const gl::Con
 {
     ContextMtl *contextMtl = GetImpl(context);
     // The color mask to be applied to every color attachment:
-    MTLColorWriteMask globalColorMask = contextMtl->getClearColorMask();
+    MTLColorWriteMask globalColorMask = params.clearColorMask;
     if (!params.clearColor.valid())
     {
         globalColorMask = MTLColorWriteMaskNone;
@@ -1271,10 +1274,12 @@ void ClearUtils::setupClearWithDraw(const gl::Context *context,
 
     // uniform
     ClearParamsUniform uniformParams;
-    uniformParams.clearColor[0] = static_cast<float>(params.clearColor.value().red);
-    uniformParams.clearColor[1] = static_cast<float>(params.clearColor.value().green);
-    uniformParams.clearColor[2] = static_cast<float>(params.clearColor.value().blue);
-    uniformParams.clearColor[3] = static_cast<float>(params.clearColor.value().alpha);
+    // ClearColorValue is an int, uint, float union so it's safe to use only floats.
+    // The Shader will do the bit cast based on appropriate format type.
+    uniformParams.clearColor[0] = params.clearColor.value().red;
+    uniformParams.clearColor[1] = params.clearColor.value().green;
+    uniformParams.clearColor[2] = params.clearColor.value().blue;
+    uniformParams.clearColor[3] = params.clearColor.value().alpha;
     uniformParams.clearDepth    = params.clearDepth.value();
 
     cmdEncoder->setVertexData(uniformParams, 0);
@@ -1393,7 +1398,6 @@ void ColorBlitUtils::ensureRenderPipelineStateCacheInitialized(ContextMtl *ctx,
                  constantValues:funcConstants
                           error:&err] ANGLE_MTL_AUTORELEASE];
 
-        ASSERT(vertexShader);
         ASSERT(fragmentShader);
         pipelineCache.setVertexShader(ctx, vertexShader);
         pipelineCache.setFragmentShader(ctx, fragmentShader);
@@ -1821,6 +1825,7 @@ void IndexGeneratorUtils::onDestroy()
 {
     ClearPipelineState2DArray(&mIndexConversionPipelineCaches);
     ClearPipelineState2DArray(&mTriFanFromElemArrayGeneratorPipelineCaches);
+
     ClearPipelineState2DArray(&mLineLoopFromElemArrayGeneratorPipelineCaches);
 
     mTriFanFromArraysGeneratorPipeline   = nil;
@@ -2242,7 +2247,7 @@ angle::Result IndexGeneratorUtils::generateLineLoopLastSegment(ContextMtl *conte
     uint32_t indices[2] = {lastVertex, firstVertex};
     memcpy(ptr, indices, sizeof(indices));
 
-    dstBuffer->unmap(contextMtl);
+    dstBuffer->unmap(contextMtl, dstOffset, sizeof(indices));
 
     return angle::Result::Continue;
 }
@@ -2414,36 +2419,35 @@ angle::Result MipmapUtils::generateMipmapCS(ContextMtl *contextMtl,
                                             bool sRGBMipmap,
                                             gl::TexLevelArray<mtl::TextureRef> *mipmapOutputViews)
 {
-    ComputeCommandEncoder *cmdEncoder = contextMtl->getComputeCommandEncoder();
-    ASSERT(cmdEncoder);
 
     MTLSize threadGroupSize;
-    uint32_t slices = 1;
+    uint32_t slices                           = 1;
+    id<MTLComputePipelineState> computePiline = nil;
     switch (srcTexture->textureType())
     {
         case MTLTextureType2D:
             ensure2DMipGeneratorPipelineInitialized(contextMtl);
-            cmdEncoder->setComputePipelineState(m2DMipGeneratorPipeline);
+            computePiline   = m2DMipGeneratorPipeline;
             threadGroupSize = MTLSizeMake(kGenerateMipThreadGroupSizePerDim,
                                           kGenerateMipThreadGroupSizePerDim, 1);
             break;
         case MTLTextureType2DArray:
             ensure2DArrayMipGeneratorPipelineInitialized(contextMtl);
-            cmdEncoder->setComputePipelineState(m2DArrayMipGeneratorPipeline);
+            computePiline   = m2DArrayMipGeneratorPipeline;
             slices          = srcTexture->arrayLength();
             threadGroupSize = MTLSizeMake(kGenerateMipThreadGroupSizePerDim,
                                           kGenerateMipThreadGroupSizePerDim, 1);
             break;
         case MTLTextureTypeCube:
             ensureCubeMipGeneratorPipelineInitialized(contextMtl);
-            cmdEncoder->setComputePipelineState(mCubeMipGeneratorPipeline);
+            computePiline   = mCubeMipGeneratorPipeline;
             slices          = 6;
             threadGroupSize = MTLSizeMake(kGenerateMipThreadGroupSizePerDim,
                                           kGenerateMipThreadGroupSizePerDim, 1);
             break;
         case MTLTextureType3D:
             ensure3DMipGeneratorPipelineInitialized(contextMtl);
-            cmdEncoder->setComputePipelineState(m3DMipGeneratorPipeline);
+            computePiline = m3DMipGeneratorPipeline;
             threadGroupSize =
                 MTLSizeMake(kGenerateMipThreadGroupSizePerDim, kGenerateMipThreadGroupSizePerDim,
                             kGenerateMipThreadGroupSizePerDim);
@@ -2451,6 +2455,20 @@ angle::Result MipmapUtils::generateMipmapCS(ContextMtl *contextMtl,
         default:
             UNREACHABLE();
     }
+
+    if (threadGroupSize.width * threadGroupSize.height * threadGroupSize.depth >
+        computePiline.maxTotalThreadsPerThreadgroup)
+    {
+        // HACK: use blit command encoder to generate mipmaps if it is not possible
+        // to use compute shader due to hardware limits.
+        BlitCommandEncoder *blitEncoder = contextMtl->getBlitCommandEncoder();
+        blitEncoder->generateMipmapsForTexture(srcTexture);
+        return angle::Result::Continue;
+    }
+
+    ComputeCommandEncoder *cmdEncoder = contextMtl->getComputeCommandEncoder();
+    ASSERT(cmdEncoder);
+    cmdEncoder->setComputePipelineState(computePiline);
 
     GenerateMipmapUniform options;
     uint32_t maxMipsPerBatch = 4;

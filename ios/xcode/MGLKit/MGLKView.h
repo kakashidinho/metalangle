@@ -35,6 +35,8 @@
 @property(nonatomic)
     MGLDrawableMultisample drawableMultisample;  // Default is MGLDrawableMultisampleNone
 
+@property(nonatomic, weak, readonly) MGLLayer *glLayer;
+
 // Return the size of the OpenGL default framebuffer.
 @property(readonly) CGSize drawableSize;
 @property(nonatomic, readonly) NSInteger drawableWidth;
